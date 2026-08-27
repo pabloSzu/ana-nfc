@@ -10,7 +10,7 @@ const base = {
 };
 
 function IconWhatsapp() {
-  return <svg {...base}><path d="M21 11.5a8.5 8.5 0 0 1-12.4 7.55L3 20l1.05-5.4A8.5 8.5 0 1 1 21 11.5Z" /><path d="M8.5 9.5c.3 3 2.7 5.4 5.7 5.7.9.1 1.3-.5 1.3-1.1v-1c-1 .3-2.3 0-3-.7l-.6-.6c-.7-.7-1-2-.7-3h-1c-.6 0-1.2.4-1.1 1.3.1.5.2 1 .4 1.4Z" fill="currentColor" stroke="none" /></svg>;
+  return <svg {...base}><path d="M21 11.5a8.5 8.5 0 0 1-12.4 7.55L3 20l1.05-5.4A8.5 8.5 0 1 1 21 11.5Z" /><path d="M9.3 9.6a5 5 0 0 0 5.1 5.1" /><circle cx="9.3" cy="9.6" r="0.9" fill="currentColor" stroke="none" /><circle cx="14.4" cy="14.7" r="0.9" fill="currentColor" stroke="none" /></svg>;
 }
 
 function IconInstagram() {
