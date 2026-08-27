@@ -37,6 +37,8 @@ export default async function Page({ params, searchParams }: { params: Promise<{
           <label className="label">Color principal<input name="primary_color" type="color" defaultValue={landing.primary_color || "#1f2937"} /></label>
           <label className="label">Color de fondo<input name="background_color" type="color" defaultValue={landing.background_color || "#f7f5f0"} /></label>
         </div>
+        <label className="label">¿A dónde apunta el NFC? (opcional)<input name="redirect_url" type="url" defaultValue={landing.redirect_url || ""} placeholder="https://instagram.com/tunegocio" /></label>
+        <p className="muted" style={{ fontSize: "0.75rem", marginTop: "-8px" }}>Dejalo vacío para usar esta landing. Si pegás un link (Instagram, tu web, Linktree...), el tag NFC va a llevar directo ahí en vez de mostrar esta página.</p>
         <button className="btn full" type="submit">Guardar identidad</button>
       </form>
       <LogoUpload action={uploadLogo} landingId={id} />

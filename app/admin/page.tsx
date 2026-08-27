@@ -23,17 +23,17 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
   landings?.forEach((landing) => { if (landing.client_id) landingCountByClient.set(landing.client_id, (landingCountByClient.get(landing.client_id) || 0) + 1); });
 
   return <main className="shell">
-    <header className="app-header"><div><p className="eyebrow">Mi Landing Web Fácil</p><h1>Tu espacio de landings</h1><p className="muted">Gestioná tus clientes y sus landings.</p></div><form action={logout}><button className="btn secondary" type="submit"><IconLogOut /> Salir</button></form></header>
+    <header className="app-header"><div><p className="eyebrow">Mi Landing Web Fácil</p><h1>Tu espacio de landings</h1><p className="muted">Creá y gestioná las landings para tus tags NFC.</p></div><form action={logout}><button className="btn secondary" type="submit"><IconLogOut /> Salir</button></form></header>
     {params.error && <div className="error">{params.error}</div>}{params.success && <div className="success">{params.success}</div>}{params.saved && <div className="success">{params.saved}</div>}
 
     <section className="stats"><div><strong>{clients?.length || 0}</strong><span><IconUsers /> Clientes</span></div><div><strong>{landings?.length || 0}</strong><span><IconFileText /> Landings</span></div><div><strong>{published}</strong><span><IconCheckCircle /> Publicadas</span></div></section>
 
     <div className="row-actions" style={{ marginBottom: "var(--space-6)" }}>
-      <ModalTrigger label="Nuevo cliente" icon={<IconPlus />} title="Nuevo cliente" description="Definí la identidad inicial.">
-        <form action={newClient} className="stack"><label className="label">Nombre del negocio<input name="name" placeholder="Ej. Aurora Hotel" required /></label><label className="label">Email<input name="email" type="email" placeholder="contacto@aurorahotel.com" /></label><label className="label">WhatsApp<input name="phone" placeholder="549351XXXXXXXX" /></label><div className="color-row"><label className="label">Color principal<input name="primary_color" type="color" defaultValue="#1f2937" /></label><label className="label">Color de fondo<input name="background_color" type="color" defaultValue="#f7f5f0" /></label></div><button className="btn full" type="submit">Crear cliente</button></form>
-      </ModalTrigger>
       <ModalTrigger label="Nueva landing" icon={<IconPlus />} title="Nueva landing" description="Lo esencial para arrancar; el resto lo completás en el editor.">
         <LandingCreationForm clients={clients || []} action={newLanding} />
+      </ModalTrigger>
+      <ModalTrigger label="Nuevo cliente" icon={<IconPlus />} title="Nuevo cliente" description="Solo hace falta si querés agrupar varias landings bajo la misma persona o negocio." variant="secondary">
+        <form action={newClient} className="stack"><label className="label">Nombre del negocio<input name="name" placeholder="Ej. Aurora Hotel" required /></label><label className="label">Email<input name="email" type="email" placeholder="contacto@aurorahotel.com" /></label><label className="label">WhatsApp<input name="phone" placeholder="549351XXXXXXXX" /></label><div className="color-row"><label className="label">Color principal<input name="primary_color" type="color" defaultValue="#1f2937" /></label><label className="label">Color de fondo<input name="background_color" type="color" defaultValue="#f7f5f0" /></label></div><button className="btn full" type="submit">Crear cliente</button></form>
       </ModalTrigger>
     </div>
 
@@ -46,7 +46,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
             <tbody>
               {landings.map((landing) => { const client = landing.client_id ? clientById.get(landing.client_id) : null; return (
                 <tr key={landing.id}>
-                  <td><div className="table-entity"><div className="avatar small" style={{ background: landing.primary_color || "#1f2937" }}>{landing.logo_url ? <img src={landing.logo_url} alt="" /> : landing.business_name.slice(0, 1)}</div><div><strong>{landing.business_name}</strong><small>/{landing.slug}</small></div></div></td>
+                  <td><div className="table-entity"><div className="avatar small" style={{ background: landing.primary_color || "#1f2937" }}>{landing.logo_url ? <img src={landing.logo_url} alt="" /> : landing.business_name.slice(0, 1)}</div><div><strong>{landing.business_name}</strong><small>/{landing.slug}{landing.redirect_url && " ↗ externo"}</small></div></div></td>
                   <td>{client ? client.name : <span className="muted">Sin cliente</span>}</td>
                   <td><span className={landing.published ? "status published" : "status"}>{landing.published ? "Publicada" : "Borrador"}</span></td>
                   <td>
@@ -66,10 +66,10 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
       )}
     </section>
 
-    <section className="list-section">
-      <div className="section-heading"><div><p className="eyebrow">Tu biblioteca</p><h2>Clientes</h2></div></div>
+    <details className="advanced-actions list-section">
+      <summary><IconUsers /> Clientes ({clients?.length || 0}) — agrupá landings de la misma persona o negocio</summary>
       {!clients?.length ? <div className="empty-state"><IconUsers /><strong>Todavía no tenés clientes</strong><p className="muted">Usá el botón "Nuevo cliente" de arriba.</p></div> : (
-        <div className="table-wrap">
+        <div className="table-wrap" style={{ marginTop: "var(--space-4)" }}>
           <table className="data-table">
             <thead><tr><th>Cliente</th><th>Contacto</th><th>Landings</th><th></th></tr></thead>
             <tbody>
@@ -90,6 +90,6 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
           </table>
         </div>
       )}
-    </section>
+    </details>
   </main>;
 }

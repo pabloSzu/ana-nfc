@@ -34,7 +34,9 @@ export async function save(fd: FormData) {
   if (!landing) fail(id, "Landing inexistente o sin permisos.");
   const businessName = String(fd.get("business_name") || "").trim();
   if (!businessName) fail(id, "El nombre de la landing es obligatorio.");
-  const { error } = await supabase.from("landings").update({ business_name: businessName, description: String(fd.get("description") || "").trim(), logo_url: String(fd.get("logo_url") || "").trim(), whatsapp: String(fd.get("whatsapp") || "").trim(), primary_color: color(fd.get("primary_color"), "#1f2937"), background_color: color(fd.get("background_color"), "#f7f5f0") }).eq("id", id).eq("owner_id", user.id);
+  const redirectUrl = String(fd.get("redirect_url") || "").trim();
+  if (redirectUrl && !/^https?:\/\//i.test(redirectUrl)) fail(id, "El link externo debe empezar con http:// o https://.");
+  const { error } = await supabase.from("landings").update({ business_name: businessName, description: String(fd.get("description") || "").trim(), logo_url: String(fd.get("logo_url") || "").trim(), whatsapp: String(fd.get("whatsapp") || "").trim(), primary_color: color(fd.get("primary_color"), "#1f2937"), background_color: color(fd.get("background_color"), "#f7f5f0"), redirect_url: redirectUrl }).eq("id", id).eq("owner_id", user.id);
   if (error) fail(id, error.message);
   redirect(`/admin/landings/${id}?saved=1`);
 }

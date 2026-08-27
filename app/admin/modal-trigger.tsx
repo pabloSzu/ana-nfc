@@ -2,11 +2,11 @@
 
 import { useRef, type ReactNode } from "react";
 
-export default function ModalTrigger({ label, icon, title, description, children }: { label: string; icon?: ReactNode; title: string; description?: string; children: ReactNode }) {
+export default function ModalTrigger({ label, icon, title, description, variant = "primary", children }: { label: string; icon?: ReactNode; title: string; description?: string; variant?: "primary" | "secondary"; children: ReactNode }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   return (
     <>
-      <button type="button" className="btn" onClick={() => dialogRef.current?.showModal()}>
+      <button type="button" className={variant === "secondary" ? "btn secondary" : "btn"} onClick={() => dialogRef.current?.showModal()}>
         {icon && <span>{icon}</span>} {label}
       </button>
       <dialog ref={dialogRef} className="modal">
