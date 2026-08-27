@@ -74,7 +74,11 @@
 html { color-scheme: light dark; }
 body {
   margin: 0;
-  background: var(--bg);
+  background:
+    radial-gradient(1100px 620px at 12% -8%, var(--accent-subtle), transparent 60%),
+    radial-gradient(900px 560px at 100% 0%, var(--success-subtle), transparent 55%),
+    var(--bg);
+  background-attachment: fixed;
   color: var(--text);
   font-family: var(--font-sans);
   font-size: 0.9375rem;
@@ -403,6 +407,41 @@ input[type="color"] { padding: 5px; height: 46px; cursor: pointer; }
 }
 .empty-state span { font-size: 1.75rem; }
 .empty-state strong { color: var(--text-muted); font-size: 0.875rem; }
+
+/* ---------- Modal ---------- */
+dialog.modal {
+  border: none; border-radius: var(--radius-xl); padding: 0; width: min(92vw, 480px);
+  box-shadow: var(--shadow-lg); background: var(--surface); color: var(--text); margin: auto;
+}
+dialog.modal::backdrop { background: oklch(15% 0.01 260 / 0.5); backdrop-filter: blur(3px); }
+dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
+@keyframes modal-in { from { opacity: 0; transform: translateY(14px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.modal-content { padding: var(--space-6); position: relative; max-height: 82vh; overflow-y: auto; }
+.modal-content h2 { font-size: 1.25rem; margin-bottom: 4px; padding-right: var(--space-6); }
+.modal-content > p.muted { margin-bottom: var(--space-5); font-size: 0.8125rem; }
+.modal-close {
+  position: absolute; top: var(--space-5); right: var(--space-5); width: 32px; height: 32px; border-radius: 50%;
+  border: 1px solid var(--border-strong); background: var(--surface); color: var(--text-muted);
+  display: grid; place-items: center; font-size: 0.8125rem; transition: background var(--dur-fast), color var(--dur-fast);
+}
+.modal-close:hover { background: var(--bg-subtle); color: var(--text); }
+
+/* ---------- Data table ---------- */
+.table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-sm); }
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+.data-table th {
+  text-align: left; padding: var(--space-3) var(--space-4); font-size: 0.6875rem; font-weight: 700; color: var(--text-subtle);
+  text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid var(--border); white-space: nowrap;
+}
+.data-table td { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border); vertical-align: middle; }
+.data-table tr:last-child td { border-bottom: 0; }
+.data-table tbody tr { transition: background var(--dur-fast) var(--ease-out); }
+.data-table tbody tr:hover { background: var(--bg-subtle); }
+.table-entity { display: flex; align-items: center; gap: var(--space-3); }
+.table-entity strong { display: block; font-size: 0.875rem; }
+.table-entity small { color: var(--text-subtle); font-size: 0.75rem; }
+.table-actions { display: flex; align-items: center; gap: var(--space-1); flex-wrap: nowrap; }
+.table-actions form { display: contents; }
 
 /* ---------- Responsive ---------- */
 @media (min-width: 640px) {
