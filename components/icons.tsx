@@ -24,7 +24,7 @@ export function IconEye(props: IconProps) {
 }
 
 export function IconQrCode(props: IconProps) {
-  return <svg {...base} {...props}><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><path d="M14 14h3v3h-3z" /><path d="M14 20h3" /><path d="M20 14v3" /><path d="M20 20h.01" /></svg>;
+  return <svg {...base} {...props}><path d="M3 8V5a2 2 0 0 1 2-2h3" /><path d="M16 3h3a2 2 0 0 1 2 2v3" /><path d="M21 16v3a2 2 0 0 1-2 2h-3" /><path d="M8 21H5a2 2 0 0 1-2-2v-3" /><rect x="9" y="9" width="6" height="6" rx="1" /></svg>;
 }
 
 export function IconPlay(props: IconProps) {

@@ -446,16 +446,19 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
 
 .icon-text-button {
   display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 10px; border: 0;
-  border-radius: var(--radius-sm); background: transparent; color: var(--text-muted);
+  border-radius: var(--radius-sm); background: transparent; color: var(--text-muted); line-height: 1;
   font-size: 0.75rem; font-weight: 600; white-space: nowrap; cursor: pointer;
   transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
 .icon-text-button:hover { background: var(--bg-subtle); color: var(--text); }
-.icon-text-button.accent:hover { background: var(--accent-subtle); color: var(--accent); }
+.icon-text-button.accent { color: var(--accent); }
+.icon-text-button.accent:hover { background: var(--accent-subtle); }
+.icon-text-button.success { color: var(--success); }
+.icon-text-button.success:hover { background: var(--success-subtle); }
 .icon-text-button.danger { color: var(--danger); }
 .icon-text-button.danger:hover { background: var(--danger-subtle); }
-.icon-text-button svg { flex: none; width: 15px; height: 15px; }
-.btn svg, .secondary svg { width: 16px; height: 16px; flex: none; }
+.icon-text-button svg { display: block; flex: none; width: 16px; height: 16px; }
+.btn svg, .secondary svg { display: block; width: 16px; height: 16px; flex: none; }
 
 /* ---------- Responsive ---------- */
 @media (min-width: 640px) {

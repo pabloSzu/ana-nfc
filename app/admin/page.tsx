@@ -51,10 +51,10 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
                   <td><span className={landing.published ? "status published" : "status"}>{landing.published ? "Publicada" : "Borrador"}</span></td>
                   <td>
                     <div className="table-actions">
-                      <Link className="icon-text-button" href={`/admin/landings/${landing.id}`}><IconEdit /> Editar</Link>
-                      <Link className="icon-text-button" href={`/${landing.slug}`} target="_blank"><IconEye /> Ver</Link>
-                      <Link className="icon-text-button" href={`/admin/landings/${landing.id}/qr`}><IconQrCode /> QR</Link>
-                      <form action={publish}><input type="hidden" name="id" value={landing.id} /><input type="hidden" name="published" value={String(!landing.published)} /><input type="hidden" name="return_to" value="/admin" /><button className="icon-text-button accent" type="submit">{landing.published ? <><IconPause /> Despublicar</> : <><IconPlay /> Publicar</>}</button></form>
+                      <Link className="icon-text-button accent" href={`/admin/landings/${landing.id}`}><IconEdit /> Editar</Link>
+                      <Link className="icon-text-button accent" href={`/${landing.slug}`} target="_blank"><IconEye /> Ver</Link>
+                      <Link className="icon-text-button accent" href={`/admin/landings/${landing.id}/qr`}><IconQrCode /> QR</Link>
+                      <form action={publish}><input type="hidden" name="id" value={landing.id} /><input type="hidden" name="published" value={String(!landing.published)} /><input type="hidden" name="return_to" value="/admin" /><button className={landing.published ? "icon-text-button" : "icon-text-button success"} type="submit">{landing.published ? <><IconPause /> Despublicar</> : <><IconPlay /> Publicar</>}</button></form>
                       <DeleteLandingButton action={deleteLanding} label="Eliminar" />
                     </div>
                   </td>
@@ -66,10 +66,10 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
       )}
     </section>
 
-    <details className="advanced-actions list-section">
-      <summary><IconUsers /> Clientes ({clients?.length || 0}) — agrupá landings de la misma persona o negocio</summary>
+    <section className="list-section">
+      <div className="section-heading"><div><p className="eyebrow">Tu biblioteca</p><h2>Clientes</h2></div></div>
       {!clients?.length ? <div className="empty-state"><IconUsers /><strong>Todavía no tenés clientes</strong><p className="muted">Usá el botón "Nuevo cliente" de arriba.</p></div> : (
-        <div className="table-wrap" style={{ marginTop: "var(--space-4)" }}>
+        <div className="table-wrap">
           <table className="data-table">
             <thead><tr><th>Cliente</th><th>Contacto</th><th>Landings</th><th></th></tr></thead>
             <tbody>
@@ -80,7 +80,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
                   <td>{landingCountByClient.get(client.id) || 0}</td>
                   <td>
                     <div className="table-actions">
-                      <Link className="icon-text-button" href={`/admin/clientes/${client.id}`}><IconEdit /> Editar</Link>
+                      <Link className="icon-text-button accent" href={`/admin/clientes/${client.id}`}><IconEdit /> Editar</Link>
                       <DeleteClientButton action={deleteClient} clientId={client.id} clientName={client.name} />
                     </div>
                   </td>
@@ -90,6 +90,6 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
           </table>
         </div>
       )}
-    </details>
+    </section>
   </main>;
 }
