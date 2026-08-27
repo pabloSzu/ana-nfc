@@ -2,7 +2,7 @@
 
 import { useState, type CSSProperties } from "react";
 import { useDraft } from "./draft-context";
-import { autoTextColor } from "@/lib/landing-catalog";
+import { autoTextColor, FONT_PAIRS } from "@/lib/landing-catalog";
 import LogoUpload from "./logo-upload";
 import BackgroundPicker from "./background-picker";
 import BackgroundImageUpload from "./background-image-upload";
@@ -25,7 +25,21 @@ type Landing = {
 const FORM_ID = "identity-form";
 const hint: CSSProperties = { fontSize: "0.75rem", marginTop: "-8px" };
 
-export default function IdentityForm({ landing, action, uploadAction, uploadBackgroundAction }: { landing: Landing; action: (formData: FormData) => void | Promise<void>; uploadAction: (formData: FormData) => void | Promise<void>; uploadBackgroundAction: (formData: FormData) => void | Promise<void> }) {
+export default function IdentityForm({
+  landing,
+  action,
+  uploadAction,
+  removeLogoAction,
+  uploadBackgroundAction,
+  removeBackgroundAction,
+}: {
+  landing: Landing;
+  action: (formData: FormData) => void | Promise<void>;
+  uploadAction: (formData: FormData) => void | Promise<void>;
+  removeLogoAction: (formData: FormData) => void | Promise<void>;
+  uploadBackgroundAction: (formData: FormData) => void | Promise<void>;
+  removeBackgroundAction: (formData: FormData) => void | Promise<void>;
+}) {
   const { draft, update } = useDraft();
   const [customText, setCustomText] = useState(Boolean(landing.text_color));
   const [showLogoUrl, setShowLogoUrl] = useState(false);
@@ -58,12 +72,35 @@ export default function IdentityForm({ landing, action, uploadAction, uploadBack
         </label>
       </div>
       <p className="muted" style={hint}>El color del texto se elige solo según el fondo. Tocá el cuadrito de arriba si querés forzar otro.</p>
+      <label className="check-label">
+        <input type="checkbox" form={FORM_ID} name="text_panel" checked={draft.text_panel} onChange={(event) => update({ text_panel: event.target.checked })} />
+        Ponerle un fondo al texto (ayuda a que se lea sobre fotos)
+      </label>
 
       <label className="label">Descripción<textarea form={FORM_ID} name="description" defaultValue={landing.description || ""} onChange={(event) => update({ description: event.target.value })} placeholder="Una frase corta que aparece debajo del nombre" /></label>
 
       <div className="label">
+        Tipografía
+        <div className="font-presets">
+          {FONT_PAIRS.map((pair) => (
+            <button
+              type="button"
+              key={pair.id}
+              className={draft.font_pair === pair.id ? "font-swatch active" : "font-swatch"}
+              style={{ fontFamily: pair.heading }}
+              onClick={() => update({ font_pair: pair.id })}
+            >
+              Aa
+              <small style={{ fontFamily: pair.body }}>{pair.label}</small>
+            </button>
+          ))}
+        </div>
+        <input type="hidden" form={FORM_ID} name="font_pair" value={draft.font_pair} />
+      </div>
+
+      <div className="label">
         Logo o foto
-        <LogoUpload action={uploadAction} landingId={landing.id} currentUrl={landing.logo_url} />
+        <LogoUpload action={uploadAction} removeAction={removeLogoAction} landingId={landing.id} currentUrl={landing.logo_url} />
         {showLogoUrl ? (
           <input form={FORM_ID} name="logo_url" defaultValue={landing.logo_url || ""} placeholder="https://..." onChange={(event) => update({ logo_url: event.target.value })} style={{ marginTop: 7 }} />
         ) : (
@@ -85,7 +122,7 @@ export default function IdentityForm({ landing, action, uploadAction, uploadBack
       <p className="muted" style={hint}>Se ve detrás del círculo del logo (si no subiste foto, es el color de fondo de la inicial) y como reserva en botones sin color propio.</p>
 
       <BackgroundPicker landing={landing} formId={FORM_ID} />
-      {draft.background_type === "image" && <BackgroundImageUpload action={uploadBackgroundAction} landingId={landing.id} currentUrl={landing.background_image_url} />}
+      {draft.background_type === "image" && <BackgroundImageUpload action={uploadBackgroundAction} removeAction={removeBackgroundAction} landingId={landing.id} currentUrl={landing.background_image_url} />}
 
       <label className="label">¿A dónde apunta el NFC? (opcional)<input form={FORM_ID} name="redirect_url" type="url" defaultValue={landing.redirect_url || ""} placeholder="https://instagram.com/tunegocio" /></label>
       <p className="muted" style={hint}>Dejalo vacío para usar esta landing. Si pegás un link (Instagram, tu web, Linktree...), el tag NFC va a llevar directo ahí en vez de mostrar esta página.</p>

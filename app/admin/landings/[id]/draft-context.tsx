@@ -14,6 +14,8 @@ export type Draft = {
   background_gradient_to: string;
   background_image_url: string;
   text_color: string;
+  text_panel: boolean;
+  font_pair: string;
   enabledActions: Record<string, boolean>;
   actionColors: Record<string, ActionColorOverride | undefined>;
 };

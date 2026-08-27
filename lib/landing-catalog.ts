@@ -51,6 +51,21 @@ export function resolveTextColor(landing: BackgroundLike & { text_color?: string
   return landing.text_color || autoTextColor(landing);
 }
 
+export function panelBackground(textColor: string): string {
+  return textColor === "#ffffff" ? "rgba(0, 0, 0, 0.38)" : "rgba(255, 255, 255, 0.78)";
+}
+
+export const FONT_PAIRS: { id: string; label: string; heading: string; body: string }[] = [
+  { id: "modern", label: "Moderno", heading: "'Space Grotesk', sans-serif", body: "'DM Sans', sans-serif" },
+  { id: "classic", label: "Clásico", heading: "'Playfair Display', serif", body: "'Lora', serif" },
+  { id: "friendly", label: "Amigable", heading: "'Poppins', sans-serif", body: "'Nunito', sans-serif" },
+  { id: "minimal", label: "Minimalista", heading: "'Inter', sans-serif", body: "'Inter', sans-serif" },
+];
+
+export function getFontPair(id: string) {
+  return FONT_PAIRS.find((pair) => pair.id === id) || FONT_PAIRS[0];
+}
+
 export const AUTO_COLORS: Record<string, string> = {
   whatsapp: "#25d366", instagram: "#c13584", tiktok: "#111111", facebook: "#1877f2", maps: "#db4437",
   youtube: "#ff0033", spotify: "#1db954", mercadopago: "#009ee3", telegram: "#229ed9", email: "#334155",

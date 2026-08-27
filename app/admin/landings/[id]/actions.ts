@@ -38,7 +38,8 @@ export async function save(fd: FormData) {
   if (redirectUrl && !/^https?:\/\//i.test(redirectUrl)) fail(id, "El link externo debe empezar con http:// o https://.");
   const backgroundType = ["color", "gradient", "image"].includes(String(fd.get("background_type"))) ? String(fd.get("background_type")) : "color";
   const customTextColor = fd.get("custom_text_color") === "on" ? color(fd.get("text_color"), "#161b18") : null;
-  const { error } = await supabase.from("landings").update({ business_name: businessName, description: String(fd.get("description") || "").trim(), logo_url: String(fd.get("logo_url") || "").trim(), whatsapp: String(fd.get("whatsapp") || "").trim(), primary_color: color(fd.get("primary_color"), "#1f2937"), background_color: color(fd.get("background_color"), "#f7f5f0"), background_type: backgroundType, background_gradient_to: color(fd.get("background_gradient_to"), "#a6c1ee"), text_color: customTextColor, redirect_url: redirectUrl }).eq("id", id).eq("owner_id", user.id);
+  const fontPair = ["modern", "classic", "friendly", "minimal"].includes(String(fd.get("font_pair"))) ? String(fd.get("font_pair")) : "modern";
+  const { error } = await supabase.from("landings").update({ business_name: businessName, description: String(fd.get("description") || "").trim(), logo_url: String(fd.get("logo_url") || "").trim(), whatsapp: String(fd.get("whatsapp") || "").trim(), primary_color: color(fd.get("primary_color"), "#1f2937"), background_color: color(fd.get("background_color"), "#f7f5f0"), background_type: backgroundType, background_gradient_to: color(fd.get("background_gradient_to"), "#a6c1ee"), text_color: customTextColor, text_panel: fd.get("text_panel") === "on", font_pair: fontPair, redirect_url: redirectUrl }).eq("id", id).eq("owner_id", user.id);
   if (error) fail(id, error.message);
   redirect(`/admin/landings/${id}?saved=1`);
 }
@@ -138,6 +139,22 @@ export async function uploadBackgroundImage(fd: FormData) {
   const { error } = await supabase.from("landings").update({ background_image_url: publicUrl.publicUrl, background_type: "image" }).eq("id", landingId).eq("owner_id", user.id);
   if (error) fail(landingId, error.message);
   redirect(`/admin/landings/${landingId}?saved=Fondo actualizado`);
+}
+
+export async function removeLogo(fd: FormData) {
+  const { supabase, user } = await auth();
+  const landingId = String(fd.get("landing_id") || "");
+  const { error } = await supabase.from("landings").update({ logo_url: "" }).eq("id", landingId).eq("owner_id", user.id);
+  if (error) fail(landingId, error.message);
+  redirect(`/admin/landings/${landingId}?saved=Logo eliminado`);
+}
+
+export async function removeBackgroundImage(fd: FormData) {
+  const { supabase, user } = await auth();
+  const landingId = String(fd.get("landing_id") || "");
+  const { error } = await supabase.from("landings").update({ background_image_url: "", background_type: "color" }).eq("id", landingId).eq("owner_id", user.id);
+  if (error) fail(landingId, error.message);
+  redirect(`/admin/landings/${landingId}?saved=Imagen de fondo eliminada`);
 }
 
 export async function saveProfileActions(fd: FormData) {

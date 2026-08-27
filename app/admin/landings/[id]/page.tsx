@@ -8,7 +8,7 @@ import IdentityForm from "./identity-form";
 import PhonePreview from "./phone-preview";
 import BuilderTabs from "./builder-tabs";
 import { DraftProvider, type Draft } from "./draft-context";
-import { save, addAction, updateAction, removeAction, moveAction, uploadLogo, uploadBackgroundImage, saveProfileActions } from "./actions";
+import { save, addAction, updateAction, removeAction, moveAction, uploadLogo, removeLogo, uploadBackgroundImage, removeBackgroundImage, saveProfileActions } from "./actions";
 import { publish, deleteLanding } from "../../actions";
 import DeleteLandingButton from "../../delete-landing-button";
 import { IconQrCode, IconEye } from "@/components/icons";
@@ -42,6 +42,8 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     background_gradient_to: landing.background_gradient_to || "#a6c1ee",
     background_image_url: landing.background_image_url || "",
     text_color: landing.text_color || "",
+    text_panel: landing.text_panel === true,
+    font_pair: landing.font_pair || "modern",
     enabledActions,
     actionColors,
   };
@@ -51,7 +53,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       <div className="section-heading">
         <div><h2>Identidad</h2><p className="muted">La primera impresión de tu landing: nombre, foto y colores.</p></div>
       </div>
-      <IdentityForm landing={landing} action={save} uploadAction={uploadLogo} uploadBackgroundAction={uploadBackgroundImage} />
+      <IdentityForm landing={landing} action={save} uploadAction={uploadLogo} removeLogoAction={removeLogo} uploadBackgroundAction={uploadBackgroundImage} removeBackgroundAction={removeBackgroundImage} />
     </section>
   );
 
