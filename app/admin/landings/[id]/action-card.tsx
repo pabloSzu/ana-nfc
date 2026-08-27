@@ -13,7 +13,7 @@ export default function ActionCard({ action, landingId, update, remove, move, fi
   const needsUrl = !["whatsapp", "email", "phone"].includes(type);
   const fallbackColor = autoColors[type] || "#1f2937";
   return <article className="action-card">
-    <div className="action-card-head"><span className="action-icon" style={{ background: action.background_color || autoColors[action.type] || "#1f2937", color: action.text_color || "#fff" }}>{action.icon || "↗"}</span><div><span className="type-label">{selected?.[1] || "Link"}</span><h3>{action.title}</h3></div><span className={action.enabled ? "status published" : "status"}>{action.enabled ? "Activa" : "Desactivada"}</span></div>
+    <div className="action-card-head"><span className="action-icon" style={{ background: action.background_color || autoColors[action.type] || "#1f2937", color: action.text_color || "#fff" }}>{action.icon || "🔗"}</span><div><span className="type-label">{selected?.[1] || "Link"}</span><h3>{action.title}</h3></div><span className={action.enabled ? "status published" : "status"}>{action.enabled ? "Activa" : "Desactivada"}</span></div>
     <form action={update} className="stack compact-form">
       <input type="hidden" name="id" value={action.id} /><input type="hidden" name="landing_id" value={landingId} /><input type="hidden" name="existing_message" value={action.message || ""} /><input type="hidden" name="existing_url" value={action.url || ""} /><input type="hidden" name="position" value={action.position} />
       <label className="label">Tipo<select name="type" value={type} onChange={(event) => setType(event.target.value)}>{actionTypes.map(([value, title]) => <option key={value} value={value}>{title}</option>)}</select></label>

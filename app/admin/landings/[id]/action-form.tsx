@@ -4,19 +4,19 @@ import { useState } from "react";
 
 export const actionTypes = [
   ["whatsapp", "WhatsApp", "💬", "Mensaje y número de la landing"],
-  ["instagram", "Instagram", "◎", "Perfil de Instagram"],
-  ["tiktok", "TikTok", "♪", "Perfil de TikTok"],
-  ["facebook", "Facebook", "f", "Página de Facebook"],
-  ["website", "Website", "⌁", "Sitio web"],
-  ["email", "Email", "✉", "Correo electrónico"],
-  ["phone", "Teléfono", "⌕", "Número de teléfono"],
-  ["maps", "Google Maps", "⌖", "Ubicación"],
-  ["youtube", "YouTube", "▶", "Canal de YouTube"],
-  ["spotify", "Spotify", "◉", "Perfil o playlist"],
-  ["mercadopago", "Mercado Pago", "$", "Cobros"],
-  ["calendar", "Reservar", "▣", "Calendario"],
-  ["telegram", "Telegram", "➤", "Canal o contacto"],
-  ["url", "Link", "↗", "Cualquier enlace"],
+  ["instagram", "Instagram", "📸", "Perfil de Instagram"],
+  ["tiktok", "TikTok", "🎵", "Perfil de TikTok"],
+  ["facebook", "Facebook", "📘", "Página de Facebook"],
+  ["website", "Website", "🌐", "Sitio web"],
+  ["email", "Email", "✉️", "Correo electrónico"],
+  ["phone", "Teléfono", "📞", "Número de teléfono"],
+  ["maps", "Google Maps", "📍", "Ubicación"],
+  ["youtube", "YouTube", "▶️", "Canal de YouTube"],
+  ["spotify", "Spotify", "🎧", "Perfil o playlist"],
+  ["mercadopago", "Mercado Pago", "💳", "Cobros"],
+  ["calendar", "Reservar", "📅", "Calendario"],
+  ["telegram", "Telegram", "📨", "Canal o contacto"],
+  ["url", "Link", "🔗", "Cualquier enlace"],
 ];
 
 const automaticColors: Record<string, string> = {
