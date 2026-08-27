@@ -6,7 +6,7 @@ import { useDraft } from "./draft-context";
 
 type Landing = { id: string; background_type?: string | null; background_color?: string | null; background_gradient_to?: string | null; background_image_url?: string | null };
 
-export default function BackgroundPicker({ landing }: { landing: Landing }) {
+export default function BackgroundPicker({ landing, formId }: { landing: Landing; formId: string }) {
   const { update } = useDraft();
   const [mode, setMode] = useState(landing.background_type || "color");
   const [from, setFrom] = useState(landing.background_color || "#f7f5f0");
@@ -27,17 +27,17 @@ export default function BackgroundPicker({ landing }: { landing: Landing }) {
           <button type="button" className={mode === "image" ? "segmented-option active" : "segmented-option"} onClick={() => selectMode("image")}>Imagen</button>
         </div>
       </label>
-      <input type="hidden" name="background_type" value={mode} />
+      <input type="hidden" form={formId} name="background_type" value={mode} />
 
       {mode === "color" && (
-        <label className="label">Color de fondo<input name="background_color" type="color" defaultValue={from} onChange={(event) => { setFrom(event.target.value); update({ background_color: event.target.value }); }} /></label>
+        <label className="label">Color de fondo<input form={formId} name="background_color" type="color" defaultValue={from} onChange={(event) => { setFrom(event.target.value); update({ background_color: event.target.value }); }} /></label>
       )}
 
       {mode === "gradient" && (
         <>
           <div className="form-split">
-            <label className="label">Desde<input name="background_color" type="color" value={from} onChange={(event) => { setFrom(event.target.value); update({ background_color: event.target.value }); }} /></label>
-            <label className="label">Hasta<input name="background_gradient_to" type="color" value={to} onChange={(event) => { setTo(event.target.value); update({ background_gradient_to: event.target.value }); }} /></label>
+            <label className="label">Desde<input form={formId} name="background_color" type="color" value={from} onChange={(event) => { setFrom(event.target.value); update({ background_color: event.target.value }); }} /></label>
+            <label className="label">Hasta<input form={formId} name="background_gradient_to" type="color" value={to} onChange={(event) => { setTo(event.target.value); update({ background_gradient_to: event.target.value }); }} /></label>
           </div>
           <div className="gradient-presets">
             {GRADIENT_PRESETS.map((preset) => (
@@ -53,7 +53,6 @@ export default function BackgroundPicker({ landing }: { landing: Landing }) {
           </div>
         </>
       )}
-
     </div>
   );
 }
