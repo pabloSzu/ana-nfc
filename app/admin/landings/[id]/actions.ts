@@ -38,10 +38,13 @@ export async function save(fd: FormData) {
   if (redirectUrl && !/^https?:\/\//i.test(redirectUrl)) fail(id, "El link externo debe empezar con http:// o https://.");
   const backgroundType = ["color", "gradient", "image"].includes(String(fd.get("background_type"))) ? String(fd.get("background_type")) : "color";
   const customTextColor = fd.get("custom_text_color") === "on" ? color(fd.get("text_color"), "#161b18") : null;
-  const fontPair = ["modern", "classic", "friendly", "minimal"].includes(String(fd.get("font_pair"))) ? String(fd.get("font_pair")) : "modern";
-  const { error } = await supabase.from("landings").update({ business_name: businessName, description: String(fd.get("description") || "").trim(), logo_url: String(fd.get("logo_url") || "").trim(), whatsapp: String(fd.get("whatsapp") || "").trim(), primary_color: color(fd.get("primary_color"), "#1f2937"), background_color: color(fd.get("background_color"), "#f7f5f0"), background_type: backgroundType, background_gradient_to: color(fd.get("background_gradient_to"), "#a6c1ee"), text_color: customTextColor, text_panel: fd.get("text_panel") === "on", font_pair: fontPair, redirect_url: redirectUrl }).eq("id", id).eq("owner_id", user.id);
+  const validFonts = ["modern", "classic", "friendly", "minimal"];
+  const fontPair = validFonts.includes(String(fd.get("font_pair"))) ? String(fd.get("font_pair")) : "modern";
+  const buttonFont = validFonts.includes(String(fd.get("button_font"))) ? String(fd.get("button_font")) : "modern";
+  const customPanelColor = fd.get("custom_panel_color") === "on" ? color(fd.get("text_panel_color"), "#000000") : null;
+  const { error } = await supabase.from("landings").update({ business_name: businessName, description: String(fd.get("description") || "").trim(), logo_url: String(fd.get("logo_url") || "").trim(), whatsapp: String(fd.get("whatsapp") || "").trim(), primary_color: color(fd.get("primary_color"), "#1f2937"), background_color: color(fd.get("background_color"), "#f7f5f0"), background_type: backgroundType, background_gradient_to: color(fd.get("background_gradient_to"), "#a6c1ee"), text_color: customTextColor, text_panel: fd.get("text_panel") === "on", text_panel_color: customPanelColor, font_pair: fontPair, button_font: buttonFont, redirect_url: redirectUrl }).eq("id", id).eq("owner_id", user.id);
   if (error) fail(id, error.message);
-  redirect(`/admin/landings/${id}?saved=1`);
+  redirect(`/admin/landings/${id}?saved=Identidad actualizada`);
 }
 
 export async function addAction(fd: FormData) {
@@ -60,7 +63,7 @@ export async function addAction(fd: FormData) {
   if (!["whatsapp", "email", "phone"].includes(type) && !/^https?:\/\//i.test(value)) fail(landingId, "La URL debe comenzar con http:// o https://.");
   const { error } = await supabase.from("actions").insert({ landing_id: landingId, title, type, message: String(fd.get("message") || "").trim(), url: value, icon: String(fd.get("icon") || "→").trim(), background_color: color(fd.get("background_color"), "#1f2937"), text_color: color(fd.get("text_color"), "#ffffff"), icon_color: color(fd.get("icon_color"), "#ffffff"), use_auto_color: fd.get("use_auto_color") === "on", position: (last?.position ?? -1) + 1 });
   if (error) fail(landingId, error.message);
-  redirect(`/admin/landings/${landingId}?saved=1`);
+  redirect(`/admin/landings/${landingId}?saved=Acción agregada`);
 }
 
 export async function updateAction(fd: FormData) {

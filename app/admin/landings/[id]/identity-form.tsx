@@ -2,7 +2,7 @@
 
 import { useState, type CSSProperties } from "react";
 import { useDraft } from "./draft-context";
-import { autoTextColor, FONT_PAIRS } from "@/lib/landing-catalog";
+import { autoTextColor, panelBackground, resolveTextColor, FONT_OPTIONS } from "@/lib/landing-catalog";
 import LogoUpload from "./logo-upload";
 import BackgroundPicker from "./background-picker";
 import BackgroundImageUpload from "./background-image-upload";
@@ -19,11 +19,28 @@ type Landing = {
   background_gradient_to?: string | null;
   background_image_url?: string | null;
   text_color?: string | null;
+  text_panel_color?: string | null;
   redirect_url?: string | null;
 };
 
 const FORM_ID = "identity-form";
 const hint: CSSProperties = { fontSize: "0.75rem", marginTop: "-8px" };
+
+function FontPicker({ label, value, onChange }: { label: string; value: string; onChange: (id: string) => void }) {
+  return (
+    <div className="label">
+      {label}
+      <div className="font-presets">
+        {FONT_OPTIONS.map((option) => (
+          <button type="button" key={option.id} className={value === option.id ? "font-swatch active" : "font-swatch"} style={{ fontFamily: option.family }} onClick={() => onChange(option.id)}>
+            Aa
+            <small>{option.label}</small>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function IdentityForm({
   landing,
@@ -42,7 +59,9 @@ export default function IdentityForm({
 }) {
   const { draft, update } = useDraft();
   const [customText, setCustomText] = useState(Boolean(landing.text_color));
+  const [customPanel, setCustomPanel] = useState(Boolean(landing.text_panel_color));
   const [showLogoUrl, setShowLogoUrl] = useState(false);
+  const resolvedTextColor = resolveTextColor(draft);
 
   return (
     <div className="stack">
@@ -72,31 +91,42 @@ export default function IdentityForm({
         </label>
       </div>
       <p className="muted" style={hint}>El color del texto se elige solo según el fondo. Tocá el cuadrito de arriba si querés forzar otro.</p>
+
       <label className="check-label">
         <input type="checkbox" form={FORM_ID} name="text_panel" checked={draft.text_panel} onChange={(event) => update({ text_panel: event.target.checked })} />
         Ponerle un fondo al texto (ayuda a que se lea sobre fotos)
       </label>
+      {draft.text_panel && (
+        <div className="profile-action-color" style={{ marginTop: -6 }}>
+          <input type="hidden" form={FORM_ID} name="custom_panel_color" value={customPanel ? "on" : "off"} />
+          <label className="check-label">
+            <input
+              type="checkbox"
+              checked={customPanel}
+              onChange={(event) => { setCustomPanel(event.target.checked); update({ text_panel_color: event.target.checked ? (resolvedTextColor === "#ffffff" ? "#000000" : "#ffffff") : "" }); }}
+            />
+            Color del fondo personalizado
+          </label>
+          {customPanel && (
+            <input
+              type="color"
+              form={FORM_ID}
+              name="text_panel_color"
+              value={draft.text_panel_color || (resolvedTextColor === "#ffffff" ? "#000000" : "#ffffff")}
+              onChange={(event) => update({ text_panel_color: event.target.value })}
+              title="Se aplica con transparencia"
+            />
+          )}
+        </div>
+      )}
 
       <label className="label">Descripción<textarea form={FORM_ID} name="description" defaultValue={landing.description || ""} onChange={(event) => update({ description: event.target.value })} placeholder="Una frase corta que aparece debajo del nombre" /></label>
 
-      <div className="label">
-        Tipografía
-        <div className="font-presets">
-          {FONT_PAIRS.map((pair) => (
-            <button
-              type="button"
-              key={pair.id}
-              className={draft.font_pair === pair.id ? "font-swatch active" : "font-swatch"}
-              style={{ fontFamily: pair.heading }}
-              onClick={() => update({ font_pair: pair.id })}
-            >
-              Aa
-              <small style={{ fontFamily: pair.body }}>{pair.label}</small>
-            </button>
-          ))}
-        </div>
-        <input type="hidden" form={FORM_ID} name="font_pair" value={draft.font_pair} />
-      </div>
+      <FontPicker label="Fuente del título" value={draft.font_pair} onChange={(id) => update({ font_pair: id })} />
+      <input type="hidden" form={FORM_ID} name="font_pair" value={draft.font_pair} />
+
+      <FontPicker label="Fuente de los botones" value={draft.button_font} onChange={(id) => update({ button_font: id })} />
+      <input type="hidden" form={FORM_ID} name="button_font" value={draft.button_font} />
 
       <div className="label">
         Logo o foto

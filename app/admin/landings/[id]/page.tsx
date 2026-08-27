@@ -43,7 +43,9 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     background_image_url: landing.background_image_url || "",
     text_color: landing.text_color || "",
     text_panel: landing.text_panel === true,
+    text_panel_color: landing.text_panel_color || "",
     font_pair: landing.font_pair || "modern",
+    button_font: landing.button_font || "modern",
     enabledActions,
     actionColors,
   };

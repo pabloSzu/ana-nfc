@@ -51,16 +51,28 @@ export function resolveTextColor(landing: BackgroundLike & { text_color?: string
   return landing.text_color || autoTextColor(landing);
 }
 
-export function panelBackground(textColor: string): string {
+function hexToRgba(hex: string, alpha: number): string {
+  const clean = hex.replace("#", "");
+  const parts = clean.match(/.{1,2}/g) || ["0", "0", "0"];
+  const [r, g, b] = parts.map((part) => parseInt(part, 16));
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+export function panelBackground(textColor: string, overrideHex?: string | null): string {
+  if (overrideHex) return hexToRgba(overrideHex, 0.55);
   return textColor === "#ffffff" ? "rgba(0, 0, 0, 0.38)" : "rgba(255, 255, 255, 0.78)";
 }
 
-export const FONT_PAIRS: { id: string; label: string; heading: string; body: string }[] = [
-  { id: "modern", label: "Moderno", heading: "'Space Grotesk', sans-serif", body: "'DM Sans', sans-serif" },
-  { id: "classic", label: "Clásico", heading: "'Playfair Display', serif", body: "'Lora', serif" },
-  { id: "friendly", label: "Amigable", heading: "'Poppins', sans-serif", body: "'Nunito', sans-serif" },
-  { id: "minimal", label: "Minimalista", heading: "'Inter', sans-serif", body: "'Inter', sans-serif" },
+export const FONT_OPTIONS: { id: string; label: string; family: string }[] = [
+  { id: "modern", label: "Moderno", family: "'Space Grotesk', sans-serif" },
+  { id: "classic", label: "Clásico", family: "'Playfair Display', serif" },
+  { id: "friendly", label: "Amigable", family: "'Poppins', sans-serif" },
+  { id: "minimal", label: "Minimalista", family: "'Inter', sans-serif" },
 ];
+
+export function getFontFamily(id: string): string {
+  return (FONT_OPTIONS.find((option) => option.id === id) || FONT_OPTIONS[0]).family;
+}
 
 export function getFontPair(id: string) {
   return FONT_PAIRS.find((pair) => pair.id === id) || FONT_PAIRS[0];
