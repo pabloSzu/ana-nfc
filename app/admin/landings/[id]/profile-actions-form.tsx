@@ -3,17 +3,20 @@
 import { getAllActions, AUTO_COLORS } from "@/lib/landing-catalog";
 import { ActionTypeIcon } from "@/components/action-icons";
 import { useDraft } from "./draft-context";
+import FontPicker from "./font-picker";
 
 type SavedAction = { source_field?: string; is_generated?: boolean; enabled?: boolean; url?: string; message?: string; background_color?: string | null; use_auto_color?: boolean | null };
 
 export default function ProfileActionsForm({ action, landingId, initial }: { action: (formData: FormData) => void | Promise<void>; landingId: string; initial: SavedAction[] }) {
-  const { draft, setActionEnabled, setActionColor } = useDraft();
+  const { draft, update, setActionEnabled, setActionColor } = useDraft();
   const allActions = getAllActions();
   const initialBySource: Record<string, SavedAction> = Object.fromEntries(initial.filter((item) => item.is_generated && item.source_field).map((item) => [item.source_field, item]));
 
   return (
     <form action={action} className="profile-actions-form stack">
       <input type="hidden" name="landing_id" value={landingId} />
+      <FontPicker label="Fuente de los botones" value={draft.button_font} onChange={(id) => update({ button_font: id })} />
+      <input type="hidden" name="button_font" value={draft.button_font} />
       <div className="profile-action-grid">
         {allActions.map((item) => {
           const on = draft.enabledActions[item.sourceField] ?? (initialBySource[item.sourceField]?.enabled === true);

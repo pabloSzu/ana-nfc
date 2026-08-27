@@ -40,9 +40,8 @@ export async function save(fd: FormData) {
   const customTextColor = fd.get("custom_text_color") === "on" ? color(fd.get("text_color"), "#161b18") : null;
   const validFonts = ["modern", "classic", "friendly", "minimal"];
   const fontPair = validFonts.includes(String(fd.get("font_pair"))) ? String(fd.get("font_pair")) : "modern";
-  const buttonFont = validFonts.includes(String(fd.get("button_font"))) ? String(fd.get("button_font")) : "modern";
   const customPanelColor = fd.get("custom_panel_color") === "on" ? color(fd.get("text_panel_color"), "#000000") : null;
-  const { error } = await supabase.from("landings").update({ business_name: businessName, description: String(fd.get("description") || "").trim(), logo_url: String(fd.get("logo_url") || "").trim(), whatsapp: String(fd.get("whatsapp") || "").trim(), primary_color: color(fd.get("primary_color"), "#1f2937"), background_color: color(fd.get("background_color"), "#f7f5f0"), background_type: backgroundType, background_gradient_to: color(fd.get("background_gradient_to"), "#a6c1ee"), text_color: customTextColor, text_panel: fd.get("text_panel") === "on", text_panel_color: customPanelColor, font_pair: fontPair, button_font: buttonFont, redirect_url: redirectUrl }).eq("id", id).eq("owner_id", user.id);
+  const { error } = await supabase.from("landings").update({ business_name: businessName, description: String(fd.get("description") || "").trim(), logo_url: String(fd.get("logo_url") || "").trim(), whatsapp: String(fd.get("whatsapp") || "").trim(), primary_color: color(fd.get("primary_color"), "#1f2937"), background_color: color(fd.get("background_color"), "#f7f5f0"), background_type: backgroundType, background_gradient_to: color(fd.get("background_gradient_to"), "#a6c1ee"), text_color: customTextColor, text_panel: fd.get("text_panel") === "on", text_panel_color: customPanelColor, font_pair: fontPair, redirect_url: redirectUrl }).eq("id", id).eq("owner_id", user.id);
   if (error) fail(id, error.message);
   redirect(`/admin/landings/${id}?saved=Identidad actualizada`);
 }
@@ -163,6 +162,8 @@ export async function removeBackgroundImage(fd: FormData) {
 export async function saveProfileActions(fd: FormData) {
   const { supabase, user } = await auth(); const landingId = String(fd.get("landing_id") || "");
   const { data: landing, error: landingError } = await supabase.from("landings").select("id").eq("id", landingId).eq("owner_id", user.id).maybeSingle(); if (landingError) fail(landingId, landingError.message); if (!landing) fail(landingId, "Landing inexistente o sin permisos.");
+  const buttonFont = ["modern", "classic", "friendly", "minimal"].includes(String(fd.get("button_font"))) ? String(fd.get("button_font")) : "modern";
+  const { error: fontError } = await supabase.from("landings").update({ button_font: buttonFont }).eq("id", landingId).eq("owner_id", user.id); if (fontError) fail(landingId, fontError.message);
   const { data: allActions, error: existingError } = await supabase.from("actions").select("*").eq("landing_id", landingId); if (existingError) fail(landingId, existingError.message); const existing = allActions?.filter((action) => action.is_generated) || []; let nextPosition = Math.max(-1, ...(allActions || []).map((action) => action.position ?? -1)) + 1;
   for (const item of getAllActions()) {
     const source = item.sourceField; const isEnabled = fd.get(`enabled_${source}`) === "on"; const found = existing?.find((action) => action.source_field === source);
