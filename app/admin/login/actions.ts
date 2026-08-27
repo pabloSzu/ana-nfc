@@ -1,0 +1,3 @@
+"use server";import {createClient} from "@/lib/supabase/server";import {redirect} from "next/navigation";
+export async function login(fd:FormData){const s=await createClient();const {error}=await s.auth.signInWithPassword({email:String(fd.get("email")),password:String(fd.get("password"))});if(error)redirect("/admin/login?error="+encodeURIComponent(error.message));redirect("/admin")}
+export async function logout(){const s=await createClient();await s.auth.signOut();redirect("/admin/login")}
