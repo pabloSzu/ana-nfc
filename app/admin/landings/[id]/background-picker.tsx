@@ -3,11 +3,10 @@
 import { useState } from "react";
 import { GRADIENT_PRESETS } from "@/lib/landing-catalog";
 import { useDraft } from "./draft-context";
-import BackgroundImageUpload from "./background-image-upload";
 
 type Landing = { id: string; background_type?: string | null; background_color?: string | null; background_gradient_to?: string | null; background_image_url?: string | null };
 
-export default function BackgroundPicker({ landing, uploadAction }: { landing: Landing; uploadAction: (formData: FormData) => void | Promise<void> }) {
+export default function BackgroundPicker({ landing }: { landing: Landing }) {
   const { update } = useDraft();
   const [mode, setMode] = useState(landing.background_type || "color");
   const [from, setFrom] = useState(landing.background_color || "#f7f5f0");
@@ -55,7 +54,6 @@ export default function BackgroundPicker({ landing, uploadAction }: { landing: L
         </>
       )}
 
-      {mode === "image" && <BackgroundImageUpload action={uploadAction} landingId={landing.id} currentUrl={landing.background_image_url} />}
     </div>
   );
 }

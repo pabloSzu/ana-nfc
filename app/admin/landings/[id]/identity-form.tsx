@@ -5,6 +5,7 @@ import { useDraft } from "./draft-context";
 import { autoTextColor } from "@/lib/landing-catalog";
 import LogoUpload from "./logo-upload";
 import BackgroundPicker from "./background-picker";
+import BackgroundImageUpload from "./background-image-upload";
 
 type Landing = {
   id: string;
@@ -34,7 +35,7 @@ export default function IdentityForm({ landing, action, uploadAction, uploadBack
         <label className="label">Logo URL<input name="logo_url" defaultValue={landing.logo_url || ""} placeholder="https://..." onChange={(event) => update({ logo_url: event.target.value })} /></label>
         <label className="label">WhatsApp principal<input name="whatsapp" defaultValue={landing.whatsapp || ""} placeholder="549351..." /></label>
         <label className="label">Color principal<input name="primary_color" type="color" defaultValue={landing.primary_color || "#1f2937"} onChange={(event) => update({ primary_color: event.target.value })} /></label>
-        <BackgroundPicker landing={landing} uploadAction={uploadBackgroundAction} />
+        <BackgroundPicker landing={landing} />
         <div className="label">
           Color del texto principal
           <div className="profile-action-color" style={{ marginTop: 7 }}>
@@ -57,6 +58,7 @@ export default function IdentityForm({ landing, action, uploadAction, uploadBack
         <button className="btn full" type="submit">Guardar identidad</button>
       </form>
       <LogoUpload action={uploadAction} landingId={landing.id} />
+      {draft.background_type === "image" && <BackgroundImageUpload action={uploadBackgroundAction} landingId={landing.id} currentUrl={landing.background_image_url} />}
     </>
   );
 }
