@@ -46,17 +46,27 @@ export default function ProfileActionsForm({ template, action, landingId, initia
                         type="checkbox"
                         name={`custom_color_${item.sourceField}`}
                         checked={draft.actionColors[item.sourceField] !== undefined}
-                        onChange={(event) => setActionColor(item.sourceField, event.target.checked ? AUTO_COLORS[item.type] || "#1f2937" : undefined)}
+                        onChange={(event) => setActionColor(item.sourceField, event.target.checked ? { bg: AUTO_COLORS[item.type] || "#1f2937", text: "#ffffff" } : undefined)}
                       />
                       Color personalizado
                     </label>
-                    {draft.actionColors[item.sourceField] !== undefined && (
-                      <input
-                        type="color"
-                        name={`color_${item.sourceField}`}
-                        value={draft.actionColors[item.sourceField]}
-                        onChange={(event) => setActionColor(item.sourceField, event.target.value)}
-                      />
+                    {draft.actionColors[item.sourceField] && (
+                      <>
+                        <span className="muted" style={{ fontSize: "0.6875rem" }}>Fondo</span>
+                        <input
+                          type="color"
+                          name={`color_${item.sourceField}`}
+                          value={draft.actionColors[item.sourceField]!.bg}
+                          onChange={(event) => setActionColor(item.sourceField, { ...draft.actionColors[item.sourceField]!, bg: event.target.value })}
+                        />
+                        <span className="muted" style={{ fontSize: "0.6875rem" }}>Texto</span>
+                        <input
+                          type="color"
+                          name={`text_${item.sourceField}`}
+                          value={draft.actionColors[item.sourceField]!.text}
+                          onChange={(event) => setActionColor(item.sourceField, { ...draft.actionColors[item.sourceField]!, text: event.target.value })}
+                        />
+                      </>
                     )}
                   </div>
                 </div>

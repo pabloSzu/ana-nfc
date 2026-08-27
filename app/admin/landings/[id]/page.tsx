@@ -24,11 +24,11 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const enabledCustomActions = customActions.filter((action) => action.enabled);
 
   const enabledActions: Record<string, boolean> = {};
-  const actionColors: Record<string, string | undefined> = {};
+  const actionColors: Record<string, { bg: string; text: string } | undefined> = {};
   actions?.forEach((action) => {
     if (action.is_generated && action.source_field) {
       enabledActions[action.source_field] = action.enabled === true;
-      if (action.use_auto_color === false) actionColors[action.source_field] = action.background_color || undefined;
+      if (action.use_auto_color === false) actionColors[action.source_field] = { bg: action.background_color || "#1f2937", text: action.text_color || "#ffffff" };
     }
   });
 
@@ -41,6 +41,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     background_type: landing.background_type || "color",
     background_gradient_to: landing.background_gradient_to || "#a6c1ee",
     background_image_url: landing.background_image_url || "",
+    text_color: landing.text_color || "",
     template: landing.template || "professional",
     enabledActions,
     actionColors,

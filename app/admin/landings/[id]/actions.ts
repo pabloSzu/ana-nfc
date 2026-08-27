@@ -37,7 +37,8 @@ export async function save(fd: FormData) {
   const redirectUrl = String(fd.get("redirect_url") || "").trim();
   if (redirectUrl && !/^https?:\/\//i.test(redirectUrl)) fail(id, "El link externo debe empezar con http:// o https://.");
   const backgroundType = ["color", "gradient", "image"].includes(String(fd.get("background_type"))) ? String(fd.get("background_type")) : "color";
-  const { error } = await supabase.from("landings").update({ business_name: businessName, description: String(fd.get("description") || "").trim(), logo_url: String(fd.get("logo_url") || "").trim(), whatsapp: String(fd.get("whatsapp") || "").trim(), primary_color: color(fd.get("primary_color"), "#1f2937"), background_color: color(fd.get("background_color"), "#f7f5f0"), background_type: backgroundType, background_gradient_to: color(fd.get("background_gradient_to"), "#a6c1ee"), redirect_url: redirectUrl }).eq("id", id).eq("owner_id", user.id);
+  const customTextColor = fd.get("custom_text_color") === "on" ? color(fd.get("text_color"), "#161b18") : null;
+  const { error } = await supabase.from("landings").update({ business_name: businessName, description: String(fd.get("description") || "").trim(), logo_url: String(fd.get("logo_url") || "").trim(), whatsapp: String(fd.get("whatsapp") || "").trim(), primary_color: color(fd.get("primary_color"), "#1f2937"), background_color: color(fd.get("background_color"), "#f7f5f0"), background_type: backgroundType, background_gradient_to: color(fd.get("background_gradient_to"), "#a6c1ee"), text_color: customTextColor, redirect_url: redirectUrl }).eq("id", id).eq("owner_id", user.id);
   if (error) fail(id, error.message);
   redirect(`/admin/landings/${id}?saved=1`);
 }
@@ -149,8 +150,8 @@ export async function saveProfileActions(fd: FormData) {
   const { error: templateError } = await supabase.from("landings").update({ template }).eq("id", landingId).eq("owner_id", user.id); if (templateError) fail(landingId, templateError.message);
   for (const item of getTemplateActions(template)) {
     const source = item.sourceField; const value = String(fd.get(`value_${source}`) || "").trim(); const isEnabled = fd.get(`enabled_${source}`) === "on"; const found = existing?.find((action) => action.source_field === source);
-    const customColorOn = fd.get(`custom_color_${source}`) === "on"; const customColor = color(fd.get(`color_${source}`), "#1f2937");
-    const payload = { title: item.label, type: item.type, url: value, message: item.type === "whatsapp" ? String(fd.get(`message_${source}`) || "Hola, quiero hacer una consulta.") : "", icon: item.icon, use_auto_color: !customColorOn, background_color: customColor, enabled: Boolean(value && isEnabled), source_field: source, is_generated: true, position: found?.position ?? nextPosition++ };
+    const customColorOn = fd.get(`custom_color_${source}`) === "on"; const customColor = color(fd.get(`color_${source}`), "#1f2937"); const customTextColor = color(fd.get(`text_${source}`), "#ffffff");
+    const payload = { title: item.label, type: item.type, url: value, message: item.type === "whatsapp" ? String(fd.get(`message_${source}`) || "Hola, quiero hacer una consulta.") : "", icon: item.icon, use_auto_color: !customColorOn, background_color: customColor, text_color: customTextColor, enabled: Boolean(value && isEnabled), source_field: source, is_generated: true, position: found?.position ?? nextPosition++ };
     if (!value || !isEnabled) { if (found) { const { error } = await supabase.from("actions").update(payload).eq("id", found.id).eq("landing_id", landingId).eq("is_generated", true); if (error) fail(landingId, error.message); } continue; }
     const result = found ? await supabase.from("actions").update(payload).eq("id", found.id).eq("landing_id", landingId) : await supabase.from("actions").insert({ landing_id: landingId, ...payload }); if (result.error) fail(landingId, result.error.message);
   }

@@ -28,6 +28,29 @@ export function backgroundStyle(landing: BackgroundLike): CSSProperties {
   return { background: landing.background_color || "#f7f5f0" };
 }
 
+function luminance(hex: string): number {
+  const clean = hex.replace("#", "");
+  const parts = clean.match(/.{1,2}/g);
+  const [r, g, b] = (parts || ["f7", "f5", "f0"]).map((part) => {
+    const channel = parseInt(part, 16) / 255;
+    return channel <= 0.03928 ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+export function autoTextColor(landing: BackgroundLike): string {
+  if (landing.background_type === "image") return "#ffffff";
+  let lum = luminance(landing.background_color || "#f7f5f0");
+  if (landing.background_type === "gradient" && landing.background_gradient_to) {
+    lum = (lum + luminance(landing.background_gradient_to)) / 2;
+  }
+  return lum > 0.5 ? "#161b18" : "#ffffff";
+}
+
+export function resolveTextColor(landing: BackgroundLike & { text_color?: string | null }): string {
+  return landing.text_color || autoTextColor(landing);
+}
+
 export const AUTO_COLORS: Record<string, string> = {
   whatsapp: "#25d366", instagram: "#c13584", tiktok: "#111111", facebook: "#1877f2", maps: "#db4437",
   youtube: "#ff0033", spotify: "#1db954", mercadopago: "#009ee3", telegram: "#229ed9", email: "#334155",

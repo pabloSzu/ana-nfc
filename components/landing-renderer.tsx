@@ -1,4 +1,4 @@
-import { AUTO_COLORS, backgroundStyle } from "@/lib/landing-catalog";
+import { AUTO_COLORS, backgroundStyle, resolveTextColor } from "@/lib/landing-catalog";
 import { ActionTypeIcon } from "@/components/action-icons";
 
 type LandingAction = {
@@ -24,6 +24,7 @@ type Landing = {
   background_type?: string | null;
   background_gradient_to?: string | null;
   background_image_url?: string | null;
+  text_color?: string | null;
 };
 
 const noBlank = new Set(["whatsapp", "email", "phone"]);
@@ -40,6 +41,7 @@ function actionHref(action: LandingAction, whatsapp?: string | null) {
 
 export default function LandingRenderer({ landing, actions, preview = false }: { landing: Landing; actions: LandingAction[]; preview?: boolean }) {
   const primary = landing.primary_color || "#1f2937";
+  const textColor = resolveTextColor(landing);
   return (
     <main className="public" style={backgroundStyle(landing)}>
       <div className="public-inner">
@@ -47,8 +49,8 @@ export default function LandingRenderer({ landing, actions, preview = false }: {
         <div className="avatar" style={{ background: primary, marginBottom: 18 }}>
           {landing.logo_url ? <img src={landing.logo_url} alt={landing.business_name} /> : landing.business_name.slice(0, 1)}
         </div>
-        <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 28, fontWeight: 700, margin: "0 0 10px" }}>{landing.business_name}</h1>
-        {landing.description && <p className="landing-desc muted">{landing.description}</p>}
+        <h1 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 28, fontWeight: 700, margin: "0 0 10px", color: textColor }}>{landing.business_name}</h1>
+        {landing.description && <p className="landing-desc" style={{ color: textColor, opacity: 0.75 }}>{landing.description}</p>}
         <div>
           {actions.map((action) => (
             <a

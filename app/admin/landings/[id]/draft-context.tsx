@@ -2,6 +2,8 @@
 
 import { createContext, useContext, useState, type ReactNode } from "react";
 
+export type ActionColorOverride = { bg: string; text: string };
+
 export type Draft = {
   business_name: string;
   description: string;
@@ -11,16 +13,17 @@ export type Draft = {
   background_type: string;
   background_gradient_to: string;
   background_image_url: string;
+  text_color: string;
   template: string;
   enabledActions: Record<string, boolean>;
-  actionColors: Record<string, string | undefined>;
+  actionColors: Record<string, ActionColorOverride | undefined>;
 };
 
 type DraftContextValue = {
   draft: Draft;
   update: (patch: Partial<Draft>) => void;
   setActionEnabled: (source: string, on: boolean) => void;
-  setActionColor: (source: string, color: string | undefined) => void;
+  setActionColor: (source: string, override: ActionColorOverride | undefined) => void;
 };
 
 const DraftContext = createContext<DraftContextValue | null>(null);
@@ -29,7 +32,7 @@ export function DraftProvider({ initial, children }: { initial: Draft; children:
   const [draft, setDraft] = useState<Draft>(initial);
   const update = (patch: Partial<Draft>) => setDraft((prev) => ({ ...prev, ...patch }));
   const setActionEnabled = (source: string, on: boolean) => setDraft((prev) => ({ ...prev, enabledActions: { ...prev.enabledActions, [source]: on } }));
-  const setActionColor = (source: string, color: string | undefined) => setDraft((prev) => ({ ...prev, actionColors: { ...prev.actionColors, [source]: color } }));
+  const setActionColor = (source: string, override: ActionColorOverride | undefined) => setDraft((prev) => ({ ...prev, actionColors: { ...prev.actionColors, [source]: override } }));
   return <DraftContext.Provider value={{ draft, update, setActionEnabled, setActionColor }}>{children}</DraftContext.Provider>;
 }
 
