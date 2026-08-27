@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { IconExternalLink, IconEye } from "@/components/icons";
 
 export default async function QR({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -27,8 +28,8 @@ export default async function QR({ params }: { params: Promise<{ id: string }> }
         />
         <p className="muted" style={{ wordBreak: "break-all", fontSize: "0.8125rem" }}>{url}</p>
         <div className="row-actions" style={{ justifyContent: "center", marginTop: "var(--space-4)" }}>
-          <a className="btn" href={qr} target="_blank" rel="noreferrer">Descargar QR</a>
-          <a className="btn secondary" href={url} target="_blank" rel="noreferrer">Ver landing ↗</a>
+          <a className="btn" href={qr} target="_blank" rel="noreferrer"><IconExternalLink /> Descargar QR</a>
+          <a className="btn secondary" href={url} target="_blank" rel="noreferrer"><IconEye /> Ver landing</a>
         </div>
         <p className="muted" style={{ marginTop: "var(--space-5)", fontSize: "0.75rem" }}>Esta misma URL es la que grabás en la tag NFC.</p>
       </div>

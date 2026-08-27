@@ -5,6 +5,7 @@ import LandingCreationForm from "./landing-creation-form";
 import DeleteClientButton from "./delete-client-button";
 import DeleteLandingButton from "./delete-landing-button";
 import ModalTrigger from "./modal-trigger";
+import { IconPlus, IconEdit, IconEye, IconQrCode, IconPlay, IconPause, IconUsers, IconFileText, IconCheckCircle, IconLogOut } from "@/components/icons";
 import Link from "next/link";
 
 export default async function Admin({ searchParams }: { searchParams: Promise<{ error?: string; success?: string; saved?: string }> }) {
@@ -22,23 +23,23 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
   landings?.forEach((landing) => { if (landing.client_id) landingCountByClient.set(landing.client_id, (landingCountByClient.get(landing.client_id) || 0) + 1); });
 
   return <main className="shell">
-    <header className="app-header"><div><p className="eyebrow">Mi Landing Web Fácil</p><h1>Tu espacio de landings</h1><p className="muted">Gestioná tus clientes y sus landings.</p></div><form action={logout}><button className="btn secondary" type="submit">Salir</button></form></header>
+    <header className="app-header"><div><p className="eyebrow">Mi Landing Web Fácil</p><h1>Tu espacio de landings</h1><p className="muted">Gestioná tus clientes y sus landings.</p></div><form action={logout}><button className="btn secondary" type="submit"><IconLogOut /> Salir</button></form></header>
     {params.error && <div className="error">{params.error}</div>}{params.success && <div className="success">{params.success}</div>}{params.saved && <div className="success">{params.saved}</div>}
 
-    <section className="stats"><div><strong>{clients?.length || 0}</strong><span>👥 Clientes</span></div><div><strong>{landings?.length || 0}</strong><span>📄 Landings</span></div><div><strong>{published}</strong><span>✅ Publicadas</span></div></section>
+    <section className="stats"><div><strong>{clients?.length || 0}</strong><span><IconUsers /> Clientes</span></div><div><strong>{landings?.length || 0}</strong><span><IconFileText /> Landings</span></div><div><strong>{published}</strong><span><IconCheckCircle /> Publicadas</span></div></section>
 
     <div className="row-actions" style={{ marginBottom: "var(--space-6)" }}>
-      <ModalTrigger label="Nuevo cliente" icon="+" title="Nuevo cliente" description="Definí la identidad inicial.">
-        <form action={newClient} className="stack"><label className="label">Nombre del negocio<input name="name" placeholder="Ej. Aurora Hotel" required /></label><label className="label">Email<input name="email" type="email" placeholder="contacto@aurorahotel.com" /></label><label className="label">WhatsApp<input name="phone" placeholder="549351XXXXXXXX" /></label><div className="color-row"><label className="label">Color principal<input name="primary_color" type="color" defaultValue="#1f2937" /></label><label className="label">Color de fondo<input name="background_color" type="color" defaultValue="#f7f5f0" /></label></div><button className="btn full" type="submit">+ Crear cliente</button></form>
+      <ModalTrigger label="Nuevo cliente" icon={<IconPlus />} title="Nuevo cliente" description="Definí la identidad inicial.">
+        <form action={newClient} className="stack"><label className="label">Nombre del negocio<input name="name" placeholder="Ej. Aurora Hotel" required /></label><label className="label">Email<input name="email" type="email" placeholder="contacto@aurorahotel.com" /></label><label className="label">WhatsApp<input name="phone" placeholder="549351XXXXXXXX" /></label><div className="color-row"><label className="label">Color principal<input name="primary_color" type="color" defaultValue="#1f2937" /></label><label className="label">Color de fondo<input name="background_color" type="color" defaultValue="#f7f5f0" /></label></div><button className="btn full" type="submit">Crear cliente</button></form>
       </ModalTrigger>
-      <ModalTrigger label="Nueva landing" icon="+" title="Nueva landing" description="Elegí un perfil y personalizalo después.">
+      <ModalTrigger label="Nueva landing" icon={<IconPlus />} title="Nueva landing" description="Lo esencial para arrancar; el resto lo completás en el editor.">
         <LandingCreationForm clients={clients || []} action={newLanding} />
       </ModalTrigger>
     </div>
 
     <section className="list-section">
       <div className="section-heading"><div><p className="eyebrow">Tu biblioteca</p><h2>Landings</h2></div></div>
-      {!landings?.length ? <div className="empty-state"><span>📄</span><strong>Todavía no creaste ninguna landing</strong><p className="muted">Usá el botón "+ Nueva landing" de arriba.</p></div> : (
+      {!landings?.length ? <div className="empty-state"><IconFileText /><strong>Todavía no creaste ninguna landing</strong><p className="muted">Usá el botón "Nueva landing" de arriba.</p></div> : (
         <div className="table-wrap">
           <table className="data-table">
             <thead><tr><th>Landing</th><th>Cliente</th><th>Estado</th><th></th></tr></thead>
@@ -50,11 +51,11 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
                   <td><span className={landing.published ? "status published" : "status"}>{landing.published ? "Publicada" : "Borrador"}</span></td>
                   <td>
                     <div className="table-actions">
-                      <Link className="text-button" href={`/admin/landings/${landing.id}`} title="Editar">✏️</Link>
-                      <Link className="text-button" href={`/${landing.slug}`} target="_blank" title="Ver landing pública">↗</Link>
-                      <Link className="text-button" href={`/admin/landings/${landing.id}/qr`} title="Código QR">📱</Link>
-                      <form action={publish}><input type="hidden" name="id" value={landing.id} /><input type="hidden" name="published" value={String(!landing.published)} /><input type="hidden" name="return_to" value="/admin" /><button className="text-button" type="submit" title={landing.published ? "Despublicar" : "Publicar"}>{landing.published ? "⏸" : "🚀"}</button></form>
-                      <DeleteLandingButton action={deleteLanding} label="🗑" />
+                      <Link className="icon-text-button" href={`/admin/landings/${landing.id}`}><IconEdit /> Editar</Link>
+                      <Link className="icon-text-button" href={`/${landing.slug}`} target="_blank"><IconEye /> Ver</Link>
+                      <Link className="icon-text-button" href={`/admin/landings/${landing.id}/qr`}><IconQrCode /> QR</Link>
+                      <form action={publish}><input type="hidden" name="id" value={landing.id} /><input type="hidden" name="published" value={String(!landing.published)} /><input type="hidden" name="return_to" value="/admin" /><button className="icon-text-button accent" type="submit">{landing.published ? <><IconPause /> Despublicar</> : <><IconPlay /> Publicar</>}</button></form>
+                      <DeleteLandingButton action={deleteLanding} label="Eliminar" />
                     </div>
                   </td>
                 </tr>
@@ -67,7 +68,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
 
     <section className="list-section">
       <div className="section-heading"><div><p className="eyebrow">Tu biblioteca</p><h2>Clientes</h2></div></div>
-      {!clients?.length ? <div className="empty-state"><span>👥</span><strong>Todavía no tenés clientes</strong><p className="muted">Usá el botón "+ Nuevo cliente" de arriba.</p></div> : (
+      {!clients?.length ? <div className="empty-state"><IconUsers /><strong>Todavía no tenés clientes</strong><p className="muted">Usá el botón "Nuevo cliente" de arriba.</p></div> : (
         <div className="table-wrap">
           <table className="data-table">
             <thead><tr><th>Cliente</th><th>Contacto</th><th>Landings</th><th></th></tr></thead>
@@ -79,7 +80,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
                   <td>{landingCountByClient.get(client.id) || 0}</td>
                   <td>
                     <div className="table-actions">
-                      <Link className="text-button" href={`/admin/clientes/${client.id}`} title="Editar">✏️ Editar</Link>
+                      <Link className="icon-text-button" href={`/admin/clientes/${client.id}`}><IconEdit /> Editar</Link>
                       <DeleteClientButton action={deleteClient} clientId={client.id} clientName={client.name} />
                     </div>
                   </td>

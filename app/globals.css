@@ -201,9 +201,9 @@ input[type="color"] { padding: 5px; height: 46px; cursor: pointer; }
   transition: transform var(--dur-fast) var(--ease-out);
 }
 .stats div:hover { transform: translateY(-2px); }
-.stats strong, .stats span { display: block; }
-.stats strong { font-family: var(--font-display); font-size: clamp(1.375rem, 1.2rem + 1vw, 1.75rem); font-weight: 700; }
-.stats span { color: oklch(85% 0.01 260); font-size: 0.75rem; margin-top: 2px; }
+.stats strong { display: block; font-family: var(--font-display); font-size: clamp(1.375rem, 1.2rem + 1vw, 1.75rem); font-weight: 700; }
+.stats span { display: flex; align-items: center; gap: 6px; color: oklch(85% 0.01 260); font-size: 0.75rem; margin-top: 4px; }
+.stats span svg { width: 14px; height: 14px; flex: none; }
 
 /* ---------- Status ---------- */
 .status {
@@ -405,7 +405,7 @@ input[type="color"] { padding: 5px; height: 46px; cursor: pointer; }
   display: grid; justify-items: center; gap: var(--space-2); text-align: center; padding: var(--space-7) var(--space-4);
   color: var(--text-subtle); border: 1px dashed var(--border-strong); border-radius: var(--radius-lg);
 }
-.empty-state span { font-size: 1.75rem; }
+.empty-state svg { width: 30px; height: 30px; color: var(--text-subtle); }
 .empty-state strong { color: var(--text-muted); font-size: 0.875rem; }
 
 /* ---------- Modal ---------- */
@@ -440,8 +440,21 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
 .table-entity { display: flex; align-items: center; gap: var(--space-3); }
 .table-entity strong { display: block; font-size: 0.875rem; }
 .table-entity small { color: var(--text-subtle); font-size: 0.75rem; }
-.table-actions { display: flex; align-items: center; gap: var(--space-1); flex-wrap: nowrap; }
+.table-actions { display: flex; align-items: center; gap: 2px; flex-wrap: nowrap; }
 .table-actions form { display: contents; }
+
+.icon-text-button {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 10px; border: 0;
+  border-radius: var(--radius-sm); background: transparent; color: var(--text-muted);
+  font-size: 0.75rem; font-weight: 600; white-space: nowrap; cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.icon-text-button:hover { background: var(--bg-subtle); color: var(--text); }
+.icon-text-button.accent:hover { background: var(--accent-subtle); color: var(--accent); }
+.icon-text-button.danger { color: var(--danger); }
+.icon-text-button.danger:hover { background: var(--danger-subtle); }
+.icon-text-button svg { flex: none; width: 15px; height: 15px; }
+.btn svg, .secondary svg { width: 16px; height: 16px; flex: none; }
 
 /* ---------- Responsive ---------- */
 @media (min-width: 640px) {

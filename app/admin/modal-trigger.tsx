@@ -2,7 +2,7 @@
 
 import { useRef, type ReactNode } from "react";
 
-export default function ModalTrigger({ label, icon, title, description, children }: { label: string; icon?: string; title: string; description?: string; children: ReactNode }) {
+export default function ModalTrigger({ label, icon, title, description, children }: { label: string; icon?: ReactNode; title: string; description?: string; children: ReactNode }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   return (
     <>

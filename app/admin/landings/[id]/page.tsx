@@ -9,6 +9,7 @@ import BuilderTabs from "./builder-tabs";
 import { save, addAction, updateAction, removeAction, moveAction, uploadLogo, saveProfileActions } from "./actions";
 import { publish, deleteLanding } from "../../actions";
 import DeleteLandingButton from "../../delete-landing-button";
+import { IconQrCode, IconEye } from "@/components/icons";
 
 const autoColors: Record<string, string> = { whatsapp: "#25d366", instagram: "#c13584", tiktok: "#111111", facebook: "#1877f2", maps: "#db4437", youtube: "#ff0033", spotify: "#1db954", telegram: "#229ed9", email: "#334155", phone: "#475569", calendar: "#e05252", website: "#1f2937", url: "#1f2937" };
 
@@ -73,7 +74,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
         <input type="hidden" name="return_to" value={`/admin/landings/${id}`} />
         <button className="btn full" type="submit">{landing.published ? "Despublicar" : "Publicar landing"}</button>
       </form>
-      {landing.published && <Link className="btn secondary full" href={`/admin/landings/${id}/qr`}>📱 Generar código QR para el tag NFC</Link>}
+      {landing.published && <Link className="btn secondary full" href={`/admin/landings/${id}/qr`}><IconQrCode /> Generar código QR para el tag NFC</Link>}
     </section>
   );
 
@@ -83,8 +84,8 @@ export default async function Page({ params, searchParams }: { params: Promise<{
         <Link className="back-link" href="/admin">← Volver</Link>
         <div><p className="eyebrow">Constructor</p><h1>{landing.business_name}</h1><p className="muted">/{landing.slug}</p></div>
         <div className="row-actions">
-          <Link className="btn secondary" href={`/admin/landings/${id}/qr`}>📱 Código QR</Link>
-          <Link className="btn secondary" href={`/${landing.slug}`} target="_blank" rel="noreferrer">Vista previa ↗</Link>
+          <Link className="btn secondary" href={`/admin/landings/${id}/qr`}><IconQrCode /> Código QR</Link>
+          <Link className="btn secondary" href={`/${landing.slug}`} target="_blank" rel="noreferrer"><IconEye /> Vista previa</Link>
           <DeleteLandingButton action={deleteLanding} />
         </div>
       </header>
