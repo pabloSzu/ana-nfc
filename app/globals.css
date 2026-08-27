@@ -443,6 +443,7 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
 .table-entity small { color: var(--text-subtle); font-size: 0.75rem; }
 .table-actions { display: flex; align-items: center; gap: 2px; flex-wrap: nowrap; }
 .table-actions form { display: contents; }
+.table-actions .icon-text-button { min-width: 112px; justify-content: flex-start; }
 
 .icon-text-button {
   display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 10px; border: 0;
