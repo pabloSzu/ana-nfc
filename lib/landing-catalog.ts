@@ -92,10 +92,13 @@ type ActionDef = {
   input: "phone" | "email" | "text" | "url";
   placeholder: string;
   message: boolean;
+  noValue?: boolean;
 };
 
+const ACTION_ORDER: ActionType[] = ["whatsapp", "instagram", "tiktok", "facebook", "website", "maps", "email", "phone", "youtube", "spotify", "mercadopago", "calendar", "telegram", "url"];
+
 const ACTION_DEFS: Record<ActionType, ActionDef> = {
-  whatsapp: { type: "whatsapp", label: "WhatsApp", icon: "💬", input: "phone", placeholder: "549351XXXXXXXX", message: true },
+  whatsapp: { type: "whatsapp", label: "WhatsApp", icon: "💬", input: "phone", placeholder: "549351XXXXXXXX", message: true, noValue: true },
   instagram: { type: "instagram", label: "Instagram", icon: "📸", input: "url", placeholder: "https://instagram.com/tuusuario", message: false },
   tiktok: { type: "tiktok", label: "TikTok", icon: "🎵", input: "url", placeholder: "https://tiktok.com/@tuusuario", message: false },
   facebook: { type: "facebook", label: "Facebook", icon: "📘", input: "url", placeholder: "https://facebook.com/tupagina", message: false },
@@ -111,15 +114,6 @@ const ACTION_DEFS: Record<ActionType, ActionDef> = {
   url: { type: "url", label: "Enlace", icon: "🔗", input: "url", placeholder: "https://...", message: false },
 };
 
-const TEMPLATE_ACTIONS: Record<TemplateValue, ActionType[]> = {
-  professional: ["whatsapp", "website", "email", "phone", "instagram", "maps"],
-  hotel: ["whatsapp", "maps", "calendar", "instagram", "facebook", "website"],
-  tourism: ["whatsapp", "calendar", "maps", "instagram", "youtube", "website"],
-  restaurant: ["whatsapp", "maps", "instagram", "facebook", "mercadopago", "website"],
-  business: ["whatsapp", "email", "phone", "website", "instagram", "calendar"],
-};
-
-export function getTemplateActions(template: string) {
-  const types = TEMPLATE_ACTIONS[template as TemplateValue] || TEMPLATE_ACTIONS.professional;
-  return types.map((type) => ({ sourceField: type, ...ACTION_DEFS[type] }));
+export function getAllActions() {
+  return ACTION_ORDER.map((type) => ({ sourceField: type, ...ACTION_DEFS[type] }));
 }

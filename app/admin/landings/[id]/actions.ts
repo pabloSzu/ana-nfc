@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getTemplateActions } from "@/lib/landing-catalog";
+import { getAllActions } from "@/lib/landing-catalog";
 
 const validTypes = ["whatsapp", "instagram", "tiktok", "facebook", "website", "email", "phone", "maps", "youtube", "spotify", "mercadopago", "calendar", "telegram", "url"];
 const hexColor = /^#[0-9a-f]{6}$/i;
@@ -142,16 +142,13 @@ export async function uploadBackgroundImage(fd: FormData) {
 
 export async function saveProfileActions(fd: FormData) {
   const { supabase, user } = await auth(); const landingId = String(fd.get("landing_id") || "");
-  const template = String(fd.get("template") || "professional"); const validTemplates = ["professional", "hotel", "tourism", "restaurant", "business"]; if (!validTemplates.includes(template)) fail(landingId, "Plantilla inválida.");
-  const { data: landing, error: landingError } = await supabase.from("landings").select("id,template").eq("id", landingId).eq("owner_id", user.id).maybeSingle(); if (landingError) fail(landingId, landingError.message); if (!landing) fail(landingId, "Landing inexistente o sin permisos.");
+  const { data: landing, error: landingError } = await supabase.from("landings").select("id").eq("id", landingId).eq("owner_id", user.id).maybeSingle(); if (landingError) fail(landingId, landingError.message); if (!landing) fail(landingId, "Landing inexistente o sin permisos.");
   const { data: allActions, error: existingError } = await supabase.from("actions").select("*").eq("landing_id", landingId); if (existingError) fail(landingId, existingError.message); const existing = allActions?.filter((action) => action.is_generated) || []; let nextPosition = Math.max(-1, ...(allActions || []).map((action) => action.position ?? -1)) + 1;
-  const configuredSources = new Set(getTemplateActions(template).map((item) => item.sourceField));
-  for (const oldAction of existing) { if (!configuredSources.has(oldAction.source_field || "")) { const { error } = await supabase.from("actions").update({ enabled: false }).eq("id", oldAction.id).eq("landing_id", landingId).eq("is_generated", true); if (error) fail(landingId, error.message); } }
-  const { error: templateError } = await supabase.from("landings").update({ template }).eq("id", landingId).eq("owner_id", user.id); if (templateError) fail(landingId, templateError.message);
-  for (const item of getTemplateActions(template)) {
-    const source = item.sourceField; const value = String(fd.get(`value_${source}`) || "").trim(); const isEnabled = fd.get(`enabled_${source}`) === "on"; const found = existing?.find((action) => action.source_field === source);
+  for (const item of getAllActions()) {
+    const source = item.sourceField; const isEnabled = fd.get(`enabled_${source}`) === "on"; const found = existing?.find((action) => action.source_field === source);
+    const value = item.noValue ? "ok" : String(fd.get(`value_${source}`) || "").trim();
     const customColorOn = fd.get(`custom_color_${source}`) === "on"; const customColor = color(fd.get(`color_${source}`), "#1f2937"); const customTextColor = color(fd.get(`text_${source}`), "#ffffff");
-    const payload = { title: item.label, type: item.type, url: value, message: item.type === "whatsapp" ? String(fd.get(`message_${source}`) || "Hola, quiero hacer una consulta.") : "", icon: item.icon, use_auto_color: !customColorOn, background_color: customColor, text_color: customTextColor, enabled: Boolean(value && isEnabled), source_field: source, is_generated: true, position: found?.position ?? nextPosition++ };
+    const payload = { title: item.label, type: item.type, url: item.noValue ? "" : value, message: item.type === "whatsapp" ? String(fd.get(`message_${source}`) || "Hola, quiero hacer una consulta.") : "", icon: item.icon, use_auto_color: !customColorOn, background_color: customColor, text_color: customTextColor, enabled: Boolean(value && isEnabled), source_field: source, is_generated: true, position: found?.position ?? nextPosition++ };
     if (!value || !isEnabled) { if (found) { const { error } = await supabase.from("actions").update(payload).eq("id", found.id).eq("landing_id", landingId).eq("is_generated", true); if (error) fail(landingId, error.message); } continue; }
     const result = found ? await supabase.from("actions").update(payload).eq("id", found.id).eq("landing_id", landingId) : await supabase.from("actions").insert({ landing_id: landingId, ...payload }); if (result.error) fail(landingId, result.error.message);
   }

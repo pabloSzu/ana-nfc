@@ -1,45 +1,39 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getTemplateActions, AUTO_COLORS } from "@/lib/landing-catalog";
+import { getAllActions, AUTO_COLORS } from "@/lib/landing-catalog";
 import { ActionTypeIcon } from "@/components/action-icons";
 import { useDraft } from "./draft-context";
 
 type SavedAction = { source_field?: string; is_generated?: boolean; enabled?: boolean; url?: string; message?: string; background_color?: string | null; use_auto_color?: boolean | null };
 
-export default function ProfileActionsForm({ template, action, landingId, initial }: { template: string; action: (formData: FormData) => void | Promise<void>; landingId: string; initial: SavedAction[] }) {
-  const { draft, update, setActionEnabled, setActionColor } = useDraft();
-  const [selectedTemplate, setSelectedTemplate] = useState(template);
-  const templateActions = getTemplateActions(selectedTemplate);
+export default function ProfileActionsForm({ action, landingId, initial }: { action: (formData: FormData) => void | Promise<void>; landingId: string; initial: SavedAction[] }) {
+  const { draft, setActionEnabled, setActionColor } = useDraft();
+  const allActions = getAllActions();
   const initialBySource: Record<string, SavedAction> = Object.fromEntries(initial.filter((item) => item.is_generated && item.source_field).map((item) => [item.source_field, item]));
-
-  useEffect(() => { update({ template: selectedTemplate }); }, [selectedTemplate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <form action={action} className="profile-actions-form stack">
       <input type="hidden" name="landing_id" value={landingId} />
-      <label className="label">
-        Rubro del negocio
-        <select name="template" value={selectedTemplate} onChange={(event) => setSelectedTemplate(event.target.value)}>
-          {["professional", "hotel", "tourism", "restaurant", "business"].map((value) => <option key={value} value={value}>{value === "restaurant" ? "Gastronomía" : value[0].toUpperCase() + value.slice(1)}</option>)}
-        </select>
-      </label>
-      <p className="muted" style={{ fontSize: "0.75rem", marginTop: "-8px" }}>Elegí el que más se parezca al negocio: define qué botones te sugerimos abajo (podés activar los que quieras igual).</p>
       <div className="profile-action-grid">
-        {templateActions.map((item) => {
+        {allActions.map((item) => {
           const on = draft.enabledActions[item.sourceField] ?? (initialBySource[item.sourceField]?.enabled === true);
           const saved = initialBySource[item.sourceField];
           return (
             <div className={on ? "profile-action-row active" : "profile-action-row"} key={item.sourceField}>
               <ActionTypeIcon type={item.type} className="profile-action-icon" />
-              <div className="profile-action-name"><b>{item.label}</b><small>{item.input === "phone" ? "Número" : item.input === "email" ? "Correo electrónico" : item.input === "text" ? "Texto informativo" : "URL pública"}</small></div>
+              <div className="profile-action-name">
+                <b>{item.label}</b>
+                <small>{item.noValue ? "Usa el WhatsApp de Identidad" : item.input === "phone" ? "Número" : item.input === "email" ? "Correo electrónico" : "URL pública"}</small>
+              </div>
               <label className="switch">
                 <input type="checkbox" name={`enabled_${item.sourceField}`} checked={on} onChange={(event) => setActionEnabled(item.sourceField, event.target.checked)} />
                 <span>{on ? "ON" : "OFF"}</span>
               </label>
               <div className="profile-action-fields">
                 <div>
-                  <input className="profile-action-value" name={`value_${item.sourceField}`} defaultValue={saved?.url || ""} placeholder={item.placeholder} disabled={!on} required={on} />
+                  {!item.noValue && (
+                    <input className="profile-action-value" name={`value_${item.sourceField}`} defaultValue={saved?.url || ""} placeholder={item.placeholder} disabled={!on} required={on} />
+                  )}
                   {item.message && <input className="profile-action-message" name={`message_${item.sourceField}`} defaultValue={saved?.message || ""} placeholder="Mensaje opcional" disabled={!on} />}
                   <div className="profile-action-color">
                     <label className="check-label">

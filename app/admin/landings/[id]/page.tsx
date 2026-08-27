@@ -42,7 +42,6 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     background_gradient_to: landing.background_gradient_to || "#a6c1ee",
     background_image_url: landing.background_image_url || "",
     text_color: landing.text_color || "",
-    template: landing.template || "professional",
     enabledActions,
     actionColors,
   };
@@ -61,7 +60,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       <div className="section-heading">
         <div><h2>Botones de la landing</h2><p className="muted">Activá los que necesites y completá el enlace de cada uno.</p></div>
       </div>
-      <ProfileActionsForm template={landing.template || "professional"} action={saveProfileActions} landingId={id} initial={actions || []} />
+      <ProfileActionsForm action={saveProfileActions} landingId={id} initial={actions || []} />
       <details className="advanced-actions">
         <summary>+ Agregar un botón personalizado</summary>
         <ActionForm action={addAction} landingId={id} />

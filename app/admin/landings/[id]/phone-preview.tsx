@@ -1,14 +1,14 @@
 "use client";
 
 import { useDraft } from "./draft-context";
-import { getTemplateActions, AUTO_COLORS, backgroundStyle, resolveTextColor } from "@/lib/landing-catalog";
+import { getAllActions, AUTO_COLORS, backgroundStyle, resolveTextColor } from "@/lib/landing-catalog";
 import { ActionTypeIcon } from "@/components/action-icons";
 
 type CustomAction = { id: string; type: string; title: string; url?: string | null; message?: string | null; background_color?: string | null; text_color?: string | null; icon_color?: string | null; use_auto_color?: boolean | null };
 
 export default function PhonePreview({ customActions }: { customActions: CustomAction[] }) {
   const { draft } = useDraft();
-  const visibleTemplateActions = getTemplateActions(draft.template).filter((item) => draft.enabledActions[item.sourceField]);
+  const visibleTemplateActions = getAllActions().filter((item) => draft.enabledActions[item.sourceField]);
   const textColor = resolveTextColor(draft);
 
   return (
