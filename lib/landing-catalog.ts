@@ -63,6 +63,16 @@ export function panelBackground(textColor: string, overrideHex?: string | null):
   return textColor === "#ffffff" ? "rgba(0, 0, 0, 0.38)" : "rgba(255, 255, 255, 0.78)";
 }
 
+export function normalizeUrl(value: string): string {
+  const trimmed = (value || "").trim();
+  if (!trimmed) return "";
+  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+}
+
+export function isPlausiblePhone(value: string): boolean {
+  return (value || "").replace(/\D/g, "").length >= 8;
+}
+
 export const FONT_OPTIONS: { id: string; label: string; family: string }[] = [
   { id: "modern", label: "Moderno", family: "'Space Grotesk', sans-serif" },
   { id: "classic", label: "Clásico", family: "'Playfair Display', serif" },
@@ -72,10 +82,6 @@ export const FONT_OPTIONS: { id: string; label: string; family: string }[] = [
 
 export function getFontFamily(id: string): string {
   return (FONT_OPTIONS.find((option) => option.id === id) || FONT_OPTIONS[0]).family;
-}
-
-export function getFontPair(id: string) {
-  return FONT_PAIRS.find((pair) => pair.id === id) || FONT_PAIRS[0];
 }
 
 export const AUTO_COLORS: Record<string, string> = {
@@ -116,18 +122,18 @@ type ActionDef = {
   type: ActionType;
   label: string;
   icon: string;
-  input: "phone" | "email" | "text" | "url";
+  input: "phone" | "email" | "text" | "url" | "username";
   placeholder: string;
   message: boolean;
-  noValue?: boolean;
+  prefix?: string;
 };
 
 const ACTION_ORDER: ActionType[] = ["whatsapp", "instagram", "tiktok", "facebook", "website", "maps", "email", "phone", "youtube", "spotify", "mercadopago", "calendar", "telegram", "url"];
 
 const ACTION_DEFS: Record<ActionType, ActionDef> = {
-  whatsapp: { type: "whatsapp", label: "WhatsApp", icon: "💬", input: "phone", placeholder: "549351XXXXXXXX", message: true, noValue: true },
-  instagram: { type: "instagram", label: "Instagram", icon: "📸", input: "url", placeholder: "https://instagram.com/tuusuario", message: false },
-  tiktok: { type: "tiktok", label: "TikTok", icon: "🎵", input: "url", placeholder: "https://tiktok.com/@tuusuario", message: false },
+  whatsapp: { type: "whatsapp", label: "WhatsApp", icon: "💬", input: "phone", placeholder: "549351XXXXXXXX", message: true },
+  instagram: { type: "instagram", label: "Instagram", icon: "📸", input: "username", placeholder: "tuusuario", prefix: "instagram.com/", message: false },
+  tiktok: { type: "tiktok", label: "TikTok", icon: "🎵", input: "username", placeholder: "tuusuario", prefix: "tiktok.com/@", message: false },
   facebook: { type: "facebook", label: "Facebook", icon: "📘", input: "url", placeholder: "https://facebook.com/tupagina", message: false },
   website: { type: "website", label: "Sitio web", icon: "🌐", input: "url", placeholder: "https://tusitio.com", message: false },
   email: { type: "email", label: "Email", icon: "✉️", input: "email", placeholder: "contacto@negocio.com", message: false },
@@ -137,10 +143,35 @@ const ACTION_DEFS: Record<ActionType, ActionDef> = {
   spotify: { type: "spotify", label: "Spotify", icon: "🎧", input: "url", placeholder: "https://open.spotify.com/...", message: false },
   mercadopago: { type: "mercadopago", label: "Pagar con Mercado Pago", icon: "💳", input: "url", placeholder: "https://mpago.la/...", message: false },
   calendar: { type: "calendar", label: "Reservar turno", icon: "📅", input: "url", placeholder: "https://calendly.com/...", message: false },
-  telegram: { type: "telegram", label: "Telegram", icon: "📨", input: "url", placeholder: "https://t.me/tucanal", message: false },
+  telegram: { type: "telegram", label: "Telegram", icon: "📨", input: "username", placeholder: "tucanal", prefix: "t.me/", message: false },
   url: { type: "url", label: "Enlace", icon: "🔗", input: "url", placeholder: "https://...", message: false },
 };
 
 export function getAllActions() {
   return ACTION_ORDER.map((type) => ({ sourceField: type, ...ACTION_DEFS[type] }));
+}
+
+export function displayUsername(type: string, value: string): string {
+  const def = ACTION_DEFS[type as ActionType];
+  if (!def || def.input !== "username" || !value) return value || "";
+  let clean = value.trim();
+  if (/^https?:\/\//i.test(clean)) {
+    clean = clean.replace(/^https?:\/\//i, "");
+    if (def.prefix && clean.toLowerCase().startsWith(def.prefix.toLowerCase())) {
+      clean = clean.slice(def.prefix.length);
+    } else {
+      const parts = clean.split("/").filter(Boolean);
+      clean = parts[parts.length - 1] || clean;
+    }
+  }
+  return clean.replace(/^@/, "");
+}
+
+export function buildActionLink(type: string, value: string): string {
+  const clean = (value || "").trim().replace(/^@/, "");
+  if (!clean) return "";
+  if (/^https?:\/\//i.test(clean)) return clean;
+  const def = ACTION_DEFS[type as ActionType];
+  if (def?.prefix) return `https://${def.prefix}${clean}`;
+  return clean;
 }

@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { IconUser, IconLink, IconRocket } from "@/components/icons";
 
 const TABS = [
-  { id: "identity", label: "Identidad", icon: "🪪" },
-  { id: "actions", label: "Botones", icon: "🔗" },
-  { id: "publish", label: "Publicar", icon: "🚀" },
+  { id: "identity", label: "Identidad", Icon: IconUser },
+  { id: "actions", label: "Botones", Icon: IconLink },
+  { id: "publish", label: "Publicar", Icon: IconRocket },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -25,7 +26,7 @@ export default function BuilderTabs({ identity, actions, publish }: { identity: 
             className={tab === item.id ? "tab-button active" : "tab-button"}
             onClick={() => setTab(item.id)}
           >
-            <span>{item.icon}</span> {item.label}
+            <item.Icon /> {item.label}
           </button>
         ))}
       </div>

@@ -4,7 +4,7 @@ import { useDraft } from "./draft-context";
 import { getAllActions, AUTO_COLORS, backgroundStyle, resolveTextColor, getFontFamily, panelBackground } from "@/lib/landing-catalog";
 import { ActionTypeIcon } from "@/components/action-icons";
 
-type CustomAction = { id: string; type: string; title: string; url?: string | null; message?: string | null; background_color?: string | null; text_color?: string | null; icon_color?: string | null; use_auto_color?: boolean | null };
+type CustomAction = { id: string; type: string; title: string; url?: string | null; message?: string | null; icon?: string | null; background_color?: string | null; text_color?: string | null; icon_color?: string | null; use_auto_color?: boolean | null };
 
 export default function PhonePreview({ customActions }: { customActions: CustomAction[] }) {
   const { draft } = useDraft();
@@ -46,7 +46,7 @@ export default function PhonePreview({ customActions }: { customActions: CustomA
           onClick={(event) => event.preventDefault()}
           style={{ background: action.use_auto_color ? AUTO_COLORS[action.type] || draft.primary_color : action.background_color || draft.primary_color, color: action.text_color || "#fff", fontFamily: buttonFont }}
         >
-          <ActionTypeIcon type={action.type} /> {action.title}
+          <ActionTypeIcon type={action.type} icon={action.icon} /> {action.title}
         </a>
       ))}
     </div>

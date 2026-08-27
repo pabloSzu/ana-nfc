@@ -1,4 +1,4 @@
-import { AUTO_COLORS, backgroundStyle, resolveTextColor, getFontFamily, panelBackground } from "@/lib/landing-catalog";
+import { AUTO_COLORS, backgroundStyle, resolveTextColor, getFontFamily, panelBackground, buildActionLink } from "@/lib/landing-catalog";
 import { ActionTypeIcon } from "@/components/action-icons";
 
 type LandingAction = {
@@ -18,7 +18,6 @@ type Landing = {
   business_name: string;
   description?: string | null;
   logo_url?: string | null;
-  whatsapp?: string | null;
   primary_color?: string | null;
   background_color?: string | null;
   background_type?: string | null;
@@ -33,14 +32,14 @@ type Landing = {
 
 const noBlank = new Set(["whatsapp", "email", "phone"]);
 
-function actionHref(action: LandingAction, whatsapp?: string | null) {
+function actionHref(action: LandingAction) {
   if (action.type === "whatsapp") {
-    const phone = (whatsapp || "").replace(/\D/g, "");
+    const phone = (action.url || "").replace(/\D/g, "");
     return `https://wa.me/${phone}?text=${encodeURIComponent(action.message || "Hola, quiero hacer una consulta.")}`;
   }
   if (action.type === "email") return `mailto:${action.url || ""}`;
   if (action.type === "phone") return `tel:${action.url || ""}`;
-  return action.url || "#";
+  return buildActionLink(action.type, action.url || "") || "#";
 }
 
 export default function LandingRenderer({ landing, actions, preview = false }: { landing: Landing; actions: LandingAction[]; preview?: boolean }) {
@@ -73,7 +72,7 @@ export default function LandingRenderer({ landing, actions, preview = false }: {
             <a
               key={action.id}
               className="action"
-              href={actionHref(action, landing.whatsapp)}
+              href={actionHref(action)}
               target={noBlank.has(action.type) ? undefined : "_blank"}
               rel="noreferrer"
               style={{
@@ -82,7 +81,7 @@ export default function LandingRenderer({ landing, actions, preview = false }: {
                 fontFamily: buttonFont,
               }}
             >
-              <ActionTypeIcon type={action.type} /> {action.title}
+              <ActionTypeIcon type={action.type} icon={action.icon} /> {action.title}
             </a>
           ))}
         </div>

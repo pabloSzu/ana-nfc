@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import ActionForm from "./action-form";
 import ActionCard from "./action-card";
-import ProfileActionsForm from "./profile-actions-form";
+import ProfileActionsForm, { PROFILE_ACTIONS_FORM_ID } from "./profile-actions-form";
 import IdentityForm from "./identity-form";
 import PhonePreview from "./phone-preview";
 import BuilderTabs from "./builder-tabs";
@@ -11,11 +11,12 @@ import { DraftProvider, type Draft } from "./draft-context";
 import { save, addAction, updateAction, removeAction, moveAction, uploadLogo, removeLogo, uploadBackgroundImage, removeBackgroundImage, saveProfileActions } from "./actions";
 import { publish, deleteLanding } from "../../actions";
 import DeleteLandingButton from "../../delete-landing-button";
-import { IconQrCode, IconEye } from "@/components/icons";
+import { IconQrCode, IconEye, IconPlus } from "@/components/icons";
+import Toast from "@/components/toast";
+import { Suspense } from "react";
 
-export default async function Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ saved?: string; error?: string }> }) {
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const notice = await searchParams;
   const supabase = await createClient();
   const { data: landing } = await supabase.from("landings").select("*").eq("id", id).maybeSingle();
   if (!landing) notFound();
@@ -66,7 +67,13 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       </div>
       <ProfileActionsForm action={saveProfileActions} landingId={id} initial={actions || []} />
       <details className="advanced-actions">
-        <summary>+ Agregar un botón personalizado</summary>
+        <summary className="custom-action-trigger">
+          <span className="plus-badge"><IconPlus /></span>
+          <span className="custom-action-trigger-text">
+            <b>Botón personalizado</b>
+            <small>¿Necesitás algo que no está en la lista de arriba? Agregá cualquier link.</small>
+          </span>
+        </summary>
         <ActionForm action={addAction} landingId={id} />
         <div className="action-list">
           {customActions.map((action, index) => (
@@ -74,6 +81,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
           ))}
         </div>
       </details>
+      <button form={PROFILE_ACTIONS_FORM_ID} className="btn full" type="submit" style={{ marginTop: "var(--space-6)" }}>Guardar todos los cambios</button>
     </section>
   );
 
@@ -105,8 +113,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
           <DeleteLandingButton action={deleteLanding} />
         </div>
       </header>
-      {notice.error && <div className="error">{notice.error}</div>}
-      {notice.saved && <div className="success">{notice.saved}</div>}
+      <Suspense fallback={null}><Toast /></Suspense>
       <DraftProvider initial={initialDraft}>
         <div className="builder-layout">
           <div className="builder-content card">

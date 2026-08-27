@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ActionTypeIcon } from "@/components/action-icons";
 import { AUTO_COLORS } from "@/lib/landing-catalog";
+import IconPicker from "./icon-picker";
 
 export const actionTypes: [string, string, string][] = [
   ["whatsapp", "WhatsApp", "Mensaje y número de la landing"],
@@ -23,6 +24,7 @@ export const actionTypes: [string, string, string][] = [
 
 export default function ActionForm({ action, landingId }: { action: (formData: FormData) => void | Promise<void>; landingId: string }) {
   const [type, setType] = useState("whatsapp");
+  const [icon, setIcon] = useState("");
   const selected = actionTypes.find(([value]) => value === type);
   const needsUrl = !["whatsapp", "email", "phone"].includes(type);
   return <form action={action} className="stack action-builder">
@@ -32,7 +34,14 @@ export default function ActionForm({ action, landingId }: { action: (formData: F
     {type === "whatsapp" && <label className="label">Mensaje WhatsApp<input name="message" defaultValue="Hola, quiero hacer una consulta." /></label>}
     {type === "email" && <label className="label">Email<input name="value" type="email" placeholder="contacto@empresa.com" required /></label>}
     {type === "phone" && <label className="label">Número<input name="value" type="tel" placeholder="+54 9 351..." required /></label>}
-    {needsUrl && <label className="label">URL<input name="url" type="url" placeholder="https://..." required /></label>}
+    {needsUrl && (
+      <label className="label">
+        URL<input name="url" type="text" placeholder="tusitio.com" required />
+        <small className="muted" style={{ fontWeight: 400 }}>No hace falta escribir "https://", lo agregamos solos.</small>
+      </label>
+    )}
+    <IconPicker type={type} value={icon} onChange={setIcon} />
+    <input type="hidden" name="icon" value={icon} />
     <div className="form-split"><label className="label">Color<input name="background_color" type="color" defaultValue={AUTO_COLORS[type] || "#1f2937"} /></label><label className="label">Texto<input name="text_color" type="color" defaultValue="#ffffff" /></label></div>
     <label className="check-label"><input name="use_auto_color" type="checkbox" defaultChecked /> Usar color automático de {selected?.[1] || "la red"}</label>
     <button className="btn full" type="submit">+ Agregar acción</button>

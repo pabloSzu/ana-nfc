@@ -1,9 +1,11 @@
 "use client";
 
-import { getAllActions, AUTO_COLORS } from "@/lib/landing-catalog";
+import { getAllActions, AUTO_COLORS, displayUsername } from "@/lib/landing-catalog";
 import { ActionTypeIcon } from "@/components/action-icons";
 import { useDraft } from "./draft-context";
 import FontPicker from "./font-picker";
+
+export const PROFILE_ACTIONS_FORM_ID = "profile-actions-form";
 
 type SavedAction = { source_field?: string; is_generated?: boolean; enabled?: boolean; url?: string; message?: string; background_color?: string | null; use_auto_color?: boolean | null };
 
@@ -13,7 +15,7 @@ export default function ProfileActionsForm({ action, landingId, initial }: { act
   const initialBySource: Record<string, SavedAction> = Object.fromEntries(initial.filter((item) => item.is_generated && item.source_field).map((item) => [item.source_field, item]));
 
   return (
-    <form action={action} className="profile-actions-form stack">
+    <form id={PROFILE_ACTIONS_FORM_ID} action={action} className="profile-actions-form stack">
       <input type="hidden" name="landing_id" value={landingId} />
       <FontPicker label="Fuente de los botones" value={draft.button_font} onChange={(id) => update({ button_font: id })} />
       <input type="hidden" name="button_font" value={draft.button_font} />
@@ -26,7 +28,7 @@ export default function ProfileActionsForm({ action, landingId, initial }: { act
               <ActionTypeIcon type={item.type} className="profile-action-icon" />
               <div className="profile-action-name">
                 <b>{item.label}</b>
-                <small>{item.noValue ? "Usa el WhatsApp de Identidad" : item.input === "phone" ? "Número" : item.input === "email" ? "Correo electrónico" : "URL pública"}</small>
+                <small>{item.input === "phone" ? "Número" : item.input === "email" ? "Correo electrónico" : item.input === "username" ? "Usuario (o pegá el link, se limpia solo)" : "URL pública"}</small>
               </div>
               <label className="switch">
                 <input type="checkbox" name={`enabled_${item.sourceField}`} checked={on} onChange={(event) => setActionEnabled(item.sourceField, event.target.checked)} />
@@ -34,10 +36,28 @@ export default function ProfileActionsForm({ action, landingId, initial }: { act
               </label>
               <div className="profile-action-fields">
                 <div>
-                  {!item.noValue && (
+                  {item.prefix ? (
+                    <div className="input-prefix-group">
+                      <span className="input-prefix">{item.prefix}</span>
+                      <input
+                        className="profile-action-value"
+                        name={`value_${item.sourceField}`}
+                        defaultValue={displayUsername(item.type, saved?.url || "")}
+                        placeholder={item.placeholder}
+                        disabled={!on}
+                        required={on}
+                        onBlur={(event) => { event.target.value = displayUsername(item.type, event.target.value); }}
+                      />
+                    </div>
+                  ) : (
                     <input className="profile-action-value" name={`value_${item.sourceField}`} defaultValue={saved?.url || ""} placeholder={item.placeholder} disabled={!on} required={on} />
                   )}
-                  {item.message && <input className="profile-action-message" name={`message_${item.sourceField}`} defaultValue={saved?.message || ""} placeholder="Mensaje opcional" disabled={!on} />}
+                  {item.message && (
+                    <>
+                      <input className="profile-action-message" name={`message_${item.sourceField}`} defaultValue={saved?.message || ""} placeholder="Mensaje opcional" disabled={!on} />
+                      <small className="muted" style={{ display: "block", fontSize: "0.6875rem", marginTop: -4 }}>Así arranca la conversación: se escribe solo en WhatsApp cuando alguien toca el botón, listo para enviar.</small>
+                    </>
+                  )}
                   <div className="profile-action-color">
                     <label className="check-label">
                       <input
@@ -73,7 +93,6 @@ export default function ProfileActionsForm({ action, landingId, initial }: { act
           );
         })}
       </div>
-      <button className="btn full" type="submit">Guardar todos los cambios</button>
     </form>
   );
 }

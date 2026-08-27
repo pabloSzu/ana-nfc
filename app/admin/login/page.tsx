@@ -1,14 +1,15 @@
 import { login } from "./actions";
+import Toast from "@/components/toast";
+import { Suspense } from "react";
 
-export default async function Page({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
-  const params = await searchParams;
+export default async function Page() {
   return (
     <main className="auth-shell">
+      <Suspense fallback={null}><Toast /></Suspense>
       <div className="auth-card">
         <div className="auth-mark">M</div>
         <h1>Ingresar</h1>
         <p className="muted">Accedé a tu panel de Mi Landing Web Fácil.</p>
-        {params.error && <div className="error">{params.error}</div>}
         <form action={login} className="stack">
           <label className="label">
             Email

@@ -6,9 +6,11 @@ import DeleteClientButton from "./delete-client-button";
 import DeleteLandingButton from "./delete-landing-button";
 import ModalTrigger from "./modal-trigger";
 import { IconPlus, IconEdit, IconEye, IconQrCode, IconPlay, IconPause, IconUsers, IconFileText, IconCheckCircle, IconLogOut } from "@/components/icons";
+import Toast from "@/components/toast";
 import Link from "next/link";
+import { Suspense } from "react";
 
-export default async function Admin({ searchParams }: { searchParams: Promise<{ error?: string; success?: string; saved?: string }> }) {
+export default async function Admin() {
   const supabase = await createClient();
   const { data: claims } = await supabase.auth.getClaims();
   if (!claims?.claims) return <main className="auth-shell"><div className="auth-card" style={{ textAlign: "center" }}><div className="auth-mark" style={{ margin: "0 auto 16px" }}>M</div><h1>Mi Landing Web Fácil</h1><p className="muted">Iniciá sesión para gestionar tus clientes y landings.</p><Link className="btn full" href="/admin/login">Ingresar</Link></div></main>;
@@ -16,7 +18,6 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
     supabase.from("clients").select("*").order("created_at", { ascending: false }),
     supabase.from("landings").select("*").order("created_at", { ascending: false }),
   ]);
-  const params = await searchParams;
   const published = landings?.filter((landing) => landing.published).length || 0;
   const clientById = new Map((clients || []).map((client) => [client.id, client]));
   const landingCountByClient = new Map<string, number>();
@@ -24,7 +25,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
 
   return <main className="shell">
     <header className="app-header"><div><p className="eyebrow">Mi Landing Web Fácil</p><h1>Tu espacio de landings</h1><p className="muted">Creá y gestioná las landings para tus tags NFC.</p></div><form action={logout}><button className="btn secondary" type="submit"><IconLogOut /> Salir</button></form></header>
-    {params.error && <div className="error">{params.error}</div>}{params.success && <div className="success">{params.success}</div>}{params.saved && <div className="success">{params.saved}</div>}
+    <Suspense fallback={null}><Toast /></Suspense>
 
     <section className="stats"><div><strong>{clients?.length || 0}</strong><span><IconUsers /> Clientes</span></div><div><strong>{landings?.length || 0}</strong><span><IconFileText /> Landings</span></div><div><strong>{published}</strong><span><IconCheckCircle /> Publicadas</span></div></section>
 

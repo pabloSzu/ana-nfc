@@ -7,13 +7,13 @@ import LogoUpload from "./logo-upload";
 import BackgroundPicker from "./background-picker";
 import BackgroundImageUpload from "./background-image-upload";
 import FontPicker from "./font-picker";
+import { IconEdit, IconImage, IconDroplet, IconWifi } from "@/components/icons";
 
 type Landing = {
   id: string;
   business_name: string;
   description?: string | null;
   logo_url?: string | null;
-  whatsapp?: string | null;
   primary_color?: string | null;
   background_color?: string | null;
   background_type?: string | null;
@@ -52,7 +52,7 @@ export default function IdentityForm({
     <div className="stack">
       <form id={FORM_ID} action={action}><input type="hidden" name="id" value={landing.id} /></form>
 
-      <p className="subsection-title" style={{ marginTop: 0 }}>Título</p>
+      <p className="subsection-title" style={{ marginTop: 0 }}><IconEdit /> Título</p>
 
       <div className="name-row">
         <label className="label" style={{ flex: 1 }}>
@@ -112,7 +112,7 @@ export default function IdentityForm({
         </div>
       )}
 
-      <p className="subsection-title">Logo</p>
+      <p className="subsection-title"><IconImage /> Logo</p>
 
       <label className="label">
         Color de fondo del logo
@@ -128,23 +128,15 @@ export default function IdentityForm({
       )}
       <p className="muted" style={hint}>Se muestra en un círculo redondo arriba del nombre. Si no subís nada, se ve la inicial del nombre.</p>
 
-      <p className="subsection-title">Contacto</p>
-
-      <label className="label">
-        WhatsApp del botón principal
-        <input form={FORM_ID} name="whatsapp" defaultValue={landing.whatsapp || ""} placeholder="5493511234567" />
-      </label>
-      <p className="muted" style={hint}>Con código de país y de área, sin espacios ni el signo +. Ejemplo: 5493511234567.</p>
-
-      <p className="subsection-title">Fondo de la landing</p>
+      <p className="subsection-title"><IconDroplet /> Fondo de la landing</p>
 
       <BackgroundPicker landing={landing} formId={FORM_ID} />
       {draft.background_type === "image" && <BackgroundImageUpload action={uploadBackgroundAction} removeAction={removeBackgroundAction} landingId={landing.id} currentUrl={landing.background_image_url} />}
 
-      <p className="subsection-title">NFC</p>
+      <p className="subsection-title"><IconWifi /> NFC</p>
 
-      <label className="label">¿A dónde apunta el tag? (opcional)<input form={FORM_ID} name="redirect_url" type="url" defaultValue={landing.redirect_url || ""} placeholder="https://instagram.com/tunegocio" /></label>
-      <p className="muted" style={hint}>Dejalo vacío para usar esta landing. Si pegás un link (Instagram, tu web, Linktree...), el tag NFC va a llevar directo ahí en vez de mostrar esta página.</p>
+      <label className="label">¿A dónde apunta el tag? (opcional)<input form={FORM_ID} name="redirect_url" type="text" defaultValue={landing.redirect_url || ""} placeholder="instagram.com/tunegocio" /></label>
+      <p className="muted" style={hint}>Dejalo vacío para usar esta landing. Si pegás un link (Instagram, tu web, Linktree...), el tag NFC va a llevar directo ahí en vez de mostrar esta página. No hace falta escribir "https://", lo agregamos solos.</p>
 
       <button form={FORM_ID} className="btn full" type="submit">Guardar identidad</button>
     </div>
