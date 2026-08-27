@@ -19,11 +19,12 @@ export default function ProfileActionsForm({ template, action, landingId, initia
     <form action={action} className="profile-actions-form stack">
       <input type="hidden" name="landing_id" value={landingId} />
       <label className="label">
-        Plantilla
+        Rubro del negocio
         <select name="template" value={selectedTemplate} onChange={(event) => setSelectedTemplate(event.target.value)}>
           {["professional", "hotel", "tourism", "restaurant", "business"].map((value) => <option key={value} value={value}>{value === "restaurant" ? "Gastronomía" : value[0].toUpperCase() + value.slice(1)}</option>)}
         </select>
       </label>
+      <p className="muted" style={{ fontSize: "0.75rem", marginTop: "-8px" }}>Elegí el que más se parezca al negocio: define qué botones te sugerimos abajo (podés activar los que quieras igual).</p>
       <div className="profile-action-grid">
         {templateActions.map((item) => {
           const on = draft.enabledActions[item.sourceField] ?? (initialBySource[item.sourceField]?.enabled === true);

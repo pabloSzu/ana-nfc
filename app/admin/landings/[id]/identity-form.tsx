@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { useDraft } from "./draft-context";
 import { autoTextColor } from "@/lib/landing-catalog";
 import LogoUpload from "./logo-upload";
@@ -23,6 +23,7 @@ type Landing = {
 };
 
 const FORM_ID = "identity-form";
+const hint: CSSProperties = { fontSize: "0.75rem", marginTop: "-8px" };
 
 export default function IdentityForm({ landing, action, uploadAction, uploadBackgroundAction }: { landing: Landing; action: (formData: FormData) => void | Promise<void>; uploadAction: (formData: FormData) => void | Promise<void>; uploadBackgroundAction: (formData: FormData) => void | Promise<void> }) {
   const { draft, update } = useDraft();
@@ -35,11 +36,11 @@ export default function IdentityForm({ landing, action, uploadAction, uploadBack
 
       <div className="name-row">
         <label className="label" style={{ flex: 1 }}>
-          Nombre
+          Nombre del negocio
           <input form={FORM_ID} name="business_name" defaultValue={landing.business_name} onChange={(event) => update({ business_name: event.target.value })} />
         </label>
         <label className="label">
-          Color texto
+          Color del texto
           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
             <input type="hidden" form={FORM_ID} name="custom_text_color" value={customText ? "on" : "off"} />
             <input
@@ -56,27 +57,38 @@ export default function IdentityForm({ landing, action, uploadAction, uploadBack
           </div>
         </label>
       </div>
+      <p className="muted" style={hint}>El color del texto se elige solo según el fondo. Tocá el cuadrito de arriba si querés forzar otro.</p>
 
-      <label className="label">Descripción<textarea form={FORM_ID} name="description" defaultValue={landing.description || ""} onChange={(event) => update({ description: event.target.value })} /></label>
+      <label className="label">Descripción<textarea form={FORM_ID} name="description" defaultValue={landing.description || ""} onChange={(event) => update({ description: event.target.value })} placeholder="Una frase corta que aparece debajo del nombre" /></label>
 
       <div className="label">
-        Logo
+        Logo o foto
         <LogoUpload action={uploadAction} landingId={landing.id} currentUrl={landing.logo_url} />
         {showLogoUrl ? (
           <input form={FORM_ID} name="logo_url" defaultValue={landing.logo_url || ""} placeholder="https://..." onChange={(event) => update({ logo_url: event.target.value })} style={{ marginTop: 7 }} />
         ) : (
           <button type="button" className="text-button" style={{ marginTop: 7 }} onClick={() => setShowLogoUrl(true)}>o pegar una URL en vez de subir</button>
         )}
+        <p className="muted" style={{ ...hint, marginTop: 7 }}>Se muestra en un círculo redondo arriba del nombre. Si no subís nada, se ve la inicial del nombre.</p>
       </div>
 
-      <label className="label">WhatsApp principal<input form={FORM_ID} name="whatsapp" defaultValue={landing.whatsapp || ""} placeholder="549351..." /></label>
-      <label className="label">Color principal<input form={FORM_ID} name="primary_color" type="color" defaultValue={landing.primary_color || "#1f2937"} onChange={(event) => update({ primary_color: event.target.value })} /></label>
+      <label className="label">
+        WhatsApp del botón principal
+        <input form={FORM_ID} name="whatsapp" defaultValue={landing.whatsapp || ""} placeholder="5493511234567" />
+      </label>
+      <p className="muted" style={hint}>Con código de país y de área, sin espacios ni el signo +. Ejemplo: 5493511234567.</p>
+
+      <label className="label">
+        Color de fondo del logo
+        <input form={FORM_ID} name="primary_color" type="color" defaultValue={landing.primary_color || "#1f2937"} onChange={(event) => update({ primary_color: event.target.value })} />
+      </label>
+      <p className="muted" style={hint}>Se ve detrás del círculo del logo (si no subiste foto, es el color de fondo de la inicial) y como reserva en botones sin color propio.</p>
 
       <BackgroundPicker landing={landing} formId={FORM_ID} />
       {draft.background_type === "image" && <BackgroundImageUpload action={uploadBackgroundAction} landingId={landing.id} currentUrl={landing.background_image_url} />}
 
       <label className="label">¿A dónde apunta el NFC? (opcional)<input form={FORM_ID} name="redirect_url" type="url" defaultValue={landing.redirect_url || ""} placeholder="https://instagram.com/tunegocio" /></label>
-      <p className="muted" style={{ fontSize: "0.75rem", marginTop: "-8px" }}>Dejalo vacío para usar esta landing. Si pegás un link (Instagram, tu web, Linktree...), el tag NFC va a llevar directo ahí en vez de mostrar esta página.</p>
+      <p className="muted" style={hint}>Dejalo vacío para usar esta landing. Si pegás un link (Instagram, tu web, Linktree...), el tag NFC va a llevar directo ahí en vez de mostrar esta página.</p>
 
       <button form={FORM_ID} className="btn full" type="submit">Guardar identidad</button>
     </div>
