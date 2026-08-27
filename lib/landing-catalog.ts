@@ -1,5 +1,11 @@
 export type TemplateValue = "professional" | "hotel" | "tourism" | "restaurant" | "business";
 
+export const AUTO_COLORS: Record<string, string> = {
+  whatsapp: "#25d366", instagram: "#c13584", tiktok: "#111111", facebook: "#1877f2", maps: "#db4437",
+  youtube: "#ff0033", spotify: "#1db954", mercadopago: "#009ee3", telegram: "#229ed9", email: "#334155",
+  phone: "#475569", calendar: "#e05252", website: "#1f2937", url: "#1f2937",
+};
+
 export const templates: { value: TemplateValue; label: string; description: string }[] = [
   { value: "professional", label: "Profesional", description: "Diseño neutro para cualquier rubro." },
   { value: "hotel", label: "Hotelería", description: "Pensada para hoteles, cabañas y alojamientos." },

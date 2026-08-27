@@ -368,9 +368,11 @@ input[type="color"] { padding: 5px; height: 46px; cursor: pointer; }
 .phone-preview > p { color: var(--text-muted); font-size: 0.8125rem; line-height: 1.5; margin: 0 0 var(--space-5); }
 
 .preview-action, .action {
-  display: block; padding: 13px 16px; border-radius: var(--radius-md); margin: 9px 0; font-weight: 600;
-  font-size: 0.875rem; text-align: center; transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+  display: flex; align-items: center; justify-content: center; gap: 9px; padding: 13px 16px; border-radius: var(--radius-md);
+  margin: 9px 0; font-weight: 600; font-size: 0.875rem; text-align: center;
+  transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
 }
+.preview-action svg, .action svg { width: 18px; height: 18px; flex: none; }
 .preview-action:hover, .action:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
 
 /* ---------- Public landing (baseline; full pass comes later) ---------- */

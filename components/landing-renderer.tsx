@@ -1,3 +1,6 @@
+import { AUTO_COLORS } from "@/lib/landing-catalog";
+import { ActionTypeIcon } from "@/components/action-icons";
+
 type LandingAction = {
   id: string;
   type: string;
@@ -19,8 +22,6 @@ type Landing = {
   primary_color?: string | null;
   background_color?: string | null;
 };
-
-const autoColors: Record<string, string> = { whatsapp: "#25d366", instagram: "#c13584", tiktok: "#111111", facebook: "#1877f2", maps: "#db4437", youtube: "#ff0033", spotify: "#1db954", telegram: "#229ed9", email: "#334155", phone: "#475569", calendar: "#e05252", website: "#1f2937", url: "#1f2937", mercadopago: "#009ee3" };
 
 const noBlank = new Set(["whatsapp", "email", "phone"]);
 
@@ -54,11 +55,11 @@ export default function LandingRenderer({ landing, actions, preview = false }: {
               target={noBlank.has(action.type) ? undefined : "_blank"}
               rel="noreferrer"
               style={{
-                background: action.use_auto_color ? autoColors[action.type] || primary : action.background_color || primary,
+                background: action.use_auto_color ? AUTO_COLORS[action.type] || primary : action.background_color || primary,
                 color: action.text_color || "#ffffff",
               }}
             >
-              <span style={{ color: action.icon_color || "inherit" }}>{action.icon || "→"}</span> {action.title}
+              <ActionTypeIcon type={action.type} /> {action.title}
             </a>
           ))}
         </div>
