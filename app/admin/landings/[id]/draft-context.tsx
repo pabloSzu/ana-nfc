@@ -8,11 +8,20 @@ export type Draft = {
   logo_url: string;
   primary_color: string;
   background_color: string;
+  background_type: string;
+  background_gradient_to: string;
+  background_image_url: string;
   template: string;
   enabledActions: Record<string, boolean>;
+  actionColors: Record<string, string | undefined>;
 };
 
-type DraftContextValue = { draft: Draft; update: (patch: Partial<Draft>) => void; setActionEnabled: (source: string, on: boolean) => void };
+type DraftContextValue = {
+  draft: Draft;
+  update: (patch: Partial<Draft>) => void;
+  setActionEnabled: (source: string, on: boolean) => void;
+  setActionColor: (source: string, color: string | undefined) => void;
+};
 
 const DraftContext = createContext<DraftContextValue | null>(null);
 
@@ -20,7 +29,8 @@ export function DraftProvider({ initial, children }: { initial: Draft; children:
   const [draft, setDraft] = useState<Draft>(initial);
   const update = (patch: Partial<Draft>) => setDraft((prev) => ({ ...prev, ...patch }));
   const setActionEnabled = (source: string, on: boolean) => setDraft((prev) => ({ ...prev, enabledActions: { ...prev.enabledActions, [source]: on } }));
-  return <DraftContext.Provider value={{ draft, update, setActionEnabled }}>{children}</DraftContext.Provider>;
+  const setActionColor = (source: string, color: string | undefined) => setDraft((prev) => ({ ...prev, actionColors: { ...prev.actionColors, [source]: color } }));
+  return <DraftContext.Provider value={{ draft, update, setActionEnabled, setActionColor }}>{children}</DraftContext.Provider>;
 }
 
 export function useDraft() {

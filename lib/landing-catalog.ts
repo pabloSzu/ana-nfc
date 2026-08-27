@@ -1,4 +1,32 @@
+import type { CSSProperties } from "react";
+
 export type TemplateValue = "professional" | "hotel" | "tourism" | "restaurant" | "business";
+
+export const GRADIENT_PRESETS = [
+  { label: "Atardecer", from: "#ff9a76", to: "#6a4c93" },
+  { label: "Océano", from: "#2193b0", to: "#6dd5ed" },
+  { label: "Bosque", from: "#134e5e", to: "#71b280" },
+  { label: "Uva", from: "#8e2de2", to: "#4a00e0" },
+  { label: "Durazno", from: "#ffecd2", to: "#fcb69f" },
+  { label: "Medianoche", from: "#0f2027", to: "#2c5364" },
+];
+
+export type BackgroundLike = {
+  background_type?: string | null;
+  background_color?: string | null;
+  background_gradient_to?: string | null;
+  background_image_url?: string | null;
+};
+
+export function backgroundStyle(landing: BackgroundLike): CSSProperties {
+  if (landing.background_type === "image" && landing.background_image_url) {
+    return { backgroundImage: `url(${landing.background_image_url})`, backgroundSize: "cover", backgroundPosition: "center" };
+  }
+  if (landing.background_type === "gradient" && landing.background_gradient_to) {
+    return { background: `linear-gradient(135deg, ${landing.background_color || "#f7f5f0"}, ${landing.background_gradient_to})` };
+  }
+  return { background: landing.background_color || "#f7f5f0" };
+}
 
 export const AUTO_COLORS: Record<string, string> = {
   whatsapp: "#25d366", instagram: "#c13584", tiktok: "#111111", facebook: "#1877f2", maps: "#db4437",

@@ -1,7 +1,7 @@
 "use client";
 
 import { useDraft } from "./draft-context";
-import { getTemplateActions, AUTO_COLORS } from "@/lib/landing-catalog";
+import { getTemplateActions, AUTO_COLORS, backgroundStyle } from "@/lib/landing-catalog";
 import { ActionTypeIcon } from "@/components/action-icons";
 
 type CustomAction = { id: string; type: string; title: string; url?: string | null; message?: string | null; background_color?: string | null; text_color?: string | null; icon_color?: string | null; use_auto_color?: boolean | null };
@@ -11,7 +11,7 @@ export default function PhonePreview({ customActions }: { customActions: CustomA
   const visibleTemplateActions = getTemplateActions(draft.template).filter((item) => draft.enabledActions[item.sourceField]);
 
   return (
-    <div className="phone-preview" style={{ background: draft.background_color || "#f7f5f0" }}>
+    <div className="phone-preview" style={backgroundStyle(draft)}>
       <div className="phone-notch" />
       <div className="avatar" style={{ background: draft.primary_color || "#1f2937" }}>
         {draft.logo_url ? <img src={draft.logo_url} alt="" /> : draft.business_name.slice(0, 1) || "?"}
@@ -19,7 +19,7 @@ export default function PhonePreview({ customActions }: { customActions: CustomA
       <h2>{draft.business_name || "Nombre de tu landing"}</h2>
       {draft.description && <p>{draft.description}</p>}
       {visibleTemplateActions.map((item) => (
-        <a className="preview-action" key={item.sourceField} href="#" onClick={(event) => event.preventDefault()} style={{ background: AUTO_COLORS[item.type] || draft.primary_color, color: "#fff" }}>
+        <a className="preview-action" key={item.sourceField} href="#" onClick={(event) => event.preventDefault()} style={{ background: draft.actionColors[item.sourceField] || AUTO_COLORS[item.type] || draft.primary_color, color: "#fff" }}>
           <ActionTypeIcon type={item.type} /> {item.label}
         </a>
       ))}

@@ -8,7 +8,7 @@ import IdentityForm from "./identity-form";
 import PhonePreview from "./phone-preview";
 import BuilderTabs from "./builder-tabs";
 import { DraftProvider, type Draft } from "./draft-context";
-import { save, addAction, updateAction, removeAction, moveAction, uploadLogo, saveProfileActions } from "./actions";
+import { save, addAction, updateAction, removeAction, moveAction, uploadLogo, uploadBackgroundImage, saveProfileActions } from "./actions";
 import { publish, deleteLanding } from "../../actions";
 import DeleteLandingButton from "../../delete-landing-button";
 import { IconQrCode, IconEye } from "@/components/icons";
@@ -24,7 +24,13 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const enabledCustomActions = customActions.filter((action) => action.enabled);
 
   const enabledActions: Record<string, boolean> = {};
-  actions?.forEach((action) => { if (action.is_generated && action.source_field) enabledActions[action.source_field] = action.enabled === true; });
+  const actionColors: Record<string, string | undefined> = {};
+  actions?.forEach((action) => {
+    if (action.is_generated && action.source_field) {
+      enabledActions[action.source_field] = action.enabled === true;
+      if (action.use_auto_color === false) actionColors[action.source_field] = action.background_color || undefined;
+    }
+  });
 
   const initialDraft: Draft = {
     business_name: landing.business_name || "",
@@ -32,8 +38,12 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     logo_url: landing.logo_url || "",
     primary_color: landing.primary_color || "#1f2937",
     background_color: landing.background_color || "#f7f5f0",
+    background_type: landing.background_type || "color",
+    background_gradient_to: landing.background_gradient_to || "#a6c1ee",
+    background_image_url: landing.background_image_url || "",
     template: landing.template || "professional",
     enabledActions,
+    actionColors,
   };
 
   const identityPanel = (
@@ -41,7 +51,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       <div className="section-heading">
         <div><h2>Identidad</h2><p className="muted">La primera impresión de tu landing: nombre, foto y colores.</p></div>
       </div>
-      <IdentityForm landing={landing} action={save} uploadAction={uploadLogo} />
+      <IdentityForm landing={landing} action={save} uploadAction={uploadLogo} uploadBackgroundAction={uploadBackgroundImage} />
     </section>
   );
 

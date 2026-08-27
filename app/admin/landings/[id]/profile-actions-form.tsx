@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getTemplateActions } from "@/lib/landing-catalog";
+import { getTemplateActions, AUTO_COLORS } from "@/lib/landing-catalog";
 import { ActionTypeIcon } from "@/components/action-icons";
 import { useDraft } from "./draft-context";
 
-type SavedAction = { source_field?: string; is_generated?: boolean; enabled?: boolean; url?: string; message?: string };
+type SavedAction = { source_field?: string; is_generated?: boolean; enabled?: boolean; url?: string; message?: string; background_color?: string | null; use_auto_color?: boolean | null };
 
 export default function ProfileActionsForm({ template, action, landingId, initial }: { template: string; action: (formData: FormData) => void | Promise<void>; landingId: string; initial: SavedAction[] }) {
-  const { draft, update, setActionEnabled } = useDraft();
+  const { draft, update, setActionEnabled, setActionColor } = useDraft();
   const [selectedTemplate, setSelectedTemplate] = useState(template);
   const templateActions = getTemplateActions(selectedTemplate);
   const initialBySource: Record<string, SavedAction> = Object.fromEntries(initial.filter((item) => item.is_generated && item.source_field).map((item) => [item.source_field, item]));
@@ -40,6 +40,25 @@ export default function ProfileActionsForm({ template, action, landingId, initia
                 <div>
                   <input className="profile-action-value" name={`value_${item.sourceField}`} defaultValue={saved?.url || ""} placeholder={item.placeholder} disabled={!on} required={on} />
                   {item.message && <input className="profile-action-message" name={`message_${item.sourceField}`} defaultValue={saved?.message || ""} placeholder="Mensaje opcional" disabled={!on} />}
+                  <div className="profile-action-color">
+                    <label className="check-label">
+                      <input
+                        type="checkbox"
+                        name={`custom_color_${item.sourceField}`}
+                        checked={draft.actionColors[item.sourceField] !== undefined}
+                        onChange={(event) => setActionColor(item.sourceField, event.target.checked ? AUTO_COLORS[item.type] || "#1f2937" : undefined)}
+                      />
+                      Color personalizado
+                    </label>
+                    {draft.actionColors[item.sourceField] !== undefined && (
+                      <input
+                        type="color"
+                        name={`color_${item.sourceField}`}
+                        value={draft.actionColors[item.sourceField]}
+                        onChange={(event) => setActionColor(item.sourceField, event.target.value)}
+                      />
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

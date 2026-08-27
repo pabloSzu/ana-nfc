@@ -1,4 +1,4 @@
-import { AUTO_COLORS } from "@/lib/landing-catalog";
+import { AUTO_COLORS, backgroundStyle } from "@/lib/landing-catalog";
 import { ActionTypeIcon } from "@/components/action-icons";
 
 type LandingAction = {
@@ -21,6 +21,9 @@ type Landing = {
   whatsapp?: string | null;
   primary_color?: string | null;
   background_color?: string | null;
+  background_type?: string | null;
+  background_gradient_to?: string | null;
+  background_image_url?: string | null;
 };
 
 const noBlank = new Set(["whatsapp", "email", "phone"]);
@@ -38,7 +41,7 @@ function actionHref(action: LandingAction, whatsapp?: string | null) {
 export default function LandingRenderer({ landing, actions, preview = false }: { landing: Landing; actions: LandingAction[]; preview?: boolean }) {
   const primary = landing.primary_color || "#1f2937";
   return (
-    <main className="public" style={{ background: landing.background_color || "#f7f5f0" }}>
+    <main className="public" style={backgroundStyle(landing)}>
       <div className="public-inner">
         {preview && <span className="preview-badge">Vista previa</span>}
         <div className="avatar" style={{ background: primary, marginBottom: 18 }}>
