@@ -1,12 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import ActionForm from "../action-form";
-import ActionCard from "../action-card";
-import ProfileActionsForm, { PROFILE_ACTIONS_FORM_ID } from "../profile-actions-form";
 import { DraftProvider, type Draft } from "../draft-context";
-import { save, addAction, updateAction, removeAction, moveAction, uploadLogo, removeLogo, uploadBackgroundImage, removeBackgroundImage, saveProfileActions } from "../actions";
+import { save, addAction, updateAction, removeAction, uploadLogo, removeLogo, uploadBackgroundImage, removeBackgroundImage } from "../actions";
 import { publish, deleteLanding } from "../../../actions";
+import { saveTemplateAction, removeTemplateAction, saveButtonFont, moveVisualAction } from "./actions";
 import DeleteLandingButton from "../../../delete-landing-button";
 import { IconQrCode, IconEye } from "@/components/icons";
 import Toast from "@/components/toast";
@@ -25,10 +23,19 @@ export default async function VisualPage({ params }: { params: Promise<{ id: str
 
   const enabledActions: Record<string, boolean> = {};
   const actionColors: Record<string, { bg: string; text: string } | undefined> = {};
+  const templateValues: Record<string, { id: string; url: string; message: string; useAutoColor: boolean; backgroundColor: string; textColor: string }> = {};
   actions?.forEach((action) => {
     if (action.is_generated && action.source_field) {
       enabledActions[action.source_field] = action.enabled === true;
       if (action.use_auto_color === false) actionColors[action.source_field] = { bg: action.background_color || "#1f2937", text: action.text_color || "#ffffff" };
+      templateValues[action.source_field] = {
+        id: action.id,
+        url: action.url || "",
+        message: action.message || "",
+        useAutoColor: action.use_auto_color !== false,
+        backgroundColor: action.background_color || "#1f2937",
+        textColor: action.text_color || "#ffffff",
+      };
     }
   });
 
@@ -73,24 +80,15 @@ export default async function VisualPage({ params }: { params: Promise<{ id: str
             uploadBackgroundAction={uploadBackgroundImage}
             removeBackgroundAction={removeBackgroundImage}
             publishAction={publish}
+            saveTemplateAction={saveTemplateAction}
+            removeTemplateAction={removeTemplateAction}
+            saveButtonFont={saveButtonFont}
+            addCustomAction={addAction}
+            updateCustomAction={updateAction}
+            removeCustomAction={removeAction}
+            moveAction={moveVisualAction}
             customActions={enabledCustomActions}
-            buttonsPanel={
-              <div className="stack">
-                <p className="muted" style={{ marginTop: 0 }}>Activá los que necesites y completá el enlace de cada uno.</p>
-                <ProfileActionsForm action={saveProfileActions} landingId={id} initial={actions || []} />
-                <div className="visual-custom-actions">
-                  <h4>+ Botón personalizado</h4>
-                  <p className="muted" style={{ marginTop: -6 }}>¿Necesitás algo que no está en la lista de arriba? Agregá cualquier link.</p>
-                  <ActionForm action={addAction} landingId={id} />
-                  <div className="action-list">
-                    {customActions.map((action, index) => (
-                      <ActionCard key={action.id} action={action} landingId={id} update={updateAction} remove={removeAction} move={moveAction} first={index === 0} last={index === customActions.length - 1} />
-                    ))}
-                  </div>
-                </div>
-                <button form={PROFILE_ACTIONS_FORM_ID} className="btn full" type="submit" style={{ marginTop: "var(--space-5)" }}>Guardar todos los cambios</button>
-              </div>
-            }
+            templateValues={templateValues}
           />
         </div>
       </DraftProvider>

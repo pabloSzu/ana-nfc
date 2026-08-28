@@ -57,6 +57,11 @@
   background: rgba(0, 0, 0, 0.3); color: #fff; font-weight: 600; font-size: 0.875rem; cursor: pointer;
 }
 .visual-add-action svg { width: 16px; height: 16px; }
+.visual-font-link {
+  display: block; width: 100%; text-align: center; margin-top: 10px; padding: 4px; border: none; background: none;
+  cursor: pointer; font-size: 0.8125rem; font-weight: 600; color: rgba(255, 255, 255, 0.85); text-decoration: underline;
+  text-underline-offset: 3px;
+}
 
 /* ---------- Modal — stays INSIDE the phone frame, like a real app's bottom sheet. ---------- */
 /* Tall by default so almost nothing needs its own scroll; the phone's overflow:hidden clips it. ---------- */
@@ -90,3 +95,23 @@
 .visual-custom-actions h4 { font-size: 0.875rem; font-weight: 700; margin: 0; }
 
 .visual-save-btn { margin-top: 2px; }
+
+/* Marks a field that has a mandatory, fixed format (phone/email/username) — distinct from */
+/* the accent color used for "this is editable" so the two meanings never get confused. */
+.visual-format-box { border: 1.5px solid var(--accent-2); background: var(--accent-2-subtle); border-radius: var(--radius-md); padding: var(--space-3); }
+.visual-format-hint { margin: 6px 0 0; font-size: 0.75rem; color: var(--text-muted); }
+
+/* ---------- Simple buttons view (default) — only the active ones, plus a tap-to-add icon grid ---------- */
+.simple-btn-row { border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-3); display: flex; flex-direction: column; gap: 8px; background: var(--surface-2); }
+.simple-btn-head { display: flex; align-items: center; gap: 8px; }
+.simple-btn-head svg { width: 18px; height: 18px; flex: none; }
+.simple-btn-head b { flex: 1; font-size: 0.875rem; }
+.simple-add-label { font-size: 0.8125rem; font-weight: 700; margin: var(--space-2) 0 0; }
+.simple-add-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; }
+.simple-add-icon {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px;
+  border: 1.5px dashed var(--border); border-radius: var(--radius-md); background: var(--surface); cursor: pointer;
+}
+.simple-add-icon svg { width: 18px; height: 18px; }
+.simple-add-icon small { font-size: 0.625rem; color: var(--text-muted); line-height: 1.2; text-align: center; }
+.simple-add-icon:hover { border-color: var(--accent); background: var(--accent-subtle); }

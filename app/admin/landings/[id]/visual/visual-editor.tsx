@@ -1,17 +1,19 @@
 "use client";
 
-import { useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { useDraft, type Draft } from "../draft-context";
 import BackgroundPicker from "../background-picker";
 import FontPicker from "../font-picker";
+import IconPicker from "../icon-picker";
 import { compressImage } from "@/lib/compress-image";
-import { getAllActions, AUTO_COLORS, resolveTextColor, panelBackground, getFontFamily } from "@/lib/landing-catalog";
+import { getAllActions, AUTO_COLORS, resolveTextColor, panelBackground, getFontFamily, displayUsername } from "@/lib/landing-catalog";
 import { ActionTypeIcon } from "@/components/action-icons";
-import { IconDroplet, IconX, IconEdit, IconPlus, IconQrCode, IconEye, IconRocket } from "@/components/icons";
+import { IconDroplet, IconX, IconEdit, IconPlus, IconQrCode, IconEye, IconRocket, IconTrash } from "@/components/icons";
 
 const FORM_ID = "visual-identity-form";
 const NO_SUBMIT = "visual-noop";
+const NON_URL_TYPES = ["whatsapp", "email", "phone"];
 
 type Landing = {
   id: string;
@@ -33,9 +35,22 @@ type Landing = {
 
 type Action = (formData: FormData) => void | Promise<void>;
 
-type CustomAction = { id: string; type: string; title: string; url?: string | null; message?: string | null; icon?: string | null; background_color?: string | null; text_color?: string | null; icon_color?: string | null; use_auto_color?: boolean | null };
+type CustomAction = {
+  id: string; type: string; title: string; url?: string | null; message?: string | null; icon?: string | null;
+  background_color?: string | null; text_color?: string | null; use_auto_color?: boolean | null; position?: number | null;
+};
 
-type Sheet = "background" | "text" | "logo" | "buttons" | "settings" | null;
+type Sheet =
+  | { kind: "background" }
+  | { kind: "text" }
+  | { kind: "logo" }
+  | { kind: "settings" }
+  | { kind: "add" }
+  | { kind: "add-custom" }
+  | { kind: "button-style" }
+  | { kind: "template"; sourceField: string }
+  | { kind: "custom"; action: CustomAction }
+  | null;
 
 export default function VisualEditor({
   landing,
@@ -45,8 +60,15 @@ export default function VisualEditor({
   uploadBackgroundAction,
   removeBackgroundAction,
   publishAction,
+  saveTemplateAction,
+  removeTemplateAction,
+  saveButtonFont,
+  addCustomAction,
+  updateCustomAction,
+  removeCustomAction,
+  moveAction,
   customActions = [],
-  buttonsPanel,
+  templateValues = {},
 }: {
   landing: Landing;
   saveAction: Action;
@@ -55,8 +77,15 @@ export default function VisualEditor({
   uploadBackgroundAction: Action;
   removeBackgroundAction: Action;
   publishAction: Action;
+  saveTemplateAction: Action;
+  removeTemplateAction: Action;
+  saveButtonFont: Action;
+  addCustomAction: Action;
+  updateCustomAction: Action;
+  removeCustomAction: Action;
+  moveAction: Action;
   customActions?: CustomAction[];
-  buttonsPanel?: ReactNode;
+  templateValues?: Record<string, { id: string; url: string; message: string; useAutoColor: boolean; backgroundColor: string; textColor: string }>;
 }) {
   const { draft, update } = useDraft();
   const [customText, setCustomText] = useState(Boolean(landing.text_color));
@@ -75,6 +104,7 @@ export default function VisualEditor({
   const headingFont = getFontFamily(draft.font_pair);
   const buttonFont = getFontFamily(draft.button_font);
   const visibleTemplateActions = getAllActions().filter((item) => draft.enabledActions[item.sourceField]);
+  const availableTemplateActions = getAllActions().filter((item) => !draft.enabledActions[item.sourceField]);
 
   const bgStyle: CSSProperties =
     draft.background_type === "image" && draft.background_image_url
@@ -120,17 +150,23 @@ export default function VisualEditor({
     bgFormRef.current?.requestSubmit();
   }
 
-  const sheetTitle: Record<Exclude<Sheet, null>, string> = {
-    background: "Fondo de la landing",
-    text: "Nombre y texto",
-    logo: "Logo",
-    buttons: "Botones",
-    settings: "Configuración",
-  };
+  function sheetTitle(s: Exclude<Sheet, null>): string {
+    if (s.kind === "background") return "Fondo de la landing";
+    if (s.kind === "text") return "Nombre y texto";
+    if (s.kind === "logo") return "Logo";
+    if (s.kind === "settings") return "Configuración";
+    if (s.kind === "add") return "Agregar botón";
+    if (s.kind === "add-custom") return "Botón personalizado";
+    if (s.kind === "button-style") return "Fuente de los botones";
+    if (s.kind === "template") return getAllActions().find((item) => item.sourceField === s.sourceField)?.label || "Botón";
+    return s.action.title || "Botón";
+  }
+
+  const isTall = sheet?.kind === "add" || sheet?.kind === "add-custom";
 
   return (
     <div className="visual-single">
-      {/* Every field save() needs stays mounted here at all times, mirroring the live draft — */}
+      {/* Every identity field save() needs stays mounted here at all times, mirroring the live draft — */}
       {/* modals below only ever edit the draft; this is the one and only submission source. */}
       <form id={FORM_ID} action={saveAction}>
         <input type="hidden" name="id" value={landing.id} />
@@ -153,17 +189,17 @@ export default function VisualEditor({
       <div className="visual-phone" style={bgStyle}>
         <div className="visual-notch" />
 
-        <button type="button" className="visual-chip visual-chip-bg" title="Fondo" onClick={() => openSheet("background")}><IconDroplet /> Fondo</button>
-        <button type="button" className="visual-chip visual-chip-settings" title="Configuración" onClick={() => openSheet("settings")}>⚙</button>
+        <button type="button" className="visual-chip visual-chip-bg" title="Fondo" onClick={() => openSheet({ kind: "background" })}><IconDroplet /> Fondo</button>
+        <button type="button" className="visual-chip visual-chip-settings" title="Configuración" onClick={() => openSheet({ kind: "settings" })}>⚙</button>
 
-        <div className="visual-avatar-wrap" onClick={() => openSheet("logo")}>
+        <div className="visual-avatar-wrap" onClick={() => openSheet({ kind: "logo" })}>
           <div className="visual-avatar" style={{ background: draft.primary_color || "#1f2937" }}>
             {draft.logo_url ? <img src={draft.logo_url} alt="" /> : <span>{draft.business_name.slice(0, 1) || "?"}</span>}
           </div>
           <span className="visual-chip visual-chip-badge"><IconEdit /></span>
         </div>
 
-        <div className="visual-text-block" onClick={() => openSheet("text")}>
+        <div className="visual-text-block" onClick={() => openSheet({ kind: "text" })}>
           <span className="visual-chip visual-chip-badge visual-chip-badge-text" title="Editar nombre y texto"><IconEdit /></span>
           {draft.text_panel ? (
             <div className="visual-text-panel" style={{ background: panelBackground(textColor, draft.text_panel_color) }}>
@@ -182,139 +218,383 @@ export default function VisualEditor({
           {visibleTemplateActions.map((item) => {
             const override = draft.actionColors[item.sourceField];
             return (
-              <button key={item.sourceField} type="button" className="preview-action visual-action-btn" style={{ background: override?.bg || AUTO_COLORS[item.type] || draft.primary_color, color: override?.text || "#fff", fontFamily: buttonFont }} onClick={() => openSheet("buttons")}>
+              <button key={item.sourceField} type="button" className="preview-action visual-action-btn" style={{ background: override?.bg || AUTO_COLORS[item.type] || draft.primary_color, color: override?.text || "#fff", fontFamily: buttonFont }} onClick={() => openSheet({ kind: "template", sourceField: item.sourceField })}>
                 <ActionTypeIcon type={item.type} /> {item.label}
                 <span className="visual-chip visual-chip-badge visual-chip-badge-action" title="Editar botón"><IconEdit /></span>
               </button>
             );
           })}
           {customActions.map((action) => (
-            <button key={action.id} type="button" className="preview-action visual-action-btn" style={{ background: action.use_auto_color ? AUTO_COLORS[action.type] || draft.primary_color : action.background_color || draft.primary_color, color: action.text_color || "#fff", fontFamily: buttonFont }} onClick={() => openSheet("buttons")}>
+            <button key={action.id} type="button" className="preview-action visual-action-btn" style={{ background: action.use_auto_color ? AUTO_COLORS[action.type] || draft.primary_color : action.background_color || draft.primary_color, color: action.text_color || "#fff", fontFamily: buttonFont }} onClick={() => openSheet({ kind: "custom", action })}>
               <ActionTypeIcon type={action.type} icon={action.icon} /> {action.title}
               <span className="visual-chip visual-chip-badge visual-chip-badge-action" title="Editar botón"><IconEdit /></span>
             </button>
           ))}
-          <button type="button" className="visual-add-action" onClick={() => openSheet("buttons")}>
-            <IconPlus /> Agregar / editar botones
+          <button type="button" className="visual-add-action" onClick={() => openSheet({ kind: "add" })}>
+            <IconPlus /> Agregar botón
           </button>
+          {(visibleTemplateActions.length > 0 || customActions.length > 0) && (
+            <button type="button" className="visual-font-link" style={{ fontFamily: buttonFont }} onClick={() => openSheet({ kind: "button-style" })}>
+              Aa Cambiar la fuente de los botones
+            </button>
+          )}
         </div>
 
         {sheet && (
-        <>
-          <div className="visual-modal-backdrop" onClick={() => closeSheet(false)} />
-          <div className={sheet === "buttons" ? "visual-modal visual-modal-tall" : "visual-modal"} role="dialog" aria-modal="true">
-            <div className="visual-modal-head">
-              <h4>{sheetTitle[sheet]}</h4>
-              <button type="button" className="visual-sheet-close" onClick={() => closeSheet(false)}><IconX /></button>
-            </div>
-            <div className="visual-modal-body">
-              {sheet === "logo" && (
-                <>
-                  <div className="visual-logo-preview" style={{ background: draft.primary_color || "#1f2937" }}>
-                    {draft.logo_url ? <img src={draft.logo_url} alt="" /> : <span>{draft.business_name.slice(0, 1) || "?"}</span>}
-                  </div>
-                  <form ref={logoFormRef} action={uploadLogoAction} style={{ textAlign: "center" }}>
-                    <input type="hidden" name="landing_id" value={landing.id} />
-                    <label className="upload-button" style={{ margin: "0 auto" }}>
-                      {logoUploading ? "Optimizando y subiendo..." : draft.logo_url ? "Cambiar foto" : "Subir foto"}
-                      <input ref={logoInputRef} name="file" type="file" accept="image/jpeg,image/png,image/webp" onChange={handleLogoPick} />
-                    </label>
-                  </form>
-                  {draft.logo_url && !logoUploading && (
-                    <form action={removeLogoAction} style={{ textAlign: "center" }}>
-                      <input type="hidden" name="landing_id" value={landing.id} />
-                      <button type="submit" className="text-button">Quitar foto</button>
-                    </form>
-                  )}
-                  <label className="label">
-                    Color de fondo del logo
-                    <input type="color" value={draft.primary_color || "#1f2937"} onChange={(event) => update({ primary_color: event.target.value })} />
-                  </label>
-                </>
-              )}
-
-              {sheet === "background" && (
-                <>
-                  <BackgroundPicker landing={landing} formId={NO_SUBMIT} />
-                  {draft.background_type === "image" && (
-                    <div className="visual-bg-upload">
-                      <form ref={bgFormRef} action={uploadBackgroundAction} className="stack" style={{ gap: 6 }}>
-                        <input type="hidden" name="landing_id" value={landing.id} />
-                        <label className="upload-button">
-                          {bgUploading ? "Optimizando y subiendo..." : draft.background_image_url ? "Cambiar imagen" : "Subir imagen"}
-                          <input ref={bgInputRef} name="file" type="file" accept="image/jpeg,image/png,image/webp" onChange={handleBgPick} />
-                        </label>
-                      </form>
-                      {draft.background_image_url && (
-                        <form action={removeBackgroundAction}>
-                          <input type="hidden" name="landing_id" value={landing.id} />
-                          <button type="submit" className="text-button">Quitar imagen</button>
-                        </form>
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
-
-              {sheet === "text" && (
-                <>
-                  <label className="label">Nombre del negocio<input value={draft.business_name} placeholder="Nombre de tu negocio" onChange={(event) => update({ business_name: event.target.value })} /></label>
-                  <label className="label">Descripción<textarea value={draft.description} placeholder="Una frase corta (opcional)" rows={2} onChange={(event) => update({ description: event.target.value })} /></label>
-                  <FontPicker label="Fuente del título" value={draft.font_pair} onChange={(id) => update({ font_pair: id })} />
-                  <label className="label">
-                    Color del texto
-                    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                      <input type="color" value={draft.text_color || textColor} title={customText ? "Color personalizado" : "Automático — cambialo para personalizar"} onChange={(event) => { setCustomText(true); update({ text_color: event.target.value }); }} />
-                      {customText && <button type="button" className="icon-button" title="Volver a automático" onClick={() => { setCustomText(false); update({ text_color: "" }); }}>↺</button>}
-                    </div>
-                  </label>
-                  <label className="check-label">
-                    <input type="checkbox" checked={draft.text_panel} onChange={(event) => update({ text_panel: event.target.checked })} />
-                    Ponerle un fondo al texto (ayuda a que se lea sobre fotos)
-                  </label>
-                  {draft.text_panel && (
-                    <div className="profile-action-color" style={{ marginTop: -6 }}>
-                      <label className="check-label">
-                        <input type="checkbox" checked={customPanel} onChange={(event) => { setCustomPanel(event.target.checked); update({ text_panel_color: event.target.checked ? (textColor === "#ffffff" ? "#000000" : "#ffffff") : "" }); }} />
-                        Color de fondo personalizado
-                      </label>
-                      {customPanel && <input type="color" value={draft.text_panel_color || (textColor === "#ffffff" ? "#000000" : "#ffffff")} onChange={(event) => update({ text_panel_color: event.target.value })} />}
-                    </div>
-                  )}
-                </>
-              )}
-
-              {sheet === "settings" && (
-                <>
-                  <div className="visual-status-row">
-                    <span className={landing.published ? "status published" : "status"}>{landing.published ? "Publicada" : "Borrador"}</span>
-                    <p className="muted" style={{ margin: 0 }}>{landing.published ? "Cualquiera con el link o el tag NFC puede verla." : "Todavía no es visible para el público."}</p>
-                  </div>
-                  <form action={publishAction}>
-                    <input type="hidden" name="id" value={landing.id} />
-                    <input type="hidden" name="published" value={String(!landing.published)} />
-                    <input type="hidden" name="return_to" value={`/admin/landings/${landing.id}/visual`} />
-                    <button className="btn full" type="submit"><IconRocket /> {landing.published ? "Despublicar" : "Publicar landing"}</button>
-                  </form>
-                  <Link className="btn secondary full" href={`/admin/landings/${landing.id}/qr`}><IconQrCode /> Código QR para el tag NFC</Link>
-                  {landing.published && <Link className="btn secondary full" href={`/${landing.slug}`} target="_blank" rel="noreferrer"><IconEye /> Ver landing publicada</Link>}
-                </>
-              )}
-
-              {sheet === "buttons" && buttonsPanel}
-            </div>
-            {sheet !== "settings" && sheet !== "buttons" && (
-              <div className="visual-modal-foot">
-                <button type="button" className="btn secondary" onClick={() => closeSheet(false)}>Cancelar</button>
-                <button type="button" className="btn" onClick={() => closeSheet(true)}>Aceptar</button>
+          <>
+            <div className="visual-modal-backdrop" onClick={() => closeSheet(false)} />
+            <div className={isTall ? "visual-modal visual-modal-tall" : "visual-modal"} role="dialog" aria-modal="true">
+              <div className="visual-modal-head">
+                <h4>{sheetTitle(sheet)}</h4>
+                <button type="button" className="visual-sheet-close" onClick={() => closeSheet(false)}><IconX /></button>
               </div>
-            )}
-          </div>
+              <div className="visual-modal-body">
+                {sheet.kind === "logo" && (
+                  <>
+                    <div className="visual-logo-preview" style={{ background: draft.primary_color || "#1f2937" }}>
+                      {draft.logo_url ? <img src={draft.logo_url} alt="" /> : <span>{draft.business_name.slice(0, 1) || "?"}</span>}
+                    </div>
+                    <form ref={logoFormRef} action={uploadLogoAction} style={{ textAlign: "center" }} onSubmit={() => setSheet(null)}>
+                      <input type="hidden" name="landing_id" value={landing.id} />
+                      <label className="upload-button" style={{ margin: "0 auto" }}>
+                        {logoUploading ? "Optimizando y subiendo..." : draft.logo_url ? "Cambiar foto" : "Subir foto"}
+                        <input ref={logoInputRef} name="file" type="file" accept="image/jpeg,image/png,image/webp" onChange={handleLogoPick} />
+                      </label>
+                    </form>
+                    {draft.logo_url && !logoUploading && (
+                      <form action={removeLogoAction} style={{ textAlign: "center" }} onSubmit={() => setSheet(null)}>
+                        <input type="hidden" name="landing_id" value={landing.id} />
+                        <button type="submit" className="text-button">Quitar foto</button>
+                      </form>
+                    )}
+                    <label className="label">
+                      Color de fondo del logo
+                      <input type="color" value={draft.primary_color || "#1f2937"} onChange={(event) => update({ primary_color: event.target.value })} />
+                    </label>
+                  </>
+                )}
+
+                {sheet.kind === "background" && (
+                  <>
+                    <BackgroundPicker landing={landing} formId={NO_SUBMIT} />
+                    {draft.background_type === "image" && (
+                      <div className="visual-bg-upload">
+                        <form ref={bgFormRef} action={uploadBackgroundAction} className="stack" style={{ gap: 6 }} onSubmit={() => setSheet(null)}>
+                          <input type="hidden" name="landing_id" value={landing.id} />
+                          <label className="upload-button">
+                            {bgUploading ? "Optimizando y subiendo..." : draft.background_image_url ? "Cambiar imagen" : "Subir imagen"}
+                            <input ref={bgInputRef} name="file" type="file" accept="image/jpeg,image/png,image/webp" onChange={handleBgPick} />
+                          </label>
+                        </form>
+                        {draft.background_image_url && (
+                          <form action={removeBackgroundAction} onSubmit={() => setSheet(null)}>
+                            <input type="hidden" name="landing_id" value={landing.id} />
+                            <button type="submit" className="text-button">Quitar imagen</button>
+                          </form>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {sheet.kind === "text" && (
+                  <>
+                    <label className="label">Nombre del negocio<input value={draft.business_name} placeholder="Nombre de tu negocio" onChange={(event) => update({ business_name: event.target.value })} /></label>
+                    <label className="label">Descripción<textarea value={draft.description} placeholder="Una frase corta (opcional)" rows={2} onChange={(event) => update({ description: event.target.value })} /></label>
+                    <FontPicker label="Fuente del título" value={draft.font_pair} onChange={(id) => update({ font_pair: id })} />
+                    <label className="label">
+                      Color del texto
+                      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                        <input type="color" value={draft.text_color || textColor} title={customText ? "Color personalizado" : "Automático — cambialo para personalizar"} onChange={(event) => { setCustomText(true); update({ text_color: event.target.value }); }} />
+                        {customText && <button type="button" className="icon-button" title="Volver a automático" onClick={() => { setCustomText(false); update({ text_color: "" }); }}>↺</button>}
+                      </div>
+                    </label>
+                    <label className="check-label">
+                      <input type="checkbox" checked={draft.text_panel} onChange={(event) => update({ text_panel: event.target.checked })} />
+                      Ponerle un fondo al texto (ayuda a que se lea sobre fotos)
+                    </label>
+                    {draft.text_panel && (
+                      <div className="profile-action-color" style={{ marginTop: -6 }}>
+                        <label className="check-label">
+                          <input type="checkbox" checked={customPanel} onChange={(event) => { setCustomPanel(event.target.checked); update({ text_panel_color: event.target.checked ? (textColor === "#ffffff" ? "#000000" : "#ffffff") : "" }); }} />
+                          Color de fondo personalizado
+                        </label>
+                        {customPanel && <input type="color" value={draft.text_panel_color || (textColor === "#ffffff" ? "#000000" : "#ffffff")} onChange={(event) => update({ text_panel_color: event.target.value })} />}
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {sheet.kind === "settings" && (
+                  <>
+                    <div className="visual-status-row">
+                      <span className={landing.published ? "status published" : "status"}>{landing.published ? "Publicada" : "Borrador"}</span>
+                      <p className="muted" style={{ margin: 0 }}>{landing.published ? "Cualquiera con el link o el tag NFC puede verla." : "Todavía no es visible para el público."}</p>
+                    </div>
+                    <form action={publishAction} onSubmit={() => setSheet(null)}>
+                      <input type="hidden" name="id" value={landing.id} />
+                      <input type="hidden" name="published" value={String(!landing.published)} />
+                      <input type="hidden" name="return_to" value={`/admin/landings/${landing.id}/visual`} />
+                      <button className="btn full" type="submit"><IconRocket /> {landing.published ? "Despublicar" : "Publicar landing"}</button>
+                    </form>
+                    <Link className="btn secondary full" href={`/admin/landings/${landing.id}/qr`}><IconQrCode /> Código QR para el tag NFC</Link>
+                    {landing.published && <Link className="btn secondary full" href={`/${landing.slug}`} target="_blank" rel="noreferrer"><IconEye /> Ver landing publicada</Link>}
+                  </>
+                )}
+
+                {sheet.kind === "template" && (
+                  <TemplateButtonForm
+                    landingId={landing.id}
+                    sourceField={sheet.sourceField}
+                    isNew={!draft.enabledActions[sheet.sourceField]}
+                    initialValue={templateValues[sheet.sourceField]}
+                    saveTemplateAction={saveTemplateAction}
+                    removeTemplateAction={removeTemplateAction}
+                    moveAction={moveAction}
+                    onDone={() => setSheet(null)}
+                  />
+                )}
+
+                {sheet.kind === "custom" && (
+                  <CustomButtonForm
+                    action={sheet.action}
+                    landingId={landing.id}
+                    updateCustomAction={updateCustomAction}
+                    removeCustomAction={removeCustomAction}
+                    moveAction={moveAction}
+                    onDone={() => setSheet(null)}
+                  />
+                )}
+
+                {sheet.kind === "add" && (
+                  <>
+                    <p className="muted" style={{ marginTop: 0 }}>Elegí qué tipo de botón querés agregar.</p>
+                    <div className="simple-add-grid">
+                      {availableTemplateActions.map((item) => (
+                        <button key={item.sourceField} type="button" className="simple-add-icon" onClick={() => setSheet({ kind: "template", sourceField: item.sourceField })}>
+                          <ActionTypeIcon type={item.type} />
+                          <small>{item.label}</small>
+                        </button>
+                      ))}
+                      <button type="button" className="simple-add-icon" onClick={() => setSheet({ kind: "add-custom" })}>
+                        <IconPlus />
+                        <small>Otro link</small>
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {sheet.kind === "add-custom" && (
+                  <NewCustomButtonForm landingId={landing.id} addCustomAction={addCustomAction} onDone={() => setSheet(null)} />
+                )}
+
+                {sheet.kind === "button-style" && (
+                  <form action={saveButtonFont} className="stack" onSubmit={() => setSheet(null)}>
+                    <input type="hidden" name="landing_id" value={landing.id} />
+                    <input type="hidden" name="button_font" value={draft.button_font} />
+                    <FontPicker label="Fuente de los botones" value={draft.button_font} onChange={(id) => update({ button_font: id })} />
+                    <button className="btn full" type="submit">Guardar</button>
+                  </form>
+                )}
+              </div>
+              {(sheet.kind === "background" || sheet.kind === "text" || sheet.kind === "logo") && (
+                <div className="visual-modal-foot">
+                  <button type="button" className="btn secondary" onClick={() => closeSheet(false)}>Cancelar</button>
+                  <button type="button" className="btn" onClick={() => closeSheet(true)}>Aceptar</button>
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>
 
       <button form={FORM_ID} type="submit" className="btn full visual-save-btn">Guardar cambios</button>
     </div>
+  );
+}
+
+const FORMAT_HINTS: Record<string, string> = {
+  phone: "Con código de país, sin espacios ni signos. Ej: 5493511234567.",
+  email: "Tiene que ser un email válido (ej: contacto@negocio.com).",
+  username: "Solo tu usuario, sin @ — el link se arma solo.",
+};
+
+function TemplateButtonForm({
+  landingId, sourceField, isNew, initialValue, saveTemplateAction, removeTemplateAction, moveAction, onDone,
+}: {
+  landingId: string; sourceField: string; isNew: boolean;
+  initialValue?: { id: string; url: string; message: string; useAutoColor: boolean; backgroundColor: string; textColor: string };
+  saveTemplateAction: Action; removeTemplateAction: Action; moveAction: Action; onDone: () => void;
+}) {
+  const item = getAllActions().find((entry) => entry.sourceField === sourceField)!;
+  const [customColor, setCustomColor] = useState(initialValue ? !initialValue.useAutoColor : false);
+  const [bg, setBg] = useState(initialValue?.backgroundColor || AUTO_COLORS[item.type] || "#1f2937");
+  const [text, setText] = useState(initialValue?.textColor || "#ffffff");
+  const hint = FORMAT_HINTS[item.input];
+
+  return (
+    <>
+      <form action={saveTemplateAction} className="stack" onSubmit={onDone}>
+        <input type="hidden" name="landing_id" value={landingId} />
+        <input type="hidden" name="source_field" value={sourceField} />
+        <input type="hidden" name="custom_color" value={customColor ? "on" : "off"} />
+        {customColor && <input type="hidden" name="color" value={bg} />}
+        {customColor && <input type="hidden" name="text_color" value={text} />}
+        <div className={hint ? "visual-format-box" : undefined}>
+          {item.prefix ? (
+            <label className="label">
+              {item.label}
+              <div className="input-prefix-group">
+                <span className="input-prefix">{item.prefix}</span>
+                <input
+                  name="value"
+                  defaultValue={displayUsername(item.type, initialValue?.url || "")}
+                  placeholder={item.placeholder}
+                  required
+                  onBlur={(event) => { event.target.value = displayUsername(item.type, event.target.value); }}
+                />
+              </div>
+            </label>
+          ) : (
+            <label className="label">
+              {item.input === "phone" ? "Número" : item.input === "email" ? "Email" : "Link"}
+              <input name="value" type={item.input === "email" ? "email" : item.input === "phone" ? "tel" : "text"} defaultValue={initialValue?.url || ""} placeholder={item.placeholder} required />
+            </label>
+          )}
+          {hint && <p className="visual-format-hint">Este dato tiene un formato fijo: {hint}</p>}
+        </div>
+        {item.message && <label className="label">Mensaje de WhatsApp<input name="message" defaultValue={initialValue?.message || "Hola, quiero hacer una consulta."} /></label>}
+
+        <label className="check-label">
+          <input type="checkbox" checked={customColor} onChange={(event) => setCustomColor(event.target.checked)} />
+          Color personalizado
+        </label>
+        {customColor && (
+          <div className="form-split">
+            <label className="label">Fondo<input type="color" value={bg} onChange={(event) => setBg(event.target.value)} /></label>
+            <label className="label">Texto<input type="color" value={text} onChange={(event) => setText(event.target.value)} /></label>
+          </div>
+        )}
+
+        <button className="btn full" type="submit">Guardar</button>
+      </form>
+      {!isNew && initialValue && (
+        <div className="visual-modal-foot" style={{ padding: 0 }}>
+          <form action={moveAction} onSubmit={onDone}>
+            <input type="hidden" name="id" value={initialValue.id} />
+            <input type="hidden" name="landing_id" value={landingId} />
+            <input type="hidden" name="direction" value="up" />
+            <button type="submit" className="btn secondary">↑ Subir</button>
+          </form>
+          <form action={moveAction} onSubmit={onDone}>
+            <input type="hidden" name="id" value={initialValue.id} />
+            <input type="hidden" name="landing_id" value={landingId} />
+            <input type="hidden" name="direction" value="down" />
+            <button type="submit" className="btn secondary">↓ Bajar</button>
+          </form>
+        </div>
+      )}
+      {!isNew && (
+        <form action={removeTemplateAction} onSubmit={onDone}>
+          <input type="hidden" name="landing_id" value={landingId} />
+          <input type="hidden" name="source_field" value={sourceField} />
+          <button type="submit" className="text-button" style={{ color: "#dc2626" }}><IconTrash /> Quitar este botón</button>
+        </form>
+      )}
+    </>
+  );
+}
+
+function CustomButtonForm({
+  action, landingId, updateCustomAction, removeCustomAction, moveAction, onDone,
+}: {
+  action: CustomAction; landingId: string; updateCustomAction: Action; removeCustomAction: Action; moveAction: Action; onDone: () => void;
+}) {
+  const needsUrl = !NON_URL_TYPES.includes(action.type);
+  const [icon, setIcon] = useState(action.icon || "");
+  const [customColor, setCustomColor] = useState(action.use_auto_color === false);
+  const [bg, setBg] = useState(action.background_color || AUTO_COLORS[action.type] || "#1f2937");
+  const [text, setText] = useState(action.text_color || "#ffffff");
+  return (
+    <>
+      <form action={updateCustomAction} className="stack" onSubmit={onDone}>
+        <input type="hidden" name="id" value={action.id} />
+        <input type="hidden" name="landing_id" value={landingId} />
+        <input type="hidden" name="type" value={action.type} />
+        <input type="hidden" name="icon" value={icon} />
+        <input type="hidden" name="background_color" value={bg} />
+        <input type="hidden" name="text_color" value={text} />
+        <input type="hidden" name="use_auto_color" value={customColor ? "" : "on"} />
+        <input type="hidden" name="enabled" value="on" />
+        <input type="hidden" name="position" value={action.position ?? 0} />
+        <label className="label">Título<input name="title" defaultValue={action.title} required /></label>
+        {action.type === "whatsapp" && <label className="label">Mensaje<input name="message" defaultValue={action.message || ""} /></label>}
+        {action.type === "email" && <label className="label">Email<input name="value" type="email" defaultValue={action.url || ""} required /></label>}
+        {action.type === "phone" && <label className="label">Teléfono<input name="value" type="tel" defaultValue={action.url || ""} required /></label>}
+        {needsUrl && <label className="label">Link<input name="url" type="text" defaultValue={action.url || ""} required /></label>}
+        <IconPicker type={action.type} value={icon} onChange={setIcon} />
+
+        <label className="check-label">
+          <input type="checkbox" checked={customColor} onChange={(event) => setCustomColor(event.target.checked)} />
+          Color personalizado
+        </label>
+        {customColor && (
+          <div className="form-split">
+            <label className="label">Fondo<input type="color" value={bg} onChange={(event) => setBg(event.target.value)} /></label>
+            <label className="label">Texto<input type="color" value={text} onChange={(event) => setText(event.target.value)} /></label>
+          </div>
+        )}
+
+        <button className="btn full" type="submit">Guardar</button>
+      </form>
+      <div className="visual-modal-foot" style={{ padding: 0 }}>
+        <form action={moveAction} onSubmit={onDone}>
+          <input type="hidden" name="id" value={action.id} />
+          <input type="hidden" name="landing_id" value={landingId} />
+          <input type="hidden" name="direction" value="up" />
+          <button type="submit" className="btn secondary">↑ Subir</button>
+        </form>
+        <form action={moveAction} onSubmit={onDone}>
+          <input type="hidden" name="id" value={action.id} />
+          <input type="hidden" name="landing_id" value={landingId} />
+          <input type="hidden" name="direction" value="down" />
+          <button type="submit" className="btn secondary">↓ Bajar</button>
+        </form>
+      </div>
+      <form action={removeCustomAction} onSubmit={onDone}>
+        <input type="hidden" name="id" value={action.id} />
+        <input type="hidden" name="landing_id" value={landingId} />
+        <button type="submit" className="text-button" style={{ color: "#dc2626" }}><IconTrash /> Eliminar botón</button>
+      </form>
+    </>
+  );
+}
+
+function NewCustomButtonForm({ landingId, addCustomAction, onDone }: { landingId: string; addCustomAction: Action; onDone: () => void }) {
+  const [type, setType] = useState("url");
+  const [icon, setIcon] = useState("");
+  const needsUrl = !NON_URL_TYPES.includes(type);
+  return (
+    <form action={addCustomAction} className="stack" onSubmit={onDone}>
+      <input type="hidden" name="landing_id" value={landingId} />
+      <input type="hidden" name="use_auto_color" value="on" />
+      <input type="hidden" name="icon" value={icon} />
+      <label className="label">
+        Tipo
+        <select name="type" value={type} onChange={(event) => setType(event.target.value)}>
+          <option value="url">Link / Web</option>
+          <option value="whatsapp">WhatsApp</option>
+          <option value="email">Email</option>
+          <option value="phone">Teléfono</option>
+        </select>
+      </label>
+      <label className="label">Título<input name="title" placeholder="Ej: Reservar mesa" required /></label>
+      {type === "whatsapp" && <label className="label">Mensaje<input name="message" defaultValue="Hola, quiero hacer una consulta." /></label>}
+      {type === "email" && <label className="label">Email<input name="value" type="email" placeholder="contacto@negocio.com" required /></label>}
+      {type === "phone" && <label className="label">Teléfono<input name="value" type="tel" placeholder="+54 9 351..." required /></label>}
+      {needsUrl && <label className="label">Link<input name="url" type="text" placeholder="tusitio.com" required /></label>}
+      <IconPicker type={type} value={icon} onChange={setIcon} />
+      <button className="btn full" type="submit">Agregar</button>
+    </form>
   );
 }
