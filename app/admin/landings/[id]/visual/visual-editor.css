@@ -1,0 +1,92 @@
+/* Scoped styles for the experimental WYSIWYG landing editor. Does not touch globals.css. */
+
+.visual-page-layout { display: grid; gap: var(--space-5); max-width: 460px; margin: 0 auto; }
+.visual-single { display: flex; flex-direction: column; gap: var(--space-4); align-items: stretch; }
+
+/* ---------- Big phone canvas — a clean preview of the real landing. Nothing is drawn on top; ---------- */
+/* tapping a zone opens a proper centered modal to edit it, instead of decorating the canvas itself.  ---------- */
+.visual-phone {
+  width: 100%; min-height: 820px; margin: auto; padding: 60px 24px 34px;
+  background: var(--surface-2); border: 12px solid var(--text); border-radius: 50px; text-align: center;
+  box-shadow: var(--shadow-lg); position: relative; overflow: hidden;
+}
+.visual-notch { width: 100px; height: 8px; border-radius: var(--radius-full); background: var(--text); margin: -38px auto 26px; position: relative; z-index: 1; }
+
+/* Bold, high-contrast chips — same style everywhere so they read as one consistent "edit" affordance */
+.visual-chip {
+  border: 2px solid var(--accent); cursor: pointer; display: grid; place-items: center; background: #fff;
+  color: var(--accent); box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+}
+.visual-chip svg { width: 15px; height: 15px; stroke-width: 2.5; }
+.visual-chip-bg {
+  position: absolute; top: 16px; right: 16px; z-index: 5; width: auto; border-radius: var(--radius-full);
+  display: flex; align-items: center; gap: 6px; padding: 9px 14px 9px 12px; font-size: 0.75rem; font-weight: 700;
+}
+.visual-chip-settings {
+  position: absolute; top: 16px; left: 16px; z-index: 5; width: 34px; height: 34px; border-radius: 50%; font-size: 1rem;
+}
+.visual-chip-badge {
+  position: absolute; width: 30px; height: 30px; border-radius: 50%; bottom: -6px; right: -6px; pointer-events: none;
+  animation: visualBadgePop 1.4s ease-in-out 1;
+}
+.visual-chip-badge-action { bottom: 50%; right: 8px; transform: translateY(50%); pointer-events: none; width: 26px; height: 26px; }
+.visual-chip-badge-action svg { width: 13px; height: 13px; }
+
+@keyframes visualBadgePop { 0% { transform: scale(0.7); } 45% { transform: scale(1.15); } 100% { transform: scale(1); } }
+
+.visual-avatar-wrap { position: relative; width: 96px; margin: 0 auto var(--space-4); z-index: 1; cursor: pointer; }
+.visual-avatar {
+  width: 96px; height: 96px; border-radius: var(--radius-lg); overflow: hidden; display: grid; place-items: center;
+  color: #fff; font-family: var(--font-display); font-weight: 700; font-size: 1.75rem; box-shadow: var(--shadow-md);
+}
+.visual-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.visual-text-block { position: relative; cursor: pointer; padding: 6px 30px; margin: 0 0 var(--space-4); border-radius: var(--radius-md); z-index: 1; }
+.visual-text-block h2 { font-size: 1.5rem; font-weight: 700; margin: 0 0 6px; }
+.visual-text-block p { font-size: 0.875rem; line-height: 1.5; margin: 0; }
+.visual-chip-badge-text { top: -6px; right: 2px; bottom: auto; }
+
+.visual-text-panel { border-radius: var(--radius-md); padding: 14px 18px; }
+.visual-text-panel h2 { margin: 0; }
+
+.visual-actions { display: flex; flex-direction: column; width: 100%; position: relative; z-index: 1; }
+.visual-action-btn { border: none; width: 100%; cursor: pointer; font: inherit; appearance: none; position: relative; padding-right: 44px !important; }
+.visual-add-action {
+  display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 6px;
+  padding: 13px 16px; border-radius: var(--radius-md); border: 1.5px dashed rgba(255, 255, 255, 0.7);
+  background: rgba(0, 0, 0, 0.3); color: #fff; font-weight: 600; font-size: 0.875rem; cursor: pointer;
+}
+.visual-add-action svg { width: 16px; height: 16px; }
+
+/* ---------- Modal — stays INSIDE the phone frame, like a real app's bottom sheet. ---------- */
+/* Tall by default so almost nothing needs its own scroll; the phone's overflow:hidden clips it. ---------- */
+.visual-modal-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.5); z-index: 30; }
+.visual-modal {
+  position: absolute; left: 0; right: 0; bottom: 0; width: auto; max-height: 86%;
+  background: var(--surface); border-radius: 26px 26px 0 0; box-shadow: 0 -14px 34px rgba(0, 0, 0, 0.35);
+  z-index: 31; display: flex; flex-direction: column; overflow: hidden; animation: visualModalIn 0.22s ease-out;
+}
+.visual-modal-tall { max-height: 94%; }
+.visual-modal-head { display: flex; align-items: center; justify-content: space-between; padding: 14px var(--space-4) var(--space-3); border-bottom: 1px solid var(--border); flex: none; }
+.visual-modal-head h4 { margin: 0; font-size: 1rem; font-weight: 700; }
+.visual-modal-body { padding: var(--space-4); overflow-y: auto; display: flex; flex-direction: column; gap: var(--space-3); text-align: left; flex: 1; }
+.visual-modal-foot { display: flex; gap: var(--space-3); padding: var(--space-4); border-top: 1px solid var(--border); flex: none; }
+.visual-modal-foot .btn { flex: 1; margin: 0; }
+.visual-sheet-close { width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface-2); display: grid; place-items: center; cursor: pointer; padding: 0; }
+.visual-sheet-close svg { width: 12px; height: 12px; }
+
+@keyframes visualModalIn { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.visual-logo-preview {
+  width: 88px; height: 88px; margin: 0 auto; border-radius: var(--radius-lg); overflow: hidden; display: grid;
+  place-items: center; color: #fff; font-family: var(--font-display); font-weight: 700; font-size: 1.5rem;
+}
+.visual-logo-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.visual-status-row { display: flex; flex-direction: column; gap: 6px; padding: var(--space-3); background: var(--surface-2); border-radius: var(--radius-md); margin-bottom: 2px; }
+
+.visual-bg-upload { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+.visual-custom-actions { border-top: 1px dashed var(--border); padding-top: var(--space-4); margin-top: 2px; display: flex; flex-direction: column; gap: var(--space-3); }
+.visual-custom-actions h4 { font-size: 0.875rem; font-weight: 700; margin: 0; }
+
+.visual-save-btn { margin-top: 2px; }
