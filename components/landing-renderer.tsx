@@ -53,7 +53,7 @@ export default function LandingRenderer({ landing, actions, preview = false }: {
     <main className="public" style={backgroundStyle(landing)}>
       <div className="public-inner">
         {preview && <span className="preview-badge">Vista previa</span>}
-        <div className="avatar" style={{ background: primary, marginBottom: 18 }}>
+        <div className="avatar" style={{ background: primary }}>
           {landing.logo_url ? <img src={landing.logo_url} alt={landing.business_name} /> : landing.business_name.slice(0, 1)}
         </div>
         {landing.text_panel ? (
