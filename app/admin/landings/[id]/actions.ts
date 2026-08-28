@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getAllActions, normalizeUrl, isPlausiblePhone } from "@/lib/landing-catalog";
 
@@ -42,6 +43,8 @@ export async function save(fd: FormData) {
   const customPanelColor = fd.get("custom_panel_color") === "on" ? color(fd.get("text_panel_color"), "#000000") : null;
   const { error } = await supabase.from("landings").update({ business_name: businessName, description: String(fd.get("description") || "").trim(), logo_url: String(fd.get("logo_url") || "").trim(), primary_color: color(fd.get("primary_color"), "#1f2937"), background_color: color(fd.get("background_color"), "#f7f5f0"), background_type: backgroundType, background_gradient_to: color(fd.get("background_gradient_to"), "#a6c1ee"), text_color: customTextColor, text_panel: fd.get("text_panel") === "on", text_panel_color: customPanelColor, font_pair: fontPair, redirect_url: redirectUrl }).eq("id", id).eq("owner_id", user.id);
   if (error) fail(id, error.message);
+  revalidatePath(`/admin/landings/${id}`);
+  revalidatePath("/admin");
   redirect(`/admin/landings/${id}?saved=Identidad actualizada`);
 }
 
@@ -62,6 +65,7 @@ export async function addAction(fd: FormData) {
   if (!["whatsapp", "email", "phone"].includes(type)) value = normalizeUrl(value);
   const { error } = await supabase.from("actions").insert({ landing_id: landingId, title, type, message: String(fd.get("message") || "").trim(), url: value, icon: String(fd.get("icon") || "").trim(), background_color: color(fd.get("background_color"), "#1f2937"), text_color: color(fd.get("text_color"), "#ffffff"), icon_color: color(fd.get("icon_color"), "#ffffff"), use_auto_color: fd.get("use_auto_color") === "on", position: (last?.position ?? -1) + 1 });
   if (error) fail(landingId, error.message);
+  revalidatePath(`/admin/landings/${landingId}`);
   redirect(`/admin/landings/${landingId}?saved=Boton agregado`);
 }
 
@@ -86,20 +90,21 @@ export async function updateAction(fd: FormData) {
   const message = String(fd.get("message") ?? fd.get("existing_message") ?? "").trim();
   const { error } = await supabase.from("actions").update({ title, type, message, url: value, icon: String(fd.get("icon") || "").trim(), background_color: color(fd.get("background_color"), "#1f2937"), text_color: color(fd.get("text_color"), "#ffffff"), icon_color: color(fd.get("icon_color"), "#ffffff"), use_auto_color: fd.get("use_auto_color") === "on", enabled: fd.get("enabled") === "on", position: Number.isInteger(position) && position >= 0 ? position : 0 }).eq("id", id).eq("landing_id", landingId);
   if (error) fail(landingId, error.message);
+  revalidatePath(`/admin/landings/${landingId}`);
   redirect(`/admin/landings/${landingId}`);
 }
 
 export async function removeAction(fd: FormData) {
   const { supabase, user } = await auth(); const id = String(fd.get("id") || ""); const landingId = String(fd.get("landing_id") || "");
   const { data: landing, error: landingError } = await supabase.from("landings").select("id").eq("id", landingId).eq("owner_id", user.id).maybeSingle(); if (landingError) fail(landingId, landingError.message); if (!landing) fail(landingId, "Landing inexistente o sin permisos.");
-  const { error } = await supabase.from("actions").delete().eq("id", id).eq("landing_id", landingId); if (error) fail(landingId, error.message); redirect(`/admin/landings/${landingId}`);
+  const { error } = await supabase.from("actions").delete().eq("id", id).eq("landing_id", landingId); if (error) fail(landingId, error.message); revalidatePath(`/admin/landings/${landingId}`); redirect(`/admin/landings/${landingId}`);
 }
 
 export async function moveAction(fd: FormData) {
   const { supabase, user } = await auth(); const id = String(fd.get("id") || ""); const landingId = String(fd.get("landing_id") || ""); const direction = String(fd.get("direction") || "");
   const { data: landing, error: landingError } = await supabase.from("landings").select("id").eq("id", landingId).eq("owner_id", user.id).maybeSingle(); if (landingError) fail(landingId, landingError.message); if (!landing) fail(landingId, "Landing inexistente o sin permisos.");
   const { data, error } = await supabase.from("actions").select("id,position").eq("landing_id", landingId).order("position"); if (error) fail(landingId, error.message); const actions = data ?? []; const index = actions.findIndex((item) => item.id === id); const otherIndex = direction === "up" ? index - 1 : index + 1; if (index < 0 || otherIndex < 0 || otherIndex >= actions.length) redirect(`/admin/landings/${landingId}`);
-  const current = actions[index]; const other = actions[otherIndex]; const firstUpdate = await supabase.from("actions").update({ position: other.position }).eq("id", current.id).eq("landing_id", landingId); if (firstUpdate.error) fail(landingId, firstUpdate.error.message); const secondUpdate = await supabase.from("actions").update({ position: current.position }).eq("id", other.id).eq("landing_id", landingId); if (secondUpdate.error) fail(landingId, secondUpdate.error.message); redirect(`/admin/landings/${landingId}`);
+  const current = actions[index]; const other = actions[otherIndex]; const firstUpdate = await supabase.from("actions").update({ position: other.position }).eq("id", current.id).eq("landing_id", landingId); if (firstUpdate.error) fail(landingId, firstUpdate.error.message); const secondUpdate = await supabase.from("actions").update({ position: current.position }).eq("id", other.id).eq("landing_id", landingId); if (secondUpdate.error) fail(landingId, secondUpdate.error.message); revalidatePath(`/admin/landings/${landingId}`); redirect(`/admin/landings/${landingId}`);
 }
 
 export async function uploadLogo(fd: FormData) {
@@ -120,6 +125,7 @@ export async function uploadLogo(fd: FormData) {
   const { data: publicUrl } = supabase.storage.from("landing-assets").getPublicUrl(path);
   const { error } = await supabase.from("landings").update({ logo_url: publicUrl.publicUrl }).eq("id", landingId).eq("owner_id", user.id);
   if (error) fail(landingId, error.message);
+  revalidatePath(`/admin/landings/${landingId}`);
   redirect(`/admin/landings/${landingId}?saved=Logo actualizado`);
 }
 
@@ -141,6 +147,7 @@ export async function uploadBackgroundImage(fd: FormData) {
   const { data: publicUrl } = supabase.storage.from("landing-assets").getPublicUrl(path);
   const { error } = await supabase.from("landings").update({ background_image_url: publicUrl.publicUrl, background_type: "image" }).eq("id", landingId).eq("owner_id", user.id);
   if (error) fail(landingId, error.message);
+  revalidatePath(`/admin/landings/${landingId}`);
   redirect(`/admin/landings/${landingId}?saved=Fondo actualizado`);
 }
 
@@ -149,6 +156,7 @@ export async function removeLogo(fd: FormData) {
   const landingId = String(fd.get("landing_id") || "");
   const { error } = await supabase.from("landings").update({ logo_url: "" }).eq("id", landingId).eq("owner_id", user.id);
   if (error) fail(landingId, error.message);
+  revalidatePath(`/admin/landings/${landingId}`);
   redirect(`/admin/landings/${landingId}?saved=Logo eliminado`);
 }
 
@@ -157,6 +165,7 @@ export async function removeBackgroundImage(fd: FormData) {
   const landingId = String(fd.get("landing_id") || "");
   const { error } = await supabase.from("landings").update({ background_image_url: "", background_type: "color" }).eq("id", landingId).eq("owner_id", user.id);
   if (error) fail(landingId, error.message);
+  revalidatePath(`/admin/landings/${landingId}`);
   redirect(`/admin/landings/${landingId}?saved=Imagen de fondo eliminada`);
 }
 
@@ -179,5 +188,6 @@ export async function saveProfileActions(fd: FormData) {
     if (!value || !isEnabled) { if (found) { const { error } = await supabase.from("actions").update(payload).eq("id", found.id).eq("landing_id", landingId).eq("is_generated", true); if (error) fail(landingId, error.message); } continue; }
     const result = found ? await supabase.from("actions").update(payload).eq("id", found.id).eq("landing_id", landingId) : await supabase.from("actions").insert({ landing_id: landingId, ...payload }); if (result.error) fail(landingId, result.error.message);
   }
+  revalidatePath(`/admin/landings/${landingId}`);
   redirect(`/admin/landings/${landingId}?saved=Acciones del perfil actualizadas`);
 }

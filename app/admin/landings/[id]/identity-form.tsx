@@ -7,7 +7,7 @@ import LogoUpload from "./logo-upload";
 import BackgroundPicker from "./background-picker";
 import BackgroundImageUpload from "./background-image-upload";
 import FontPicker from "./font-picker";
-import { IconEdit, IconImage, IconDroplet, IconWifi } from "@/components/icons";
+import { IconEdit, IconImage, IconDroplet } from "@/components/icons";
 
 type Landing = {
   id: string;
@@ -124,7 +124,10 @@ export default function IdentityForm({
       {showLogoUrl ? (
         <input form={FORM_ID} name="logo_url" defaultValue={landing.logo_url || ""} placeholder="https://..." onChange={(event) => update({ logo_url: event.target.value })} />
       ) : (
-        <button type="button" className="text-button" onClick={() => setShowLogoUrl(true)}>o pegar una URL en vez de subir</button>
+        <>
+          <input type="hidden" form={FORM_ID} name="logo_url" value={landing.logo_url || ""} />
+          <button type="button" className="text-button" onClick={() => setShowLogoUrl(true)}>o pegar una URL en vez de subir</button>
+        </>
       )}
       <p className="muted" style={hint}>Se muestra en un círculo redondo arriba del nombre. Si no subís nada, se ve la inicial del nombre.</p>
 
@@ -133,10 +136,7 @@ export default function IdentityForm({
       <BackgroundPicker landing={landing} formId={FORM_ID} />
       {draft.background_type === "image" && <BackgroundImageUpload action={uploadBackgroundAction} removeAction={removeBackgroundAction} landingId={landing.id} currentUrl={landing.background_image_url} />}
 
-      <p className="subsection-title"><IconWifi /> NFC</p>
-
-      <label className="label">¿A dónde apunta el tag? (opcional)<input form={FORM_ID} name="redirect_url" type="text" defaultValue={landing.redirect_url || ""} placeholder="instagram.com/tunegocio" /></label>
-      <p className="muted" style={hint}>Dejalo vacío para usar esta landing. Si pegás un link (Instagram, tu web, Linktree...), el tag NFC va a llevar directo ahí en vez de mostrar esta página. No hace falta escribir "https://", lo agregamos solos.</p>
+      <input type="hidden" form={FORM_ID} name="redirect_url" value={landing.redirect_url || ""} />
 
       <button form={FORM_ID} className="btn full" type="submit">Guardar identidad</button>
     </div>
