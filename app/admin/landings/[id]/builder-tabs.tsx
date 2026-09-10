@@ -30,7 +30,11 @@ export default function BuilderTabs({ identity, actions, publish }: { identity: 
           </button>
         ))}
       </div>
-      <div className="tab-panel" key={tab}>{panels[tab]}</div>
+      <div className="tab-panel">
+        {TABS.map((item) => (
+          <div key={item.id} hidden={tab !== item.id}>{panels[item.id]}</div>
+        ))}
+      </div>
     </div>
   );
 }

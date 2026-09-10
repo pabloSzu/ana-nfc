@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { getAllActions, normalizeUrl, isPlausiblePhone, AUTO_COLORS } from "@/lib/landing-catalog";
+import { normalizeUrl, isPlausiblePhone, getAllActions, AUTO_COLORS } from "@/lib/landing-catalog";
 
 const fail = (landingId: string, message: string): never => redirect(`/admin/landings/${landingId}/visual?error=${encodeURIComponent(message)}`);
 const hexColor = /^#[0-9a-f]{6}$/i;
@@ -25,60 +25,218 @@ async function ownedLanding(landingId: string, userId: string) {
   return { supabase, data, error };
 }
 
-// Saves (or creates) exactly one catalog button (WhatsApp, Instagram, etc.) — independent
-// from every other button, so editing one can never affect another.
-export async function saveTemplateAction(fd: FormData) {
+const validTypes = ["whatsapp", "instagram", "tiktok", "facebook", "website", "email", "phone", "maps", "youtube", "spotify", "mercadopago", "calendar", "telegram", "url"];
+
+const validFontsIdentity = ["modern", "classic", "friendly", "minimal"];
+
+// Visual-editor-scoped copy of the classic identity save — same fields, but redirects
+// back to /visual instead of the classic route (classic `save` bounced users out).
+export async function saveIdentity(fd: FormData) {
+  const { supabase, user } = await auth();
+  const landingId = String(fd.get("id") || "");
+  const { data: landing, error: landingError } = await ownedLanding(landingId, user.id);
+  if (landingError) fail(landingId, landingError.message);
+  if (!landing) fail(landingId, "Landing inexistente o sin permisos.");
+  const businessName = String(fd.get("business_name") || "").trim();
+  if (!businessName) fail(landingId, "El nombre de la landing es obligatorio.");
+  const redirectUrl = normalizeUrl(String(fd.get("redirect_url") || ""));
+  const backgroundType = ["color", "gradient", "image"].includes(String(fd.get("background_type"))) ? String(fd.get("background_type")) : "color";
+  const customTextColor = fd.get("custom_text_color") === "on" ? color(fd.get("text_color"), "#161b18") : null;
+  const fontPair = validFontsIdentity.includes(String(fd.get("font_pair"))) ? String(fd.get("font_pair")) : "modern";
+  const customPanelColor = fd.get("custom_panel_color") === "on" ? color(fd.get("text_panel_color"), "#000000") : null;
+  const { error } = await supabase.from("landings").update({
+    business_name: businessName, description: String(fd.get("description") || "").trim(), logo_url: String(fd.get("logo_url") || "").trim(),
+    primary_color: color(fd.get("primary_color"), "#1f2937"), background_color: color(fd.get("background_color"), "#f7f5f0"),
+    background_type: backgroundType, background_gradient_to: color(fd.get("background_gradient_to"), "#a6c1ee"),
+    text_color: customTextColor, text_panel: fd.get("text_panel") === "on", text_panel_color: customPanelColor,
+    font_pair: fontPair, redirect_url: redirectUrl,
+  }).eq("id", landingId).eq("owner_id", user.id);
+  if (error) fail(landingId, error.message);
+  revalidatePath(`/admin/landings/${landingId}/visual`);
+  revalidatePath("/admin");
+  redirect(`/admin/landings/${landingId}/visual?saved=Identidad actualizada`);
+}
+
+export async function uploadLogoVisual(fd: FormData) {
+  const { supabase, user } = await auth();
+  const landingId = String(fd.get("landing_id") || "");
+  const file = fd.get("file");
+  const { data: landing, error: landingError } = await ownedLanding(landingId, user.id);
+  if (landingError) fail(landingId, landingError.message);
+  if (!landing) fail(landingId, "Landing inexistente o sin permisos.");
+  if (!(file instanceof File) || file.size === 0) fail(landingId, "Seleccioná una imagen.");
+  const imageFile = file as File;
+  if (imageFile.size > 5 * 1024 * 1024) fail(landingId, "La imagen no puede superar 5 MB.");
+  if (!["image/jpeg", "image/png", "image/webp"].includes(imageFile.type)) fail(landingId, "La imagen debe ser JPG, PNG o WEBP.");
+  const extension = imageFile.type.split("/")[1].replace("jpeg", "jpg");
+  const path = `${user.id}/${landingId}/logo-${Date.now()}.${extension}`;
+  const { error: uploadError } = await supabase.storage.from("landing-assets").upload(path, imageFile, { contentType: imageFile.type, upsert: false });
+  if (uploadError) fail(landingId, uploadError.message);
+  const { data: publicUrl } = supabase.storage.from("landing-assets").getPublicUrl(path);
+  const { error } = await supabase.from("landings").update({ logo_url: publicUrl.publicUrl }).eq("id", landingId).eq("owner_id", user.id);
+  if (error) fail(landingId, error.message);
+  revalidatePath(`/admin/landings/${landingId}/visual`);
+  redirect(`/admin/landings/${landingId}/visual?saved=Logo actualizado&open=logo`);
+}
+
+export async function uploadBackgroundImageVisual(fd: FormData) {
+  const { supabase, user } = await auth();
+  const landingId = String(fd.get("landing_id") || "");
+  const file = fd.get("file");
+  const { data: landing, error: landingError } = await ownedLanding(landingId, user.id);
+  if (landingError) fail(landingId, landingError.message);
+  if (!landing) fail(landingId, "Landing inexistente o sin permisos.");
+  if (!(file instanceof File) || file.size === 0) fail(landingId, "Seleccioná una imagen.");
+  const imageFile = file as File;
+  if (imageFile.size > 5 * 1024 * 1024) fail(landingId, "La imagen no puede superar 5 MB.");
+  if (!["image/jpeg", "image/png", "image/webp"].includes(imageFile.type)) fail(landingId, "La imagen debe ser JPG, PNG o WEBP.");
+  const extension = imageFile.type.split("/")[1].replace("jpeg", "jpg");
+  const path = `${user.id}/${landingId}/bg-${Date.now()}.${extension}`;
+  const { error: uploadError } = await supabase.storage.from("landing-assets").upload(path, imageFile, { contentType: imageFile.type, upsert: false });
+  if (uploadError) fail(landingId, uploadError.message);
+  const { data: publicUrl } = supabase.storage.from("landing-assets").getPublicUrl(path);
+  const { error } = await supabase.from("landings").update({ background_image_url: publicUrl.publicUrl, background_type: "image" }).eq("id", landingId).eq("owner_id", user.id);
+  if (error) fail(landingId, error.message);
+  revalidatePath(`/admin/landings/${landingId}/visual`);
+  redirect(`/admin/landings/${landingId}/visual?saved=Fondo actualizado&open=background`);
+}
+
+export async function removeLogoVisual(fd: FormData) {
   const { user } = await auth();
   const landingId = String(fd.get("landing_id") || "");
-  const source = String(fd.get("source_field") || "");
   const { supabase, data: landing, error: landingError } = await ownedLanding(landingId, user.id);
   if (landingError) fail(landingId, landingError.message);
   if (!landing) fail(landingId, "Landing inexistente o sin permisos.");
-  const item = getAllActions().find((entry) => entry.sourceField === source);
-  if (!item) return fail(landingId, "Tipo de botón inválido.");
+  const { error } = await supabase.from("landings").update({ logo_url: "" }).eq("id", landingId).eq("owner_id", user.id);
+  if (error) fail(landingId, error.message);
+  revalidatePath(`/admin/landings/${landingId}/visual`);
+  redirect(`/admin/landings/${landingId}/visual?saved=Logo eliminado&open=logo`);
+}
 
-  let value = String(fd.get("value") || "").trim();
-  if (item.input === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) fail(landingId, "El email no parece válido. Revisalo y probá de nuevo.");
-  if (item.input === "phone" && !isPlausiblePhone(value)) fail(landingId, "El número parece incompleto. Escribilo con código de país, ej: 5493511234567.");
-  if (item.input === "url") value = normalizeUrl(value);
-  const message = item.message ? String(fd.get("message") || "Hola, quiero hacer una consulta.").trim() : "";
-  const title = String(fd.get("title") || "").trim() || item.label;
-  const customColorOn = fd.get("custom_color") === "on";
-  const backgroundColor = customColorOn ? color(fd.get("color"), AUTO_COLORS[item.type] || "#1f2937") : AUTO_COLORS[item.type] || "#1f2937";
-  const textColor = customColorOn ? color(fd.get("text_color"), "#ffffff") : "#ffffff";
+export async function removeBackgroundImageVisual(fd: FormData) {
+  const { user } = await auth();
+  const landingId = String(fd.get("landing_id") || "");
+  const { supabase, data: landing, error: landingError } = await ownedLanding(landingId, user.id);
+  if (landingError) fail(landingId, landingError.message);
+  if (!landing) fail(landingId, "Landing inexistente o sin permisos.");
+  const { error } = await supabase.from("landings").update({ background_image_url: "", background_type: "color" }).eq("id", landingId).eq("owner_id", user.id);
+  if (error) fail(landingId, error.message);
+  revalidatePath(`/admin/landings/${landingId}/visual`);
+  redirect(`/admin/landings/${landingId}/visual?saved=Imagen de fondo eliminada&open=background`);
+}
 
-  const { data: existing, error: existingError } = await supabase.from("actions").select("id").eq("landing_id", landingId).eq("source_field", source).eq("is_generated", true).maybeSingle();
-  if (existingError) fail(landingId, existingError.message);
+// One button model, no "one per type" cap — you can add WhatsApp as many times as you
+// want. Every button (old catalog rows included) is edited/moved/removed the same way.
+export async function addButton(fd: FormData) {
+  const { supabase, user } = await auth();
+  const landingId = String(fd.get("landing_id") || "");
+  const title = String(fd.get("title") || "").trim();
+  const type = String(fd.get("type") || "url");
+  if (!landingId || !title || !validTypes.includes(type)) fail(landingId, "Datos de botón inválidos.");
+  const { data: landing, error: landingError } = await ownedLanding(landingId, user.id);
+  if (landingError) fail(landingId, landingError.message);
+  if (!landing) fail(landingId, "Landing inexistente o sin permisos.");
+  const { data: last, error: positionError } = await supabase.from("actions").select("position").eq("landing_id", landingId).order("position", { ascending: false }).limit(1).maybeSingle();
+  if (positionError) fail(landingId, positionError.message);
+  let value = String(fd.get("url") || fd.get("value") || "").trim();
+  if (type === "email" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) fail(landingId, "El email no parece válido. Revisalo y probá de nuevo.");
+  if (["whatsapp", "phone"].includes(type) && value && !isPlausiblePhone(value)) fail(landingId, "El número parece incompleto. Escribilo con código de país, ej: 5493511234567.");
+  if (!["whatsapp", "email", "phone"].includes(type) && value && !value.startsWith("http")) value = normalizeUrl(value);
+  const { error } = await supabase.from("actions").insert({
+    landing_id: landingId, title, subtitle: String(fd.get("subtitle") || "").trim(), type,
+    message: String(fd.get("message") || "").trim(), url: value, icon: String(fd.get("icon") || "").trim(),
+    background_color: color(fd.get("background_color"), "#1f2937"), text_color: color(fd.get("text_color"), "#ffffff"),
+    use_auto_color: fd.get("use_auto_color") === "on", enabled: true, position: (last?.position ?? -1) + 1,
+  });
+  if (error) fail(landingId, error.message);
+  revalidatePath(`/admin/landings/${landingId}/visual`);
+  redirect(`/admin/landings/${landingId}/visual?saved=Boton agregado`);
+}
 
-  if (existing) {
-    const { error } = await supabase.from("actions").update({ title, type: item.type, icon: item.icon, url: value, message, enabled: true, use_auto_color: !customColorOn, background_color: backgroundColor, text_color: textColor }).eq("id", existing.id);
-    if (error) fail(landingId, error.message);
-  } else {
-    const { data: last, error: positionError } = await supabase.from("actions").select("position").eq("landing_id", landingId).order("position", { ascending: false }).limit(1).maybeSingle();
-    if (positionError) fail(landingId, positionError.message);
-    const { error } = await supabase.from("actions").insert({ landing_id: landingId, title, type: item.type, url: value, message, icon: item.icon, use_auto_color: !customColorOn, background_color: backgroundColor, text_color: textColor, enabled: true, source_field: source, is_generated: true, position: (last?.position ?? -1) + 1 });
-    if (error) fail(landingId, error.message);
-  }
+// Tapping a preset icon (or "Crear personalizado") creates the button right away with
+// blank/default fields, then the page auto-opens its edit popover — same "tap it into
+// existence, then fill it in" flow as the reference, instead of a form-first add screen.
+export async function quickAddButton(fd: FormData) {
+  const { supabase, user } = await auth();
+  const landingId = String(fd.get("landing_id") || "");
+  const type = String(fd.get("type") || "url");
+  if (!landingId || !validTypes.includes(type)) fail(landingId, "Tipo de botón inválido.");
+  const { data: landing, error: landingError } = await ownedLanding(landingId, user.id);
+  if (landingError) fail(landingId, landingError.message);
+  if (!landing) fail(landingId, "Landing inexistente o sin permisos.");
+  const { data: last, error: positionError } = await supabase.from("actions").select("position").eq("landing_id", landingId).order("position", { ascending: false }).limit(1).maybeSingle();
+  if (positionError) fail(landingId, positionError.message);
+  const item = getAllActions().find((entry) => entry.type === type);
+  const { data: inserted, error } = await supabase.from("actions").insert({
+    landing_id: landingId, title: item?.label || "Nuevo botón", subtitle: "", type, message: "", url: "",
+    icon: "", background_color: AUTO_COLORS[type] || "#1f2937", text_color: "#ffffff", use_auto_color: true,
+    enabled: true, position: (last?.position ?? -1) + 1,
+  }).select("id").single();
+  if (error || !inserted) return fail(landingId, error?.message || "No se pudo crear el botón.");
+  revalidatePath(`/admin/landings/${landingId}/visual`);
+  redirect(`/admin/landings/${landingId}/visual?saved=Boton agregado&opened=${inserted.id}`);
+}
+
+export async function updateButton(fd: FormData) {
+  const { supabase, user } = await auth();
+  const id = String(fd.get("id") || "");
+  const landingId = String(fd.get("landing_id") || "");
+  const type = String(fd.get("type") || "url");
+  const { data: landing, error: landingError } = await ownedLanding(landingId, user.id);
+  if (landingError) fail(landingId, landingError.message);
+  if (!landing || !validTypes.includes(type)) fail(landingId, "Botón inválido o sin permisos.");
+  const title = String(fd.get("title") || "").trim();
+  if (!title) fail(landingId, "El nombre del botón es obligatorio.");
+  let value = String(fd.get("url") || fd.get("value") || "").trim();
+  if (type === "email" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) fail(landingId, "El email no parece válido. Revisalo y probá de nuevo.");
+  if (["whatsapp", "phone"].includes(type) && value && !isPlausiblePhone(value)) fail(landingId, "El número parece incompleto. Escribilo con código de país, ej: 5493511234567.");
+  if (!["whatsapp", "email", "phone"].includes(type) && value && !value.startsWith("http")) value = normalizeUrl(value);
+  const { data: action, error: actionError } = await supabase.from("actions").select("id,position").eq("id", id).eq("landing_id", landingId).maybeSingle();
+  if (actionError) fail(landingId, actionError.message);
+  if (!action) fail(landingId, "Botón inexistente o sin permisos.");
+  const { error } = await supabase.from("actions").update({
+    title, subtitle: String(fd.get("subtitle") || "").trim(), type, message: String(fd.get("message") || "").trim(), url: value,
+    icon: String(fd.get("icon") || "").trim(), background_color: color(fd.get("background_color"), "#1f2937"),
+    text_color: color(fd.get("text_color"), "#ffffff"), use_auto_color: fd.get("use_auto_color") === "on", enabled: true,
+  }).eq("id", id).eq("landing_id", landingId);
+  if (error) fail(landingId, error.message);
   revalidatePath(`/admin/landings/${landingId}/visual`);
   redirect(`/admin/landings/${landingId}/visual?saved=Boton actualizado`);
 }
 
-// Turns off exactly one catalog button. Never touches any other button's row.
-export async function removeTemplateAction(fd: FormData) {
-  const { user } = await auth();
+export async function removeButton(fd: FormData) {
+  const { supabase, user } = await auth();
+  const id = String(fd.get("id") || "");
   const landingId = String(fd.get("landing_id") || "");
-  const source = String(fd.get("source_field") || "");
-  const { supabase, data: landing, error: landingError } = await ownedLanding(landingId, user.id);
+  const { data: landing, error: landingError } = await ownedLanding(landingId, user.id);
   if (landingError) fail(landingId, landingError.message);
   if (!landing) fail(landingId, "Landing inexistente o sin permisos.");
-  const { error } = await supabase.from("actions").update({ enabled: false }).eq("landing_id", landingId).eq("source_field", source).eq("is_generated", true);
+  const { error } = await supabase.from("actions").delete().eq("id", id).eq("landing_id", landingId);
   if (error) fail(landingId, error.message);
   revalidatePath(`/admin/landings/${landingId}/visual`);
-  redirect(`/admin/landings/${landingId}/visual?saved=Boton quitado`);
+  redirect(`/admin/landings/${landingId}/visual?saved=Boton eliminado`);
 }
 
-// Same up/down reorder as the classic editor's moveAction, but redirects back to /visual
-// instead of the classic route — reusing the shared one would silently bounce the user away.
+export async function duplicateButton(fd: FormData) {
+  const { supabase, user } = await auth();
+  const id = String(fd.get("id") || "");
+  const landingId = String(fd.get("landing_id") || "");
+  const { data: landing, error: landingError } = await ownedLanding(landingId, user.id);
+  if (landingError) fail(landingId, landingError.message);
+  if (!landing) fail(landingId, "Landing inexistente o sin permisos.");
+  const { data: original, error: originalError } = await supabase.from("actions").select("*").eq("id", id).eq("landing_id", landingId).maybeSingle();
+  if (originalError) fail(landingId, originalError.message);
+  if (!original) fail(landingId, "Botón inexistente o sin permisos.");
+  const { data: last, error: positionError } = await supabase.from("actions").select("position").eq("landing_id", landingId).order("position", { ascending: false }).limit(1).maybeSingle();
+  if (positionError) fail(landingId, positionError.message);
+  const { id: _oldId, position: _oldPosition, source_field: _sourceField, is_generated: _isGenerated, ...rest } = original;
+  const { error } = await supabase.from("actions").insert({ ...rest, title: `${original.title} copia`, landing_id: landingId, position: (last?.position ?? -1) + 1, is_generated: false, source_field: null });
+  if (error) fail(landingId, error.message);
+  revalidatePath(`/admin/landings/${landingId}/visual`);
+  redirect(`/admin/landings/${landingId}/visual?saved=Boton duplicado`);
+}
+
+// Up/down reorder, redirects back to /visual instead of the classic editor route.
 export async function moveVisualAction(fd: FormData) {
   const { supabase, user } = await auth();
   const id = String(fd.get("id") || "");
@@ -106,87 +264,137 @@ export async function moveVisualAction(fd: FormData) {
   redirect(`/admin/landings/${landingId}/visual?saved=Orden actualizado`);
 }
 
-const validTypes = ["whatsapp", "instagram", "tiktok", "facebook", "website", "email", "phone", "maps", "youtube", "spotify", "mercadopago", "calendar", "telegram", "url"];
-
-// Same as the classic editor's addAction/updateAction/removeAction (custom, unlimited
-// buttons) — duplicated only so the redirect lands back on /visual instead of bouncing
-// the user out to the classic editor route.
-export async function addCustomActionVisual(fd: FormData) {
+export async function reorderButtons(fd: FormData) {
   const { supabase, user } = await auth();
   const landingId = String(fd.get("landing_id") || "");
-  const title = String(fd.get("title") || "").trim();
-  const type = String(fd.get("type") || "whatsapp");
-  if (!landingId || !title || !validTypes.includes(type)) fail(landingId, "Datos de acción inválidos.");
+  const order = String(fd.get("order") || "").split(",").filter(Boolean);
   const { data: landing, error: landingError } = await ownedLanding(landingId, user.id);
   if (landingError) fail(landingId, landingError.message);
   if (!landing) fail(landingId, "Landing inexistente o sin permisos.");
-  const { data: last, error: positionError } = await supabase.from("actions").select("position").eq("landing_id", landingId).order("position", { ascending: false }).limit(1).maybeSingle();
-  if (positionError) fail(landingId, positionError.message);
-  let value = String(fd.get("url") || fd.get("value") || "").trim();
-  if (type === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) fail(landingId, "El email no parece válido. Revisalo y probá de nuevo.");
-  if (["whatsapp", "phone"].includes(type) && !isPlausiblePhone(value)) fail(landingId, "El número parece incompleto. Escribilo con código de país, ej: 5493511234567.");
-  if (!["whatsapp", "email", "phone"].includes(type) && !value.startsWith("http")) value = normalizeUrl(value);
-  const { error } = await supabase.from("actions").insert({ landing_id: landingId, title, type, message: String(fd.get("message") || "").trim(), url: value, icon: String(fd.get("icon") || "").trim(), background_color: color(fd.get("background_color"), "#1f2937"), text_color: color(fd.get("text_color"), "#ffffff"), use_auto_color: fd.get("use_auto_color") === "on", position: (last?.position ?? -1) + 1 });
-  if (error) fail(landingId, error.message);
+  for (let i = 0; i < order.length; i++) {
+    const { error } = await supabase.from("actions").update({ position: i }).eq("id", order[i]).eq("landing_id", landingId);
+    if (error) fail(landingId, error.message);
+  }
   revalidatePath(`/admin/landings/${landingId}/visual`);
-  redirect(`/admin/landings/${landingId}/visual?saved=Boton agregado`);
-}
-
-export async function updateCustomActionVisual(fd: FormData) {
-  const { supabase, user } = await auth();
-  const id = String(fd.get("id") || "");
-  const landingId = String(fd.get("landing_id") || "");
-  const type = String(fd.get("type") || "url");
-  const { data: landing, error: landingError } = await ownedLanding(landingId, user.id);
-  if (landingError) fail(landingId, landingError.message);
-  if (!landing || !validTypes.includes(type)) fail(landingId, "Acción inválida o sin permisos.");
-  const title = String(fd.get("title") || "").trim();
-  if (!title) fail(landingId, "El título de la acción es obligatorio.");
-  let value = String(fd.get("url") || fd.get("value") || "").trim();
-  if (type === "email" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) fail(landingId, "El email no parece válido. Revisalo y probá de nuevo.");
-  if (["whatsapp", "phone"].includes(type) && value && !isPlausiblePhone(value)) fail(landingId, "El número parece incompleto. Escribilo con código de país, ej: 5493511234567.");
-  if (!["whatsapp", "email", "phone"].includes(type) && !value.startsWith("http")) value = normalizeUrl(value);
-  const { data: action, error: actionError } = await supabase.from("actions").select("id").eq("id", id).eq("landing_id", landingId).maybeSingle();
-  if (actionError) fail(landingId, actionError.message);
-  if (!action) fail(landingId, "Acción inexistente o sin permisos.");
-  const position = Number(fd.get("position"));
-  const message = String(fd.get("message") || "").trim();
-  const { error } = await supabase.from("actions").update({ title, type, message, url: value, icon: String(fd.get("icon") || "").trim(), background_color: color(fd.get("background_color"), "#1f2937"), text_color: color(fd.get("text_color"), "#ffffff"), use_auto_color: fd.get("use_auto_color") === "on", enabled: fd.get("enabled") === "on", position: Number.isInteger(position) && position >= 0 ? position : 0 }).eq("id", id).eq("landing_id", landingId);
-  if (error) fail(landingId, error.message);
-  revalidatePath(`/admin/landings/${landingId}/visual`);
-  redirect(`/admin/landings/${landingId}/visual?saved=Boton actualizado`);
-}
-
-export async function removeCustomActionVisual(fd: FormData) {
-  const { supabase, user } = await auth();
-  const id = String(fd.get("id") || "");
-  const landingId = String(fd.get("landing_id") || "");
-  const { data: landing, error: landingError } = await ownedLanding(landingId, user.id);
-  if (landingError) fail(landingId, landingError.message);
-  if (!landing) fail(landingId, "Landing inexistente o sin permisos.");
-  const { error } = await supabase.from("actions").delete().eq("id", id).eq("landing_id", landingId);
-  if (error) fail(landingId, error.message);
-  revalidatePath(`/admin/landings/${landingId}/visual`);
-  redirect(`/admin/landings/${landingId}/visual?saved=Boton eliminado`);
+  redirect(`/admin/landings/${landingId}/visual?saved=Orden actualizado`);
 }
 
 const validFonts = ["modern", "classic", "friendly", "minimal"];
-const validShapes = ["rounded", "pill", "sharp"];
-const validFills = ["solid", "outline", "glass"];
 
-// Saves the global button look (font + shape + fill) — one style for every button at
-// once, separate from every per-button save so it can never touch a button's own data.
-export async function saveButtonStyle(fd: FormData) {
+// Saves the whole button-zone look (gap/height/radius/width/shadow/finish/color mode/
+// sizes) as one JSON blob, plus the button font — one style for every button at once.
+export async function saveButtonZoneStyle(fd: FormData) {
   const { user } = await auth();
   const landingId = String(fd.get("landing_id") || "");
   const { supabase, data: landing, error: landingError } = await ownedLanding(landingId, user.id);
   if (landingError) fail(landingId, landingError.message);
   if (!landing) fail(landingId, "Landing inexistente o sin permisos.");
   const buttonFont = validFonts.includes(String(fd.get("button_font"))) ? String(fd.get("button_font")) : "modern";
-  const buttonShape = validShapes.includes(String(fd.get("button_shape"))) ? String(fd.get("button_shape")) : "rounded";
-  const buttonFill = validFills.includes(String(fd.get("button_fill"))) ? String(fd.get("button_fill")) : "solid";
-  const { error } = await supabase.from("landings").update({ button_font: buttonFont, button_shape: buttonShape, button_fill: buttonFill }).eq("id", landingId);
+  const styleRaw = String(fd.get("button_style") || "{}");
+  let buttonStyle: Record<string, unknown> = {};
+  try { buttonStyle = JSON.parse(styleRaw); } catch { buttonStyle = {}; }
+  const { error } = await supabase.from("landings").update({ button_font: buttonFont, button_style: buttonStyle }).eq("id", landingId);
   if (error) fail(landingId, error.message);
   revalidatePath(`/admin/landings/${landingId}/visual`);
   redirect(`/admin/landings/${landingId}/visual?saved=Estilo de botones actualizado`);
+}
+
+function parseJson(raw: FormDataEntryValue | null): Record<string, unknown> {
+  try { return JSON.parse(String(raw || "{}")); } catch { return {}; }
+}
+
+// The visual editor works as a local draft. This is its single persistence point:
+// identity, visual styles, button-zone settings and the complete ordered button list
+// are saved together only when the user presses the main "Guardar cambios" button.
+export async function saveDesignStyle(fd: FormData) {
+  const { user } = await auth();
+  const landingId = String(fd.get("landing_id") || "");
+  const { supabase, data: landing, error: landingError } = await ownedLanding(landingId, user.id);
+  if (landingError) fail(landingId, landingError.message);
+  if (!landing) fail(landingId, "Landing inexistente o sin permisos.");
+  const businessName = String(fd.get("business_name") || "").trim();
+  if (!businessName) fail(landingId, "El nombre de la landing es obligatorio.");
+  const backgroundType = ["color", "gradient", "image"].includes(String(fd.get("background_type")))
+    ? String(fd.get("background_type"))
+    : "color";
+  const { error } = await supabase.from("landings").update({
+    business_name: businessName,
+    description: String(fd.get("description") || "").trim(),
+    primary_color: color(fd.get("primary_color"), "#1f2937"),
+    background_type: backgroundType,
+    background_color: color(fd.get("background_color"), "#f7f5f0"),
+    background_gradient_to: color(fd.get("background_gradient_to"), "#a6c1ee"),
+    text_color: color(fd.get("text_color"), "#ffffff"),
+    text_panel: fd.get("text_panel") === "on",
+    text_panel_color: color(fd.get("text_panel_color"), "#000000"),
+    font_pair: validFontsIdentity.includes(String(fd.get("font_pair"))) ? String(fd.get("font_pair")) : "modern",
+    button_font: validFonts.includes(String(fd.get("button_font"))) ? String(fd.get("button_font")) : "modern",
+    button_style: parseJson(fd.get("button_style")),
+    title_style: parseJson(fd.get("title_style")),
+    subtitle_style: parseJson(fd.get("subtitle_style")),
+    logo_style: parseJson(fd.get("logo_style")),
+    background_style: parseJson(fd.get("background_style")),
+  }).eq("id", landingId);
+  if (error) fail(landingId, error.message);
+
+  let requestedButtons: Array<Record<string, unknown>> = [];
+  try {
+    const parsed = JSON.parse(String(fd.get("buttons") || "[]"));
+    if (Array.isArray(parsed)) requestedButtons = parsed;
+  } catch {
+    fail(landingId, "No se pudieron leer los botones del borrador.");
+  }
+
+  const { data: existing, error: existingError } = await supabase
+    .from("actions")
+    .select("id,enabled")
+    .eq("landing_id", landingId);
+  if (existingError) fail(landingId, existingError.message);
+  const existingIds = new Set((existing || []).map((item) => item.id));
+  const retainedIds = new Set<string>();
+
+  for (let position = 0; position < requestedButtons.length; position++) {
+    const button = requestedButtons[position];
+    const type = validTypes.includes(String(button.type)) ? String(button.type) : "url";
+    const title = String(button.title || "").trim();
+    if (!title) fail(landingId, `El botón ${position + 1} necesita un nombre.`);
+    let value = String(button.url || "").trim();
+    if (type === "email" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) fail(landingId, `El email del botón “${title}” no parece válido.`);
+    if (["whatsapp", "phone"].includes(type) && value && !isPlausiblePhone(value)) fail(landingId, `El número del botón “${title}” parece incompleto.`);
+    if (!["whatsapp", "email", "phone"].includes(type) && value && !value.startsWith("http")) value = normalizeUrl(value);
+    const row = {
+      landing_id: landingId,
+      title,
+      subtitle: String(button.subtitle || "").trim(),
+      type,
+      message: String(button.message || "").trim(),
+      url: value,
+      icon: String(button.icon || "").trim(),
+      background_color: color(String(button.background_color || ""), AUTO_COLORS[type] || "#1f2937"),
+      text_color: color(String(button.text_color || ""), "#ffffff"),
+      use_auto_color: button.use_auto_color !== false,
+      enabled: true,
+      position,
+    };
+    const id = String(button.id || "");
+    if (existingIds.has(id)) {
+      retainedIds.add(id);
+      const { error: updateError } = await supabase.from("actions").update(row).eq("id", id).eq("landing_id", landingId);
+      if (updateError) fail(landingId, updateError.message);
+    } else {
+      const { error: insertError } = await supabase.from("actions").insert({ ...row, is_generated: false, source_field: null });
+      if (insertError) fail(landingId, insertError.message);
+    }
+  }
+
+  const removableIds = (existing || [])
+    .filter((item) => item.enabled !== false && !retainedIds.has(item.id))
+    .map((item) => item.id);
+  if (removableIds.length) {
+    const { error: deleteError } = await supabase.from("actions").delete().eq("landing_id", landingId).in("id", removableIds);
+    if (deleteError) fail(landingId, deleteError.message);
+  }
+  revalidatePath(`/admin/landings/${landingId}/visual`);
+  revalidatePath("/admin");
+  redirect(`/admin/landings/${landingId}/visual?saved=Cambios guardados`);
 }

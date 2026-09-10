@@ -87,6 +87,65 @@ export function buttonShapeRadius(shape?: string | null): string {
   return "var(--radius-md)";
 }
 
+export type ButtonZoneStyle = {
+  gap: number; height: number; radius: number; width: number;
+  shadow: "none" | "soft" | "strong"; finish: "solid" | "glass" | "outline";
+  colorMode: "auto" | "one"; oneColor: string; textSize: number; iconSize: number;
+};
+
+export const DEFAULT_BUTTON_ZONE: ButtonZoneStyle = {
+  gap: 9, height: 52, radius: 16, width: 100,
+  shadow: "soft", finish: "solid", colorMode: "auto", oneColor: "#6d5cff",
+  textSize: 14, iconSize: 29,
+};
+
+export function parseButtonZone(raw: unknown): ButtonZoneStyle {
+  if (!raw || typeof raw !== "object") return { ...DEFAULT_BUTTON_ZONE };
+  return { ...DEFAULT_BUTTON_ZONE, ...(raw as Partial<ButtonZoneStyle>) };
+}
+
+// ---------- Per-element text/logo/background styling — matches the "linkme" ----------
+// reference design exactly: each element has its own font/weight/size/color/background,
+// not just the app's older shared font_pair + text_color + one text_panel toggle.
+export type TitleStyle = { font: string; weight: number; size: number; color: string; bgMode: "none" | "solid"; bg: string; align: "left" | "center" | "right" };
+export type SubtitleStyle = { font: string; weight: number; size: number; color: string; bgMode: "none" | "solid"; bg: string };
+export type LogoStyle = { shape: "round" | "square"; size: number; zoom: number; x: number; y: number; fallback: string };
+export type BackgroundPosition = { zoom: number; x: number; y: number; tint: number };
+
+export const TEXT_FONT_OPTIONS: { value: string; label: string }[] = [
+  { value: "Inter,ui-sans-serif,system-ui,sans-serif", label: "Inter · Moderna" },
+  { value: "Georgia,serif", label: "Georgia · Editorial" },
+  { value: "'Trebuchet MS',sans-serif", label: "Trebuchet · Friendly" },
+  { value: "'Arial Black',Arial,sans-serif", label: "Arial Black · Fuerte" },
+  { value: "'Courier New',monospace", label: "Courier · Mono" },
+];
+
+const DEFAULT_TITLE_STYLE: TitleStyle = { font: TEXT_FONT_OPTIONS[0].value, weight: 900, size: 28, color: "#ffffff", bgMode: "none", bg: "#111111", align: "center" };
+const DEFAULT_SUBTITLE_STYLE: SubtitleStyle = { font: TEXT_FONT_OPTIONS[0].value, weight: 500, size: 14, color: "#ffffff", bgMode: "none", bg: "#111111" };
+const DEFAULT_LOGO_STYLE: LogoStyle = { shape: "round", size: 124, zoom: 1, x: 50, y: 50, fallback: "#f5eddf" };
+const DEFAULT_BG_POSITION: BackgroundPosition = { zoom: 1, x: 50, y: 50, tint: 0.28 };
+
+function hasKeys(raw: unknown): raw is Record<string, unknown> {
+  return Boolean(raw && typeof raw === "object" && Object.keys(raw as object).length > 0);
+}
+
+export function parseTitleStyle(landing: BackgroundLike & { text_color?: string | null; font_pair?: string | null; title_style?: unknown }): TitleStyle {
+  if (hasKeys(landing.title_style)) return { ...DEFAULT_TITLE_STYLE, ...(landing.title_style as Partial<TitleStyle>) };
+  return { ...DEFAULT_TITLE_STYLE, color: landing.text_color || autoTextColor(landing), font: getFontFamily(landing.font_pair || "modern") };
+}
+export function parseSubtitleStyle(landing: BackgroundLike & { text_color?: string | null; font_pair?: string | null; subtitle_style?: unknown }): SubtitleStyle {
+  if (hasKeys(landing.subtitle_style)) return { ...DEFAULT_SUBTITLE_STYLE, ...(landing.subtitle_style as Partial<SubtitleStyle>) };
+  return { ...DEFAULT_SUBTITLE_STYLE, color: landing.text_color || autoTextColor(landing), font: getFontFamily(landing.font_pair || "modern") };
+}
+export function parseLogoStyle(raw: unknown): LogoStyle { return hasKeys(raw) ? { ...DEFAULT_LOGO_STYLE, ...(raw as Partial<LogoStyle>) } : { ...DEFAULT_LOGO_STYLE }; }
+export function parseBackgroundPosition(raw: unknown): BackgroundPosition { return hasKeys(raw) ? { ...DEFAULT_BG_POSITION, ...(raw as Partial<BackgroundPosition>) } : { ...DEFAULT_BG_POSITION }; }
+
+export function buttonZoneShadow(shadow: ButtonZoneStyle["shadow"]): string {
+  if (shadow === "none") return "none";
+  if (shadow === "strong") return "0 12px 24px rgba(0,0,0,.20)";
+  return "0 8px 18px rgba(0,0,0,.13)";
+}
+
 export function buttonFillStyle(fill: string | null | undefined, bg: string, text: string): CSSProperties {
   if (fill === "outline") return { background: "transparent", border: `2px solid ${bg}`, color: bg };
   if (fill === "glass") return { background: hexToRgba(bg, 0.22), border: "1px solid rgba(255, 255, 255, 0.35)", color: text, backdropFilter: "blur(10px)" };

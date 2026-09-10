@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { parseButtonZone, parseTitleStyle, parseSubtitleStyle, parseLogoStyle, parseBackgroundPosition } from "@/lib/landing-catalog";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import ActionForm from "./action-form";
@@ -49,6 +50,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     button_font: landing.button_font || "modern",
     button_shape: landing.button_shape || "rounded",
     button_fill: landing.button_fill || "solid",
+    buttonZone: parseButtonZone(landing.button_style),
+    titleStyle: parseTitleStyle(landing),
+    subtitleStyle: parseSubtitleStyle(landing),
+    logoStyle: parseLogoStyle(landing.logo_style),
+    bgPosition: parseBackgroundPosition(landing.background_style),
     enabledActions,
     actionColors,
   };
