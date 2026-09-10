@@ -101,6 +101,14 @@
 .visual-format-box { border: 1.5px solid var(--accent-2); background: var(--accent-2-subtle); border-radius: var(--radius-md); padding: var(--space-3); }
 .visual-format-hint { margin: 6px 0 0; font-size: 0.75rem; color: var(--text-muted); }
 
+.visual-add-section-label { font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); margin: 0; }
+.visual-add-divider { height: 1px; background: var(--border); margin: var(--space-4) 0; border: none; }
+.visual-add-custom-cta {
+  display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 13px 16px;
+  border-radius: var(--radius-md); border: 1.5px dashed var(--accent); background: var(--accent-subtle);
+  color: var(--accent); font-weight: 700; font-size: 0.875rem; cursor: pointer;
+}
+
 /* ---------- Simple buttons view (default) — only the active ones, plus a tap-to-add icon grid ---------- */
 .simple-btn-row { border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-3); display: flex; flex-direction: column; gap: 8px; background: var(--surface-2); }
 .simple-btn-head { display: flex; align-items: center; gap: 8px; }

@@ -18,6 +18,8 @@ export type Draft = {
   text_panel_color: string;
   font_pair: string;
   button_font: string;
+  button_shape: string;
+  button_fill: string;
   enabledActions: Record<string, boolean>;
   actionColors: Record<string, ActionColorOverride | undefined>;
 };

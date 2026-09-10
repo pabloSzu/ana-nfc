@@ -7,13 +7,12 @@ import BackgroundPicker from "../background-picker";
 import FontPicker from "../font-picker";
 import IconPicker from "../icon-picker";
 import { compressImage } from "@/lib/compress-image";
-import { getAllActions, AUTO_COLORS, resolveTextColor, panelBackground, getFontFamily, displayUsername } from "@/lib/landing-catalog";
+import { getAllActions, AUTO_COLORS, resolveTextColor, panelBackground, getFontFamily, displayUsername, contrastTextColor, buttonShapeRadius, buttonFillStyle, BUTTON_SHAPES, BUTTON_FILLS } from "@/lib/landing-catalog";
 import { ActionTypeIcon } from "@/components/action-icons";
 import { IconDroplet, IconX, IconEdit, IconPlus, IconQrCode, IconEye, IconRocket, IconTrash } from "@/components/icons";
 
 const FORM_ID = "visual-identity-form";
 const NO_SUBMIT = "visual-noop";
-const NON_URL_TYPES = ["whatsapp", "email", "phone"];
 
 type Landing = {
   id: string;
@@ -31,6 +30,8 @@ type Landing = {
   text_panel_color?: string | null;
   redirect_url?: string | null;
   published?: boolean | null;
+  button_shape?: string | null;
+  button_fill?: string | null;
 };
 
 type Action = (formData: FormData) => void | Promise<void>;
@@ -62,7 +63,7 @@ export default function VisualEditor({
   publishAction,
   saveTemplateAction,
   removeTemplateAction,
-  saveButtonFont,
+  saveButtonStyle,
   addCustomAction,
   updateCustomAction,
   removeCustomAction,
@@ -79,13 +80,13 @@ export default function VisualEditor({
   publishAction: Action;
   saveTemplateAction: Action;
   removeTemplateAction: Action;
-  saveButtonFont: Action;
+  saveButtonStyle: Action;
   addCustomAction: Action;
   updateCustomAction: Action;
   removeCustomAction: Action;
   moveAction: Action;
   customActions?: CustomAction[];
-  templateValues?: Record<string, { id: string; url: string; message: string; useAutoColor: boolean; backgroundColor: string; textColor: string }>;
+  templateValues?: Record<string, { id: string; title: string; url: string; message: string; useAutoColor: boolean; backgroundColor: string; textColor: string }>;
 }) {
   const { draft, update } = useDraft();
   const [customText, setCustomText] = useState(Boolean(landing.text_color));
@@ -157,8 +158,8 @@ export default function VisualEditor({
     if (s.kind === "settings") return "Configuración";
     if (s.kind === "add") return "Agregar botón";
     if (s.kind === "add-custom") return "Botón personalizado";
-    if (s.kind === "button-style") return "Fuente de los botones";
-    if (s.kind === "template") return getAllActions().find((item) => item.sourceField === s.sourceField)?.label || "Botón";
+    if (s.kind === "button-style") return "Estilo de los botones";
+    if (s.kind === "template") return templateValues[s.sourceField]?.title || getAllActions().find((item) => item.sourceField === s.sourceField)?.label || "Botón";
     return s.action.title || "Botón";
   }
 
@@ -217,19 +218,25 @@ export default function VisualEditor({
         <div className="visual-actions">
           {visibleTemplateActions.map((item) => {
             const override = draft.actionColors[item.sourceField];
+            const bg = override?.bg || AUTO_COLORS[item.type] || draft.primary_color;
+            const text = override?.text || contrastTextColor(bg);
             return (
-              <button key={item.sourceField} type="button" className="preview-action visual-action-btn" style={{ background: override?.bg || AUTO_COLORS[item.type] || draft.primary_color, color: override?.text || "#fff", fontFamily: buttonFont }} onClick={() => openSheet({ kind: "template", sourceField: item.sourceField })}>
-                <ActionTypeIcon type={item.type} /> {item.label}
+              <button key={item.sourceField} type="button" className="preview-action visual-action-btn" style={{ ...buttonFillStyle(draft.button_fill, bg, text), borderRadius: buttonShapeRadius(draft.button_shape), fontFamily: buttonFont }} onClick={() => openSheet({ kind: "template", sourceField: item.sourceField })}>
+                <ActionTypeIcon type={item.type} /> {templateValues[item.sourceField]?.title || item.label}
                 <span className="visual-chip visual-chip-badge visual-chip-badge-action" title="Editar botón"><IconEdit /></span>
               </button>
             );
           })}
-          {customActions.map((action) => (
-            <button key={action.id} type="button" className="preview-action visual-action-btn" style={{ background: action.use_auto_color ? AUTO_COLORS[action.type] || draft.primary_color : action.background_color || draft.primary_color, color: action.text_color || "#fff", fontFamily: buttonFont }} onClick={() => openSheet({ kind: "custom", action })}>
-              <ActionTypeIcon type={action.type} icon={action.icon} /> {action.title}
-              <span className="visual-chip visual-chip-badge visual-chip-badge-action" title="Editar botón"><IconEdit /></span>
-            </button>
-          ))}
+          {customActions.map((action) => {
+            const bg = action.use_auto_color ? AUTO_COLORS[action.type] || draft.primary_color : action.background_color || draft.primary_color;
+            const text = action.text_color || contrastTextColor(bg);
+            return (
+              <button key={action.id} type="button" className="preview-action visual-action-btn" style={{ ...buttonFillStyle(draft.button_fill, bg, text), borderRadius: buttonShapeRadius(draft.button_shape), fontFamily: buttonFont }} onClick={() => openSheet({ kind: "custom", action })}>
+                <ActionTypeIcon type={action.type} icon={action.icon} /> {action.title}
+                <span className="visual-chip visual-chip-badge visual-chip-badge-action" title="Editar botón"><IconEdit /></span>
+              </button>
+            );
+          })}
           <button type="button" className="visual-add-action" onClick={() => openSheet({ kind: "add" })}>
             <IconPlus /> Agregar botón
           </button>
@@ -368,19 +375,28 @@ export default function VisualEditor({
 
                 {sheet.kind === "add" && (
                   <>
-                    <p className="muted" style={{ marginTop: 0 }}>Elegí qué tipo de botón querés agregar.</p>
-                    <div className="simple-add-grid">
-                      {availableTemplateActions.map((item) => (
-                        <button key={item.sourceField} type="button" className="simple-add-icon" onClick={() => setSheet({ kind: "template", sourceField: item.sourceField })}>
-                          <ActionTypeIcon type={item.type} />
-                          <small>{item.label}</small>
-                        </button>
-                      ))}
-                      <button type="button" className="simple-add-icon" onClick={() => setSheet({ kind: "add-custom" })}>
-                        <IconPlus />
-                        <small>Otro link</small>
-                      </button>
-                    </div>
+                    <p className="visual-add-section-label">Principales</p>
+                    <p className="muted" style={{ marginTop: 0 }}>Tu WhatsApp, Instagram, etc. — uno de cada, con su marca y su color.</p>
+                    {availableTemplateActions.length > 0 ? (
+                      <div className="simple-add-grid">
+                        {availableTemplateActions.map((item) => (
+                          <button key={item.sourceField} type="button" className="simple-add-icon" onClick={() => setSheet({ kind: "template", sourceField: item.sourceField })}>
+                            <ActionTypeIcon type={item.type} />
+                            <small>{item.label}</small>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="muted" style={{ fontSize: "0.8125rem" }}>Ya usaste todos los principales — para otro más, usá el botón personalizado de abajo.</p>
+                    )}
+
+                    <div className="visual-add-divider" />
+
+                    <p className="visual-add-section-label">Personalizado</p>
+                    <p className="muted" style={{ marginTop: 0 }}>Para un segundo WhatsApp, un link con el nombre que quieras, o cualquier otra cosa — ícono, color y nombre a tu gusto, sin límite.</p>
+                    <button type="button" className="visual-add-custom-cta" onClick={() => setSheet({ kind: "add-custom" })}>
+                      <IconPlus /> Crear botón personalizado
+                    </button>
                   </>
                 )}
 
@@ -389,9 +405,28 @@ export default function VisualEditor({
                 )}
 
                 {sheet.kind === "button-style" && (
-                  <form action={saveButtonFont} className="stack" onSubmit={() => setSheet(null)}>
+                  <form action={saveButtonStyle} className="stack" onSubmit={() => setSheet(null)}>
                     <input type="hidden" name="landing_id" value={landing.id} />
                     <input type="hidden" name="button_font" value={draft.button_font} />
+                    <input type="hidden" name="button_shape" value={draft.button_shape} />
+                    <input type="hidden" name="button_fill" value={draft.button_fill} />
+                    <p className="muted" style={{ marginTop: 0 }}>Un mismo estilo para todos los botones — así se ven como un solo conjunto, no una mezcla.</p>
+                    <label className="label">
+                      Forma
+                      <div className="segmented">
+                        {BUTTON_SHAPES.map((option) => (
+                          <button key={option.id} type="button" className={draft.button_shape === option.id ? "segmented-option active" : "segmented-option"} onClick={() => update({ button_shape: option.id })}>{option.label}</button>
+                        ))}
+                      </div>
+                    </label>
+                    <label className="label">
+                      Relleno
+                      <div className="segmented">
+                        {BUTTON_FILLS.map((option) => (
+                          <button key={option.id} type="button" className={draft.button_fill === option.id ? "segmented-option active" : "segmented-option"} onClick={() => update({ button_fill: option.id })}>{option.label}</button>
+                        ))}
+                      </div>
+                    </label>
                     <FontPicker label="Fuente de los botones" value={draft.button_font} onChange={(id) => update({ button_font: id })} />
                     <button className="btn full" type="submit">Guardar</button>
                   </form>
@@ -423,13 +458,12 @@ function TemplateButtonForm({
   landingId, sourceField, isNew, initialValue, saveTemplateAction, removeTemplateAction, moveAction, onDone,
 }: {
   landingId: string; sourceField: string; isNew: boolean;
-  initialValue?: { id: string; url: string; message: string; useAutoColor: boolean; backgroundColor: string; textColor: string };
+  initialValue?: { id: string; title: string; url: string; message: string; useAutoColor: boolean; backgroundColor: string; textColor: string };
   saveTemplateAction: Action; removeTemplateAction: Action; moveAction: Action; onDone: () => void;
 }) {
   const item = getAllActions().find((entry) => entry.sourceField === sourceField)!;
-  const [customColor, setCustomColor] = useState(initialValue ? !initialValue.useAutoColor : false);
-  const [bg, setBg] = useState(initialValue?.backgroundColor || AUTO_COLORS[item.type] || "#1f2937");
-  const [text, setText] = useState(initialValue?.textColor || "#ffffff");
+  const brandColor = AUTO_COLORS[item.type] || "#1f2937";
+  const [bg, setBg] = useState(initialValue?.backgroundColor || brandColor);
   const hint = FORMAT_HINTS[item.input];
 
   return (
@@ -437,9 +471,10 @@ function TemplateButtonForm({
       <form action={saveTemplateAction} className="stack" onSubmit={onDone}>
         <input type="hidden" name="landing_id" value={landingId} />
         <input type="hidden" name="source_field" value={sourceField} />
-        <input type="hidden" name="custom_color" value={customColor ? "on" : "off"} />
-        {customColor && <input type="hidden" name="color" value={bg} />}
-        {customColor && <input type="hidden" name="text_color" value={text} />}
+        <input type="hidden" name="custom_color" value="on" />
+        <input type="hidden" name="color" value={bg} />
+        <input type="hidden" name="text_color" value={contrastTextColor(bg)} />
+        <label className="label">Nombre del botón<input name="title" defaultValue={initialValue?.title || item.label} placeholder={item.label} required /></label>
         <div className={hint ? "visual-format-box" : undefined}>
           {item.prefix ? (
             <label className="label">
@@ -465,16 +500,13 @@ function TemplateButtonForm({
         </div>
         {item.message && <label className="label">Mensaje de WhatsApp<input name="message" defaultValue={initialValue?.message || "Hola, quiero hacer una consulta."} /></label>}
 
-        <label className="check-label">
-          <input type="checkbox" checked={customColor} onChange={(event) => setCustomColor(event.target.checked)} />
-          Color personalizado
-        </label>
-        {customColor && (
-          <div className="form-split">
-            <label className="label">Fondo<input type="color" value={bg} onChange={(event) => setBg(event.target.value)} /></label>
-            <label className="label">Texto<input type="color" value={text} onChange={(event) => setText(event.target.value)} /></label>
+        <label className="label">
+          Color del botón
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            <input type="color" value={bg} onChange={(event) => setBg(event.target.value)} />
+            {bg !== brandColor && <button type="button" className="icon-button" title="Volver al color de la marca" onClick={() => setBg(brandColor)}>↺</button>}
           </div>
-        )}
+        </label>
 
         <button className="btn full" type="submit">Guardar</button>
       </form>
@@ -510,11 +542,10 @@ function CustomButtonForm({
 }: {
   action: CustomAction; landingId: string; updateCustomAction: Action; removeCustomAction: Action; moveAction: Action; onDone: () => void;
 }) {
-  const needsUrl = !NON_URL_TYPES.includes(action.type);
+  const item = getAllActions().find((entry) => entry.type === action.type) || getAllActions().find((entry) => entry.type === "url")!;
+  const brandColor = AUTO_COLORS[action.type] || "#1f2937";
   const [icon, setIcon] = useState(action.icon || "");
-  const [customColor, setCustomColor] = useState(action.use_auto_color === false);
-  const [bg, setBg] = useState(action.background_color || AUTO_COLORS[action.type] || "#1f2937");
-  const [text, setText] = useState(action.text_color || "#ffffff");
+  const [bg, setBg] = useState(action.background_color || brandColor);
   return (
     <>
       <form action={updateCustomAction} className="stack" onSubmit={onDone}>
@@ -523,27 +554,22 @@ function CustomButtonForm({
         <input type="hidden" name="type" value={action.type} />
         <input type="hidden" name="icon" value={icon} />
         <input type="hidden" name="background_color" value={bg} />
-        <input type="hidden" name="text_color" value={text} />
-        <input type="hidden" name="use_auto_color" value={customColor ? "" : "on"} />
+        <input type="hidden" name="text_color" value={contrastTextColor(bg)} />
+        <input type="hidden" name="use_auto_color" value="" />
         <input type="hidden" name="enabled" value="on" />
         <input type="hidden" name="position" value={action.position ?? 0} />
         <label className="label">Título<input name="title" defaultValue={action.title} required /></label>
-        {action.type === "whatsapp" && <label className="label">Mensaje<input name="message" defaultValue={action.message || ""} /></label>}
-        {action.type === "email" && <label className="label">Email<input name="value" type="email" defaultValue={action.url || ""} required /></label>}
-        {action.type === "phone" && <label className="label">Teléfono<input name="value" type="tel" defaultValue={action.url || ""} required /></label>}
-        {needsUrl && <label className="label">Link<input name="url" type="text" defaultValue={action.url || ""} required /></label>}
+        {item.message && <label className="label">Mensaje de WhatsApp<input name="message" defaultValue={action.message || ""} /></label>}
+        <ValueField item={item} defaultValue={action.url || ""} />
         <IconPicker type={action.type} value={icon} onChange={setIcon} />
 
-        <label className="check-label">
-          <input type="checkbox" checked={customColor} onChange={(event) => setCustomColor(event.target.checked)} />
-          Color personalizado
-        </label>
-        {customColor && (
-          <div className="form-split">
-            <label className="label">Fondo<input type="color" value={bg} onChange={(event) => setBg(event.target.value)} /></label>
-            <label className="label">Texto<input type="color" value={text} onChange={(event) => setText(event.target.value)} /></label>
+        <label className="label">
+          Color del botón
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            <input type="color" value={bg} onChange={(event) => setBg(event.target.value)} />
+            {bg !== brandColor && <button type="button" className="icon-button" title="Volver al color de la marca" onClick={() => setBg(brandColor)}>↺</button>}
           </div>
-        )}
+        </label>
 
         <button className="btn full" type="submit">Guardar</button>
       </form>
@@ -570,30 +596,62 @@ function CustomButtonForm({
   );
 }
 
+function buildPrefixedUrl(item: { type: string; prefix?: string }, raw: string) {
+  const clean = displayUsername(item.type, raw);
+  return clean && item.prefix ? `https://${item.prefix}${clean}` : "";
+}
+
+function ValueField({ item, defaultValue = "" }: { item: ReturnType<typeof getAllActions>[number]; defaultValue?: string }) {
+  const hint = FORMAT_HINTS[item.input];
+  const field = item.prefix ? (
+    <label className="label">
+      {item.label}
+      <div className="input-prefix-group">
+        <span className="input-prefix">{item.prefix}</span>
+        <input name="url" defaultValue={displayUsername(item.type, defaultValue)} placeholder={item.placeholder} required onBlur={(event) => { event.target.value = buildPrefixedUrl(item, event.target.value); }} />
+      </div>
+    </label>
+  ) : item.input === "email" ? (
+    <label className="label">Email<input name="value" type="email" defaultValue={defaultValue} placeholder={item.placeholder} required /></label>
+  ) : item.input === "phone" ? (
+    <label className="label">Número<input name="value" type="tel" defaultValue={defaultValue} placeholder={item.placeholder} required /></label>
+  ) : (
+    <label className="label">Link<input name="url" type="text" defaultValue={defaultValue} placeholder={item.placeholder} required /></label>
+  );
+  return (
+    <div className={hint ? "visual-format-box" : undefined}>
+      {field}
+      {hint && <p className="visual-format-hint">Este dato tiene un formato fijo: {hint}</p>}
+    </div>
+  );
+}
+
 function NewCustomButtonForm({ landingId, addCustomAction, onDone }: { landingId: string; addCustomAction: Action; onDone: () => void }) {
+  const allTypes = getAllActions();
   const [type, setType] = useState("url");
   const [icon, setIcon] = useState("");
-  const needsUrl = !NON_URL_TYPES.includes(type);
+  const item = allTypes.find((entry) => entry.type === type)!;
+  const brandColor = AUTO_COLORS[type] || "#1f2937";
+  const [bg, setBg] = useState(brandColor);
   return (
     <form action={addCustomAction} className="stack" onSubmit={onDone}>
       <input type="hidden" name="landing_id" value={landingId} />
-      <input type="hidden" name="use_auto_color" value="on" />
+      <input type="hidden" name="use_auto_color" value="" />
       <input type="hidden" name="icon" value={icon} />
+      <input type="hidden" name="background_color" value={bg} />
+      <input type="hidden" name="text_color" value={contrastTextColor(bg)} />
       <label className="label">
-        Tipo
-        <select name="type" value={type} onChange={(event) => setType(event.target.value)}>
-          <option value="url">Link / Web</option>
-          <option value="whatsapp">WhatsApp</option>
-          <option value="email">Email</option>
-          <option value="phone">Teléfono</option>
+        Tipo de link
+        <select name="type" value={type} onChange={(event) => { setType(event.target.value); setBg(AUTO_COLORS[event.target.value] || "#1f2937"); }}>
+          {allTypes.map((entry) => <option key={entry.type} value={entry.type}>{entry.label}</option>)}
         </select>
       </label>
-      <label className="label">Título<input name="title" placeholder="Ej: Reservar mesa" required /></label>
-      {type === "whatsapp" && <label className="label">Mensaje<input name="message" defaultValue="Hola, quiero hacer una consulta." /></label>}
-      {type === "email" && <label className="label">Email<input name="value" type="email" placeholder="contacto@negocio.com" required /></label>}
-      {type === "phone" && <label className="label">Teléfono<input name="value" type="tel" placeholder="+54 9 351..." required /></label>}
-      {needsUrl && <label className="label">Link<input name="url" type="text" placeholder="tusitio.com" required /></label>}
+      <p className="muted" style={{ marginTop: -6, fontSize: "0.75rem" }}>Elegí el tipo para que el enlace y la validación funcionen bien — el nombre y el ícono los elegís vos abajo.</p>
+      <label className="label">Título del botón<input name="title" placeholder={item.label} required /></label>
+      {item.message && <label className="label">Mensaje de WhatsApp<input name="message" defaultValue="Hola, quiero hacer una consulta." /></label>}
+      <ValueField item={item} />
       <IconPicker type={type} value={icon} onChange={setIcon} />
+      <label className="label">Color del botón<input type="color" value={bg} onChange={(event) => setBg(event.target.value)} /></label>
       <button className="btn full" type="submit">Agregar</button>
     </form>
   );

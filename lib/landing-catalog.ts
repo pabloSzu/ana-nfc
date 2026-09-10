@@ -51,7 +51,11 @@ export function resolveTextColor(landing: BackgroundLike & { text_color?: string
   return landing.text_color || autoTextColor(landing);
 }
 
-function hexToRgba(hex: string, alpha: number): string {
+export function contrastTextColor(hex: string): string {
+  return luminance(hex) > 0.5 ? "#161b18" : "#ffffff";
+}
+
+export function hexToRgba(hex: string, alpha: number): string {
   const clean = hex.replace("#", "");
   const parts = clean.match(/.{1,2}/g) || ["0", "0", "0"];
   const [r, g, b] = parts.map((part) => parseInt(part, 16));
@@ -61,6 +65,32 @@ function hexToRgba(hex: string, alpha: number): string {
 export function panelBackground(textColor: string, overrideHex?: string | null): string {
   if (overrideHex) return hexToRgba(overrideHex, 0.55);
   return textColor === "#ffffff" ? "rgba(0, 0, 0, 0.38)" : "rgba(255, 255, 255, 0.78)";
+}
+
+// ---------- Global button style: one shape + fill applied to every button, ----------
+// so the whole card reads as one cohesive design instead of a per-button mix.
+export const BUTTON_SHAPES: { id: string; label: string }[] = [
+  { id: "rounded", label: "Redondeado" },
+  { id: "pill", label: "Píldora" },
+  { id: "sharp", label: "Cuadrado" },
+];
+
+export const BUTTON_FILLS: { id: string; label: string }[] = [
+  { id: "solid", label: "Sólido" },
+  { id: "outline", label: "Contorno" },
+  { id: "glass", label: "Glass" },
+];
+
+export function buttonShapeRadius(shape?: string | null): string {
+  if (shape === "pill") return "var(--radius-full)";
+  if (shape === "sharp") return "6px";
+  return "var(--radius-md)";
+}
+
+export function buttonFillStyle(fill: string | null | undefined, bg: string, text: string): CSSProperties {
+  if (fill === "outline") return { background: "transparent", border: `2px solid ${bg}`, color: bg };
+  if (fill === "glass") return { background: hexToRgba(bg, 0.22), border: "1px solid rgba(255, 255, 255, 0.35)", color: text, backdropFilter: "blur(10px)" };
+  return { background: bg, color: text, border: "none" };
 }
 
 export function normalizeUrl(value: string): string {

@@ -2,9 +2,9 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { DraftProvider, type Draft } from "../draft-context";
-import { save, addAction, updateAction, removeAction, uploadLogo, removeLogo, uploadBackgroundImage, removeBackgroundImage } from "../actions";
+import { save, uploadLogo, removeLogo, uploadBackgroundImage, removeBackgroundImage } from "../actions";
 import { publish, deleteLanding } from "../../../actions";
-import { saveTemplateAction, removeTemplateAction, saveButtonFont, moveVisualAction } from "./actions";
+import { saveTemplateAction, removeTemplateAction, saveButtonStyle, moveVisualAction, addCustomActionVisual, updateCustomActionVisual, removeCustomActionVisual } from "./actions";
 import DeleteLandingButton from "../../../delete-landing-button";
 import { IconQrCode, IconEye } from "@/components/icons";
 import Toast from "@/components/toast";
@@ -23,13 +23,14 @@ export default async function VisualPage({ params }: { params: Promise<{ id: str
 
   const enabledActions: Record<string, boolean> = {};
   const actionColors: Record<string, { bg: string; text: string } | undefined> = {};
-  const templateValues: Record<string, { id: string; url: string; message: string; useAutoColor: boolean; backgroundColor: string; textColor: string }> = {};
+  const templateValues: Record<string, { id: string; title: string; url: string; message: string; useAutoColor: boolean; backgroundColor: string; textColor: string }> = {};
   actions?.forEach((action) => {
     if (action.is_generated && action.source_field) {
       enabledActions[action.source_field] = action.enabled === true;
       if (action.use_auto_color === false) actionColors[action.source_field] = { bg: action.background_color || "#1f2937", text: action.text_color || "#ffffff" };
       templateValues[action.source_field] = {
         id: action.id,
+        title: action.title || "",
         url: action.url || "",
         message: action.message || "",
         useAutoColor: action.use_auto_color !== false,
@@ -53,6 +54,8 @@ export default async function VisualPage({ params }: { params: Promise<{ id: str
     text_panel_color: landing.text_panel_color || "",
     font_pair: landing.font_pair || "modern",
     button_font: landing.button_font || "modern",
+    button_shape: landing.button_shape || "rounded",
+    button_fill: landing.button_fill || "solid",
     enabledActions,
     actionColors,
   };
@@ -66,7 +69,7 @@ export default async function VisualPage({ params }: { params: Promise<{ id: str
           <Link className="btn secondary" href={`/admin/landings/${id}`}>Ir al editor clásico</Link>
           <Link className="btn secondary" href={`/admin/landings/${id}/qr`}><IconQrCode /> Código QR</Link>
           <Link className="btn secondary" href={`/${landing.slug}`} target="_blank" rel="noreferrer"><IconEye /> Vista previa</Link>
-          <DeleteLandingButton action={deleteLanding} />
+          <DeleteLandingButton action={deleteLanding} landingId={id} />
         </div>
       </header>
       <Suspense fallback={null}><Toast /></Suspense>
@@ -82,10 +85,10 @@ export default async function VisualPage({ params }: { params: Promise<{ id: str
             publishAction={publish}
             saveTemplateAction={saveTemplateAction}
             removeTemplateAction={removeTemplateAction}
-            saveButtonFont={saveButtonFont}
-            addCustomAction={addAction}
-            updateCustomAction={updateAction}
-            removeCustomAction={removeAction}
+            saveButtonStyle={saveButtonStyle}
+            addCustomAction={addCustomActionVisual}
+            updateCustomAction={updateCustomActionVisual}
+            removeCustomAction={removeCustomActionVisual}
             moveAction={moveVisualAction}
             customActions={enabledCustomActions}
             templateValues={templateValues}

@@ -1,4 +1,4 @@
-import { AUTO_COLORS, backgroundStyle, resolveTextColor, getFontFamily, panelBackground, buildActionLink } from "@/lib/landing-catalog";
+import { AUTO_COLORS, backgroundStyle, resolveTextColor, getFontFamily, panelBackground, buildActionLink, buttonShapeRadius, buttonFillStyle } from "@/lib/landing-catalog";
 import { ActionTypeIcon } from "@/components/action-icons";
 
 type LandingAction = {
@@ -28,6 +28,8 @@ type Landing = {
   text_panel_color?: string | null;
   font_pair?: string | null;
   button_font?: string | null;
+  button_shape?: string | null;
+  button_fill?: string | null;
 };
 
 const noBlank = new Set(["whatsapp", "email", "phone"]);
@@ -68,22 +70,26 @@ export default function LandingRenderer({ landing, actions, preview = false }: {
           </>
         )}
         <div>
-          {actions.map((action) => (
-            <a
-              key={action.id}
-              className="action"
-              href={actionHref(action)}
-              target={noBlank.has(action.type) ? undefined : "_blank"}
-              rel="noreferrer"
-              style={{
-                background: action.use_auto_color ? AUTO_COLORS[action.type] || primary : action.background_color || primary,
-                color: action.text_color || "#ffffff",
-                fontFamily: buttonFont,
-              }}
-            >
-              <ActionTypeIcon type={action.type} icon={action.icon} /> {action.title}
-            </a>
-          ))}
+          {actions.map((action) => {
+            const bg = action.use_auto_color ? AUTO_COLORS[action.type] || primary : action.background_color || primary;
+            const text = action.text_color || "#ffffff";
+            return (
+              <a
+                key={action.id}
+                className="action"
+                href={actionHref(action)}
+                target={noBlank.has(action.type) ? undefined : "_blank"}
+                rel="noreferrer"
+                style={{
+                  ...buttonFillStyle(landing.button_fill, bg, text),
+                  borderRadius: buttonShapeRadius(landing.button_shape),
+                  fontFamily: buttonFont,
+                }}
+              >
+                <ActionTypeIcon type={action.type} icon={action.icon} /> {action.title}
+              </a>
+            );
+          })}
         </div>
       </div>
     </main>
