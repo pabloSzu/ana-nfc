@@ -47,6 +47,8 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     text_panel_color: landing.text_panel_color || "",
     font_pair: landing.font_pair || "modern",
     button_font: landing.button_font || "modern",
+    button_shape: landing.button_shape || "rounded",
+    button_fill: landing.button_fill || "solid",
     enabledActions,
     actionColors,
   };
@@ -110,7 +112,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         <div className="row-actions">
           <Link className="btn secondary" href={`/admin/landings/${id}/qr`}><IconQrCode /> Código QR</Link>
           <Link className="btn secondary" href={`/${landing.slug}`} target="_blank" rel="noreferrer"><IconEye /> Vista previa</Link>
-          <DeleteLandingButton action={deleteLanding} />
+          <DeleteLandingButton action={deleteLanding} landingId={id} />
         </div>
       </header>
       <Suspense fallback={null}><Toast /></Suspense>
