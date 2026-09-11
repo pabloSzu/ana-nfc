@@ -112,16 +112,26 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 
   return (
     <main className="shell builder-shell">
-      <header className="builder-header">
-        <Link className="back-link" href="/admin">← Volver</Link>
-        <div><p className="eyebrow">Constructor</p><h1>{landing.business_name}</h1><p className="muted">/{landing.slug}</p></div>
-        <div className="row-actions">
-          <Link className="btn rainbow-editor-cta" href={`/admin/landings/${id}/editor-v2`}>
-            <span aria-hidden="true">✦</span> Probá el editor nuevo
+      <header className="builder-header landing-admin-header">
+        <div className="landing-header-identity">
+          <Link className="landing-header-back" href="/admin" aria-label="Volver al panel"><span aria-hidden="true">←</span></Link>
+          <div className="landing-header-title">
+            <p className="landing-header-kicker"><span /> Landing NFC</p>
+            <h1>{landing.business_name}</h1>
+            <p className="landing-header-slug">milandingwebfacil.com/{landing.slug}</p>
+          </div>
+        </div>
+        <div className="landing-header-nav">
+          <Link className="landing-editor-cta" href={`/admin/landings/${id}/editor-v2`}>
+            <span className="landing-editor-icon" aria-hidden="true">✦</span>
+            <span className="landing-editor-copy"><strong>Abrir editor visual</strong><small>Diseñá la landing en vivo</small></span>
+            <span className="landing-editor-arrow" aria-hidden="true">→</span>
           </Link>
-          <Link className="btn secondary" href={`/admin/landings/${id}/qr`}><IconQrCode /> Código QR</Link>
-          <Link className="btn secondary" href={`/${landing.slug}`} target="_blank" rel="noreferrer"><IconEye /> Vista previa</Link>
-          <DeleteLandingButton action={deleteLanding} landingId={id} />
+          <div className="landing-header-tools">
+            <Link className="landing-tool-button" href={`/admin/landings/${id}/qr`}><IconQrCode /><span>Código QR</span></Link>
+            <Link className="landing-tool-button" href={`/${landing.slug}`} target="_blank" rel="noreferrer"><IconEye /><span>Ver landing</span></Link>
+            <DeleteLandingButton action={deleteLanding} landingId={id} label="Eliminar" />
+          </div>
         </div>
       </header>
       <Suspense fallback={null}><Toast /></Suspense>
