@@ -309,15 +309,46 @@ function parseJson(raw: FormDataEntryValue | null): Record<string, unknown> {
 export async function saveDesignStyle(fd: FormData) {
   const { user } = await auth();
   const landingId = String(fd.get("landing_id") || "");
+  const requestedReturnTo = String(fd.get("return_to") || "");
+  const returnTo = requestedReturnTo === "/admin" || requestedReturnTo.startsWith(`/admin/landings/${landingId}/`)
+    ? requestedReturnTo
+    : `/admin/landings/${landingId}/visual`;
+  const saveFail = (message: string): never => redirect(`${returnTo}?error=${encodeURIComponent(message)}`);
   const { supabase, data: landing, error: landingError } = await ownedLanding(landingId, user.id);
-  if (landingError) fail(landingId, landingError.message);
-  if (!landing) fail(landingId, "Landing inexistente o sin permisos.");
+  if (landingError) saveFail(landingError.message);
+  if (!landing) saveFail("Landing inexistente o sin permisos.");
   const businessName = String(fd.get("business_name") || "").trim();
-  if (!businessName) fail(landingId, "El nombre de la landing es obligatorio.");
+  if (!businessName) saveFail("El nombre de la landing es obligatorio.");
   const backgroundType = ["color", "gradient", "image"].includes(String(fd.get("background_type")))
     ? String(fd.get("background_type"))
     : "color";
-  const { error } = await supabase.from("landings").update({
+  const backgroundFile = fd.get("background_image");
+  let backgroundImageUrl: string | undefined;
+  if (backgroundType === "image" && backgroundFile instanceof File && backgroundFile.size > 0) {
+    if (backgroundFile.size > 5 * 1024 * 1024) saveFail("La imagen no puede superar 5 MB.");
+    if (!["image/jpeg", "image/png", "image/webp"].includes(backgroundFile.type)) saveFail("La imagen debe ser JPG, PNG o WEBP.");
+    const extension = backgroundFile.type.split("/")[1].replace("jpeg", "jpg");
+    const path = `${user.id}/${landingId}/bg-${Date.now()}.${extension}`;
+    const { error: uploadError } = await supabase.storage.from("landing-assets").upload(path, backgroundFile, { contentType: backgroundFile.type, upsert: false });
+    if (uploadError) saveFail(uploadError.message);
+    backgroundImageUrl = supabase.storage.from("landing-assets").getPublicUrl(path).data.publicUrl;
+  } else if (fd.get("remove_background_image") === "true") {
+    backgroundImageUrl = "";
+  }
+  const logoFile = fd.get("logo_image");
+  let logoImageUrl: string | undefined;
+  if (logoFile instanceof File && logoFile.size > 0) {
+    if (logoFile.size > 5 * 1024 * 1024) saveFail("El logo no puede superar 5 MB.");
+    if (!["image/jpeg", "image/png", "image/webp"].includes(logoFile.type)) saveFail("El logo debe ser JPG, PNG o WEBP.");
+    const extension = logoFile.type.split("/")[1].replace("jpeg", "jpg");
+    const path = `${user.id}/${landingId}/logo-${Date.now()}.${extension}`;
+    const { error: uploadError } = await supabase.storage.from("landing-assets").upload(path, logoFile, { contentType: logoFile.type, upsert: false });
+    if (uploadError) saveFail(uploadError.message);
+    logoImageUrl = supabase.storage.from("landing-assets").getPublicUrl(path).data.publicUrl;
+  } else if (fd.get("remove_logo_image") === "true") {
+    logoImageUrl = "";
+  }
+  const landingUpdate: Record<string, unknown> = {
     business_name: businessName,
     description: String(fd.get("description") || "").trim(),
     primary_color: color(fd.get("primary_color"), "#1f2937"),
@@ -334,22 +365,25 @@ export async function saveDesignStyle(fd: FormData) {
     subtitle_style: parseJson(fd.get("subtitle_style")),
     logo_style: parseJson(fd.get("logo_style")),
     background_style: parseJson(fd.get("background_style")),
-  }).eq("id", landingId);
-  if (error) fail(landingId, error.message);
+  };
+  if (backgroundImageUrl !== undefined) landingUpdate.background_image_url = backgroundImageUrl;
+  if (logoImageUrl !== undefined) landingUpdate.logo_url = logoImageUrl;
+  const { error } = await supabase.from("landings").update(landingUpdate).eq("id", landingId).eq("owner_id", user.id);
+  if (error) saveFail(error.message);
 
   let requestedButtons: Array<Record<string, unknown>> = [];
   try {
     const parsed = JSON.parse(String(fd.get("buttons") || "[]"));
     if (Array.isArray(parsed)) requestedButtons = parsed;
   } catch {
-    fail(landingId, "No se pudieron leer los botones del borrador.");
+    saveFail("No se pudieron leer los botones del borrador.");
   }
 
   const { data: existing, error: existingError } = await supabase
     .from("actions")
     .select("id,enabled")
     .eq("landing_id", landingId);
-  if (existingError) fail(landingId, existingError.message);
+  if (existingError) saveFail(existingError.message);
   const existingIds = new Set((existing || []).map((item) => item.id));
   const retainedIds = new Set<string>();
 
@@ -357,10 +391,10 @@ export async function saveDesignStyle(fd: FormData) {
     const button = requestedButtons[position];
     const type = validTypes.includes(String(button.type)) ? String(button.type) : "url";
     const title = String(button.title || "").trim();
-    if (!title) fail(landingId, `El botón ${position + 1} necesita un nombre.`);
+    if (!title) saveFail(`El botón ${position + 1} necesita un nombre.`);
     let value = String(button.url || "").trim();
-    if (type === "email" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) fail(landingId, `El email del botón “${title}” no parece válido.`);
-    if (["whatsapp", "phone"].includes(type) && value && !isPlausiblePhone(value)) fail(landingId, `El número del botón “${title}” parece incompleto.`);
+    if (type === "email" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) saveFail(`El email del botón “${title}” no parece válido.`);
+    if (["whatsapp", "phone"].includes(type) && value && !isPlausiblePhone(value)) saveFail(`El número del botón “${title}” parece incompleto.`);
     if (!["whatsapp", "email", "phone"].includes(type) && value && !value.startsWith("http")) value = normalizeUrl(value);
     const row = {
       landing_id: landingId,
@@ -380,10 +414,10 @@ export async function saveDesignStyle(fd: FormData) {
     if (existingIds.has(id)) {
       retainedIds.add(id);
       const { error: updateError } = await supabase.from("actions").update(row).eq("id", id).eq("landing_id", landingId);
-      if (updateError) fail(landingId, updateError.message);
+      if (updateError) saveFail(updateError.message);
     } else {
       const { error: insertError } = await supabase.from("actions").insert({ ...row, is_generated: false, source_field: null });
-      if (insertError) fail(landingId, insertError.message);
+      if (insertError) saveFail(insertError.message);
     }
   }
 
@@ -392,9 +426,10 @@ export async function saveDesignStyle(fd: FormData) {
     .map((item) => item.id);
   if (removableIds.length) {
     const { error: deleteError } = await supabase.from("actions").delete().eq("landing_id", landingId).in("id", removableIds);
-    if (deleteError) fail(landingId, deleteError.message);
+    if (deleteError) saveFail(deleteError.message);
   }
   revalidatePath(`/admin/landings/${landingId}/visual`);
+  revalidatePath(`/admin/landings/${landingId}/editor-v2`);
   revalidatePath("/admin");
-  redirect(`/admin/landings/${landingId}/visual?saved=Cambios guardados`);
+  redirect(`${returnTo}?saved=Cambios guardados`);
 }

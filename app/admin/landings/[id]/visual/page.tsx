@@ -4,8 +4,7 @@ import { parseButtonZone, parseTitleStyle, parseSubtitleStyle, parseLogoStyle, p
 import { DraftProvider, type Draft } from "../draft-context";
 import { publish, deleteLanding } from "../../../actions";
 import {
-  uploadLogoVisual, removeLogoVisual, uploadBackgroundImageVisual, removeBackgroundImageVisual,
-  saveDesignStyle,
+  uploadLogoVisual, removeLogoVisual, saveDesignStyle,
 } from "./actions";
 import VisualEditor from "./visual-editor";
 import Toast from "@/components/toast";
@@ -46,6 +45,10 @@ export default async function VisualPage({ params }: { params: Promise<{ id: str
       position: action.position ?? 0,
     }));
 
+  const buttonZone = parseButtonZone(landing.button_style);
+  const hasSavedButtonStyle = Boolean(landing.button_style && typeof landing.button_style === "object" && Object.keys(landing.button_style).length);
+  if (!hasSavedButtonStyle) buttonZone.oneColor = landing.primary_color || "#1f2937";
+
   const initialDraft: Draft = {
     business_name: landing.business_name || "",
     description: landing.description || "",
@@ -62,7 +65,7 @@ export default async function VisualPage({ params }: { params: Promise<{ id: str
     button_font: landing.button_font || "modern",
     button_shape: landing.button_shape || "rounded",
     button_fill: landing.button_fill || "solid",
-    buttonZone: parseButtonZone(landing.button_style),
+    buttonZone,
     titleStyle: parseTitleStyle(landing),
     subtitleStyle: parseSubtitleStyle(landing),
     logoStyle: parseLogoStyle(landing.logo_style),
@@ -81,8 +84,6 @@ export default async function VisualPage({ params }: { params: Promise<{ id: str
         siteUrl={siteUrl}
         uploadLogoAction={uploadLogoVisual}
         removeLogoAction={removeLogoVisual}
-        uploadBackgroundAction={uploadBackgroundImageVisual}
-        removeBackgroundAction={removeBackgroundImageVisual}
         publishAction={publish}
         deleteLandingAction={deleteLanding}
         saveDesignStyleAction={saveDesignStyle}

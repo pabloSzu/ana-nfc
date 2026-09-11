@@ -4,13 +4,13 @@ import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type 
 import Link from "next/link";
 import { useDraft, type Draft } from "../draft-context";
 import BackgroundPicker from "../background-picker";
-import IconPicker from "../icon-picker";
 import { compressImage } from "@/lib/compress-image";
 import {
-  getAllActions, AUTO_COLORS, displayUsername, contrastTextColor, buttonZoneShadow, buttonFillStyle,
+  getAllActions, AUTO_COLORS, displayUsername, contrastTextColor, buttonZoneShadow, buttonFillStyle, autoTextColor, resolveBackgroundTint,
   TEXT_FONT_OPTIONS, hexToRgba,
 } from "@/lib/landing-catalog";
 import { ActionTypeIcon } from "@/components/action-icons";
+import { resolveButtonColors } from "@/lib/design-presets";
 import { IconDroplet, IconX, IconEdit, IconPlus, IconQrCode, IconEye, IconRocket, IconTrash } from "@/components/icons";
 
 const DESIGN_FORM_ID = "visual-design-form";
@@ -30,7 +30,8 @@ type ButtonItem = {
   background_color: string; text_color: string; use_auto_color: boolean; position: number;
 };
 
-type Sheet = "title" | "subtitle" | "background" | "logo" | "buttonZone" | "add" | "settings" | { kind: "button"; button: ButtonItem } | null;
+type Sheet = "title" | "subtitle" | "background" | "logo" | "design" | "add" | "settings" | { kind: "button"; button: ButtonItem } | null;
+type Notice = { kind: "leave"; href: string } | { kind: "saveFirst"; reason: "image" | "publish" | "qr" } | { kind: "deleteLanding" } | null;
 
 const FORMAT_HINTS: Record<string, string> = {
   phone: "Con código de país, sin espacios ni signos. Ej: 5493511234567.",
@@ -38,13 +39,49 @@ const FORMAT_HINTS: Record<string, string> = {
   username: "Solo tu usuario, sin @ — el link se arma solo.",
 };
 
+type DesignPreset = {
+  id: string; name: string; description: string; accent: string;
+  buttonFont: string;
+  buttonZone: Omit<Draft["buttonZone"], "oneColor" | "preset" | "templateId">;
+  title: Pick<Draft["titleStyle"], "font" | "weight" | "size" | "align">;
+  subtitle: Pick<Draft["subtitleStyle"], "font" | "weight" | "size">;
+  logo: Pick<Draft["logoStyle"], "shape" | "size">;
+};
+
+const DESIGN_PRESETS: DesignPreset[] = [
+  {
+    id: "essential", name: "Esencial", description: "Limpio, claro y fácil de leer.", accent: "#5d64e8", buttonFont: "minimal",
+    buttonZone: { layout: "center", gap: 9, height: 52, radius: 16, width: 100, shadow: "soft", finish: "solid", collection: "soft", colorMode: "one", textSize: 14, iconSize: 29 },
+    title: { font: TEXT_FONT_OPTIONS[0].value, weight: 900, size: 28, align: "center" }, subtitle: { font: TEXT_FONT_OPTIONS[0].value, weight: 500, size: 14 }, logo: { shape: "round", size: 124 },
+  },
+  {
+    id: "modern", name: "Moderno", description: "Más presencia y botones protagonistas.", accent: "#20243b", buttonFont: "modern",
+    buttonZone: { layout: "center", gap: 11, height: 56, radius: 22, width: 100, shadow: "strong", finish: "solid", collection: "brand", colorMode: "one", textSize: 15, iconSize: 31 },
+    title: { font: "'Arial Black',Arial,sans-serif", weight: 900, size: 30, align: "left" }, subtitle: { font: TEXT_FONT_OPTIONS[0].value, weight: 500, size: 14 }, logo: { shape: "square", size: 128 },
+  },
+  {
+    id: "elegant", name: "Elegante", description: "Refinado, aireado y editorial.", accent: "#705849", buttonFont: "classic",
+    buttonZone: { layout: "center", gap: 12, height: 50, radius: 8, width: 94, shadow: "none", finish: "outline", collection: "luxury", colorMode: "one", textSize: 14, iconSize: 27 },
+    title: { font: "Georgia,serif", weight: 700, size: 32, align: "center" }, subtitle: { font: "Georgia,serif", weight: 400, size: 14 }, logo: { shape: "round", size: 118 },
+  },
+  {
+    id: "friendly", name: "Cercano", description: "Cálido, amable y con colores reconocibles.", accent: "#e46b50", buttonFont: "friendly",
+    buttonZone: { layout: "center", gap: 10, height: 54, radius: 27, width: 100, shadow: "soft", finish: "solid", collection: "soft", colorMode: "auto", textSize: 14, iconSize: 30 },
+    title: { font: "'Trebuchet MS',sans-serif", weight: 900, size: 29, align: "center" }, subtitle: { font: "'Trebuchet MS',sans-serif", weight: 500, size: 14 }, logo: { shape: "round", size: 126 },
+  },
+  {
+    id: "compact", name: "Compacto", description: "Ideal cuando hay muchos enlaces.", accent: "#177e70", buttonFont: "minimal",
+    buttonZone: { layout: "center", gap: 6, height: 44, radius: 12, width: 100, shadow: "soft", finish: "solid", collection: "minimal", colorMode: "one", textSize: 13, iconSize: 25 },
+    title: { font: TEXT_FONT_OPTIONS[0].value, weight: 800, size: 25, align: "center" }, subtitle: { font: TEXT_FONT_OPTIONS[0].value, weight: 400, size: 13 }, logo: { shape: "round", size: 104 },
+  },
+];
+
 export default function VisualEditor({
-  landing, siteUrl, uploadLogoAction, removeLogoAction, uploadBackgroundAction, removeBackgroundAction,
+  landing, siteUrl, uploadLogoAction, removeLogoAction,
   publishAction, deleteLandingAction, saveDesignStyleAction, buttons,
 }: {
   landing: Landing; siteUrl: string; uploadLogoAction: Action; removeLogoAction: Action;
-  uploadBackgroundAction: Action; removeBackgroundAction: Action; publishAction: Action; deleteLandingAction: Action;
-  saveDesignStyleAction: Action; buttons: ButtonItem[];
+  publishAction: Action; deleteLandingAction: Action; saveDesignStyleAction: Action; buttons: ButtonItem[];
 }) {
   const { draft, update: updateDraft } = useDraft();
   const [logoUploading, setLogoUploading] = useState(false);
@@ -53,11 +90,17 @@ export default function VisualEditor({
   const [previewMode, setPreviewMode] = useState(false);
   const [draftButtons, setDraftButtons] = useState(buttons);
   const [dirty, setDirty] = useState(false);
+  const [backgroundPreviewUrl, setBackgroundPreviewUrl] = useState<string | null>(null);
+  const [backgroundRemoved, setBackgroundRemoved] = useState(false);
+  const [notice, setNotice] = useState<Notice>(null);
   const [addTab, setAddTab] = useState<"preset" | "custom">("preset");
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
   const snapshotRef = useRef<Draft | null>(null);
   const buttonSnapshotRef = useRef<ButtonItem[] | null>(null);
   const dirtySnapshotRef = useRef(false);
+  const backgroundSnapshotRef = useRef<{ file: File | null; previewUrl: string | null; removed: boolean } | null>(null);
+  const backgroundObjectUrlsRef = useRef<string[]>([]);
+  const allowLeaveRef = useRef(false);
   const anchorRef = useRef<HTMLElement | null>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -65,7 +108,6 @@ export default function VisualEditor({
   const logoInputRef = useRef<HTMLInputElement>(null);
   const logoFormRef = useRef<HTMLFormElement>(null);
   const bgInputRef = useRef<HTMLInputElement>(null);
-  const bgFormRef = useRef<HTMLFormElement>(null);
 
   const buttonFont = draft.button_font;
   const zone = draft.buttonZone;
@@ -73,6 +115,8 @@ export default function VisualEditor({
   const subtitle = draft.subtitleStyle;
   const logo = draft.logoStyle;
   const bgPos = draft.bgPosition;
+  const backgroundTint = resolveBackgroundTint(draft.background_type, bgPos.tint);
+  const backgroundImageSrc = backgroundPreviewUrl || (!backgroundRemoved ? draft.background_image_url : "");
 
   const update = (patch: Partial<Draft>) => {
     updateDraft(patch);
@@ -84,9 +128,18 @@ export default function VisualEditor({
     setDirty(false);
   }, [buttons]);
 
+  useEffect(() => () => {
+    backgroundObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+  }, []);
+
   useEffect(() => {
     if (!dirty) return;
-    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    const warn = (event: BeforeUnloadEvent) => {
+      if (!allowLeaveRef.current) {
+        event.preventDefault();
+        event.returnValue = "";
+      }
+    };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty]);
@@ -129,6 +182,11 @@ export default function VisualEditor({
     snapshotRef.current = { ...draft };
     buttonSnapshotRef.current = draftButtons;
     dirtySnapshotRef.current = dirty;
+    backgroundSnapshotRef.current = {
+      file: bgInputRef.current?.files?.[0] || null,
+      previewUrl: backgroundPreviewUrl,
+      removed: backgroundRemoved,
+    };
     setSheet(next);
   }
 
@@ -137,29 +195,43 @@ export default function VisualEditor({
       updateDraft(snapshotRef.current);
       if (buttonSnapshotRef.current) setDraftButtons(buttonSnapshotRef.current);
       setDirty(dirtySnapshotRef.current);
+      const backgroundSnapshot = backgroundSnapshotRef.current;
+      if (backgroundSnapshot) {
+        setBackgroundPreviewUrl(backgroundSnapshot.previewUrl);
+        setBackgroundRemoved(backgroundSnapshot.removed);
+        if (bgInputRef.current) {
+          const files = new DataTransfer();
+          if (backgroundSnapshot.file) files.items.add(backgroundSnapshot.file);
+          bgInputRef.current.files = files.files;
+        }
+      }
     }
     setSheet(null);
     setPos(null);
     snapshotRef.current = null;
     buttonSnapshotRef.current = null;
+    backgroundSnapshotRef.current = null;
   }
 
   useEffect(() => {
-    if (!sheet) return;
+    if (!sheet && !notice) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") closeSheet(false);
+      if (event.key !== "Escape") return;
+      if (notice) setNotice(null);
+      else closeSheet(false);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [sheet]);
+  }, [sheet, notice]);
 
   useLayoutEffect(() => {
     if (!sheet || !anchorRef.current || !stageRef.current || !popoverRef.current) return;
+    if (sheet === "background") return;
     const anchor = anchorRef.current;
     const stage = stageRef.current;
     const popover = popoverRef.current;
@@ -188,7 +260,7 @@ export default function VisualEditor({
     const file = logoInputRef.current?.files?.[0];
     if (!file) return;
     if (dirty) {
-      window.alert("Guardá los cambios pendientes antes de subir una imagen.");
+      setNotice({ kind: "saveFirst", reason: "image" });
       if (logoInputRef.current) logoInputRef.current.value = "";
       return;
     }
@@ -203,17 +275,30 @@ export default function VisualEditor({
   async function handleBgPick() {
     const file = bgInputRef.current?.files?.[0];
     if (!file) return;
-    if (dirty) {
-      window.alert("Guardá los cambios pendientes antes de subir una imagen.");
-      if (bgInputRef.current) bgInputRef.current.value = "";
-      return;
-    }
     setBgUploading(true);
     const compressed = await compressImage(file, 1200);
     const dt = new DataTransfer();
     dt.items.add(compressed);
     if (bgInputRef.current) bgInputRef.current.files = dt.files;
-    bgFormRef.current?.requestSubmit();
+    const previewUrl = URL.createObjectURL(compressed);
+    backgroundObjectUrlsRef.current.push(previewUrl);
+    setBackgroundPreviewUrl(previewUrl);
+    setBackgroundRemoved(false);
+    update({
+      background_type: "image",
+      bgPosition: { ...bgPos, zoom: 1, x: 50, y: 50 },
+      titleStyle: { ...title, color: "#ffffff" },
+      subtitleStyle: { ...subtitle, color: "#ffffff" },
+    });
+    setBgUploading(false);
+  }
+
+  function removeBackgroundImage() {
+    setBackgroundPreviewUrl(null);
+    setBackgroundRemoved(true);
+    if (bgInputRef.current) bgInputRef.current.value = "";
+    const automaticTextColor = contrastTextColor(draft.background_color || "#f7f5f0");
+    update({ background_type: "color", titleStyle: { ...title, color: automaticTextColor }, subtitleStyle: { ...subtitle, color: automaticTextColor } });
   }
 
   function quickAdd(type: string) {
@@ -238,12 +323,23 @@ export default function VisualEditor({
     setSheet({ kind: "button", button });
   }
 
+  function requestLeave(event: { preventDefault: () => void }, href: string) {
+    if (!dirty) return;
+    event.preventDefault();
+    setNotice({ kind: "leave", href });
+  }
+
+  function leaveWithoutSaving(href: string) {
+    allowLeaveRef.current = true;
+    window.location.assign(href);
+  }
+
   const sheetTitle =
     sheet === "title" ? "Editar título" :
     sheet === "subtitle" ? "Editar subtítulo" :
     sheet === "background" ? "Fondo" :
     sheet === "logo" ? "Logo / foto" :
-    sheet === "buttonZone" ? "Ajustar botonera" :
+    sheet === "design" ? "Elegí un diseño" :
     sheet === "add" ? "Agregar botón" :
     sheet === "settings" ? "Configuración" :
     typeof sheet === "object" && sheet?.kind === "button" ? "Editar botón" : "";
@@ -257,11 +353,11 @@ export default function VisualEditor({
         <div className="visual-under" />
         <p className="visual-lead">Tocá lo que querés cambiar y mirá el resultado al instante. Todo se edita sobre la propia tarjeta.</p>
         <div className="visual-note">Sin paneles.<br />Sin complicaciones.<br />Todo en vivo. ↗</div>
-        <Link className="visual-back" href="/admin" onClick={(event) => { if (dirty && !window.confirm("Tenés cambios sin guardar. ¿Querés salir igual?")) event.preventDefault(); }}>← Volver al panel</Link>
+        <Link className="visual-back" href="/admin" onClick={(event) => requestLeave(event, "/admin")}>← Volver al panel</Link>
       </section>
 
       <section className="visual-center">
-        <form id={DESIGN_FORM_ID} action={saveDesignStyleAction} onSubmit={() => closeSheet(true)}>
+        <form id={DESIGN_FORM_ID} action={saveDesignStyleAction} onSubmit={() => { allowLeaveRef.current = true; setNotice(null); closeSheet(true); }}>
           <input type="hidden" name="landing_id" value={landing.id} />
           <input type="hidden" name="business_name" value={draft.business_name} />
           <input type="hidden" name="description" value={draft.description} />
@@ -280,9 +376,11 @@ export default function VisualEditor({
           <input type="hidden" name="subtitle_style" value={JSON.stringify(subtitle)} />
           <input type="hidden" name="logo_style" value={JSON.stringify(logo)} />
           <input type="hidden" name="background_style" value={JSON.stringify(bgPos)} />
+          <input type="hidden" name="remove_background_image" value={String(backgroundRemoved)} />
+          <input ref={bgInputRef} name="background_image" type="file" accept="image/jpeg,image/png,image/webp" onChange={handleBgPick} hidden />
         </form>
         <div className="visual-toolbar">
-          <Link className="visual-tb" href="/admin" onClick={(event) => { if (dirty && !window.confirm("Tenés cambios sin guardar. ¿Querés salir igual?")) event.preventDefault(); }}>← Panel</Link>
+          <Link className="visual-tb" href="/admin" onClick={(event) => requestLeave(event, "/admin")}>← Panel</Link>
           <button
             type="button"
             className={previewMode ? "visual-tb visual-tb-preview active" : "visual-tb visual-tb-preview"}
@@ -291,6 +389,7 @@ export default function VisualEditor({
           >
             {previewMode ? <><IconEdit /> Volver a editar</> : <><IconEye /> Vista previa</>}
           </button>
+          <button type="button" className="visual-tb visual-tb-design" onClick={(e) => openSheet("design", e.currentTarget)}>✦ Diseño</button>
           <button type="button" className="visual-tb" onClick={(e) => openSheet("settings", e.currentTarget)}><IconQrCode /> QR y publicar</button>
           <button form={DESIGN_FORM_ID} type="submit" className="visual-tb visual-tb-publish" disabled={!dirty}>{dirty ? "Guardar cambios" : "Todo guardado ✓"}</button>
         </div>
@@ -298,12 +397,12 @@ export default function VisualEditor({
         <div className="visual-stage" ref={stageRef}>
           <div className={previewMode ? "visual-phone visual-preview-mode" : "visual-phone"}>
             <div className="visual-screen">
-              {draft.background_type === "image" && draft.background_image_url ? (
-                <div className="visual-bg-photo" style={{ backgroundImage: `url(${draft.background_image_url})`, backgroundSize: `${bgPos.zoom * 100}%`, backgroundPosition: `${bgPos.x}% ${bgPos.y}%` }} />
+              {draft.background_type === "image" && backgroundImageSrc ? (
+                <div className="visual-bg-photo" style={{ backgroundColor: draft.background_color || "#f7f5f0", backgroundImage: `url(${backgroundImageSrc})`, backgroundSize: "cover", backgroundPosition: `${bgPos.x}% ${bgPos.y}%`, transform: `scale(${bgPos.zoom})`, transformOrigin: `${bgPos.x}% ${bgPos.y}%` }} />
               ) : (
                 <div className="visual-bg-photo" style={{ ...bgStyle, opacity: 1 }} />
               )}
-              <div className="visual-tint" style={{ background: `linear-gradient(180deg, rgba(4,8,10,.06), rgba(5,8,11,${bgPos.tint}))` }} />
+              <div className="visual-tint" style={{ background: `linear-gradient(180deg, rgba(4,8,10,.03), rgba(5,8,11,${backgroundTint}))` }} />
 
               {!previewMode && <button type="button" className="visual-bg-chip" onClick={(e) => openSheet("background", e.currentTarget)}><IconDroplet /> Fondo</button>}
               <div className="visual-statusbar"><span>9:41</span><span>▮▮▮ ● ▰</span></div>
@@ -324,9 +423,6 @@ export default function VisualEditor({
                 </div>
 
                 <section className="visual-button-zone">
-                  {!previewMode && <div className="visual-zone-head">
-                    <button type="button" className="visual-adjust" onClick={(e) => openSheet("buttonZone", e.currentTarget)}>✦ Ajustar botonera</button>
-                  </div>}
                   <ButtonList
                     buttons={draftButtons}
                     zone={zone}
@@ -345,8 +441,8 @@ export default function VisualEditor({
 
           {sheet && (
             <>
-            <button type="button" className="visual-popover-backdrop" aria-label="Cerrar sin guardar" onClick={() => closeSheet(false)} />
-            <div className="visual-popover open" ref={popoverRef} role="dialog" aria-modal="true" aria-labelledby="visual-dialog-title" tabIndex={-1} style={pos ? { left: pos.left, top: pos.top } : { opacity: 0 }}>
+            <button type="button" className={sheet === "background" ? "visual-popover-backdrop visual-background-backdrop" : "visual-popover-backdrop"} aria-label="Cerrar sin guardar" onClick={() => closeSheet(false)} />
+            <div className={sheet === "background" ? "visual-popover visual-background-editor open" : sheet === "design" ? "visual-popover visual-design-editor open" : "visual-popover open"} ref={popoverRef} role="dialog" aria-modal="true" aria-labelledby="visual-dialog-title" tabIndex={-1} style={sheet === "background" ? undefined : pos ? { left: pos.left, top: pos.top } : { opacity: 0 }}>
               <div className="visual-pop-head">
                 <h3 id="visual-dialog-title">{sheetTitle}</h3>
                 <button type="button" className="visual-close" aria-label="Cerrar sin guardar" onClick={() => closeSheet(false)}><IconX /></button>
@@ -354,74 +450,58 @@ export default function VisualEditor({
 
               {sheet === "title" && (
                 <>
-                  <p className="visual-helper">Los cambios se ven en vivo.</p>
+                  <p className="visual-helper">Cambialo y mirá el resultado directamente en el celular.</p>
                   <label className="label">Texto<input value={draft.business_name} onChange={(e) => update({ business_name: e.target.value })} /></label>
-                  <div className="two-range">
-                    <label className="label">Fuente<select value={title.font} onChange={(e) => update({ titleStyle: { ...title, font: e.target.value } })}>{TEXT_FONT_OPTIONS.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}</select></label>
-                    <label className="label">Peso<select value={title.weight} onChange={(e) => update({ titleStyle: { ...title, weight: +e.target.value } })}><option value={500}>Medio</option><option value={700}>Bold</option><option value={900}>Extra bold</option></select></label>
-                  </div>
-                  <label className="label">Tamaño<input type="range" min={18} max={44} value={title.size} onChange={(e) => update({ titleStyle: { ...title, size: +e.target.value } })} /><small>{title.size}px</small></label>
-                  <div className="two-range">
-                    <label className="label">Color<input type="color" value={title.color} onChange={(e) => update({ titleStyle: { ...title, color: e.target.value } })} /></label>
-                    <label className="label">Fondo<input type="color" value={title.bg} disabled={title.bgMode === "none"} onChange={(e) => update({ titleStyle: { ...title, bg: e.target.value } })} /></label>
-                  </div>
-                  <label className="label">Fondo<select value={title.bgMode} onChange={(e) => update({ titleStyle: { ...title, bgMode: e.target.value as "none" | "solid" } })}><option value="none">Sin fondo</option><option value="solid">Con fondo</option></select></label>
-                  <label className="label">Alineación<div className="segmented">
-                    <button type="button" className={title.align === "left" ? "segmented-option active" : "segmented-option"} onClick={() => update({ titleStyle: { ...title, align: "left" } })}>Izq.</button>
-                    <button type="button" className={title.align === "center" ? "segmented-option active" : "segmented-option"} onClick={() => update({ titleStyle: { ...title, align: "center" } })}>Centro</button>
-                    <button type="button" className={title.align === "right" ? "segmented-option active" : "segmented-option"} onClick={() => update({ titleStyle: { ...title, align: "right" } })}>Der.</button>
-                  </div></label>
                   <div className="visual-actions-row"><button type="button" className="cancel" onClick={() => closeSheet(false)}>Cancelar</button><button type="button" className="save" onClick={() => closeSheet(true)}>Aplicar</button></div>
                 </>
               )}
 
               {sheet === "subtitle" && (
                 <>
-                  <p className="visual-helper">Los cambios se ven en vivo.</p>
+                  <p className="visual-helper">Una frase corta alcanza. El diseño se adapta automáticamente.</p>
                   <label className="label">Texto<textarea rows={3} value={draft.description} onChange={(e) => update({ description: e.target.value })} /></label>
-                  <div className="two-range">
-                    <label className="label">Fuente<select value={subtitle.font} onChange={(e) => update({ subtitleStyle: { ...subtitle, font: e.target.value } })}>{TEXT_FONT_OPTIONS.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}</select></label>
-                    <label className="label">Peso<select value={subtitle.weight} onChange={(e) => update({ subtitleStyle: { ...subtitle, weight: +e.target.value } })}><option value={400}>Regular</option><option value={500}>Medio</option><option value={700}>Bold</option></select></label>
-                  </div>
-                  <label className="label">Tamaño<input type="range" min={11} max={24} value={subtitle.size} onChange={(e) => update({ subtitleStyle: { ...subtitle, size: +e.target.value } })} /><small>{subtitle.size}px</small></label>
-                  <div className="two-range">
-                    <label className="label">Color<input type="color" value={subtitle.color} onChange={(e) => update({ subtitleStyle: { ...subtitle, color: e.target.value } })} /></label>
-                    <label className="label">Fondo<input type="color" value={subtitle.bg} disabled={subtitle.bgMode === "none"} onChange={(e) => update({ subtitleStyle: { ...subtitle, bg: e.target.value } })} /></label>
-                  </div>
-                  <label className="label">Fondo<select value={subtitle.bgMode} onChange={(e) => update({ subtitleStyle: { ...subtitle, bgMode: e.target.value as "none" | "solid" } })}><option value="none">Sin fondo</option><option value="solid">Con fondo</option></select></label>
                   <div className="visual-actions-row"><button type="button" className="cancel" onClick={() => closeSheet(false)}>Cancelar</button><button type="button" className="save" onClick={() => closeSheet(true)}>Aplicar</button></div>
                 </>
               )}
 
               {sheet === "background" && (
                 <>
-                  <p className="visual-helper">Color, degradé o una imagen propia. Todo se ajusta en vivo.</p>
-                  <BackgroundPicker landing={landing} formId={NO_SUBMIT} onDirty={() => setDirty(true)} />
-                  {draft.background_type === "image" && (
-                    <div className="visual-bg-upload">
-                      <form ref={bgFormRef} action={uploadBackgroundAction} className="stack" style={{ gap: 6 }} onSubmit={() => setBgUploading(false)}>
-                        <input type="hidden" name="landing_id" value={landing.id} />
-                        <label className="upload-button">
-                          {bgUploading ? "Optimizando y subiendo..." : draft.background_image_url ? "Cambiar imagen" : "Subir imagen"}
-                          <input ref={bgInputRef} name="file" type="file" accept="image/jpeg,image/png,image/webp" onChange={handleBgPick} />
-                        </label>
-                      </form>
-                      {draft.background_image_url && (
-                        <form action={removeBackgroundAction}>
-                          <input type="hidden" name="landing_id" value={landing.id} />
-                          <button type="submit" className="text-button">Quitar imagen</button>
-                        </form>
-                      )}
-                      <DragCropPreview
-                        src={draft.background_image_url || null}
-                        width={260} height={150} radius={14}
-                        zoom={bgPos.zoom} x={bgPos.x} y={bgPos.y} fallback={draft.background_color || "#f7f5f0"}
-                        minZoom={1} maxZoom={2.4}
-                        onChange={(next) => update({ bgPosition: { ...bgPos, ...next } })}
+                  <div className="visual-background-layout">
+                    <div className="visual-background-controls">
+                      <p className="visual-helper">Elegí el fondo y mirá exactamente cómo va a quedar en el celular.</p>
+                      <BackgroundPicker
+                        landing={landing}
+                        formId={NO_SUBMIT}
+                        onDirty={() => setDirty(true)}
+                        onBackgroundChange={(type, from, to) => {
+                          const automaticTextColor = autoTextColor({ background_type: type, background_color: from, background_gradient_to: to });
+                          updateDraft({ titleStyle: { ...title, color: automaticTextColor }, subtitleStyle: { ...subtitle, color: automaticTextColor } });
+                        }}
                       />
+                      {draft.background_type === "image" && (
+                        <>
+                          <div className="visual-bg-upload-card">
+                            <div><strong>{backgroundImageSrc ? "Tu imagen" : "Agregá una imagen"}</strong><small>JPG, PNG o WEBP · se guarda junto con el resto</small></div>
+                            <button type="button" className="upload-button" disabled={bgUploading} onClick={() => bgInputRef.current?.click()}>{bgUploading ? "Preparando..." : backgroundImageSrc ? "Cambiar" : "Elegir imagen"}</button>
+                            {backgroundImageSrc && <button type="button" className="text-button" onClick={removeBackgroundImage}>Quitar</button>}
+                          </div>
+                          {backgroundImageSrc && <label className="label">Oscurecer imagen<input type="range" min={0} max={0.65} step={0.05} value={bgPos.tint} onChange={(event) => update({ bgPosition: { ...bgPos, tint: +event.target.value } })} /><small>{Math.round(bgPos.tint * 100)}%</small></label>}
+                        </>
+                      )}
                     </div>
-                  )}
-                  <label className="label">Oscurecer<input type="range" min={0.05} max={0.65} step={0.05} value={bgPos.tint} onChange={(e) => update({ bgPosition: { ...bgPos, tint: +e.target.value } })} /><small>{Math.round(bgPos.tint * 100)}%</small></label>
+                    <BackgroundPhonePreview
+                      src={draft.background_type === "image" ? backgroundImageSrc || null : null}
+                      backgroundStyle={bgStyle}
+                      bgPos={bgPos}
+                      businessName={draft.business_name}
+                      description={draft.description}
+                      logoUrl={draft.logo_url}
+                      primaryColor={draft.primary_color}
+                      zone={zone}
+                      buttons={draftButtons}
+                      onChange={(next) => update({ bgPosition: { ...bgPos, ...next } })}
+                    />
+                  </div>
                   <div className="visual-actions-row"><button type="button" className="cancel" onClick={() => closeSheet(false)}>Cancelar</button><button type="button" className="save" onClick={() => closeSheet(true)}>Aplicar</button></div>
                 </>
               )}
@@ -442,11 +522,6 @@ export default function VisualEditor({
                       <button type="submit" className="text-button">Quitar imagen</button>
                     </form>
                   )}
-                  <label className="label">Forma<div className="segmented">
-                    <button type="button" className={logo.shape === "round" ? "segmented-option active" : "segmented-option"} onClick={() => update({ logoStyle: { ...logo, shape: "round" } })}>Circular</button>
-                    <button type="button" className={logo.shape === "square" ? "segmented-option active" : "segmented-option"} onClick={() => update({ logoStyle: { ...logo, shape: "square" } })}>Cuadrado suave</button>
-                  </div></label>
-                  <label className="label">Tamaño<input type="range" min={80} max={165} value={logo.size} onChange={(e) => update({ logoStyle: { ...logo, size: +e.target.value } })} /><small>{logo.size}px</small></label>
                   {draft.logo_url && (
                     <DragCropPreview
                       src={draft.logo_url}
@@ -457,13 +532,12 @@ export default function VisualEditor({
                       onChange={(next) => update({ logoStyle: { ...logo, ...next } })}
                     />
                   )}
-                  <label className="label">Color de fondo del logo<input type="color" value={draft.primary_color || logo.fallback} onChange={(e) => update({ primary_color: e.target.value })} /></label>
                   <div className="visual-actions-row"><button type="button" className="cancel" onClick={() => closeSheet(false)}>Cancelar</button><button type="button" className="save" onClick={() => closeSheet(true)}>Aplicar</button></div>
                 </>
               )}
 
-              {sheet === "buttonZone" && (
-                <ButtonZoneSheet zone={zone} update={update} draft={draft} onDone={() => closeSheet(true)} onCancel={() => closeSheet(false)} />
+              {sheet === "design" && (
+                <DesignSheet draft={draft} update={update} onDone={() => closeSheet(true)} onCancel={() => closeSheet(false)} />
               )}
 
               {sheet === "add" && (
@@ -476,18 +550,18 @@ export default function VisualEditor({
                     <span className={landing.published ? "status published" : "status"}>{landing.published ? "Publicada" : "Borrador"}</span>
                     <p className="muted" style={{ margin: 0 }}>{landing.published ? "Cualquiera con el link o el tag NFC puede verla." : "Todavía no es visible para el público."}</p>
                   </div>
-                  {dirty && <p className="visual-unsaved-warning">Guardá los cambios pendientes antes de publicar o salir a otra pantalla.</p>}
+                  {dirty && <div className="visual-unsaved-warning">Guardá los cambios pendientes antes de publicar o salir a otra pantalla.<button type="submit" form={DESIGN_FORM_ID}>Guardar ahora</button></div>}
                   <form action={publishAction} onSubmit={() => closeSheet(true)}>
                     <input type="hidden" name="id" value={landing.id} />
                     <input type="hidden" name="published" value={String(!landing.published)} />
                     <input type="hidden" name="return_to" value={`/admin/landings/${landing.id}/visual`} />
                     <button className="btn full" type="submit" disabled={dirty}><IconRocket /> {landing.published ? "Despublicar" : "Publicar landing"}</button>
                   </form>
-                  <Link className="btn secondary full" href={`/admin/landings/${landing.id}/qr`} onClick={(event) => { if (dirty) event.preventDefault(); }} aria-disabled={dirty}><IconQrCode /> Código QR para el tag NFC</Link>
+                  <Link className="btn secondary full" href={`/admin/landings/${landing.id}/qr`} onClick={(event) => { if (dirty) { event.preventDefault(); setNotice({ kind: "saveFirst", reason: "qr" }); } }}><IconQrCode /> Código QR para el tag NFC</Link>
                   {landing.published && <Link className="btn secondary full" href={`/${landing.slug}`} target="_blank" rel="noreferrer"><IconEye /> Ver landing publicada</Link>}
-                  <form action={deleteLandingAction} onSubmit={(e) => { if (!window.confirm("¿Eliminar esta landing?\nTambién se eliminarán sus acciones.\nEsta acción no se puede deshacer.")) { e.preventDefault(); return; } closeSheet(true); }}>
+                  <form id="visual-delete-landing-form" action={deleteLandingAction} onSubmit={() => { allowLeaveRef.current = true; closeSheet(true); }}>
                     <input type="hidden" name="id" value={landing.id} />
-                    <button type="submit" className="text-button" style={{ color: "#dc2626", marginTop: 8 }}><IconTrash /> Eliminar landing</button>
+                    <button type="button" className="text-button" style={{ color: "#dc2626", marginTop: 8 }} onClick={() => setNotice({ kind: "deleteLanding" })}><IconTrash /> Eliminar landing</button>
                   </form>
                 </>
               )}
@@ -531,12 +605,128 @@ export default function VisualEditor({
         </div>
         <div className="visual-right-note">Tocás.<br />Cambiás.<br />Lo ves.<br />Así de simple.</div>
       </aside>
+
+      {notice && (
+        <div className="visual-confirm-layer" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setNotice(null); }}>
+          <section className="visual-confirm" role="alertdialog" aria-modal="true" aria-labelledby="visual-confirm-title" aria-describedby="visual-confirm-copy">
+            <div className={notice.kind === "deleteLanding" ? "visual-confirm-icon danger" : "visual-confirm-icon"} aria-hidden="true">!</div>
+            <h2 id="visual-confirm-title">{notice.kind === "leave" ? "Cambios sin guardar" : notice.kind === "deleteLanding" ? "¿Eliminar esta landing?" : "Primero guardá tus cambios"}</h2>
+            <p id="visual-confirm-copy">
+              {notice.kind === "leave"
+                ? "Si salís ahora, vas a perder los cambios que hiciste en esta landing."
+                : notice.kind === "deleteLanding"
+                  ? "También se eliminarán todos sus botones. Esta acción no se puede deshacer."
+                  : notice.reason === "image"
+                  ? "Guardá el borrador actual y después volvé a subir la imagen. Así no se pierde ningún cambio."
+                  : notice.reason === "qr"
+                    ? "Guardá el borrador para que el QR abra la última versión de la landing."
+                    : "Guardá el borrador para publicar la última versión de la landing."}
+            </p>
+            <div className="visual-confirm-actions">
+              <button type="button" className="visual-confirm-cancel" autoFocus onClick={() => setNotice(null)}>{notice.kind === "leave" ? "Seguir editando" : "Cancelar"}</button>
+              {notice.kind === "leave" ? (
+                <button type="button" className="visual-confirm-danger" onClick={() => leaveWithoutSaving(notice.href)}>Salir sin guardar</button>
+              ) : notice.kind === "deleteLanding" ? (
+                <button type="submit" form="visual-delete-landing-form" className="visual-confirm-danger">Eliminar landing</button>
+              ) : (
+                <button type="submit" form={DESIGN_FORM_ID} className="visual-confirm-save">Guardar ahora</button>
+              )}
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
+}
+
+function BackgroundPhonePreview({
+  src, backgroundStyle, bgPos, businessName, description, logoUrl, primaryColor, zone, buttons, onChange,
+}: {
+  src: string | null; backgroundStyle: CSSProperties; bgPos: Draft["bgPosition"];
+  businessName: string; description: string; logoUrl: string; primaryColor: string; zone: Draft["buttonZone"]; buttons: ButtonItem[];
+  onChange: (next: { zoom: number; x: number; y: number }) => void;
+}) {
+  const frameRef = useRef<HTMLDivElement>(null);
+  const dragState = useRef<{ startX: number; startY: number; origX: number; origY: number } | null>(null);
+  const [dragging, setDragging] = useState(false);
+
+  function handlePointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    if (!src) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    dragState.current = { startX: event.clientX, startY: event.clientY, origX: bgPos.x, origY: bgPos.y };
+    setDragging(true);
+  }
+
+  function handlePointerMove(event: React.PointerEvent<HTMLDivElement>) {
+    if (!dragState.current || !frameRef.current) return;
+    const rect = frameRef.current.getBoundingClientRect();
+    onChange({
+      zoom: bgPos.zoom,
+      x: clamp(dragState.current.origX - ((event.clientX - dragState.current.startX) / rect.width) * 100, 0, 100),
+      y: clamp(dragState.current.origY - ((event.clientY - dragState.current.startY) / rect.height) * 100, 0, 100),
+    });
+  }
+
+  function stopDragging() {
+    dragState.current = null;
+    setDragging(false);
+  }
+
+  return (
+    <div className="visual-background-preview-column">
+      <div className="visual-background-preview-label"><strong>Vista en el celular</strong><span>{src ? "Arrastrá la imagen para encuadrarla" : "Así se va a ver el fondo"}</span></div>
+      <div
+        ref={frameRef}
+        className={src ? "visual-background-phone is-draggable" : "visual-background-phone"}
+        role="group"
+        aria-label={src ? "Vista del fondo. Arrastrá para cambiar el encuadre." : "Vista previa del fondo en el celular."}
+        style={{ cursor: src ? (dragging ? "grabbing" : "grab") : "default" }}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={stopDragging}
+        onPointerCancel={stopDragging}
+        onPointerLeave={stopDragging}
+      >
+        <div
+          className="visual-background-preview-layer"
+          style={src ? {
+            backgroundColor: "#f7f5f0",
+            backgroundImage: `url(${src})`,
+            backgroundSize: "cover",
+            backgroundPosition: `${bgPos.x}% ${bgPos.y}%`,
+            transform: `scale(${bgPos.zoom})`,
+            transformOrigin: `${bgPos.x}% ${bgPos.y}%`,
+          } : backgroundStyle}
+        />
+        <div className="visual-background-preview-tint" style={{ background: `linear-gradient(180deg, rgba(4,8,10,.03), rgba(5,8,11,${resolveBackgroundTint(src ? "image" : "color", bgPos.tint)}))` }} />
+        <div className="visual-background-preview-content">
+          <div className="visual-background-preview-avatar" style={{ background: primaryColor || "#f5eddf" }}>
+            {logoUrl ? <div style={{ width: "100%", height: "100%", background: `url(${logoUrl}) center / cover` }} /> : (businessName.slice(0, 1) || "?")}
+          </div>
+          <strong className="visual-background-preview-title">{businessName || "Nombre de tu negocio"}</strong>
+          <span className="visual-background-preview-description">{description || "Tu descripción se verá acá"}</span>
+          <div className="visual-background-preview-buttons">
+            {buttons.slice(0, 4).map((button, index) => {
+              const { background: buttonColor, text: buttonText } = resolveButtonColors({ zone, type: button.type, position: index, primary: primaryColor, customColor: button.background_color, useAutoColor: button.use_auto_color });
+              return <div key={button.id} style={{ ...buttonFillStyle(zone.finish, buttonColor, buttonText), borderRadius: Math.max(7, zone.radius * .58), boxShadow: buttonZoneShadow(zone.shadow) }}><ActionTypeIcon type={button.type} icon={button.icon} /><span>{button.title}</span></div>;
+            })}
+          </div>
+        </div>
+      </div>
+      {src && (
+        <div className="visual-background-zoom">
+          <button type="button" aria-label="Alejar imagen" onClick={() => onChange({ ...bgPos, zoom: clamp(bgPos.zoom - 0.1, 1, 2.4) })}>−</button>
+          <label><span>Zoom</span><input type="range" min={1} max={2.4} step={0.01} value={bgPos.zoom} onChange={(event) => onChange({ ...bgPos, zoom: +event.target.value })} /></label>
+          <button type="button" aria-label="Acercar imagen" onClick={() => onChange({ ...bgPos, zoom: clamp(bgPos.zoom + 0.1, 1, 2.4) })}>+</button>
+          <button type="button" className="reset" onClick={() => onChange({ zoom: 1, x: 50, y: 50 })}>Centrar</button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function DragCropPreview({
@@ -630,9 +820,8 @@ function ButtonList({
 
   return (
     <div className="visual-buttons" style={{ gap: zone.gap, width: `${zone.width}%` }}>
-      {buttons.map((button) => {
-        const bg = zone.colorMode === "one" ? zone.oneColor : button.use_auto_color ? AUTO_COLORS[button.type] || primary : button.background_color || primary;
-        const text = zone.colorMode === "one" ? contrastTextColor(zone.oneColor) : button.text_color || contrastTextColor(bg);
+      {buttons.map((button, index) => {
+        const { background: bg, text } = resolveButtonColors({ zone, type: button.type, position: index, primary, customColor: button.background_color, useAutoColor: button.use_auto_color });
         return (
           <button
             key={button.id}
@@ -686,39 +875,48 @@ const FONT_FAMILY_BY_ID: Record<string, string> = {
   modern: "'Space Grotesk', sans-serif", classic: "'Playfair Display', serif", friendly: "'Poppins', sans-serif", minimal: "'Inter', sans-serif",
 };
 
-function ButtonZoneSheet({
-  zone, update, draft, onDone, onCancel,
-}: {
-  zone: Draft["buttonZone"]; update: (patch: Partial<Draft>) => void; draft: Draft;
-  onDone: () => void; onCancel: () => void;
-}) {
-  const set = (patch: Partial<Draft["buttonZone"]>) => update({ buttonZone: { ...zone, ...patch } });
+function DesignSheet({ draft, update, onDone, onCancel }: { draft: Draft; update: (patch: Partial<Draft>) => void; onDone: () => void; onCancel: () => void }) {
+  function applyPreset(preset: DesignPreset) {
+    const textColor = autoTextColor(draft);
+    update({
+      button_font: preset.buttonFont,
+      buttonZone: { ...preset.buttonZone, preset: preset.id, templateId: "custom", oneColor: draft.primary_color },
+      titleStyle: { ...draft.titleStyle, ...preset.title, color: textColor, bgMode: "none" },
+      subtitleStyle: { ...draft.subtitleStyle, ...preset.subtitle, color: textColor, bgMode: "none" },
+      logoStyle: { ...draft.logoStyle, ...preset.logo },
+    });
+  }
+
+  function updatePrimaryColor(color: string) {
+    update({
+      primary_color: color,
+      buttonZone: draft.buttonZone.colorMode === "one" ? { ...draft.buttonZone, oneColor: color } : draft.buttonZone,
+    });
+  }
+
   return (
     <form className="stack" onSubmit={(event) => { event.preventDefault(); onDone(); }}>
-      <p className="visual-helper">Un mismo estilo para todos los botones — así se ven como un solo conjunto.</p>
-      <label className="label">Colores<div className="segmented"><button type="button" className={zone.colorMode === "auto" ? "segmented-option active" : "segmented-option"} onClick={() => set({ colorMode: "auto" })}>Automáticos</button><button type="button" className={zone.colorMode === "one" ? "segmented-option active" : "segmented-option"} onClick={() => set({ colorMode: "one" })}>Un solo color</button></div></label>
-      {zone.colorMode === "one" && <label className="label">Color general<input type="color" value={zone.oneColor} onChange={(e) => set({ oneColor: e.target.value })} /></label>}
-      <label className="label">Relleno<div className="segmented"><button type="button" className={zone.finish === "solid" ? "segmented-option active" : "segmented-option"} onClick={() => set({ finish: "solid" })}>Sólido</button><button type="button" className={zone.finish === "glass" ? "segmented-option active" : "segmented-option"} onClick={() => set({ finish: "glass" })}>Glass</button><button type="button" className={zone.finish === "outline" ? "segmented-option active" : "segmented-option"} onClick={() => set({ finish: "outline" })}>Contorno</button></div></label>
-      <div className="two-range">
-        <label className="label">Separación<input type="range" min={4} max={24} value={zone.gap} onChange={(e) => set({ gap: +e.target.value })} /><small>{zone.gap}px</small></label>
-        <label className="label">Alto<input type="range" min={42} max={66} value={zone.height} onChange={(e) => set({ height: +e.target.value })} /><small>{zone.height}px</small></label>
+      <p className="visual-helper">Cada plantilla combina tipografía, logo, botones y espacios. No cambia tus textos, enlaces ni imágenes.</p>
+      <div className="visual-design-grid" role="radiogroup" aria-label="Plantillas de diseño">
+        {DESIGN_PRESETS.map((preset) => {
+          const selected = draft.buttonZone.preset === preset.id;
+          return (
+            <button key={preset.id} type="button" role="radio" aria-checked={selected} className={selected ? "visual-design-card selected" : "visual-design-card"} onClick={() => applyPreset(preset)}>
+              <span className="visual-design-thumb" style={{ "--preset-accent": draft.primary_color || preset.accent, "--preset-radius": `${preset.buttonZone.radius / 2}px` } as CSSProperties}>
+                <i className={preset.logo.shape === "round" ? "round" : "square"} />
+                <b style={{ fontFamily: preset.title.font, textAlign: preset.title.align }}>{preset.name}</b>
+                <em /><em /><em />
+              </span>
+              <span className="visual-design-copy"><strong>{preset.name}</strong><small>{preset.description}</small></span>
+              <span className="visual-design-check" aria-hidden="true">✓</span>
+            </button>
+          );
+        })}
       </div>
-      <div className="two-range">
-        <label className="label">Bordes<input type="range" min={4} max={30} value={zone.radius} onChange={(e) => set({ radius: +e.target.value })} /><small>{zone.radius}px</small></label>
-        <label className="label">Ancho<input type="range" min={72} max={100} value={zone.width} onChange={(e) => set({ width: +e.target.value })} /><small>{zone.width}%</small></label>
-      </div>
-      <details>
-        <summary>▾ Más ajustes</summary>
-        <div className="stack" style={{ paddingTop: 8 }}>
-          <label className="label">Sombra<select value={zone.shadow} onChange={(e) => set({ shadow: e.target.value as Draft["buttonZone"]["shadow"] })}><option value="none">Ninguna</option><option value="soft">Suave</option><option value="strong">Marcada</option></select></label>
-          <div className="two-range">
-            <label className="label">Texto<input type="range" min={12} max={18} value={zone.textSize} onChange={(e) => set({ textSize: +e.target.value })} /><small>{zone.textSize}px</small></label>
-            <label className="label">Ícono<input type="range" min={22} max={36} value={zone.iconSize} onChange={(e) => set({ iconSize: +e.target.value })} /><small>{zone.iconSize}px</small></label>
-          </div>
-        </div>
-      </details>
-      <label className="label">Fuente de los botones<select value={draft.button_font} onChange={(e) => update({ button_font: e.target.value })}><option value="modern">Moderna</option><option value="classic">Clásica</option><option value="friendly">Amigable</option><option value="minimal">Minimalista</option></select></label>
-      <div className="visual-actions-row"><button type="button" className="cancel" onClick={onCancel}>Cancelar</button><button className="save" type="submit">Aplicar</button></div>
+      <label className="label visual-primary-color">Color principal
+        <span className="visual-color-control"><input type="color" value={draft.primary_color} onChange={(event) => updatePrimaryColor(event.target.value)} /><strong>{draft.primary_color.toUpperCase()}</strong><small>Se aplica automáticamente donde corresponde.</small></span>
+      </label>
+      <div className="visual-actions-row"><button type="button" className="cancel" onClick={onCancel}>Cancelar</button><button className="save" type="submit">Aplicar diseño</button></div>
     </form>
   );
 }
@@ -747,8 +945,6 @@ function ButtonSheet({
   const item = getAllActions().find((entry) => entry.type === button.type) || getAllActions().find((entry) => entry.type === "url")!;
   const isPreset = getAllActions().some((entry) => entry.type === button.type);
   const brandColor = AUTO_COLORS[button.type] || "#1f2937";
-  const [icon, setIcon] = useState(button.icon || "");
-  const [bg, setBg] = useState(button.background_color || brandColor);
   const formId = `visual-button-form-${button.id}`;
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -760,23 +956,20 @@ function ButtonSheet({
       subtitle: String(data.get("subtitle") || "").trim(),
       message: String(data.get("message") || "").trim(),
       url,
-      icon,
-      background_color: bg,
-      text_color: contrastTextColor(bg),
-      use_auto_color: bg === brandColor,
+      icon: button.icon,
+      background_color: brandColor,
+      text_color: contrastTextColor(brandColor),
+      use_auto_color: true,
     });
   }
   return (
     <>
-      <span className={isPreset ? "badge" : "badge custom"}>{isPreset ? `Prediseñado · ${item.label}` : "Personalizado"}</span>
+      <span className={isPreset ? "badge" : "badge custom"}>{isPreset ? `Acción · ${item.label}` : "Enlace personalizado"}</span>
       <form id={formId} className="stack" onSubmit={submit}>
         <label className="label">Nombre<input name="title" defaultValue={button.title} required /></label>
         <label className="label">Texto secundario (opcional)<input name="subtitle" defaultValue={button.subtitle} placeholder="Ej: Hablemos de tu proyecto" /></label>
         {item.message && <label className="label">Mensaje de WhatsApp<input name="message" defaultValue={button.message} /></label>}
         <ValueField item={item} defaultValue={button.url} />
-        <IconPicker type={button.type} value={icon} onChange={setIcon} />
-        <label className="label">Color de fondo<div style={{ display: "flex", gap: 6, alignItems: "center" }}><input type="color" value={bg} onChange={(e) => setBg(e.target.value)} /></div></label>
-        <p className="visual-helper" style={{ margin: 0 }}>{bg === brandColor ? "Este botón está usando su color automático." : "Este botón tiene un color propio."} {bg !== brandColor && <button type="button" className="inline-link" onClick={() => setBg(brandColor)}>Usar color automático</button>}</p>
       </form>
       <div className="visual-order-row" aria-label="Orden del botón">
         <span>Orden</span>
@@ -802,7 +995,7 @@ function AddButtonSheet({
   return (
     <div className="stack">
       <p className="visual-helper">Podés agregar el mismo tipo todas las veces que quieras.</p>
-      <div className="segmented"><button type="button" className={addTab === "preset" ? "segmented-option active" : "segmented-option"} onClick={() => setAddTab("preset")}>Prediseñados</button><button type="button" className={addTab === "custom" ? "segmented-option active" : "segmented-option"} onClick={() => setAddTab("custom")}>Personalizado</button></div>
+      <div className="segmented"><button type="button" className={addTab === "preset" ? "segmented-option active" : "segmented-option"} onClick={() => setAddTab("preset")}>Acciones comunes</button><button type="button" className={addTab === "custom" ? "segmented-option active" : "segmented-option"} onClick={() => setAddTab("custom")}>Otro enlace</button></div>
 
       {addTab === "preset" && (
         <div className="visual-preset-grid">

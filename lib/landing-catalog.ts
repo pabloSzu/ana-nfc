@@ -47,6 +47,12 @@ export function autoTextColor(landing: BackgroundLike): string {
   return lum > 0.5 ? "#161b18" : "#ffffff";
 }
 
+export function resolveBackgroundTint(backgroundType?: string | null, tint?: number | null): number {
+  if (backgroundType !== "image") return 0;
+  const value = typeof tint === "number" && Number.isFinite(tint) ? tint : 0.18;
+  return Math.min(0.65, Math.max(0, value));
+}
+
 export function resolveTextColor(landing: BackgroundLike & { text_color?: string | null }): string {
   return landing.text_color || autoTextColor(landing);
 }
@@ -88,20 +94,55 @@ export function buttonShapeRadius(shape?: string | null): string {
 }
 
 export type ButtonZoneStyle = {
+  preset: string;
+  layout: "center" | "editorial" | "profile-card" | "compact" | "poster";
+  // Which general template (if any) the whole design was last built from — separate from
+  // `preset`, which tracks the button look specifically. They diverge once someone picks a
+  // different template just for the buttons ("elegir plantilla de botones").
+  templateId: string;
   gap: number; height: number; radius: number; width: number;
   shadow: "none" | "soft" | "strong"; finish: "solid" | "glass" | "outline";
+  collection: "soft" | "brand" | "glass" | "glow" | "luxury" | "minimal" | "split" | "bento" | "pastel" | "metallic" | "retro" | "editorial" | "candy" | "ocean" | "brutal" | "corporate";
   colorMode: "auto" | "one"; oneColor: string; textSize: number; iconSize: number;
 };
 
 export const DEFAULT_BUTTON_ZONE: ButtonZoneStyle = {
+  preset: "essential",
+  layout: "center",
+  templateId: "custom",
   gap: 9, height: 52, radius: 16, width: 100,
-  shadow: "soft", finish: "solid", colorMode: "auto", oneColor: "#6d5cff",
+  shadow: "soft", finish: "solid", collection: "soft", colorMode: "auto", oneColor: "#6d5cff",
   textSize: 14, iconSize: 29,
 };
 
 export function parseButtonZone(raw: unknown): ButtonZoneStyle {
   if (!raw || typeof raw !== "object") return { ...DEFAULT_BUTTON_ZONE };
-  return { ...DEFAULT_BUTTON_ZONE, ...(raw as Partial<ButtonZoneStyle>) };
+  const parsed = raw as Partial<ButtonZoneStyle>;
+  const merged = { ...DEFAULT_BUTTON_ZONE, ...parsed };
+  const clamp = (value: unknown, min: number, max: number, fallback: number) => typeof value === "number" && Number.isFinite(value) ? Math.min(max, Math.max(min, value)) : fallback;
+  const collections: ButtonZoneStyle["collection"][] = ["soft","brand","glass","glow","luxury","minimal","split","bento","pastel","metallic","retro","editorial","candy","ocean","brutal","corporate"];
+  const colorModes: ButtonZoneStyle["colorMode"][] = ["auto","one"];
+  const finishes: ButtonZoneStyle["finish"][] = ["solid","glass","outline"];
+  const shadows: ButtonZoneStyle["shadow"][] = ["none","soft","strong"];
+  const layouts: ButtonZoneStyle["layout"][] = ["center","editorial","profile-card","compact","poster"];
+  return {
+    ...merged,
+    preset: typeof parsed.preset === "string" ? parsed.preset : "custom",
+    // La estructura de identidad es siempre tipo Linktree; las plantillas cambian
+    // estética, nunca el orden logo → título → subtítulo → botones.
+    layout: "center",
+    templateId: typeof parsed.templateId === "string" ? parsed.templateId : "custom",
+    gap: clamp(parsed.gap, 4, 20, DEFAULT_BUTTON_ZONE.gap),
+    height: clamp(parsed.height, 40, 72, DEFAULT_BUTTON_ZONE.height),
+    radius: clamp(parsed.radius, 0, 36, DEFAULT_BUTTON_ZONE.radius),
+    width: clamp(parsed.width, 72, 100, DEFAULT_BUTTON_ZONE.width),
+    textSize: clamp(parsed.textSize, 12, 18, DEFAULT_BUTTON_ZONE.textSize),
+    iconSize: clamp(parsed.iconSize, 22, 38, DEFAULT_BUTTON_ZONE.iconSize),
+    collection: collections.includes(merged.collection) ? merged.collection : "soft",
+    colorMode: colorModes.includes(merged.colorMode) ? merged.colorMode : "auto",
+    finish: finishes.includes(merged.finish) ? merged.finish : "solid",
+    shadow: shadows.includes(merged.shadow) ? merged.shadow : "soft",
+  };
 }
 
 // ---------- Per-element text/logo/background styling — matches the "linkme" ----------
@@ -123,22 +164,34 @@ export const TEXT_FONT_OPTIONS: { value: string; label: string }[] = [
 const DEFAULT_TITLE_STYLE: TitleStyle = { font: TEXT_FONT_OPTIONS[0].value, weight: 900, size: 28, color: "#ffffff", bgMode: "none", bg: "#111111", align: "center" };
 const DEFAULT_SUBTITLE_STYLE: SubtitleStyle = { font: TEXT_FONT_OPTIONS[0].value, weight: 500, size: 14, color: "#ffffff", bgMode: "none", bg: "#111111" };
 const DEFAULT_LOGO_STYLE: LogoStyle = { shape: "round", size: 124, zoom: 1, x: 50, y: 50, fallback: "#f5eddf" };
-const DEFAULT_BG_POSITION: BackgroundPosition = { zoom: 1, x: 50, y: 50, tint: 0.28 };
+const DEFAULT_BG_POSITION: BackgroundPosition = { zoom: 1, x: 50, y: 50, tint: 0.18 };
 
 function hasKeys(raw: unknown): raw is Record<string, unknown> {
   return Boolean(raw && typeof raw === "object" && Object.keys(raw as object).length > 0);
 }
 
 export function parseTitleStyle(landing: BackgroundLike & { text_color?: string | null; font_pair?: string | null; title_style?: unknown }): TitleStyle {
-  if (hasKeys(landing.title_style)) return { ...DEFAULT_TITLE_STYLE, ...(landing.title_style as Partial<TitleStyle>) };
-  return { ...DEFAULT_TITLE_STYLE, color: landing.text_color || autoTextColor(landing), font: getFontFamily(landing.font_pair || "modern") };
+  const value = hasKeys(landing.title_style)
+    ? { ...DEFAULT_TITLE_STYLE, ...(landing.title_style as Partial<TitleStyle>) }
+    : { ...DEFAULT_TITLE_STYLE, color: landing.text_color || autoTextColor(landing), font: getFontFamily(landing.font_pair || "modern") };
+  return { ...value, size: Math.min(48, Math.max(18, Number(value.size) || 28)), weight: [400,500,600,700,800,900].includes(Number(value.weight)) ? Number(value.weight) : 900, align: ["left","center","right"].includes(value.align) ? value.align : "center", bgMode: value.bgMode === "solid" ? "solid" : "none" };
 }
 export function parseSubtitleStyle(landing: BackgroundLike & { text_color?: string | null; font_pair?: string | null; subtitle_style?: unknown }): SubtitleStyle {
-  if (hasKeys(landing.subtitle_style)) return { ...DEFAULT_SUBTITLE_STYLE, ...(landing.subtitle_style as Partial<SubtitleStyle>) };
-  return { ...DEFAULT_SUBTITLE_STYLE, color: landing.text_color || autoTextColor(landing), font: getFontFamily(landing.font_pair || "modern") };
+  const value = hasKeys(landing.subtitle_style)
+    ? { ...DEFAULT_SUBTITLE_STYLE, ...(landing.subtitle_style as Partial<SubtitleStyle>) }
+    : { ...DEFAULT_SUBTITLE_STYLE, color: landing.text_color || autoTextColor(landing), font: getFontFamily(landing.font_pair || "modern") };
+  return { ...value, size: Math.min(26, Math.max(10, Number(value.size) || 14)), weight: [400,500,600,700,800,900].includes(Number(value.weight)) ? Number(value.weight) : 500, bgMode: value.bgMode === "solid" ? "solid" : "none" };
 }
-export function parseLogoStyle(raw: unknown): LogoStyle { return hasKeys(raw) ? { ...DEFAULT_LOGO_STYLE, ...(raw as Partial<LogoStyle>) } : { ...DEFAULT_LOGO_STYLE }; }
-export function parseBackgroundPosition(raw: unknown): BackgroundPosition { return hasKeys(raw) ? { ...DEFAULT_BG_POSITION, ...(raw as Partial<BackgroundPosition>) } : { ...DEFAULT_BG_POSITION }; }
+export function parseLogoStyle(raw: unknown): LogoStyle {
+  const value = hasKeys(raw) ? { ...DEFAULT_LOGO_STYLE, ...(raw as Partial<LogoStyle>) } : { ...DEFAULT_LOGO_STYLE };
+  const finite = (candidate: unknown, fallback: number) => Number.isFinite(Number(candidate)) ? Number(candidate) : fallback;
+  return { ...value, shape: value.shape === "square" ? "square" : "round", size: Math.min(190, Math.max(72, finite(value.size, 124))), zoom: Math.min(2.5, Math.max(1, finite(value.zoom, 1))), x: Math.min(100, Math.max(0, finite(value.x, 50))), y: Math.min(100, Math.max(0, finite(value.y, 50))) };
+}
+export function parseBackgroundPosition(raw: unknown): BackgroundPosition {
+  const parsed = hasKeys(raw) ? raw as Partial<BackgroundPosition> : {};
+  const clamp = (value: unknown, min: number, max: number, fallback: number) => typeof value === "number" && Number.isFinite(value) ? Math.min(max, Math.max(min, value)) : fallback;
+  return { zoom: clamp(parsed.zoom, 1, 2.5, 1), x: clamp(parsed.x, 0, 100, 50), y: clamp(parsed.y, 0, 100, 50), tint: clamp(parsed.tint, 0, .65, .18) };
+}
 
 export function buttonZoneShadow(shadow: ButtonZoneStyle["shadow"]): string {
   if (shadow === "none") return "none";

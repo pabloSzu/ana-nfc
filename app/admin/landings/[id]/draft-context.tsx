@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import type { TitleStyle, SubtitleStyle, LogoStyle, BackgroundPosition } from "@/lib/landing-catalog";
+import type { TitleStyle, SubtitleStyle, LogoStyle, BackgroundPosition, ButtonZoneStyle } from "@/lib/landing-catalog";
 
 export type ActionColorOverride = { bg: string; text: string };
 
@@ -21,11 +21,7 @@ export type Draft = {
   button_font: string;
   button_shape: string;
   button_fill: string;
-  buttonZone: {
-    gap: number; height: number; radius: number; width: number;
-    shadow: "none" | "soft" | "strong"; finish: "solid" | "glass" | "outline";
-    colorMode: "auto" | "one"; oneColor: string; textSize: number; iconSize: number;
-  };
+  buttonZone: ButtonZoneStyle;
   enabledActions: Record<string, boolean>;
   actionColors: Record<string, ActionColorOverride | undefined>;
   titleStyle: TitleStyle;

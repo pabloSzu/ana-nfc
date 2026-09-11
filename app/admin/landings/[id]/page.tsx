@@ -116,6 +116,9 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         <Link className="back-link" href="/admin">← Volver</Link>
         <div><p className="eyebrow">Constructor</p><h1>{landing.business_name}</h1><p className="muted">/{landing.slug}</p></div>
         <div className="row-actions">
+          <Link className="btn rainbow-editor-cta" href={`/admin/landings/${id}/editor-v2`}>
+            <span aria-hidden="true">✦</span> Probá el editor nuevo
+          </Link>
           <Link className="btn secondary" href={`/admin/landings/${id}/qr`}><IconQrCode /> Código QR</Link>
           <Link className="btn secondary" href={`/${landing.slug}`} target="_blank" rel="noreferrer"><IconEye /> Vista previa</Link>
           <DeleteLandingButton action={deleteLanding} landingId={id} />
