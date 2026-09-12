@@ -6,7 +6,7 @@ import { ActionTypeIcon } from "@/components/action-icons";
 import LandingRenderer, { type LandingEditControls } from "@/components/landing-renderer";
 import { compressImage } from "@/lib/compress-image";
 import { AUTO_COLORS, contrastTextColor, getAllActions, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize, TEXT_FONT_OPTIONS, type BackgroundPosition, type ButtonZoneStyle, type LogoStyle, type SubtitleStyle, type TitleStyle } from "@/lib/landing-catalog";
-import { DESIGN_PRESETS_V2, buttonCollectionStyle, buttonIconStyle, resolveButtonColors, type DesignPreset } from "@/lib/design-presets";
+import { DESIGN_PRESETS_V2, buttonCollectionStyle, buttonIconStyle, recommendedIconAppearance, resolveButtonColors, type DesignPreset } from "@/lib/design-presets";
 
 type ButtonItem = { id: string; type: string; title: string; subtitle: string; url: string; message: string; icon: string; background_color: string; text_color: string; use_auto_color: boolean; position: number };
 type LandingDraft = {
@@ -184,6 +184,7 @@ export default function EditorV2({ landing, initialButtons, saveAction }: { land
         contentAlignMode: draft.buttonZone.contentAlignMode,
         layout: "center",
         oneColor: preset.oneColor,
+        iconAppearance: recommendedIconAppearance(preset.buttonZone.collection),
         templateId: id,
       },
       titleStyle: { ...draft.titleStyle, ...preset.title, color: preset.foreground }, subtitleStyle: { ...draft.subtitleStyle, ...preset.subtitle, color: preset.foreground }, logoStyle: { ...draft.logoStyle, ...logoTreatmentPatch("template", id), ...preset.logo },
@@ -203,6 +204,7 @@ export default function EditorV2({ landing, initialButtons, saveAction }: { land
         contentAlignMode: draft.buttonZone.contentAlignMode,
         templateId: draft.buttonZone.templateId,
         oneColor: preset.oneColor,
+        iconAppearance: recommendedIconAppearance(preset.buttonZone.collection),
       },
     });
   }
@@ -422,6 +424,7 @@ export default function EditorV2({ landing, initialButtons, saveAction }: { land
 function panelTitle(panel: Exclude<Panel, null>) { if (typeof panel === "object") return "Editar botón"; return ({ templates: "Elegí una plantilla", buttons: "Editar todos los botones", background: "Editar fondo", profile: "Contenido del perfil", title: "Editar título", subtitle: "Editar subtítulo", logo: "Editar logo", add: "Agregar un botón" } as const)[panel]; }
 
 function TemplateSwatch({ preset }: { preset: DesignPreset }) {
+  const iconAppearance = recommendedIconAppearance(preset.buttonZone.collection);
   const colors = preset.buttonZone.colorMode === "auto"
     ? ["#25d366", "#c13584", "#1877f2"]
     : [preset.oneColor, preset.oneColor, preset.oneColor];
@@ -450,11 +453,11 @@ function TemplateSwatch({ preset }: { preset: DesignPreset }) {
             const text = contrastTextColor(color);
             return (
               <span
-                className="template-shot-button"
+                className={`template-shot-button icon-appearance-${iconAppearance}`}
                 key={example.type}
                 style={{ ...buttonCollectionStyle(preset.buttonZone.collection, color, text, index), borderRadius: Math.max(0, preset.buttonZone.radius * .42), display: "grid", gridTemplateColumns: preset.buttonZone.contentAlign === "center" ? "11px minmax(0,1fr) 11px" : "11px minmax(0,1fr)", alignItems: "center", columnGap: 4, textAlign: preset.buttonZone.contentAlign === "center" ? "center" : "left" }}
               >
-                <span className="template-shot-icon" style={buttonIconStyle(preset.buttonZone.collection, color, 11)}><ActionTypeIcon type={example.type} /></span>
+                <span className="template-shot-icon" style={buttonIconStyle(preset.buttonZone.collection, color, 11, example.type, iconAppearance)}><ActionTypeIcon type={example.type} brandMark={iconAppearance === "brand"} /></span>
                 <span>{example.label}</span>
                 {preset.buttonZone.contentAlign === "center" && <span aria-hidden="true" />}
               </span>
@@ -469,6 +472,7 @@ function TemplateSwatch({ preset }: { preset: DesignPreset }) {
 function Templates({ selected, onApply }: { selected: string; onApply: (id: string) => void }) { return <div><p className="v2-help">Todas mantienen la estructura simple tipo Linktree: logo, título, subtítulo y botones centrados. La miniatura muestra el resultado real de colores, tipografía y botones.</p><div className="v2-template-grid">{DESIGN_PRESETS_V2.map((preset) => <button key={preset.id} type="button" className={selected === preset.id ? "selected" : ""} onClick={() => onApply(preset.id)}><TemplateSwatch preset={preset} /><b>{preset.name}</b><small>{preset.description}</small></button>)}</div></div>; }
 
 function ButtonLookSwatch({ preset }: { preset: DesignPreset }) {
+  const iconAppearance = recommendedIconAppearance(preset.buttonZone.collection);
   const examples = [
     { type: "whatsapp", label: "WhatsApp" },
     { type: "instagram", label: "Instagram" },
@@ -479,8 +483,8 @@ function ButtonLookSwatch({ preset }: { preset: DesignPreset }) {
   return <span className="v2-look-swatch" aria-hidden="true">
     {examples.map((example, index) => {
       const background = backgrounds[index];
-      return <span className="v2-look-button" key={example.type} style={{ ...buttonCollectionStyle(preset.buttonZone.collection, background, contrastTextColor(background), index), borderRadius: Math.max(0, preset.buttonZone.radius * .35), display: "grid", gridTemplateColumns: preset.buttonZone.contentAlign === "center" ? "15px minmax(0,1fr) 15px" : "15px minmax(0,1fr)", alignItems: "center", columnGap: 5, textAlign: preset.buttonZone.contentAlign === "center" ? "center" : "left" }}>
-        <span className="v2-look-button-icon" style={buttonIconStyle(preset.buttonZone.collection, background, 15)}><ActionTypeIcon type={example.type} /></span>
+      return <span className={`v2-look-button icon-appearance-${iconAppearance}`} key={example.type} style={{ ...buttonCollectionStyle(preset.buttonZone.collection, background, contrastTextColor(background), index), borderRadius: Math.max(0, preset.buttonZone.radius * .35), display: "grid", gridTemplateColumns: preset.buttonZone.contentAlign === "center" ? "15px minmax(0,1fr) 15px" : "15px minmax(0,1fr)", alignItems: "center", columnGap: 5, textAlign: preset.buttonZone.contentAlign === "center" ? "center" : "left" }}>
+        <span className="v2-look-button-icon" style={buttonIconStyle(preset.buttonZone.collection, background, 15, example.type, iconAppearance)}><ActionTypeIcon type={example.type} brandMark={iconAppearance === "brand"} /></span>
         <span>{example.label}</span>
         {preset.buttonZone.contentAlign === "center" && <span aria-hidden="true" />}
       </span>;
@@ -491,6 +495,7 @@ function ButtonLookSwatch({ preset }: { preset: DesignPreset }) {
 function ButtonDesign({ draft, buttons, onZone, onFont, onApplyButtonLook, onResetButtonColors }: { draft: LandingDraft; buttons: ButtonItem[]; onZone: (p: Partial<ButtonZoneStyle>) => void; onFont: (font: string) => void; onApplyButtonLook: (id: string) => void; onResetButtonColors: () => void }) {
   const zone = draft.buttonZone;
   const alignmentPreset = DESIGN_PRESETS_V2.find((preset) => preset.id === zone.preset) || DESIGN_PRESETS_V2.find((preset) => preset.id === zone.templateId) || DESIGN_PRESETS_V2[0];
+  const recommendedIcons = recommendedIconAppearance(zone.collection);
   const customCount = buttons.filter((button) => !button.use_auto_color).length;
   const inheritedCount = buttons.length - customCount;
   return (
@@ -533,6 +538,11 @@ function ButtonDesign({ draft, buttons, onZone, onFont, onApplyButtonLook, onRes
       <details className="v2-advanced">
         <summary>Más opciones</summary>
         <div className="v2-fields" style={{ marginTop: 10 }}>
+          <fieldset>
+            <legend>Apariencia de los iconos</legend>
+            <Choice active={zone.iconAppearance === "minimal"} suggested={recommendedIcons === "minimal"} title="Icono minimalista" note="Todos usan un tratamiento monocromático coordinado con la botonera." onClick={() => onZone({ iconAppearance: "minimal" })} />
+            <Choice active={zone.iconAppearance === "brand"} suggested={recommendedIcons === "brand"} title="Icono real" note="Cada marca conserva su apariencia reconocible: Spotify verde, YouTube rojo, Instagram degradado…" onClick={() => onZone({ iconAppearance: "brand" })} />
+          </fieldset>
           <label>Tipografía<select value={draft.button_font || "modern"} onChange={(event) => onFont(event.target.value)}>{Object.entries(FONT_LABEL).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label>
           <Range label="Alto del botón" min={40} max={72} value={zone.height} onChange={(height) => onZone({ height })} />
           <Range label="Espaciado entre botones" min={4} max={20} value={zone.gap} onChange={(gap) => onZone({ gap })} />
@@ -641,6 +651,6 @@ function ButtonControls({ button,draft,onChange,onDelete }: { button: ButtonItem
   </div>;
 }
 
-function Choice({active,title,note,onClick,swatch}:{active:boolean;title:string;note:string;onClick:()=>void;swatch?:string}) { return <button type="button" className={`v2-choice ${active?"active":""}`} onClick={onClick}><i>{active?"✓":""}</i>{swatch && <em className="v2-choice-swatch" style={{background:swatch}} />}<span><b>{title}</b><small>{note}</small></span></button>; }
+function Choice({active,title,note,onClick,swatch,suggested=false}:{active:boolean;title:string;note:string;onClick:()=>void;swatch?:string;suggested?:boolean}) { return <button type="button" className={`v2-choice ${active?"active":""}`} onClick={onClick}><i>{active?"✓":""}</i>{swatch && <em className="v2-choice-swatch" style={{background:swatch}} />}<span><b>{title}{suggested && <em className="v2-choice-suggested">(Sugerido para la plantilla)</em>}</b><small>{note}</small></span></button>; }
 function ColorField({label,value,onChange}:{label:string;value:string;onChange:(v:string)=>void}) { return <label className="v2-color"><span>{label}</span><input type="color" value={value} onChange={(e)=>onChange(e.target.value)}/><code>{value.toUpperCase()}</code></label>; }
 function Range({label,min,max,step=1,value,onChange}:{label:string;min:number;max:number;step?:number;value:number;onChange:(v:number)=>void}) { const scaledPercent=max<=3; const percent=scaledPercent||label==="Horizontal"||label==="Vertical"; const pixels=!percent&&(label==="Tamaño"||label==="Borde"||label.includes("Alto")||label.includes("Espaciado")||label.includes("ícono")||label.includes("texto")); return <label className="v2-range"><span>{label}<b>{Math.round(value*(scaledPercent?100:1))}{percent?"%":pixels?" px":""}</b></span><input type="range" min={min} max={max} step={step} value={value} onChange={(e)=>onChange(Number(e.target.value))}/></label>; }

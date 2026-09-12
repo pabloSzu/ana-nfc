@@ -9,6 +9,24 @@ import {
   FiMail, FiMapPin, FiMusic, FiPhone, FiShoppingCart, FiStar, FiTag,
 } from "react-icons/fi";
 
+function SpotifyWavesIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M5 8.3c4.4-1.25 9.8-.94 14 1.12" fill="none" stroke="currentColor" strokeWidth="2.35" strokeLinecap="round" />
+      <path d="M5.8 12.15c3.75-1 8.55-.7 12.2 1.05" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" />
+      <path d="M6.55 15.75c3.05-.72 6.88-.47 9.92.96" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function YoutubePlayIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M9.25 7.25 17 12l-7.75 4.75z" fill="currentColor" />
+    </svg>
+  );
+}
+
 const actionIcons: Record<string, IconType> = {
   whatsapp: FaWhatsapp,
   instagram: FaInstagram,
@@ -72,8 +90,11 @@ export const CUSTOM_ICON_OPTIONS: { id: string; label: string }[] = [
   { id: "bell", label: "Aviso" },
 ];
 
-export function ActionTypeIcon({ type, icon, className }: { type: string; icon?: string | null; className?: string }) {
+export function ActionTypeIcon({ type, icon, className, brandMark = false }: { type: string; icon?: string | null; className?: string; brandMark?: boolean }) {
   const iconKey = icon && customIcons[icon] ? icon : (actionIcons[type] ? type : "url");
+  const sharedClassName = `action-type-icon action-type-icon-${iconKey}${className ? ` ${className}` : ""}`;
+  if (brandMark && !icon && type === "spotify") return <SpotifyWavesIcon className={sharedClassName} />;
+  if (brandMark && !icon && type === "youtube") return <YoutubePlayIcon className={sharedClassName} />;
   const Icon = (icon && customIcons[icon]) || actionIcons[type] || FiLink;
-  return <Icon className={`action-type-icon action-type-icon-${iconKey}${className ? ` ${className}` : ""}`} aria-hidden="true" focusable="false" />;
+  return <Icon className={sharedClassName} aria-hidden="true" focusable="false" />;
 }

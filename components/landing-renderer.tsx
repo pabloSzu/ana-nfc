@@ -85,6 +85,7 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
   const logo = parseLogoStyle(landing.logo_style);
   const bgPos = parseBackgroundPosition(landing.background_style);
   const zone = parseButtonZone(landing.button_style);
+  const iconAppearance = zone.iconAppearance;
   const hasSavedButtonStyle = Boolean(landing.button_style && typeof landing.button_style === "object" && Object.keys(landing.button_style).length);
   if (!hasSavedButtonStyle) zone.oneColor = primary;
   const buttonFont = getFontFamily(landing.button_font || "modern");
@@ -170,7 +171,7 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
                 key={action.id}
                 ref={edit ? (el) => edit.onButtonRef(action.id, el) : undefined}
                 data-button-id={edit ? action.id : undefined}
-                className={`action button-collection-${zone.collection}${edit ? " editor-hit" : ""}${isSelected ? " is-selected" : ""}${isDragging ? " is-dragging" : ""}`}
+                className={`action button-collection-${zone.collection} icon-appearance-${iconAppearance}${edit ? " editor-hit" : ""}${isSelected ? " is-selected" : ""}${isDragging ? " is-dragging" : ""}`}
                 href={actionHref(action)}
                 target={edit ? undefined : (noBlank.has(action.type) ? undefined : "_blank")}
                 rel="noreferrer"
@@ -191,7 +192,7 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
                 }}
               >
                 <span className={`action-main action-main-${zone.contentAlign}`} style={zone.contentAlign === "center" ? { width: "100%", display: "grid", gridTemplateColumns: `${zone.iconSize}px minmax(0,1fr) ${zone.iconSize}px`, alignItems: "center", columnGap: 10 } : { width: "100%", display: "flex", alignItems: "center", justifyContent: "flex-start", gap: 10 }}>
-                  <span className="action-brand-icon" style={buttonIconStyle(zone.collection, bg, zone.iconSize)}><ActionTypeIcon type={action.type} icon={action.icon} /></span>
+                  <span className="action-brand-icon" style={buttonIconStyle(zone.collection, bg, zone.iconSize, action.type, iconAppearance)}><ActionTypeIcon type={action.type} icon={action.icon} brandMark={iconAppearance === "brand"} /></span>
                   <span className="action-copy" style={{ textAlign: zone.contentAlign === "center" ? "center" : "left" }}>
                     <span className="action-title">{action.title}</span>
                     {action.subtitle && <small style={{ fontSize: 11, opacity: 0.82, fontWeight: 600 }}>{action.subtitle}</small>}

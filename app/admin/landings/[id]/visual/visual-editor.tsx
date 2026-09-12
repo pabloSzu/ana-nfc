@@ -42,7 +42,7 @@ const FORMAT_HINTS: Record<string, string> = {
 type DesignPreset = {
   id: string; name: string; description: string; accent: string;
   buttonFont: string;
-  buttonZone: Omit<Draft["buttonZone"], "oneColor" | "preset" | "templateId" | "contentAlign" | "contentAlignMode">;
+  buttonZone: Omit<Draft["buttonZone"], "oneColor" | "preset" | "templateId" | "contentAlign" | "contentAlignMode" | "iconAppearance">;
   title: Pick<Draft["titleStyle"], "font" | "weight" | "size" | "align">;
   subtitle: Pick<Draft["subtitleStyle"], "font" | "weight" | "size">;
   logo: Pick<Draft["logoStyle"], "shape" | "size">;
@@ -881,7 +881,7 @@ function DesignSheet({ draft, update, onDone, onCancel }: { draft: Draft; update
     const textColor = autoTextColor(draft);
     update({
       button_font: preset.buttonFont,
-      buttonZone: { ...preset.buttonZone, preset: preset.id, templateId: "custom", oneColor: draft.primary_color, contentAlign: draft.buttonZone.contentAlign, contentAlignMode: draft.buttonZone.contentAlignMode },
+      buttonZone: { ...preset.buttonZone, preset: preset.id, templateId: "custom", oneColor: draft.primary_color, iconAppearance: draft.buttonZone.iconAppearance, contentAlign: draft.buttonZone.contentAlign, contentAlignMode: draft.buttonZone.contentAlignMode },
       titleStyle: { ...draft.titleStyle, ...preset.title, color: textColor, bgMode: "none" },
       subtitleStyle: { ...draft.subtitleStyle, ...preset.subtitle, color: textColor, bgMode: "none" },
       logoStyle: { ...draft.logoStyle, ...preset.logo },

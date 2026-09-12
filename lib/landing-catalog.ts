@@ -102,8 +102,9 @@ export type ButtonZoneStyle = {
   templateId: string;
   gap: number; height: number; radius: number; width: number;
   shadow: "none" | "soft" | "strong"; finish: "solid" | "glass" | "outline";
-  collection: "soft" | "brand" | "glass" | "glow" | "luxury" | "minimal" | "split" | "bento" | "pastel" | "metallic" | "retro" | "editorial" | "candy" | "ocean" | "brutal" | "corporate";
+  collection: "soft" | "brand" | "brandmark" | "brandpanel" | "glass" | "glow" | "luxury" | "minimal" | "split" | "bento" | "pastel" | "metallic" | "retro" | "editorial" | "candy" | "ocean" | "brutal" | "corporate";
   colorMode: "auto" | "one"; oneColor: string; textSize: number; iconSize: number;
+  iconAppearance: "brand" | "minimal";
   contentAlign: "center" | "left";
   contentAlignMode: "auto" | "manual";
 };
@@ -114,7 +115,7 @@ export const DEFAULT_BUTTON_ZONE: ButtonZoneStyle = {
   templateId: "custom",
   gap: 9, height: 52, radius: 16, width: 100,
   shadow: "soft", finish: "solid", collection: "soft", colorMode: "auto", oneColor: "#6d5cff",
-  textSize: 14, iconSize: 29, contentAlign: "center", contentAlignMode: "auto",
+  textSize: 14, iconSize: 29, iconAppearance: "minimal", contentAlign: "center", contentAlignMode: "auto",
 };
 
 export function parseButtonZone(raw: unknown): ButtonZoneStyle {
@@ -122,7 +123,7 @@ export function parseButtonZone(raw: unknown): ButtonZoneStyle {
   const parsed = raw as Partial<ButtonZoneStyle>;
   const merged = { ...DEFAULT_BUTTON_ZONE, ...parsed };
   const clamp = (value: unknown, min: number, max: number, fallback: number) => typeof value === "number" && Number.isFinite(value) ? Math.min(max, Math.max(min, value)) : fallback;
-  const collections: ButtonZoneStyle["collection"][] = ["soft","brand","glass","glow","luxury","minimal","split","bento","pastel","metallic","retro","editorial","candy","ocean","brutal","corporate"];
+  const collections: ButtonZoneStyle["collection"][] = ["soft","brand","brandmark","brandpanel","glass","glow","luxury","minimal","split","bento","pastel","metallic","retro","editorial","candy","ocean","brutal","corporate"];
   const colorModes: ButtonZoneStyle["colorMode"][] = ["auto","one"];
   const finishes: ButtonZoneStyle["finish"][] = ["solid","glass","outline"];
   const shadows: ButtonZoneStyle["shadow"][] = ["none","soft","strong"];
@@ -145,6 +146,9 @@ export function parseButtonZone(raw: unknown): ButtonZoneStyle {
     colorMode: colorModes.includes(merged.colorMode) ? merged.colorMode : "auto",
     finish: finishes.includes(merged.finish) ? merged.finish : "solid",
     shadow: shadows.includes(merged.shadow) ? merged.shadow : "soft",
+    iconAppearance: parsed.iconAppearance === "brand" || parsed.iconAppearance === "minimal"
+      ? parsed.iconAppearance
+      : merged.collection === "brandmark" || merged.collection === "brandpanel" ? "brand" : "minimal",
     contentAlign: contentAligns.includes(merged.contentAlign) ? merged.contentAlign : "center",
     contentAlignMode: parsed.contentAlignMode === "auto" || parsed.contentAlignMode === "manual"
       ? parsed.contentAlignMode

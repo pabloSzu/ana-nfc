@@ -13,7 +13,7 @@ export type DesignPreset = {
   oneColor: string;
   foreground: string;
   buttonFont: string;
-  buttonZone: Omit<ButtonZoneStyle, "oneColor" | "templateId" | "contentAlignMode">;
+  buttonZone: Omit<ButtonZoneStyle, "oneColor" | "templateId" | "contentAlignMode" | "iconAppearance">;
   title: Pick<TitleStyle, "font" | "weight" | "size" | "align">;
   subtitle: Pick<SubtitleStyle, "font" | "weight" | "size">;
   logo: Pick<LogoStyle, "shape" | "size">;
@@ -101,11 +101,27 @@ export const DESIGN_PRESETS_V2: DesignPreset[] = [
     buttonZone: { preset: "creator", layout: "center", gap: 12, height: 58, radius: 22, width: 100, shadow: "strong", finish: "solid", collection: "candy", colorMode: "one", textSize: 14, iconSize: 29, contentAlign: "left" },
     title: { font: "'Arial Black',Arial,sans-serif", weight: 900, size: 30, align: "center" }, subtitle: { font: "'Trebuchet MS',sans-serif", weight: 700, size: 14 }, logo: { shape: "square", size: 118 },
   },
+  {
+    id: "brand-signature", name: "Firma de Marca", description: "Tarjetas claras con insignias oficiales protagonistas. Limpia, reconocible y premium.",
+    background: "linear-gradient(155deg,#fffdf7,#ebeef5)", bg1: "#fffdf7", bg2: "#ebeef5", accent: "#17191f", oneColor: "#ffffff", foreground: "#17191f",
+    buttonFont: "minimal",
+    buttonZone: { preset: "brand-signature", layout: "center", gap: 11, height: 61, radius: 19, width: 100, shadow: "soft", finish: "solid", collection: "brandmark", colorMode: "one", textSize: 14, iconSize: 36, contentAlign: "left" },
+    title: { font: "Inter,ui-sans-serif,system-ui,sans-serif", weight: 850, size: 29, align: "center" }, subtitle: { font: "Inter,ui-sans-serif,system-ui,sans-serif", weight: 500, size: 14 }, logo: { shape: "round", size: 120 },
+  },
+  {
+    id: "brand-stage", name: "Brand Stage", description: "Botones oscuros de alto impacto con cada marca iluminada en su color real.",
+    background: "linear-gradient(145deg,#26304a,#07090e)", bg1: "#26304a", bg2: "#07090e", accent: "#ffffff", oneColor: "#151922", foreground: "#ffffff",
+    buttonFont: "modern",
+    buttonZone: { preset: "brand-stage", layout: "center", gap: 12, height: 63, radius: 20, width: 100, shadow: "strong", finish: "solid", collection: "brandpanel", colorMode: "one", textSize: 14, iconSize: 38, contentAlign: "left" },
+    title: { font: "Inter,ui-sans-serif,system-ui,sans-serif", weight: 900, size: 30, align: "center" }, subtitle: { font: "Inter,ui-sans-serif,system-ui,sans-serif", weight: 500, size: 14 }, logo: { shape: "square", size: 122 },
+  },
 ];
 
 export const BUTTON_COLLECTIONS: { id: ButtonZoneStyle["collection"]; name: string; description: string }[] = [
   { id: "soft", name: "Soft Cards", description: "Suaves, cálidos y con profundidad delicada." },
   { id: "brand", name: "Colores de marca", description: "Degradados intensos para redes y acciones." },
+  { id: "brandmark", name: "Firma de Marca", description: "Tarjetas claras con insignias oficiales a todo color." },
+  { id: "brandpanel", name: "Brand Stage", description: "Paneles oscuros con insignias oficiales luminosas." },
   { id: "glass", name: "Cristal premium", description: "Transparencia, reflejo y fondo desenfocado." },
   { id: "glow", name: "Neon Glow", description: "Brillo ambiental para fondos oscuros." },
   { id: "luxury", name: "Luxury", description: "Oscuro, editorial y con detalles dorados." },
@@ -130,6 +146,8 @@ export function buttonCollectionStyle(collection: ButtonZoneStyle["collection"],
   // with no highlight — technically translucent, but nothing read as glass.
   if (collection === "glass") return { background: `linear-gradient(135deg, rgba(255,255,255,.46), rgba(255,255,255,.14) 48%, color-mix(in srgb, ${bg} 38%, transparent))`, color: "#ffffff", border: "1px solid rgba(255,255,255,.68)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.75), 0 12px 28px rgba(13,8,35,.2)", backdropFilter: "blur(18px) saturate(1.35)" };
   if (collection === "brand") return { background: `linear-gradient(135deg, color-mix(in srgb, ${bg} 92%, white), color-mix(in srgb, ${bg} 92%, black))`, color: text, border: "1px solid rgba(255,255,255,.26)", boxShadow: `0 8px 20px color-mix(in srgb, ${bg} 22%, transparent), inset 0 1px 0 rgba(255,255,255,.25)` };
+  if (collection === "brandmark") return { background: `linear-gradient(145deg,color-mix(in srgb,${bg} 7%,#ffffff),color-mix(in srgb,${bg} 5%,#f5f6f9))`, color: "#17191f", border: "1px solid rgba(24,29,40,.08)", boxShadow: "0 8px 22px rgba(24,30,45,.095)" };
+  if (collection === "brandpanel") return { background: `linear-gradient(145deg,color-mix(in srgb,${bg} 16%,#1b202a),color-mix(in srgb,${bg} 10%,#10131a))`, color: "#ffffff", border: "1px solid rgba(255,255,255,.09)", boxShadow: "0 12px 28px rgba(0,0,0,.3)" };
   if (collection === "glow") return { background: `linear-gradient(135deg, color-mix(in srgb, ${bg} 48%, #19152f), color-mix(in srgb, ${bg} 22%, #101224))`, color: "#ffffff", border: `1px solid color-mix(in srgb, ${bg} 76%, white)`, boxShadow: `0 0 0 1px color-mix(in srgb, ${bg} 14%, transparent), 0 10px 30px color-mix(in srgb, ${bg} 34%, transparent), inset 0 1px 0 rgba(255,255,255,.15)` };
   // Luxury and minimal keep a deliberately light surface, while the selected color still
   // drives their border/accent. That keeps custom colors visible without sacrificing the
@@ -149,8 +167,38 @@ export function buttonCollectionStyle(collection: ButtonZoneStyle["collection"],
   return { background: `linear-gradient(180deg, color-mix(in srgb, ${bg} 92%, white), ${bg})`, color: text, border: "1px solid rgba(255,255,255,.3)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.4), 0 8px 18px rgba(20,22,30,.13)" };
 }
 
-export function buttonIconStyle(collection: ButtonZoneStyle["collection"], bg: string, size: number): CSSProperties {
+const BRAND_ICON_COLORS: Record<string, { background: string; color: string }> = {
+  spotify: { background: "#1ed760", color: "#0b0b0b" },
+  youtube: { background: "#ff0033", color: "#ffffff" },
+  instagram: { background: "linear-gradient(135deg,#833ab4 5%,#fd1d1d 52%,#fcb045 100%)", color: "#ffffff" },
+  whatsapp: { background: "#25d366", color: "#ffffff" },
+  tiktok: { background: "#090909", color: "#ffffff" },
+  facebook: { background: "#1877f2", color: "#ffffff" },
+  telegram: { background: "#229ed9", color: "#ffffff" },
+  website: { background: "#665cf6", color: "#ffffff" },
+  email: { background: "#ffca52", color: "#17191f" },
+  phone: { background: "#32b768", color: "#ffffff" },
+  maps: { background: "#ea4335", color: "#ffffff" },
+  calendar: { background: "#5b6ff5", color: "#ffffff" },
+  mercadopago: { background: "#009ee3", color: "#ffffff" },
+};
+
+export function isBrandIconCollection(collection: ButtonZoneStyle["collection"]) {
+  return collection === "brandmark" || collection === "brandpanel";
+}
+
+export function recommendedIconAppearance(collection: ButtonZoneStyle["collection"]): ButtonZoneStyle["iconAppearance"] {
+  return isBrandIconCollection(collection) ? "brand" : "minimal";
+}
+
+export function buttonIconStyle(collection: ButtonZoneStyle["collection"], bg: string, size: number, type?: string, appearance = recommendedIconAppearance(collection)): CSSProperties {
   const base: CSSProperties = { width: size, height: size, flexGrow: 0, flexShrink: 0, flexBasis: size, display: "inline-grid", placeItems: "center", lineHeight: 0 };
+  if (appearance === "brand") {
+    const palette = BRAND_ICON_COLORS[type || ""] || { background: "#6c63ff", color: "#ffffff" };
+    return { ...base, borderRadius: collection === "brandmark" ? "50%" : 13, background: palette.background, color: palette.color, boxShadow: collection === "brandmark" ? "0 5px 12px rgba(22,27,39,.16)" : `0 6px 16px color-mix(in srgb, ${typeof palette.background === "string" && palette.background.startsWith("#") ? palette.background : "#e1306c"} 30%, transparent)` };
+  }
+  if (collection === "brandmark") return { ...base, width: size - 4, height: size - 4, flexBasis: size - 4, color: "#17191f" };
+  if (collection === "brandpanel") return { ...base, width: size - 4, height: size - 4, flexBasis: size - 4, color: "#ffffff" };
   if (collection === "minimal") return { ...base, width: size - 4, height: size - 4, flexBasis: size - 4, color: bg };
   if (collection === "brutal") return { ...base, borderRadius: 2, background: "#0a0a0a", color: "#ffffff" };
   if (collection === "retro") return { ...base, borderRadius: 7, background: "rgba(255,255,255,.34)", border: "1.5px solid #191724" };
