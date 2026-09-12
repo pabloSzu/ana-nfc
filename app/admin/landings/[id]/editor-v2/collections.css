@@ -249,6 +249,30 @@
 }
 .v2-scope-summary b { color: #38305f; font-size: 12px; }
 .v2-scope-summary span { color: #716b8a; font-size: 10px; line-height: 1.4; }
+.v2-scope-summary.has-custom {
+  border-color: #f2c879;
+  background: #fff9ec;
+}
+.v2-scope-summary.has-custom b { color: #744b06; }
+.v2-scope-summary.has-custom span { color: #805f24; }
+.v2-scope-summary.none-inherited {
+  border-color: #efaa9c;
+  background: #fff4f1;
+}
+.v2-scope-summary.none-inherited b { color: #8f2e20; }
+.v2-restore-all {
+  min-height: 34px;
+  margin-top: 5px;
+  padding: 7px 10px;
+  border: 1px solid currentColor;
+  border-radius: 9px;
+  background: #fff;
+  color: #6657e8;
+  font-size: 10px;
+  font-weight: 850;
+  cursor: pointer;
+}
+.v2-restore-all:hover { background: #f8f7ff; }
 
 .v2-look-grid {
   display: grid;

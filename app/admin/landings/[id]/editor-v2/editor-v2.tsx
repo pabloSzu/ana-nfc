@@ -31,14 +31,6 @@ const DEVICE_OPTIONS: { id: DeviceMode; label: string; size: string }[] = [
   { id: "standard", label: "Común", size: "390 px" },
   { id: "large", label: "Grande", size: "430 px" },
 ];
-const BUTTON_LOOKS = [
-  { id: "minimal", label: "Limpio", note: "Aireado y discreto" },
-  { id: "corporate", label: "Suave", note: "Prolijo y versátil" },
-  { id: "neobrutal", label: "Marcado", note: "Borde y sombra fuerte" },
-  { id: "glass", label: "Cristal", note: "Transparente y luminoso" },
-  { id: "elegant", label: "Elegante", note: "Oscuro y refinado" },
-  { id: "creator", label: "Vibrante", note: "Redondo y expresivo" },
-] as const;
 type LogoTreatment = "template" | "clean" | "badge" | "card" | "highlight";
 
 function logoTreatmentPatch(treatment: LogoTreatment, templateId = "minimal"): Partial<LogoStyle> {
@@ -69,6 +61,7 @@ export default function EditorV2({ landing, initialButtons, saveAction }: { land
   const lastDragTargetIndex = useRef<number | null>(null);
   const buttonElements = useRef(new Map<string, HTMLButtonElement>());
   const buttonsContainerRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const grabOffsetRef = useRef(0);
   const dragOffsetRef = useRef(0);
@@ -79,6 +72,10 @@ export default function EditorV2({ landing, initialButtons, saveAction }: { land
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty]);
+
+  useEffect(() => {
+    panelRef.current?.scrollTo({ top: 0 });
+  }, [panel]);
 
   // Undo/redo history. Everything lives in `draft` + `buttons`, so a snapshot of both is
   // enough to restore any point in time. Continuous edits (typing, dragging a slider or
@@ -196,6 +193,12 @@ export default function EditorV2({ landing, initialButtons, saveAction }: { land
         finish: preset.buttonZone.finish,
       },
     });
+  }
+
+  function resetButtonColors() {
+    if (!buttons.some((button) => !button.use_auto_color)) return;
+    commitDiscrete();
+    patchButtons((current) => current.map((button) => ({ ...button, use_auto_color: true })));
   }
 
   function addButton(type: string) {
@@ -362,10 +365,10 @@ export default function EditorV2({ landing, initialButtons, saveAction }: { land
       </header>
 
       <div className={`v2-workspace ${preview ? "is-preview" : ""}`}>
-        {!preview && panel && <aside className="v2-panel">
+        {!preview && panel && <aside ref={panelRef} className="v2-panel">
           <div className="v2-panel-head"><div><span>Paso simple</span><h2>{panelTitle(panel)}</h2></div><button onClick={() => setPanel(null)}>×</button></div>
           {panel === "templates" && <Templates selected={draft.buttonZone.templateId} onApply={applyPreset} />}
-          {panel === "buttons" && <ButtonDesign draft={draft} buttons={buttons} onZone={changeZone} onFont={(button_font) => change({ button_font })} onApplyButtonLook={applyButtonLook} />}
+          {panel === "buttons" && <ButtonDesign draft={draft} buttons={buttons} onZone={changeZone} onFont={(button_font) => change({ button_font })} onApplyButtonLook={applyButtonLook} onResetButtonColors={resetButtonColors} />}
           {panel === "background" && <BackgroundControls draft={draft} onChange={change} onFile={onBackgroundFile} />}
           {panel === "profile" && <ProfileControls draft={draft} onChange={change} />}
           {panel === "title" && <TitleControls draft={draft} onChange={change} />}
@@ -484,35 +487,33 @@ function ButtonLookSwatch({ preset, zone }: { preset: DesignPreset; zone: Button
   </span>;
 }
 
-function ButtonDesign({ draft, buttons, onZone, onFont, onApplyButtonLook }: { draft: LandingDraft; buttons: ButtonItem[]; onZone: (p: Partial<ButtonZoneStyle>) => void; onFont: (font: string) => void; onApplyButtonLook: (id: string) => void }) {
+function ButtonDesign({ draft, buttons, onZone, onFont, onApplyButtonLook, onResetButtonColors }: { draft: LandingDraft; buttons: ButtonItem[]; onZone: (p: Partial<ButtonZoneStyle>) => void; onFont: (font: string) => void; onApplyButtonLook: (id: string) => void; onResetButtonColors: () => void }) {
   const zone = draft.buttonZone;
   const customCount = buttons.filter((button) => !button.use_auto_color).length;
+  const inheritedCount = buttons.length - customCount;
   return (
     <div className="v2-fields">
-      {buttons.length > 0 && (
-        <div className="v2-scope-summary">
-          <b>Este diseño se aplica a todos</b>
-          <span>
-          {customCount === 0
-            ? `${buttons.length} de ${buttons.length} botones lo usan.`
-            : `${buttons.length - customCount} lo usan · ${customCount} ${customCount === 1 ? "tiene color propio" : "tienen color propio"}.`}
-          </span>
-        </div>
-      )}
       <fieldset>
-        <legend>Apariencia</legend>
+        <legend>Plantilla de los botones</legend>
+        <p className="v2-help">Son las mismas plantillas del diseño general. Acá solo cambia la apariencia de todos los botones.</p>
         <div className="v2-look-grid">
-          {BUTTON_LOOKS.map((look) => {
-            const preset = DESIGN_PRESETS_V2.find((item) => item.id === look.id)!;
-            return <button type="button" key={look.id} className={zone.preset === look.id ? "active" : ""} onClick={() => onApplyButtonLook(look.id)}>
+          {DESIGN_PRESETS_V2.map((preset) => {
+            return <button type="button" key={preset.id} className={zone.preset === preset.id ? "active" : ""} onClick={() => onApplyButtonLook(preset.id)} aria-pressed={zone.preset === preset.id}>
               <ButtonLookSwatch preset={preset} zone={zone} />
-              <b>{look.label}</b><small>{look.note}</small>
+              <b>{preset.name}</b>
             </button>;
           })}
         </div>
       </fieldset>
       <fieldset>
         <legend>Regla de color</legend>
+        {buttons.length > 0 && (
+          <div className={`v2-scope-summary ${customCount > 0 ? "has-custom" : ""} ${inheritedCount === 0 ? "none-inherited" : ""}`} role={customCount > 0 ? "status" : undefined}>
+            <b>{inheritedCount === 0 ? "El cambio no afectará ningún botón" : customCount > 0 ? `El cambio se aplicará a ${inheritedCount} de ${buttons.length}` : `El cambio se aplicará a los ${buttons.length} botones`}</b>
+            <span>{customCount === 0 ? "Todos usan el color del diseño general." : `${customCount} ${customCount === 1 ? "botón mantiene su color propio" : "botones mantienen su color propio"}.`}</span>
+            {customCount > 0 && <button type="button" className="v2-restore-all" onClick={onResetButtonColors}>↩ Restaurar todos al diseño general</button>}
+          </div>
+        )}
         <Choice active={draft.buttonZone.colorMode === "one"} swatch={draft.buttonZone.oneColor} title="Un color para todos" note="Los botones que usan el diseño general tendrán este color." onClick={() => onZone({ colorMode: "one" })} />
         {draft.buttonZone.colorMode === "one" && <ColorField label="Color de los botones" value={draft.buttonZone.oneColor} onChange={(oneColor) => onZone({ oneColor })} />}
         <Choice active={draft.buttonZone.colorMode === "auto"} title="Cada red con su color" note="WhatsApp verde, Instagram rosa y cada marca con su color oficial." onClick={() => onZone({ colorMode: "auto" })} />
