@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { parseBackgroundPosition, parseButtonZone, parseLogoStyle, parseSubtitleStyle, parseTitleStyle } from "@/lib/landing-catalog";
-import { saveDesignStyle } from "../visual/actions";
+import { saveDesignStyle } from "./actions";
+import { publish, deleteLanding } from "@/app/admin/actions";
 import EditorV2 from "./editor-v2";
 import Toast from "@/components/toast";
 import { Suspense } from "react";
@@ -40,6 +41,8 @@ export default async function EditorV2Page({ params }: { params: Promise<{ id: s
         use_auto_color: action.use_auto_color !== false, position: action.position || 0,
       }))}
       saveAction={saveDesignStyle}
+      publishAction={publish}
+      deleteLandingAction={deleteLanding}
     />
   </>);
 }

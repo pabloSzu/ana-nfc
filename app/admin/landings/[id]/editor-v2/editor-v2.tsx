@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ActionTypeIcon } from "@/components/action-icons";
 import { FiLink } from "react-icons/fi";
+import { IconEye, IconQrCode } from "@/components/icons";
+import DeleteLandingButton from "@/app/admin/delete-landing-button";
 import LandingRenderer, { type LandingEditControls } from "@/components/landing-renderer";
 import { compressImage } from "@/lib/compress-image";
 import { AUTO_COLORS, contrastTextColor, getAllActions, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize, type BackgroundPosition, type ButtonZoneStyle, type LogoStyle, type SubtitleStyle, type TitleStyle } from "@/lib/landing-catalog";
@@ -18,7 +20,7 @@ type LandingDraft = {
   text_color?: string | null; text_panel?: boolean | null; text_panel_color?: string | null; font_pair?: string | null; button_font?: string | null;
   published?: boolean | null; buttonZone: ButtonZoneStyle; titleStyle: TitleStyle; subtitleStyle: SubtitleStyle; logoStyle: LogoStyle; bgPosition: BackgroundPosition;
 };
-type Panel = "templates" | "buttons" | "background" | "profile" | "title" | "subtitle" | "logo" | "add" | { buttonId: string } | null;
+type Panel = "templates" | "buttons" | "background" | "settings" | "title" | "subtitle" | "logo" | "add" | { buttonId: string } | null;
 type DeviceMode = "small" | "standard" | "large";
 type SaveAction = (formData: FormData) => void | Promise<void>;
 
@@ -49,7 +51,7 @@ function logoTreatmentPatch(treatment: LogoTreatment, templateId = "minimal"): P
   return { treatment, shape: "round", borderWidth: 3, borderColor: "#ffffff", shadow: "soft", backgroundMode: "auto" };
 }
 
-export default function EditorV2({ landing, initialButtons, saveAction }: { landing: LandingDraft; initialButtons: ButtonItem[]; saveAction: SaveAction }) {
+export default function EditorV2({ landing, initialButtons, saveAction, publishAction, deleteLandingAction }: { landing: LandingDraft; initialButtons: ButtonItem[]; saveAction: SaveAction; publishAction: SaveAction; deleteLandingAction: SaveAction }) {
   const [draft, setDraft] = useState(landing);
   const [buttons, setButtons] = useState(initialButtons);
   const [panel, setPanel] = useState<Panel>("templates");
@@ -389,6 +391,7 @@ export default function EditorV2({ landing, initialButtons, saveAction }: { land
           <button type="button" title="Deshacer (Ctrl+Z)" aria-label="Deshacer" disabled={pastRef.current.length === 0} onClick={undo}>↶</button>
           <button type="button" title="Rehacer (Ctrl+Shift+Z)" aria-label="Rehacer" disabled={futureRef.current.length === 0} onClick={redo}>↷</button>
         </div>
+        <button className="v2-ghost" type="button" onClick={() => { setPanel(panel === "settings" ? null : "settings"); setPreview(false); }}>Ajustes</button>
         <button className="v2-ghost" type="button" onClick={() => { setPreview(!preview); setPanel(null); }}>{preview ? "Seguir editando" : "Vista previa"}</button>
         <button className="v2-save" form="v2-save" type="submit" name="return_to" value={`/admin/landings/${draft.id}/editor-v2`} disabled={!dirty}>Guardar cambios</button>
       </header>
@@ -399,7 +402,7 @@ export default function EditorV2({ landing, initialButtons, saveAction }: { land
           {panel === "templates" && <Templates selected={draft.buttonZone.templateId} onApply={applyPreset} />}
           {panel === "buttons" && <ButtonDesign draft={draft} buttons={buttons} onZone={changeZone} onFont={(button_font) => change({ button_font })} onApplyButtonLook={applyButtonLook} onResetButtonColors={resetButtonColors} />}
           {panel === "background" && <BackgroundControls draft={draft} onChange={change} onFile={onBackgroundFile} />}
-          {panel === "profile" && <ProfileControls draft={draft} onChange={change} />}
+          {panel === "settings" && <SettingsControls draft={draft} publishAction={publishAction} deleteLandingAction={deleteLandingAction} />}
           {panel === "title" && <TitleControls draft={draft} onChange={change} />}
           {panel === "subtitle" && <SubtitleControls draft={draft} onChange={change} />}
           {panel === "logo" && <LogoControls draft={draft} logoImage={logoImage} onChange={change} onLogo={onLogoFile} onRemoveLogo={() => { setLogoPreview(null); setLogoRemoved(true); setDirty(true); }} />}
@@ -422,7 +425,7 @@ export default function EditorV2({ landing, initialButtons, saveAction }: { land
   );
 }
 
-function panelTitle(panel: Exclude<Panel, null>) { if (typeof panel === "object") return "Editar botón"; return ({ templates: "Elegí una plantilla", buttons: "Editar todos los botones", background: "Editar fondo", profile: "Contenido del perfil", title: "Editar título", subtitle: "Editar subtítulo", logo: "Editar logo", add: "Agregar un botón" } as const)[panel]; }
+function panelTitle(panel: Exclude<Panel, null>) { if (typeof panel === "object") return "Editar botón"; return ({ templates: "Elegí una plantilla", buttons: "Editar todos los botones", background: "Editar fondo", settings: "Ajustes de la landing", title: "Editar título", subtitle: "Editar subtítulo", logo: "Editar logo", add: "Agregar un botón" } as const)[panel]; }
 
 function TemplateSwatch({ preset }: { preset: DesignPreset }) {
   const iconAppearance = recommendedIconAppearance(preset.buttonZone.collection);
@@ -557,7 +560,27 @@ function ButtonDesign({ draft, buttons, onZone, onFont, onApplyButtonLook, onRes
 
 function BackgroundControls({ draft, onChange, onFile }: { draft: LandingDraft; onChange: (p: Partial<LandingDraft>) => void; onFile: (f?: File) => void }) { const updatePos=(p:Partial<BackgroundPosition>)=>onChange({bgPosition:{...draft.bgPosition,...p}}); return <div className="v2-fields"><div className="v2-segment"><button className={draft.background_type === "color" ? "active" : ""} onClick={() => onChange({background_type:"color"})}>Color</button><button className={draft.background_type === "gradient" ? "active" : ""} onClick={() => onChange({background_type:"gradient"})}>Degradado</button><button className={draft.background_type === "image" ? "active" : ""} onClick={() => onChange({background_type:"image"})}>Imagen</button></div>{draft.background_type !== "image" && <><ColorField label="Color principal" value={draft.background_color || "#f7f5f0"} onChange={(background_color)=>onChange({background_color})}/>{draft.background_type === "gradient" && <ColorField label="Segundo color" value={draft.background_gradient_to || "#a6c1ee"} onChange={(background_gradient_to)=>onChange({background_gradient_to})}/>}</>}{draft.background_type === "image" && <><label className="v2-upload">Cambiar imagen<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event)=>onFile(event.target.files?.[0])}/></label><p className="v2-help">Ajustala mirando el celular: nunca se guarda el recorte original.</p><Range label="Oscurecer imagen" min={0} max={.65} step={.01} value={draft.bgPosition.tint} onChange={(tint)=>updatePos({tint})}/><Range label="Acercar" min={1} max={2.2} step={.01} value={draft.bgPosition.zoom} onChange={(zoom)=>updatePos({zoom})}/><Range label="Mover horizontal" min={0} max={100} value={draft.bgPosition.x} onChange={(x)=>updatePos({x})}/><Range label="Mover vertical" min={0} max={100} value={draft.bgPosition.y} onChange={(y)=>updatePos({y})}/></>}</div>; }
 
-function ProfileControls({ draft, onChange }: { draft: LandingDraft; onChange: (p: Partial<LandingDraft>) => void }) { return <div className="v2-fields"><p className="v2-help">También podés tocar directamente cada elemento en el celular.</p><label>Nombre del negocio<input value={draft.business_name} onChange={(e)=>onChange({business_name:e.target.value})}/></label><label>Descripción<textarea rows={3} value={draft.description || ""} onChange={(e)=>onChange({description:e.target.value})}/></label></div>; }
+// The one panel that isn't a design control: publishing, sharing and deleting the landing
+// itself. Everything here posts straight to the same server actions the admin list uses
+// (`publishAction`/`deleteLandingAction`, both passed down from the page), so there's exactly
+// one place in the whole app that actually flips `published` or deletes a landing row.
+function SettingsControls({ draft, publishAction, deleteLandingAction }: { draft: LandingDraft; publishAction: SaveAction; deleteLandingAction: SaveAction }) {
+  const isPublished = Boolean(draft.published);
+  return <div className="v2-fields">
+    <div className="v2-brand">
+      <span><b>{isPublished ? "Tu landing está online" : "Tu landing está en borrador"}</b><small>{isPublished ? "Cualquiera con el link o el tag NFC puede verla." : "Todavía no es visible para el público."}</small></span>
+    </div>
+    <form action={publishAction}>
+      <input type="hidden" name="id" value={draft.id} />
+      <input type="hidden" name="published" value={String(!isPublished)} />
+      <input type="hidden" name="return_to" value={`/admin/landings/${draft.id}/editor-v2`} />
+      <button className="v2-save" style={{ width: "100%" }} type="submit">{isPublished ? "Despublicar" : "Publicar landing"}</button>
+    </form>
+    <a className="v2-suggested" href={`/${draft.slug}`} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", gap: 8 }}><IconEye /> Ver landing publicada</a>
+    <Link className="v2-suggested" href={`/admin/landings/${draft.id}/qr`} style={{ display: "flex", alignItems: "center", gap: 8 }}><IconQrCode /> Código QR para el tag NFC</Link>
+    <DeleteLandingButton action={deleteLandingAction} landingId={draft.id} label="Eliminar landing" />
+  </div>;
+}
 
 // Falls back to the "Minimalismo" template (designed to suit "casi cualquier rubro") when
 // no general template is active yet, so "Usar estilos recomendados" always has something sane

@@ -14,7 +14,7 @@ export default async function QR({ params }: { params: Promise<{ id: string }> }
   return (
     <main className="shell">
       <header className="builder-header">
-        <Link className="back-link" href={`/admin/landings/${id}`}>← Volver</Link>
+        <Link className="back-link" href={`/admin/landings/${id}/editor-v2`}>← Volver</Link>
         <div>
           <p className="eyebrow">Código QR</p>
           <h1>{landing.business_name}</h1>

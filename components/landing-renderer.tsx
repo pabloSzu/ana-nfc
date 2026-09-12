@@ -46,7 +46,7 @@ type Landing = {
 // What's "selected" right now, for the highlight outline — mirrors editor-v2's own Panel
 // type structurally (kept independent here, not imported, to avoid a circular dependency
 // between the admin editor and this shared public-facing component).
-export type LandingEditSelection = "templates" | "buttons" | "background" | "profile" | "title" | "subtitle" | "logo" | "add" | { buttonId: string } | null;
+export type LandingEditSelection = "templates" | "buttons" | "background" | "settings" | "title" | "subtitle" | "logo" | "add" | { buttonId: string } | null;
 
 // Everything the editor needs to turn this same real render into a live, click-to-edit
 // canvas — no separate mock. Every hook here only ever *adds* non-layout-affecting behavior

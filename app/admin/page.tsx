@@ -74,7 +74,7 @@ export default async function Admin() {
                   <td><span className={landing.published ? "status published" : "status"}>{landing.published ? "Publicada" : "Borrador"}</span></td>
                   <td>
                     <div className="table-actions">
-                      <Link className="icon-text-button accent" href={`/admin/landings/${landing.id}`}><IconEdit /> Editar</Link>
+                      <Link className="icon-text-button accent" href={`/admin/landings/${landing.id}/editor-v2`}><IconEdit /> Editar</Link>
                       <Link className="icon-text-button accent" href={`/${landing.slug}`} target="_blank"><IconEye /> Ver</Link>
                       <Link className="icon-text-button accent" href={`/admin/landings/${landing.id}/qr`}><IconQrCode /> QR</Link>
                       <form action={publish}><input type="hidden" name="id" value={landing.id} /><input type="hidden" name="published" value={String(!landing.published)} /><input type="hidden" name="return_to" value="/admin" /><button className={landing.published ? "icon-text-button" : "icon-text-button success"} type="submit">{landing.published ? <><IconPause /> Despublicar</> : <><IconPlay /> Publicar</>}</button></form>
