@@ -1,6 +1,6 @@
 import {
   buildActionLink, buttonZoneShadow, resolveBackgroundTint,
-  parseTitleStyle, parseSubtitleStyle, parseLogoStyle, parseBackgroundPosition, parseButtonZone, hexToRgba, logoFrameStyle,
+  parseTitleStyle, parseSubtitleStyle, parseLogoStyle, parseBackgroundPosition, parseButtonZone, hexToRgba, logoBorderRadius, logoFrameStyle,
 } from "@/lib/landing-catalog";
 import { buttonCollectionStyle, buttonCollectionWidth, resolveButtonColors } from "@/lib/design-presets";
 import { ActionTypeIcon } from "@/components/action-icons";
@@ -99,7 +99,7 @@ export default function LandingRenderer({ landing, actions, preview = false }: {
       <div className={`public-inner layout-${zone.layout}`} style={{ position: "relative", zIndex: 2 }}>
         {preview && <span className="preview-badge">Vista previa</span>}
         <div className="landing-identity-block">
-        <div className="avatar" style={{ ...logoFrameStyle(logo, primary, Boolean(landing.logo_url)), width: logo.size, height: logo.size, borderRadius: logo.shape === "round" ? "50%" : "28px", margin: "0 auto 18px", overflow: "hidden" }}>
+        <div className="avatar" style={{ ...logoFrameStyle(logo, primary, Boolean(landing.logo_url)), width: logo.size, height: logo.size, borderRadius: logoBorderRadius(logo.shape, logo.size), margin: "0 auto 18px", overflow: "hidden" }}>
           {landing.logo_url ? <div style={{ width: "100%", height: "100%", backgroundImage: `url(${landing.logo_url})`, backgroundSize: `${logo.zoom * 100}%`, backgroundPosition: `${logo.x}% ${logo.y}%` }} /> : landing.business_name.slice(0, 1)}
         </div>
         {heading}

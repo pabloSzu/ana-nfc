@@ -6,7 +6,7 @@ import { useDraft, type Draft } from "../draft-context";
 import BackgroundPicker from "../background-picker";
 import { compressImage } from "@/lib/compress-image";
 import {
-  getAllActions, AUTO_COLORS, displayUsername, contrastTextColor, buttonZoneShadow, buttonFillStyle, autoTextColor, logoBackgroundColor, logoFrameStyle, resolveBackgroundTint,
+  getAllActions, AUTO_COLORS, displayUsername, contrastTextColor, buttonZoneShadow, buttonFillStyle, autoTextColor, logoBackgroundColor, logoBorderRadius, logoFrameStyle, resolveBackgroundTint,
   TEXT_FONT_OPTIONS, hexToRgba,
 } from "@/lib/landing-catalog";
 import { ActionTypeIcon } from "@/components/action-icons";
@@ -409,7 +409,7 @@ export default function VisualEditor({
               <div className="visual-statusbar"><span>9:41</span><span>▮▮▮ ● ▰</span></div>
 
               <div className="visual-scroll">
-                <div className={previewMode ? "visual-logo" : "visual-logo editable"} style={{ ...logoFrameStyle(logo, draft.primary_color || "#1f2937", Boolean(draft.logo_url)), width: logo.size, height: logo.size, borderRadius: logo.shape === "round" ? "50%" : "28px" }} onClick={(e) => { if (!previewMode) openSheet("logo", e.currentTarget); }}>
+                <div className={previewMode ? "visual-logo" : "visual-logo editable"} style={{ ...logoFrameStyle(logo, draft.primary_color || "#1f2937", Boolean(draft.logo_url)), width: logo.size, height: logo.size, borderRadius: logoBorderRadius(logo.shape, logo.size) }} onClick={(e) => { if (!previewMode) openSheet("logo", e.currentTarget); }}>
                   {draft.logo_url ? <div style={{ width: "100%", height: "100%", backgroundImage: `url(${draft.logo_url})`, backgroundSize: `${logo.zoom * 100}%`, backgroundPosition: `${logo.x}% ${logo.y}%` }} /> : <span className="visual-initial">{draft.business_name.slice(0, 1) || "?"}</span>}
                   {!previewMode && <span className="visual-edit-bubble"><IconEdit /></span>}
                 </div>
@@ -527,7 +527,7 @@ export default function VisualEditor({
                     <DragCropPreview
                       src={draft.logo_url}
                       width={Math.min(logo.size, 140)} height={Math.min(logo.size, 140)}
-                      radius={logo.shape === "round" ? "50%" : 20}
+                      radius={logoBorderRadius(logo.shape, Math.min(logo.size, 140))}
                       zoom={logo.zoom} x={logo.x} y={logo.y} fallback={logoBackground}
                       minZoom={1} maxZoom={2.5}
                       onChange={(next) => update({ logoStyle: { ...logo, ...next } })}

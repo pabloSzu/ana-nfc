@@ -6,7 +6,7 @@ import { ActionTypeIcon } from "@/components/action-icons";
 import { IconEdit } from "@/components/icons";
 import LandingRenderer from "@/components/landing-renderer";
 import { compressImage } from "@/lib/compress-image";
-import { AUTO_COLORS, buttonZoneShadow, contrastTextColor, getAllActions, getFontFamily, hexToRgba, logoFrameStyle, resolveBackgroundTint, TEXT_FONT_OPTIONS, type BackgroundPosition, type ButtonZoneStyle, type LogoStyle, type SubtitleStyle, type TitleStyle } from "@/lib/landing-catalog";
+import { AUTO_COLORS, buttonZoneShadow, contrastTextColor, getAllActions, getFontFamily, hexToRgba, logoBorderRadius, logoFrameStyle, resolveBackgroundTint, TEXT_FONT_OPTIONS, type BackgroundPosition, type ButtonZoneStyle, type LogoStyle, type SubtitleStyle, type TitleStyle } from "@/lib/landing-catalog";
 import { DESIGN_PRESETS_V2, buttonCollectionStyle, buttonCollectionWidth, resolveButtonColors, type DesignPreset } from "@/lib/design-presets";
 
 type ButtonItem = { id: string; type: string; title: string; subtitle: string; url: string; message: string; icon: string; background_color: string; text_color: string; use_auto_color: boolean; position: number };
@@ -30,6 +30,10 @@ const DEVICE_OPTIONS: { id: DeviceMode; label: string; size: string }[] = [
   { id: "small", label: "Chico", size: "360 px" },
   { id: "standard", label: "Común", size: "390 px" },
   { id: "large", label: "Grande", size: "430 px" },
+];
+const LOGO_SHAPE_OPTIONS: { id: LogoStyle["shape"]; label: string }[] = [
+  { id: "round", label: "Circular" },
+  { id: "square", label: "Cuadrado redondeado" },
 ];
 type LogoTreatment = "template" | "clean" | "badge" | "card" | "highlight";
 
@@ -390,7 +394,7 @@ export default function EditorV2({ landing, initialButtons, saveAction }: { land
               <div className={`v2-content layout-${draft.buttonZone.layout}`}>
                 <div className="v2-identity-block">
                 <button className={`v2-edit-element v2-logo-hit ${panel === "logo" ? "is-selected" : ""}`} type="button" onClick={() => !preview && setPanel("logo")} aria-label="Editar logo">
-                  <div className="v2-avatar" style={{ ...logoFrameStyle(draft.logoStyle, draft.primary_color || "#1f2937", Boolean(logoImage)), width: draft.logoStyle.size, height: draft.logoStyle.size, borderRadius: draft.logoStyle.shape === "round" ? "50%" : 24 }}>
+                  <div className="v2-avatar" style={{ ...logoFrameStyle(draft.logoStyle, draft.primary_color || "#1f2937", Boolean(logoImage)), width: draft.logoStyle.size, height: draft.logoStyle.size, borderRadius: logoBorderRadius(draft.logoStyle.shape, draft.logoStyle.size) }}>
                     {logoImage ? <span style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${draft.logoStyle.zoom * 100}%`, backgroundPosition: `${draft.logoStyle.x}% ${draft.logoStyle.y}%` }} /> : draft.business_name.slice(0, 1)}
                   </div>
                   {!preview && <span className="v2-element-tag">Logo</span>}
@@ -477,13 +481,21 @@ function TemplateSwatch({ preset }: { preset: DesignPreset }) {
 function Templates({ selected, onApply }: { selected: string; onApply: (id: string) => void }) { return <div><p className="v2-help">Todas mantienen la estructura simple tipo Linktree: logo, título, subtítulo y botones centrados. La miniatura muestra el resultado real de colores, tipografía y botones.</p><div className="v2-template-grid">{DESIGN_PRESETS_V2.map((preset) => <button key={preset.id} type="button" className={selected === preset.id ? "selected" : ""} onClick={() => onApply(preset.id)}><TemplateSwatch preset={preset} /><b>{preset.name}</b><small>{preset.description}</small></button>)}</div></div>; }
 
 function ButtonLookSwatch({ preset, zone }: { preset: DesignPreset; zone: ButtonZoneStyle }) {
+  const examples = [
+    { type: "whatsapp", label: "WhatsApp" },
+    { type: "instagram", label: "Instagram" },
+  ];
   const backgrounds = zone.colorMode === "one"
     ? [zone.oneColor, zone.oneColor]
     : [AUTO_COLORS.whatsapp, AUTO_COLORS.instagram];
   return <span className="v2-look-swatch" aria-hidden="true">
-    {backgrounds.map((background, index) => (
-      <i key={index} style={{ ...buttonCollectionStyle(preset.buttonZone.collection, background, contrastTextColor(background), index), borderRadius: preset.buttonZone.radius * .35 }} />
-    ))}
+    {examples.map((example, index) => {
+      const background = backgrounds[index];
+      return <span className="v2-look-button" key={example.type} style={{ ...buttonCollectionStyle(preset.buttonZone.collection, background, contrastTextColor(background), index), borderRadius: Math.max(0, preset.buttonZone.radius * .35) }}>
+        <span className="v2-look-button-icon"><ActionTypeIcon type={example.type} /></span>
+        <span>{example.label}</span>
+      </span>;
+    })}
   </span>;
 }
 
@@ -554,8 +566,21 @@ function LogoControls({ draft, logoImage, onChange, onLogo, onRemoveLogo }: { dr
   const primary = draft.primary_color || "#1f2937";
   const update = (patch: Partial<LogoStyle>) => onChange({ logoStyle: { ...style, ...patch } });
   return <div className="v2-fields">
-    <div className="v2-logo-editor"><div style={{ ...logoFrameStyle(style, primary, Boolean(logoImage)), borderRadius: style.shape === "round" ? "50%" : 18 }}>{logoImage ? <span style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${style.zoom * 100}%`, backgroundPosition: `${style.x}% ${style.y}%` }} /> : draft.business_name.slice(0,1)}</div><span><label className="v2-upload">{logoImage ? "Cambiar imagen" : "Elegir imagen"}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => onLogo(event.target.files?.[0])} /></label>{logoImage && <button type="button" className="v2-delete" onClick={onRemoveLogo}>Quitar</button>}</span></div>
+    <div className="v2-logo-editor"><div style={{ ...logoFrameStyle(style, primary, Boolean(logoImage)), borderRadius: logoBorderRadius(style.shape, 76) }}>{logoImage ? <span style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${style.zoom * 100}%`, backgroundPosition: `${style.x}% ${style.y}%` }} /> : draft.business_name.slice(0,1)}</div><span><label className="v2-upload">{logoImage ? "Cambiar imagen" : "Elegir imagen"}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => onLogo(event.target.files?.[0])} /></label>{logoImage && <button type="button" className="v2-delete" onClick={onRemoveLogo}>Quitar</button>}</span></div>
     <button type="button" className="v2-suggested v2-logo-recommended-button" onClick={() => onChange({ logoStyle: { ...style, ...logoTreatmentPatch("template", draft.buttonZone.templateId), ...preset.logo, zoom: 1, x: 50, y: 50 } })}>✦ Usar estilos recomendados ({preset.name})</button>
+    <fieldset>
+      <legend>Forma del logo</legend>
+      <div className="v2-logo-shape-grid">
+        {LOGO_SHAPE_OPTIONS.map((option) => (
+          <button type="button" key={option.id} className={style.shape === option.id ? "active" : ""} aria-pressed={style.shape === option.id} onClick={() => update({ shape: option.id, treatment: "custom" })}>
+            <span className="v2-logo-shape-preview" style={{ ...logoFrameStyle({ ...style, shape: option.id }, primary, Boolean(logoImage)), borderRadius: logoBorderRadius(option.id, 48) }}>
+              {logoImage ? <i style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${style.zoom * 100}%`, backgroundPosition: `${style.x}% ${style.y}%` }} /> : draft.business_name.slice(0,1)}
+            </span>
+            <b>{option.label}</b>
+          </button>
+        ))}
+      </div>
+    </fieldset>
     <Range label="Tamaño" min={72} max={190} value={style.size} onChange={(size) => update({ size })} />
     <Range label="Borde" min={0} max={10} value={style.borderWidth} onChange={(borderWidth) => update({ borderWidth, treatment: "custom" })} />
     {logoImage && <><Range label="Zoom" min={1} max={2.5} step={.01} value={style.zoom} onChange={(zoom) => update({ zoom })} /><Range label="Horizontal" min={0} max={100} value={style.x} onChange={(x) => update({ x })} /><Range label="Vertical" min={0} max={100} value={style.y} onChange={(y) => update({ y })} /></>}

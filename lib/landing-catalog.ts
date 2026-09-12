@@ -218,6 +218,11 @@ export function logoFrameStyle(style: LogoStyle, primary: string, hasImage: bool
     boxShadow: shadow,
   };
 }
+
+export function logoBorderRadius(shape: LogoStyle["shape"], size: number): string | number {
+  return shape === "round" ? "50%" : Math.max(12, Math.round(size * 0.22));
+}
+
 export function parseBackgroundPosition(raw: unknown): BackgroundPosition {
   const parsed = hasKeys(raw) ? raw as Partial<BackgroundPosition> : {};
   const clamp = (value: unknown, min: number, max: number, fallback: number) => typeof value === "number" && Number.isFinite(value) ? Math.min(max, Math.max(min, value)) : fallback;
