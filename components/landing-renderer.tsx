@@ -1,7 +1,8 @@
 import {
-  buildActionLink, buttonZoneShadow, resolveBackgroundTint, getFontFamily,
+  buildActionLink, buttonZoneShadow, resolveBackgroundTint,
   parseTitleStyle, parseSubtitleStyle, parseLogoStyle, parseBackgroundPosition, parseButtonZone, hexToRgba, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize,
 } from "@/lib/landing-catalog";
+import { getFontFamily, resolveTextFont, FontLinks, ALL_FONT_IDS } from "@/lib/fonts";
 import { buttonCollectionStyle, buttonCollectionWidth, buttonIconStyle, resolveButtonColors } from "@/lib/design-presets";
 import { ActionTypeIcon } from "@/components/action-icons";
 import { IconEdit, IconImage } from "@/components/icons";
@@ -89,6 +90,10 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
   const hasSavedButtonStyle = Boolean(landing.button_style && typeof landing.button_style === "object" && Object.keys(landing.button_style).length);
   if (!hasSavedButtonStyle) zone.oneColor = primary;
   const buttonFont = getFontFamily(landing.button_font || "modern");
+  // In the editor, preload every font in the catalog so every option in every font picker
+  // previews correctly and instantly. On the real page (and admin previews), load only the
+  // 2-3 fonts this specific landing actually uses — visitors never download the other five.
+  const fontIds = edit ? ALL_FONT_IDS : [title.font, subtitle.font, landing.button_font];
 
   const bgLayerStyle: CSSProperties =
     landing.background_type === "image" && landing.background_image_url
@@ -110,7 +115,7 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
       className={edit ? "editor-hit" : undefined}
       data-tag="Título"
       onClick={edit?.onSelectTitle}
-      style={{ fontFamily: title.font, fontWeight: title.weight, fontSize: title.size, color: title.color, background: title.bgMode === "solid" ? hexToRgba(title.bg, 0.55) : "transparent", textAlign: title.align, borderRadius: 12, padding: title.bgMode === "solid" ? "4px 10px" : 0, margin: "0 0 7px", display: "inline-block", position: edit ? "relative" : undefined }}
+      style={{ fontFamily: resolveTextFont(title.font), fontWeight: title.weight, fontSize: title.size, color: title.color, background: title.bgMode === "solid" ? hexToRgba(title.bg, 0.55) : "transparent", textAlign: title.align, borderRadius: 12, padding: title.bgMode === "solid" ? "4px 10px" : 0, margin: "0 0 7px", display: "inline-block", position: edit ? "relative" : undefined }}
     >
       {landing.business_name}
     </h1>
@@ -120,7 +125,7 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
       className={`landing-desc${edit ? " editor-hit" : ""}${edit?.selected === "subtitle" ? " is-selected" : ""}`}
       data-tag="Subtítulo"
       onClick={edit?.onSelectSubtitle}
-      style={{ fontFamily: subtitle.font, fontWeight: subtitle.weight, fontSize: subtitle.size, color: subtitle.color, background: subtitle.bgMode === "solid" ? hexToRgba(subtitle.bg, 0.55) : "transparent", borderRadius: 10, padding: subtitle.bgMode === "solid" ? "4px 9px" : 0, display: "inline-block", position: edit ? "relative" : undefined }}
+      style={{ fontFamily: resolveTextFont(subtitle.font), fontWeight: subtitle.weight, fontSize: subtitle.size, color: subtitle.color, background: subtitle.bgMode === "solid" ? hexToRgba(subtitle.bg, 0.55) : "transparent", borderRadius: 10, padding: subtitle.bgMode === "solid" ? "4px 9px" : 0, display: "inline-block", position: edit ? "relative" : undefined }}
     >
       {landing.description || (edit ? "Tocá para agregar una descripción" : "")}
     </p>
@@ -128,6 +133,7 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
 
   return (
     <main className="public" style={{ position: "relative", overflow: "hidden", background: landing.background_color || "#f7f5f0" }}>
+      <FontLinks ids={fontIds} />
       <div className="public-bg-layer" style={{ position: "absolute", inset: 0, zIndex: 0, backgroundRepeat: "no-repeat", ...bgLayerStyle }} />
       <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none", background: `linear-gradient(180deg, rgba(4,8,10,.03), rgba(5,8,11,${resolveBackgroundTint(landing.background_type, bgPos.tint)}))` }} />
       {edit && (

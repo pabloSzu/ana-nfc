@@ -7,7 +7,7 @@ import BackgroundPicker from "../background-picker";
 import { compressImage } from "@/lib/compress-image";
 import {
   getAllActions, AUTO_COLORS, displayUsername, contrastTextColor, buttonZoneShadow, buttonFillStyle, autoTextColor, logoBackgroundColor, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize, resolveBackgroundTint,
-  TEXT_FONT_OPTIONS, hexToRgba,
+  hexToRgba,
 } from "@/lib/landing-catalog";
 import { ActionTypeIcon } from "@/components/action-icons";
 import { resolveButtonColors } from "@/lib/design-presets";
@@ -52,12 +52,12 @@ const DESIGN_PRESETS: DesignPreset[] = [
   {
     id: "essential", name: "Esencial", description: "Limpio, claro y fácil de leer.", accent: "#5d64e8", buttonFont: "minimal",
     buttonZone: { layout: "center", gap: 9, height: 52, radius: 16, width: 100, shadow: "soft", finish: "solid", collection: "soft", colorMode: "one", textSize: 14, iconSize: 29 },
-    title: { font: TEXT_FONT_OPTIONS[0].value, weight: 900, size: 28, align: "center" }, subtitle: { font: TEXT_FONT_OPTIONS[0].value, weight: 500, size: 14 }, logo: { shape: "round", size: 124 },
+    title: { font: "Inter,ui-sans-serif,system-ui,sans-serif", weight: 900, size: 28, align: "center" }, subtitle: { font: "Inter,ui-sans-serif,system-ui,sans-serif", weight: 500, size: 14 }, logo: { shape: "round", size: 124 },
   },
   {
     id: "modern", name: "Moderno", description: "Más presencia y botones protagonistas.", accent: "#20243b", buttonFont: "modern",
     buttonZone: { layout: "center", gap: 11, height: 56, radius: 22, width: 100, shadow: "strong", finish: "solid", collection: "brand", colorMode: "one", textSize: 15, iconSize: 31 },
-    title: { font: "'Arial Black',Arial,sans-serif", weight: 900, size: 30, align: "left" }, subtitle: { font: TEXT_FONT_OPTIONS[0].value, weight: 500, size: 14 }, logo: { shape: "square", size: 128 },
+    title: { font: "'Arial Black',Arial,sans-serif", weight: 900, size: 30, align: "left" }, subtitle: { font: "Inter,ui-sans-serif,system-ui,sans-serif", weight: 500, size: 14 }, logo: { shape: "square", size: 128 },
   },
   {
     id: "elegant", name: "Elegante", description: "Refinado, aireado y editorial.", accent: "#705849", buttonFont: "classic",
@@ -72,7 +72,7 @@ const DESIGN_PRESETS: DesignPreset[] = [
   {
     id: "compact", name: "Compacto", description: "Ideal cuando hay muchos enlaces.", accent: "#177e70", buttonFont: "minimal",
     buttonZone: { layout: "center", gap: 6, height: 44, radius: 12, width: 100, shadow: "soft", finish: "solid", collection: "minimal", colorMode: "one", textSize: 13, iconSize: 25 },
-    title: { font: TEXT_FONT_OPTIONS[0].value, weight: 800, size: 25, align: "center" }, subtitle: { font: TEXT_FONT_OPTIONS[0].value, weight: 400, size: 13 }, logo: { shape: "round", size: 104 },
+    title: { font: "Inter,ui-sans-serif,system-ui,sans-serif", weight: 800, size: 25, align: "center" }, subtitle: { font: "Inter,ui-sans-serif,system-ui,sans-serif", weight: 400, size: 13 }, logo: { shape: "round", size: 104 },
   },
 ];
 

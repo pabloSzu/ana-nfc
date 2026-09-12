@@ -1,4 +1,7 @@
 import type { CSSProperties } from "react";
+import { FONT_OPTIONS, getFontFamily, resolveTextFont } from "@/lib/fonts";
+
+export { FONT_OPTIONS, getFontFamily, resolveTextFont };
 
 export type TemplateValue = "professional" | "hotel" | "tourism" | "restaurant" | "business";
 
@@ -181,16 +184,8 @@ export type LogoStyle = {
 };
 export type BackgroundPosition = { zoom: number; x: number; y: number; tint: number };
 
-export const TEXT_FONT_OPTIONS: { value: string; label: string }[] = [
-  { value: "Inter,ui-sans-serif,system-ui,sans-serif", label: "Inter · Moderna" },
-  { value: "Georgia,serif", label: "Georgia · Editorial" },
-  { value: "'Trebuchet MS',sans-serif", label: "Trebuchet · Friendly" },
-  { value: "'Arial Black',Arial,sans-serif", label: "Arial Black · Fuerte" },
-  { value: "'Courier New',monospace", label: "Courier · Mono" },
-];
-
-const DEFAULT_TITLE_STYLE: TitleStyle = { font: TEXT_FONT_OPTIONS[0].value, weight: 900, size: 28, color: "#ffffff", bgMode: "none", bg: "#111111", align: "center" };
-const DEFAULT_SUBTITLE_STYLE: SubtitleStyle = { font: TEXT_FONT_OPTIONS[0].value, weight: 500, size: 14, color: "#ffffff", bgMode: "none", bg: "#111111" };
+const DEFAULT_TITLE_STYLE: TitleStyle = { font: FONT_OPTIONS[0].id, weight: 900, size: 28, color: "#ffffff", bgMode: "none", bg: "#111111", align: "center" };
+const DEFAULT_SUBTITLE_STYLE: SubtitleStyle = { font: FONT_OPTIONS[0].id, weight: 500, size: 14, color: "#ffffff", bgMode: "none", bg: "#111111" };
 const DEFAULT_LOGO_STYLE: LogoStyle = { treatment: "template", shape: "round", size: 124, zoom: 1, x: 50, y: 50, backgroundMode: "auto", fallback: "#f5eddf", borderWidth: 0, borderColor: "#ffffff", shadow: "soft", initials: "one" };
 const DEFAULT_BG_POSITION: BackgroundPosition = { zoom: 1, x: 50, y: 50, tint: 0.18 };
 
@@ -201,13 +196,13 @@ function hasKeys(raw: unknown): raw is Record<string, unknown> {
 export function parseTitleStyle(landing: BackgroundLike & { text_color?: string | null; font_pair?: string | null; title_style?: unknown }): TitleStyle {
   const value = hasKeys(landing.title_style)
     ? { ...DEFAULT_TITLE_STYLE, ...(landing.title_style as Partial<TitleStyle>) }
-    : { ...DEFAULT_TITLE_STYLE, color: landing.text_color || autoTextColor(landing), font: getFontFamily(landing.font_pair || "modern") };
+    : { ...DEFAULT_TITLE_STYLE, color: landing.text_color || autoTextColor(landing), font: landing.font_pair || "modern" };
   return { ...value, size: Math.min(48, Math.max(18, Number(value.size) || 28)), weight: [400,500,600,700,800,900].includes(Number(value.weight)) ? Number(value.weight) : 900, align: ["left","center","right"].includes(value.align) ? value.align : "center", bgMode: value.bgMode === "solid" ? "solid" : "none" };
 }
 export function parseSubtitleStyle(landing: BackgroundLike & { text_color?: string | null; font_pair?: string | null; subtitle_style?: unknown }): SubtitleStyle {
   const value = hasKeys(landing.subtitle_style)
     ? { ...DEFAULT_SUBTITLE_STYLE, ...(landing.subtitle_style as Partial<SubtitleStyle>) }
-    : { ...DEFAULT_SUBTITLE_STYLE, color: landing.text_color || autoTextColor(landing), font: getFontFamily(landing.font_pair || "modern") };
+    : { ...DEFAULT_SUBTITLE_STYLE, color: landing.text_color || autoTextColor(landing), font: landing.font_pair || "modern" };
   return { ...value, size: Math.min(26, Math.max(10, Number(value.size) || 14)), weight: [400,500,600,700,800,900].includes(Number(value.weight)) ? Number(value.weight) : 500, bgMode: value.bgMode === "solid" ? "solid" : "none" };
 }
 export function parseLogoStyle(raw: unknown): LogoStyle {
@@ -287,17 +282,6 @@ export function normalizeUrl(value: string): string {
 
 export function isPlausiblePhone(value: string): boolean {
   return (value || "").replace(/\D/g, "").length >= 8;
-}
-
-export const FONT_OPTIONS: { id: string; label: string; family: string }[] = [
-  { id: "modern", label: "Moderno", family: "'Space Grotesk', sans-serif" },
-  { id: "classic", label: "Clásico", family: "'Playfair Display', serif" },
-  { id: "friendly", label: "Amigable", family: "'Poppins', sans-serif" },
-  { id: "minimal", label: "Minimalista", family: "'Inter', sans-serif" },
-];
-
-export function getFontFamily(id: string): string {
-  return (FONT_OPTIONS.find((option) => option.id === id) || FONT_OPTIONS[0]).family;
 }
 
 export const AUTO_COLORS: Record<string, string> = {
