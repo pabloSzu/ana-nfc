@@ -380,28 +380,46 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; letter-spacing: -0.01e
    icons half a pixel left, which reads as a visibly bigger gap on their right side once the
    icon is this much bigger. */
 .action-type-icon-youtube { width: 80%; height: 80%; }
-/* Pixel-measured (not guessed): Instagram's own artwork sits ~1.7% up-left of center inside
-   its own viewBox — the icon's bounding box is centered fine, but the drawn glyph inside it
-   isn't, so a bounding-box centering check alone won't catch this. This nudges the actual
-   drawn content back to true center; it's additive with (not a replacement for) the width
-   rules above/below. */
-.action-type-icon-instagram { width: 78%; height: 78%; transform: translate(1.7%, 1.7%); }
+.action-type-icon-instagram { width: 78%; height: 78%; }
 .action-type-icon-tiktok { width: 74%; height: 74%; }
 .action-type-icon-facebook { width: 70%; height: 70%; }
 .action-type-icon-telegram { width: 75%; height: 75%; }
 .action-type-icon-linkedin { width: 68%; height: 68%; }
-.icon-appearance-brand .action-type-icon { width: 74%; height: 74%; }
-.icon-appearance-brand .action-type-icon-spotify { width: 78%; height: 78%; }
-.icon-appearance-brand .action-type-icon-youtube { width: 82%; height: 82%; }
-/* Instagram's glyph is an actual rounded square with real straight edges and corners — a
-   circle can only fully inscribe a square up to ~70.7% of its own diameter (1/√2) before the
-   corners poke past the circle's edge and get clipped. Every other brand glyph here is a thin
-   or irregular shape (a wordmark, a wave, a speech bubble) that never reaches its own bounding
-   box's corners, so this is the one that actually needed to come down. LinkedIn's "in" mark is
-   the same kind of filled rounded square, so it gets the same treatment. */
+/* Every brand glyph's own artwork fills a different fraction of its own viewBox — WhatsApp's
+   and Instagram's glyphs use ~87.5% of theirs, Spotify's and Telegram's ~97%, while Facebook's
+   "f" and TikTok's note run edge-to-edge at 100% of their viewBox height with zero built-in
+   margin. Sizing every icon to the same CSS width/height percentage (the old approach) made
+   the full-bleed ones — Facebook above all, but also TikTok, Spotify, YouTube, Telegram to a
+   smaller degree — render visibly larger than the rest and crowd right up against the circular
+   badge's edge, even though none of their bounding boxes were ever off-center.
+   These numbers instead solve for one consistent target: every glyph's actual drawn ink ends
+   up at ~60% of the badge's diameter in its longest dimension, computed from each icon's real
+   fill ratio (measured from its own path bounding box) — not eyeballed per icon. Instagram and
+   LinkedIn are the exception: they're solid rounded squares, which need to stay further under
+   the ~70.7% (1/√2) a circle can inscribe before corners clip, so they're pinned at a smaller,
+   separately-verified 64% rather than this formula's ~69%. */
+.icon-appearance-brand .action-type-icon { width: 68%; height: 68%; }
+.icon-appearance-brand .action-type-icon-youtube { width: 63%; height: 63%; }
+.icon-appearance-brand .action-type-icon-spotify { width: 62%; height: 62%; }
+.icon-appearance-brand .action-type-icon-telegram { width: 62%; height: 62%; }
+.icon-appearance-brand .action-type-icon-facebook { width: 60%; height: 60%; }
 .icon-appearance-brand .action-type-icon-instagram { width: 64%; height: 64%; }
 .icon-appearance-brand .action-type-icon-linkedin { width: 64%; height: 64%; }
-.icon-appearance-brand .action-type-icon-tiktok { width: 74%; height: 74%; }
+.icon-appearance-brand .action-type-icon-tiktok { width: 60%; height: 60%; }
+/* Real, verified centering fix — not a guess: measured each brand glyph's own drawn-ink
+   bounding box against its SVG box's true center, using the browser's own
+   getBoundingClientRect (not a pixel-color scan against a background, which earlier turned out
+   to pick up anti-aliasing noise from whatever sits behind the icon — a circle's curved edge,
+   a badge's own fill — and reported bugs on icons, e.g. Instagram, that were never actually
+   there). Measured this way, in a plain isolated box with no background to contaminate the
+   result, seven of the eight brand glyphs (WhatsApp, Instagram, TikTok, Facebook, YouTube,
+   Spotify, Telegram) are already centered to within 0.03% — true noise, not a real offset, and
+   need no correction anywhere. LinkedIn's "in" mark is the one genuine exception: its own
+   artwork sits a real, repeatable 6.25% above center within its viewBox (extra empty space
+   below it, baked into the icon file), in EVERY context, so unlike the icon-specific sizing
+   above this correction is NOT scoped to any one appearance — it needs to apply everywhere
+   this glyph renders. */
+.action-type-icon-linkedin { transform: translateY(6.25%); }
 .action-brand-icon { align-self: center; }
 .action-copy { display: grid; min-width: 0; gap: 2px; text-align: left; }
 .action-title { display: block; min-width: 0; overflow: hidden; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }

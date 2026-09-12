@@ -225,8 +225,11 @@ export function buttonIconStyle(collection: ButtonZoneStyle["collection"], bg: s
   if (collection === "pastel") return { ...base, borderRadius: "50%", background: "rgba(255,255,255,.68)", border: "1px solid rgba(255,255,255,.85)" };
   // Glow's icon used to have zero frame — just a bare glyph — leaving the "ambient light" idea
   // entirely to the button's own shadow. A soft colored halo around the icon itself sells the
-  // neon identity at a glance, even before reading the button label.
-  if (collection === "glow") return { ...base, width: size - 2, height: size - 2, flexBasis: size - 2, borderRadius: "50%", border: `1px solid color-mix(in srgb, ${bg} 55%, white)`, boxShadow: `0 0 10px color-mix(in srgb, ${bg} 65%, transparent), 0 0 2px color-mix(in srgb, ${bg} 80%, transparent)` };
+  // neon identity at a glance, even before reading the button label. The halo is kept small
+  // (same lesson as the brandmark badge shadow): the button clips its own contents, and a big
+  // blur here doesn't have equal room on every side of the badge, so it rendered as a lopsided
+  // smear — brighter toward the button's center, visibly cut off toward the near edge.
+  if (collection === "glow") return { ...base, width: size - 2, height: size - 2, flexBasis: size - 2, borderRadius: "50%", border: `1px solid color-mix(in srgb, ${bg} 55%, white)`, boxShadow: `0 0 4px color-mix(in srgb, ${bg} 65%, transparent)` };
   if (collection === "candy") return { ...base, borderRadius: "50%", background: "rgba(255,255,255,.2)", border: "1px solid rgba(255,255,255,.28)" };
   // Shared fallback for collections without a bespoke treatment (soft/bento/editorial/ocean) —
   // a full circle instead of a squarish chip reads softer/more organic, which fits "Natural"
