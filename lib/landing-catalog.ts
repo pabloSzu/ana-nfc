@@ -168,6 +168,11 @@ export type LogoStyle = {
   borderWidth: number;
   borderColor: string;
   shadow: "none" | "soft" | "glow";
+  // Only matters while there's no logo image — how many letters of the business name to show,
+  // and at what size. The size is never a manual control: it's always computed from the
+  // avatar's own size (see logoLetterSize), so a big avatar doesn't end up with a tiny,
+  // lost-looking initial the way a fixed font-size would.
+  initials: "one" | "two";
 };
 export type BackgroundPosition = { zoom: number; x: number; y: number; tint: number };
 
@@ -181,7 +186,7 @@ export const TEXT_FONT_OPTIONS: { value: string; label: string }[] = [
 
 const DEFAULT_TITLE_STYLE: TitleStyle = { font: TEXT_FONT_OPTIONS[0].value, weight: 900, size: 28, color: "#ffffff", bgMode: "none", bg: "#111111", align: "center" };
 const DEFAULT_SUBTITLE_STYLE: SubtitleStyle = { font: TEXT_FONT_OPTIONS[0].value, weight: 500, size: 14, color: "#ffffff", bgMode: "none", bg: "#111111" };
-const DEFAULT_LOGO_STYLE: LogoStyle = { treatment: "template", shape: "round", size: 124, zoom: 1, x: 50, y: 50, backgroundMode: "auto", fallback: "#f5eddf", borderWidth: 0, borderColor: "#ffffff", shadow: "soft" };
+const DEFAULT_LOGO_STYLE: LogoStyle = { treatment: "template", shape: "round", size: 124, zoom: 1, x: 50, y: 50, backgroundMode: "auto", fallback: "#f5eddf", borderWidth: 0, borderColor: "#ffffff", shadow: "soft", initials: "one" };
 const DEFAULT_BG_POSITION: BackgroundPosition = { zoom: 1, x: 50, y: 50, tint: 0.18 };
 
 function hasKeys(raw: unknown): raw is Record<string, unknown> {
@@ -205,7 +210,25 @@ export function parseLogoStyle(raw: unknown): LogoStyle {
   const finite = (candidate: unknown, fallback: number) => Number.isFinite(Number(candidate)) ? Number(candidate) : fallback;
   const treatments: LogoStyle["treatment"][] = ["template","clean","badge","card","highlight","custom"];
   const shadows: LogoStyle["shadow"][] = ["none","soft","glow"];
-  return { ...value, treatment: treatments.includes(value.treatment) ? value.treatment : "template", shape: value.shape === "square" ? "square" : "round", backgroundMode: value.backgroundMode === "custom" ? "custom" : "auto", fallback: /^#[0-9a-f]{6}$/i.test(value.fallback) ? value.fallback : DEFAULT_LOGO_STYLE.fallback, borderWidth: Math.min(10, Math.max(0, finite(value.borderWidth, 0))), borderColor: /^#[0-9a-f]{6}$/i.test(value.borderColor) ? value.borderColor : "#ffffff", shadow: shadows.includes(value.shadow) ? value.shadow : "soft", size: Math.min(190, Math.max(72, finite(value.size, 124))), zoom: Math.min(2.5, Math.max(1, finite(value.zoom, 1))), x: Math.min(100, Math.max(0, finite(value.x, 50))), y: Math.min(100, Math.max(0, finite(value.y, 50))) };
+  const initialsModes: LogoStyle["initials"][] = ["one","two"];
+  return { ...value, treatment: treatments.includes(value.treatment) ? value.treatment : "template", shape: value.shape === "square" ? "square" : "round", backgroundMode: value.backgroundMode === "custom" ? "custom" : "auto", fallback: /^#[0-9a-f]{6}$/i.test(value.fallback) ? value.fallback : DEFAULT_LOGO_STYLE.fallback, borderWidth: Math.min(10, Math.max(0, finite(value.borderWidth, 0))), borderColor: /^#[0-9a-f]{6}$/i.test(value.borderColor) ? value.borderColor : "#ffffff", shadow: shadows.includes(value.shadow) ? value.shadow : "soft", initials: initialsModes.includes(value.initials) ? value.initials : "one", size: Math.min(190, Math.max(72, finite(value.size, 124))), zoom: Math.min(2.5, Math.max(1, finite(value.zoom, 1))), x: Math.min(100, Math.max(0, finite(value.x, 50))), y: Math.min(100, Math.max(0, finite(value.y, 50))) };
+}
+
+// Derives the fallback initial(s) shown when there's no logo image yet. "two" tries one
+// letter per word (e.g. "Café Sol" -> "CS") since that carries more identity than a single
+// letter would for a multi-word name; a one-word name just takes its first two letters instead.
+export function logoInitials(businessName: string, mode: LogoStyle["initials"]): string {
+  const trimmed = (businessName || "").trim();
+  if (!trimmed) return "?";
+  if (mode === "one") return trimmed.slice(0, 1).toUpperCase();
+  const words = trimmed.split(/\s+/).filter(Boolean);
+  return (words.length >= 2 ? words[0][0] + words[1][0] : trimmed.slice(0, 2)).toUpperCase();
+}
+
+// Scaled from the avatar's own size instead of being its own manual control — otherwise a
+// fixed font-size looks lost inside a large avatar and cramped inside a small one.
+export function logoLetterSize(avatarSize: number, mode: LogoStyle["initials"]): number {
+  return Math.round(avatarSize * (mode === "two" ? 0.3 : 0.36));
 }
 
 export function logoBackgroundColor(style: LogoStyle, primary: string): string {

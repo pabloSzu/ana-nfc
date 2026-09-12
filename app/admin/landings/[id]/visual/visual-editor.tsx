@@ -6,7 +6,7 @@ import { useDraft, type Draft } from "../draft-context";
 import BackgroundPicker from "../background-picker";
 import { compressImage } from "@/lib/compress-image";
 import {
-  getAllActions, AUTO_COLORS, displayUsername, contrastTextColor, buttonZoneShadow, buttonFillStyle, autoTextColor, logoBackgroundColor, logoBorderRadius, logoFrameStyle, resolveBackgroundTint,
+  getAllActions, AUTO_COLORS, displayUsername, contrastTextColor, buttonZoneShadow, buttonFillStyle, autoTextColor, logoBackgroundColor, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize, resolveBackgroundTint,
   TEXT_FONT_OPTIONS, hexToRgba,
 } from "@/lib/landing-catalog";
 import { ActionTypeIcon } from "@/components/action-icons";
@@ -409,8 +409,8 @@ export default function VisualEditor({
               <div className="visual-statusbar"><span>9:41</span><span>▮▮▮ ● ▰</span></div>
 
               <div className="visual-scroll">
-                <div className={previewMode ? "visual-logo" : "visual-logo editable"} style={{ ...logoFrameStyle(logo, draft.primary_color || "#1f2937"), width: logo.size, height: logo.size, borderRadius: logoBorderRadius(logo.shape, logo.size) }} onClick={(e) => { if (!previewMode) openSheet("logo", e.currentTarget); }}>
-                  {draft.logo_url ? <div style={{ width: "100%", height: "100%", backgroundImage: `url(${draft.logo_url})`, backgroundSize: `${logo.zoom * 100}%`, backgroundPosition: `${logo.x}% ${logo.y}%` }} /> : <span className="visual-initial">{draft.business_name.slice(0, 1) || "?"}</span>}
+                <div className={previewMode ? "visual-logo" : "visual-logo editable"} style={{ ...logoFrameStyle(logo, draft.primary_color || "#1f2937"), width: logo.size, height: logo.size, borderRadius: logoBorderRadius(logo.shape, logo.size), fontSize: logoLetterSize(logo.size, logo.initials) }} onClick={(e) => { if (!previewMode) openSheet("logo", e.currentTarget); }}>
+                  {draft.logo_url ? <div style={{ width: "100%", height: "100%", backgroundImage: `url(${draft.logo_url})`, backgroundSize: `${logo.zoom * 100}%`, backgroundPosition: `${logo.x}% ${logo.y}%` }} /> : <span className="visual-initial">{logoInitials(draft.business_name, logo.initials)}</span>}
                   {!previewMode && <span className="visual-edit-bubble"><IconEdit /></span>}
                 </div>
 

@@ -6,7 +6,7 @@ import { ActionTypeIcon } from "@/components/action-icons";
 import { IconEdit } from "@/components/icons";
 import LandingRenderer from "@/components/landing-renderer";
 import { compressImage } from "@/lib/compress-image";
-import { AUTO_COLORS, buttonZoneShadow, contrastTextColor, getAllActions, getFontFamily, hexToRgba, logoBorderRadius, logoFrameStyle, resolveBackgroundTint, TEXT_FONT_OPTIONS, type BackgroundPosition, type ButtonZoneStyle, type LogoStyle, type SubtitleStyle, type TitleStyle } from "@/lib/landing-catalog";
+import { AUTO_COLORS, buttonZoneShadow, contrastTextColor, getAllActions, getFontFamily, hexToRgba, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize, resolveBackgroundTint, TEXT_FONT_OPTIONS, type BackgroundPosition, type ButtonZoneStyle, type LogoStyle, type SubtitleStyle, type TitleStyle } from "@/lib/landing-catalog";
 import { DESIGN_PRESETS_V2, buttonCollectionStyle, buttonCollectionWidth, resolveButtonColors, type DesignPreset } from "@/lib/design-presets";
 
 type ButtonItem = { id: string; type: string; title: string; subtitle: string; url: string; message: string; icon: string; background_color: string; text_color: string; use_auto_color: boolean; position: number };
@@ -394,8 +394,8 @@ export default function EditorV2({ landing, initialButtons, saveAction }: { land
               <div className={`v2-content layout-${draft.buttonZone.layout}`}>
                 <div className="v2-identity-block">
                 <button className={`v2-edit-element v2-logo-hit ${panel === "logo" ? "is-selected" : ""}`} type="button" onClick={() => !preview && setPanel("logo")} aria-label="Editar logo">
-                  <div className="v2-avatar" style={{ ...logoFrameStyle(draft.logoStyle, draft.primary_color || "#1f2937"), width: draft.logoStyle.size, height: draft.logoStyle.size, borderRadius: logoBorderRadius(draft.logoStyle.shape, draft.logoStyle.size), margin: "0 auto 18px" }}>
-                    {logoImage ? <span style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${draft.logoStyle.zoom * 100}%`, backgroundPosition: `${draft.logoStyle.x}% ${draft.logoStyle.y}%` }} /> : draft.business_name.slice(0, 1)}
+                  <div className="v2-avatar" style={{ ...logoFrameStyle(draft.logoStyle, draft.primary_color || "#1f2937"), width: draft.logoStyle.size, height: draft.logoStyle.size, borderRadius: logoBorderRadius(draft.logoStyle.shape, draft.logoStyle.size), margin: "0 auto 18px", fontSize: logoLetterSize(draft.logoStyle.size, draft.logoStyle.initials) }}>
+                    {logoImage ? <span style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${draft.logoStyle.zoom * 100}%`, backgroundPosition: `${draft.logoStyle.x}% ${draft.logoStyle.y}%` }} /> : logoInitials(draft.business_name, draft.logoStyle.initials)}
                   </div>
                   {!preview && <span className="v2-element-tag">Logo</span>}
                 </button>
@@ -572,21 +572,31 @@ function LogoControls({ draft, logoImage, onChange, onLogo, onRemoveLogo }: { dr
   const primary = draft.primary_color || "#1f2937";
   const update = (patch: Partial<LogoStyle>) => onChange({ logoStyle: { ...style, ...patch } });
   return <div className="v2-fields">
-    <div className="v2-logo-editor"><div style={{ ...logoFrameStyle(style, primary), borderRadius: logoBorderRadius(style.shape, 76) }}>{logoImage ? <span style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${style.zoom * 100}%`, backgroundPosition: `${style.x}% ${style.y}%` }} /> : draft.business_name.slice(0,1)}</div><span><label className="v2-upload">{logoImage ? "Cambiar imagen" : "Elegir imagen"}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => onLogo(event.target.files?.[0])} /></label>{logoImage && <button type="button" className="v2-delete" onClick={onRemoveLogo}>Quitar</button>}</span></div>
+    <div className="v2-logo-editor"><div style={{ ...logoFrameStyle(style, primary), borderRadius: logoBorderRadius(style.shape, 76), fontSize: logoLetterSize(76, style.initials) }}>{logoImage ? <span style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${style.zoom * 100}%`, backgroundPosition: `${style.x}% ${style.y}%` }} /> : logoInitials(draft.business_name, style.initials)}</div><span><label className="v2-upload">{logoImage ? "Cambiar imagen" : "Elegir imagen"}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => onLogo(event.target.files?.[0])} /></label>{logoImage && <button type="button" className="v2-delete" onClick={onRemoveLogo}>Quitar</button>}</span></div>
     <button type="button" className="v2-suggested v2-logo-recommended-button" onClick={() => onChange({ logoStyle: { ...style, ...logoTreatmentPatch("template", draft.buttonZone.templateId), ...preset.logo, zoom: 1, x: 50, y: 50 } })}>✦ Usar estilos recomendados ({preset.name})</button>
     <fieldset>
       <legend>Forma del logo</legend>
       <div className="v2-logo-shape-grid">
         {LOGO_SHAPE_OPTIONS.map((option) => (
           <button type="button" key={option.id} className={style.shape === option.id ? "active" : ""} aria-pressed={style.shape === option.id} onClick={() => update({ shape: option.id, treatment: "custom" })}>
-            <span className="v2-logo-shape-preview" style={{ ...logoFrameStyle({ ...style, shape: option.id }, primary), borderRadius: logoBorderRadius(option.id, 48) }}>
-              {logoImage ? <i style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${style.zoom * 100}%`, backgroundPosition: `${style.x}% ${style.y}%` }} /> : draft.business_name.slice(0,1)}
+            <span className="v2-logo-shape-preview" style={{ ...logoFrameStyle({ ...style, shape: option.id }, primary), borderRadius: logoBorderRadius(option.id, 48), fontSize: logoLetterSize(48, style.initials) }}>
+              {logoImage ? <i style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${style.zoom * 100}%`, backgroundPosition: `${style.x}% ${style.y}%` }} /> : logoInitials(draft.business_name, style.initials)}
             </span>
             <b>{option.label}</b>
           </button>
         ))}
       </div>
     </fieldset>
+    {!logoImage && (
+      <fieldset>
+        <legend>Iniciales</legend>
+        <p className="v2-help" style={{ margin: "0 0 4px" }}>Mientras no subas una imagen, se muestra esto en el círculo.</p>
+        <div className="v2-segment">
+          <button type="button" className={style.initials === "one" ? "active" : ""} onClick={() => update({ initials: "one" })}>{logoInitials(draft.business_name, "one")}</button>
+          <button type="button" className={style.initials === "two" ? "active" : ""} onClick={() => update({ initials: "two" })}>{logoInitials(draft.business_name, "two")}</button>
+        </div>
+      </fieldset>
+    )}
     <Range label="Tamaño" min={72} max={190} value={style.size} onChange={(size) => update({ size })} />
     <div className="v2-inline-row">
       <Range label="Borde" min={0} max={10} value={style.borderWidth} onChange={(borderWidth) => update({ borderWidth, treatment: "custom" })} />
