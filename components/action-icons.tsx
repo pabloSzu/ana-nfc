@@ -73,6 +73,7 @@ export const CUSTOM_ICON_OPTIONS: { id: string; label: string }[] = [
 ];
 
 export function ActionTypeIcon({ type, icon, className }: { type: string; icon?: string | null; className?: string }) {
+  const iconKey = icon && customIcons[icon] ? icon : (actionIcons[type] ? type : "url");
   const Icon = (icon && customIcons[icon]) || actionIcons[type] || FiLink;
-  return <Icon className={`action-type-icon${className ? ` ${className}` : ""}`} aria-hidden="true" focusable="false" />;
+  return <Icon className={`action-type-icon action-type-icon-${iconKey}${className ? ` ${className}` : ""}`} aria-hidden="true" focusable="false" />;
 }

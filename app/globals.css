@@ -365,7 +365,20 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; letter-spacing: -0.01e
 .button-collection-luxury > .v2-btn-icon > i,
 .button-collection-luxury > .action-main > i { color: #e8c777; }
 .button-collection-glass { overflow: hidden; }
-.action-type-icon { display: block; width: 64%; height: 64%; overflow: visible; }
+.action-type-icon {
+  display: block;
+  width: 64%;
+  height: 64%;
+  overflow: visible;
+  transform-origin: center;
+}
+/* Brand glyphs have different viewBox proportions. These tiny optical corrections keep
+   their visible mass centered without moving the shared icon box or the button copy. */
+.action-type-icon-youtube { width: 72%; height: 72%; transform: translateX(-.5px); }
+.action-type-icon-instagram { width: 70%; height: 70%; transform: translateX(-.5px); }
+.action-type-icon-tiktok { width: 66%; height: 66%; transform: translateX(-.5px); }
+.action-type-icon-facebook { width: 62%; height: 62%; transform: translateX(-.5px); }
+.action-type-icon-telegram { width: 67%; height: 67%; transform: translateX(-.5px); }
 .action-brand-icon { align-self: center; }
 .action-copy { display: grid; min-width: 0; gap: 2px; text-align: left; }
 .action-title { display: block; min-width: 0; overflow: hidden; line-height: 1.15; text-overflow: ellipsis; white-space: nowrap; }
