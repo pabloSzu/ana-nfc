@@ -97,11 +97,6 @@
 .v2-template-art.template-layout-compact .template-mini-identity > span { width: 100%; justify-items: start; }
 .v2-template-art.template-layout-poster .template-mini-identity { padding-bottom: 5px; border-bottom: 1px solid #ffffff88; }
 .v2-template-art em { position: absolute; right: 7px; top: 7px; color: #fff; font-size: 6px; letter-spacing: .1em; font-style: normal; }
-.template-elegant i:not(:first-child) { border-radius: 2px; border: 1px solid #e6ca91; background: #181510 !important; }
-.template-neon i:not(:first-child) { background: #161321 !important; border: 1px solid #9a63ff; box-shadow: 0 0 9px #8d58ff; }
-.template-photo i:not(:first-child) { background: #ffffff2a !important; border: 1px solid #ffffff66; backdrop-filter: blur(5px); }
-.template-minimal i:not(:first-child) { background: #fff !important; border: 1px solid #ddd; }
-
 /* The template picker is a gallery of small, faithful landing screenshots. The
    hierarchy stays identical in every style so the visual choice is predictable. */
 .v2-template-grid { grid-template-columns: 1fr; gap: 12px; }

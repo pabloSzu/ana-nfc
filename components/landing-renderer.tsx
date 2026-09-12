@@ -2,7 +2,7 @@ import {
   buildActionLink, buttonZoneShadow, resolveBackgroundTint, getFontFamily,
   parseTitleStyle, parseSubtitleStyle, parseLogoStyle, parseBackgroundPosition, parseButtonZone, hexToRgba, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize,
 } from "@/lib/landing-catalog";
-import { buttonCollectionStyle, buttonCollectionWidth, resolveButtonColors } from "@/lib/design-presets";
+import { buttonCollectionStyle, buttonCollectionWidth, buttonIconStyle, resolveButtonColors } from "@/lib/design-presets";
 import { ActionTypeIcon } from "@/components/action-icons";
 import { IconEdit, IconImage } from "@/components/icons";
 import type { CSSProperties } from "react";
@@ -186,12 +186,18 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
                   fontSize: zone.textSize,
                   flexDirection: "column",
                   alignItems: zone.contentAlign === "left" ? "flex-start" : "center",
-                  gap: action.subtitle ? 2 : 9,
+                  gap: 0,
                   position: edit ? "relative" : undefined,
                 }}
               >
-                <span className="action-main" style={{ display: "flex", alignItems: "center", justifyContent: zone.contentAlign === "left" ? "flex-start" : "center", gap: 9 }}><span style={{ fontSize: zone.iconSize * 0.52, flex: "none", display: "inline-flex" }}><ActionTypeIcon type={action.type} icon={action.icon} /></span> {action.title}</span>
-                {action.subtitle && <small style={{ fontSize: 11, opacity: 0.85, fontWeight: 600 }}>{action.subtitle}</small>}
+                <span className={`action-main action-main-${zone.contentAlign}`} style={zone.contentAlign === "center" ? { width: "100%", display: "grid", gridTemplateColumns: `${zone.iconSize}px minmax(0,1fr) ${zone.iconSize}px`, alignItems: "center", columnGap: 10 } : { width: "100%", display: "flex", alignItems: "center", justifyContent: "flex-start", gap: 10 }}>
+                  <span className="action-brand-icon" style={buttonIconStyle(zone.collection, bg, zone.iconSize)}><ActionTypeIcon type={action.type} icon={action.icon} /></span>
+                  <span className="action-copy" style={{ textAlign: zone.contentAlign === "center" ? "center" : "left" }}>
+                    <span className="action-title">{action.title}</span>
+                    {action.subtitle && <small style={{ fontSize: 11, opacity: 0.82, fontWeight: 600 }}>{action.subtitle}</small>}
+                  </span>
+                  {zone.contentAlign === "center" && <span className="action-icon-balance" aria-hidden="true" />}
+                </span>
                 {edit && !action.use_auto_color && <span className="editor-own-badge">Propio</span>}
                 {edit && <span className="editor-pencil" title="Editar botón"><IconEdit /></span>}
                 {edit && (

@@ -1,41 +1,52 @@
-export const actionIconMap: Record<string, string> = {
-  whatsapp: "fa-brands fa-whatsapp",
-  instagram: "fa-brands fa-instagram",
-  tiktok: "fa-brands fa-tiktok",
-  facebook: "fa-brands fa-facebook-f",
-  website: "fa-solid fa-globe",
-  email: "fa-solid fa-envelope",
-  phone: "fa-solid fa-phone",
-  maps: "fa-solid fa-location-dot",
-  youtube: "fa-brands fa-youtube",
-  spotify: "fa-brands fa-spotify",
-  mercadopago: "fa-solid fa-wallet",
-  calendar: "fa-regular fa-calendar-check",
-  telegram: "fa-brands fa-telegram",
-  url: "fa-solid fa-link",
+import type { IconType } from "react-icons";
+import {
+  FaCarSide, FaFacebookF, FaInstagram, FaSpotify, FaTelegram, FaTicket,
+  FaTiktok, FaUtensils, FaWallet, FaWhatsapp, FaYoutube,
+} from "react-icons/fa6";
+import {
+  FiBell, FiBookOpen, FiBriefcase, FiCamera, FiClock, FiCoffee, FiDownload,
+  FiFlag, FiGift, FiGlobe, FiHeart, FiHelpCircle, FiHome, FiInfo, FiLink,
+  FiMail, FiMapPin, FiMusic, FiPhone, FiShoppingCart, FiStar, FiTag,
+} from "react-icons/fi";
+
+const actionIcons: Record<string, IconType> = {
+  whatsapp: FaWhatsapp,
+  instagram: FaInstagram,
+  tiktok: FaTiktok,
+  facebook: FaFacebookF,
+  website: FiGlobe,
+  email: FiMail,
+  phone: FiPhone,
+  maps: FiMapPin,
+  youtube: FaYoutube,
+  spotify: FaSpotify,
+  mercadopago: FaWallet,
+  calendar: FiClock,
+  telegram: FaTelegram,
+  url: FiLink,
 };
 
-export const customIconMap: Record<string, string> = {
-  star: "fa-solid fa-star",
-  heart: "fa-solid fa-heart",
-  gift: "fa-solid fa-gift",
-  tag: "fa-solid fa-tag",
-  cart: "fa-solid fa-cart-shopping",
-  ticket: "fa-solid fa-ticket",
-  camera: "fa-solid fa-camera",
-  music: "fa-solid fa-music",
-  clock: "fa-regular fa-clock",
-  info: "fa-solid fa-circle-info",
-  help: "fa-solid fa-circle-question",
-  home: "fa-solid fa-house",
-  briefcase: "fa-solid fa-briefcase",
-  book: "fa-solid fa-book-open",
-  coffee: "fa-solid fa-mug-hot",
-  utensils: "fa-solid fa-utensils",
-  car: "fa-solid fa-car",
-  download: "fa-solid fa-download",
-  flag: "fa-solid fa-flag",
-  bell: "fa-solid fa-bell",
+const customIcons: Record<string, IconType> = {
+  star: FiStar,
+  heart: FiHeart,
+  gift: FiGift,
+  tag: FiTag,
+  cart: FiShoppingCart,
+  ticket: FaTicket,
+  camera: FiCamera,
+  music: FiMusic,
+  clock: FiClock,
+  info: FiInfo,
+  help: FiHelpCircle,
+  home: FiHome,
+  briefcase: FiBriefcase,
+  book: FiBookOpen,
+  coffee: FiCoffee,
+  utensils: FaUtensils,
+  car: FaCarSide,
+  download: FiDownload,
+  flag: FiFlag,
+  bell: FiBell,
 };
 
 export const CUSTOM_ICON_OPTIONS: { id: string; label: string }[] = [
@@ -62,6 +73,6 @@ export const CUSTOM_ICON_OPTIONS: { id: string; label: string }[] = [
 ];
 
 export function ActionTypeIcon({ type, icon, className }: { type: string; icon?: string | null; className?: string }) {
-  const faClass = (icon && customIconMap[icon]) || actionIconMap[type] || "fa-solid fa-link";
-  return <i className={`${faClass}${className ? ` ${className}` : ""}`} aria-hidden="true" />;
+  const Icon = (icon && customIcons[icon]) || actionIcons[type] || FiLink;
+  return <Icon className={`action-type-icon${className ? ` ${className}` : ""}`} aria-hidden="true" focusable="false" />;
 }

@@ -104,10 +104,8 @@ export type ButtonZoneStyle = {
   shadow: "none" | "soft" | "strong"; finish: "solid" | "glass" | "outline";
   collection: "soft" | "brand" | "glass" | "glow" | "luxury" | "minimal" | "split" | "bento" | "pastel" | "metallic" | "retro" | "editorial" | "candy" | "ocean" | "brutal" | "corporate";
   colorMode: "auto" | "one"; oneColor: string; textSize: number; iconSize: number;
-  // How the icon+text sit inside each button — independent of the template, same as color:
-  // a design decision that lives in one place and doesn't get silently reset when you pick
-  // a different plantilla.
   contentAlign: "center" | "left";
+  contentAlignMode: "auto" | "manual";
 };
 
 export const DEFAULT_BUTTON_ZONE: ButtonZoneStyle = {
@@ -116,7 +114,7 @@ export const DEFAULT_BUTTON_ZONE: ButtonZoneStyle = {
   templateId: "custom",
   gap: 9, height: 52, radius: 16, width: 100,
   shadow: "soft", finish: "solid", collection: "soft", colorMode: "auto", oneColor: "#6d5cff",
-  textSize: 14, iconSize: 29, contentAlign: "left",
+  textSize: 14, iconSize: 29, contentAlign: "center", contentAlignMode: "auto",
 };
 
 export function parseButtonZone(raw: unknown): ButtonZoneStyle {
@@ -147,7 +145,10 @@ export function parseButtonZone(raw: unknown): ButtonZoneStyle {
     colorMode: colorModes.includes(merged.colorMode) ? merged.colorMode : "auto",
     finish: finishes.includes(merged.finish) ? merged.finish : "solid",
     shadow: shadows.includes(merged.shadow) ? merged.shadow : "soft",
-    contentAlign: contentAligns.includes(merged.contentAlign) ? merged.contentAlign : "left",
+    contentAlign: contentAligns.includes(merged.contentAlign) ? merged.contentAlign : "center",
+    contentAlignMode: parsed.contentAlignMode === "auto" || parsed.contentAlignMode === "manual"
+      ? parsed.contentAlignMode
+      : contentAligns.includes(parsed.contentAlign as ButtonZoneStyle["contentAlign"]) ? "manual" : "auto",
   };
 }
 
@@ -296,7 +297,7 @@ export function getFontFamily(id: string): string {
 }
 
 export const AUTO_COLORS: Record<string, string> = {
-  whatsapp: "#25d366", instagram: "#c13584", tiktok: "#111111", facebook: "#1877f2", maps: "#db4437",
+  whatsapp: "#25d366", instagram: "#e1306c", tiktok: "#111111", facebook: "#1877f2", maps: "#db4437",
   youtube: "#ff0033", spotify: "#1db954", mercadopago: "#009ee3", telegram: "#229ed9", email: "#334155",
   phone: "#475569", calendar: "#e05252", website: "#1f2937", url: "#1f2937",
 };
