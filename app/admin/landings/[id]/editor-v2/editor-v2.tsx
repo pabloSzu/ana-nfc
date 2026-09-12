@@ -25,9 +25,9 @@ type DeviceMode = "small" | "standard" | "large";
 type SaveAction = (formData: FormData) => void | Promise<void>;
 
 const SIZES = [
-  { label: "Compactos", patch: { height: 44, textSize: 13, iconSize: 25, gap: 6 } },
-  { label: "Normales", patch: { height: 52, textSize: 14, iconSize: 29, gap: 9 } },
-  { label: "Grandes", patch: { height: 60, textSize: 16, iconSize: 32, gap: 12 } },
+  { label: "Chico", patch: { height: 44, textSize: 13, iconSize: 25, gap: 6 } },
+  { label: "Medio", patch: { height: 52, textSize: 14, iconSize: 29, gap: 9 } },
+  { label: "Grande", patch: { height: 60, textSize: 16, iconSize: 32, gap: 12 } },
 ];
 const DEVICE_OPTIONS: { id: DeviceMode; label: string; size: string }[] = [
   { id: "small", label: "Chico", size: "360 px" },
@@ -389,7 +389,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
         <div className="v2-status"><i className={dirty ? "is-dirty" : ""} />{dirty ? "Cambios sin guardar" : "Todo guardado"}</div>
         <div className="v2-history" data-tick={historyTick}>
           <button type="button" title="Deshacer (Ctrl+Z)" aria-label="Deshacer" disabled={pastRef.current.length === 0} onClick={undo}>↶</button>
-          <button type="button" title="Rehacer (Ctrl+Shift+Z)" aria-label="Rehacer" disabled={futureRef.current.length === 0} onClick={redo}>↷</button>
+          <button type="button" title="Rehacer (Ctrl+Y)" aria-label="Rehacer" disabled={futureRef.current.length === 0} onClick={redo}>↷</button>
         </div>
         <button className="v2-ghost" type="button" onClick={() => { setPanel(panel === "settings" ? null : "settings"); setPreview(false); }}>Ajustes</button>
         <button className="v2-ghost" type="button" onClick={() => { setPreview(!preview); setPanel(null); }}>{preview ? "Seguir editando" : "Vista previa"}</button>
@@ -529,16 +529,18 @@ function ButtonDesign({ draft, buttons, onZone, onFont, onApplyButtonLook, onRes
         {draft.buttonZone.colorMode === "one" && <ColorField label="Color de los botones" value={draft.buttonZone.oneColor} onChange={(oneColor) => onZone({ oneColor })} />}
         <Choice active={draft.buttonZone.colorMode === "auto"} title="Cada red con su color" note="WhatsApp verde, Instagram rosa y cada marca con su color oficial." onClick={() => onZone({ colorMode: "auto" })} />
       </fieldset>
-      <fieldset><legend>Tamaño</legend><div className="v2-segment">{SIZES.map((item) => <button type="button" className={draft.buttonZone.height === item.patch.height ? "active" : ""} key={item.label} onClick={() => onZone(item.patch)}>{item.label}</button>)}</div></fieldset>
-      <fieldset>
-        <legend>Alineación</legend>
-        <div className="v2-segment">
-          <button type="button" className={zone.contentAlignMode === "auto" ? "active" : ""} aria-pressed={zone.contentAlignMode === "auto"} onClick={() => onZone({ contentAlignMode: "auto", contentAlign: alignmentPreset.buttonZone.contentAlign })}>Automática</button>
-          <button type="button" className={zone.contentAlignMode === "manual" && zone.contentAlign === "center" ? "active" : ""} aria-pressed={zone.contentAlignMode === "manual" && zone.contentAlign === "center"} onClick={() => onZone({ contentAlignMode: "manual", contentAlign: "center" })}>Centrada</button>
-          <button type="button" className={zone.contentAlignMode === "manual" && zone.contentAlign === "left" ? "active" : ""} aria-pressed={zone.contentAlignMode === "manual" && zone.contentAlign === "left"} onClick={() => onZone({ contentAlignMode: "manual", contentAlign: "left" })}>Izquierda</button>
-        </div>
-        <p className="v2-help" style={{ margin: 0 }}>{zone.contentAlignMode === "auto" ? `La plantilla ${alignmentPreset.name} recomienda alineación ${zone.contentAlign === "center" ? "centrada" : "a la izquierda"}.` : "Tu elección se mantendrá aunque cambies de plantilla."}</p>
-      </fieldset>
+      <div className="v2-fields-row">
+        <fieldset><legend>Tamaño</legend><div className="v2-segment">{SIZES.map((item) => <button type="button" className={draft.buttonZone.height === item.patch.height ? "active" : ""} key={item.label} onClick={() => onZone(item.patch)}>{item.label}</button>)}</div></fieldset>
+        <fieldset>
+          <legend>Alineación</legend>
+          <div className="v2-segment">
+            <button type="button" className={zone.contentAlignMode === "auto" ? "active" : ""} aria-pressed={zone.contentAlignMode === "auto"} onClick={() => onZone({ contentAlignMode: "auto", contentAlign: alignmentPreset.buttonZone.contentAlign })}>Auto</button>
+            <button type="button" className={zone.contentAlignMode === "manual" && zone.contentAlign === "center" ? "active" : ""} aria-pressed={zone.contentAlignMode === "manual" && zone.contentAlign === "center"} onClick={() => onZone({ contentAlignMode: "manual", contentAlign: "center" })}>Centro</button>
+            <button type="button" className={zone.contentAlignMode === "manual" && zone.contentAlign === "left" ? "active" : ""} aria-pressed={zone.contentAlignMode === "manual" && zone.contentAlign === "left"} onClick={() => onZone({ contentAlignMode: "manual", contentAlign: "left" })}>Izq.</button>
+          </div>
+          <p className="v2-help" style={{ margin: "8px 0 0", fontSize: 11 }}>{zone.contentAlignMode === "auto" ? `Recomendado por ${alignmentPreset.name}.` : "Se mantiene aunque cambies de plantilla."}</p>
+        </fieldset>
+      </div>
       <details className="v2-advanced">
         <summary>Más opciones</summary>
         <div className="v2-fields" style={{ marginTop: 10 }}>
@@ -548,10 +550,14 @@ function ButtonDesign({ draft, buttons, onZone, onFont, onApplyButtonLook, onRes
             <Choice active={zone.iconAppearance === "brand"} suggested={recommendedIcons === "brand"} title="Icono real" note="Cada marca conserva su apariencia reconocible: Spotify verde, YouTube rojo, Instagram degradado…" onClick={() => onZone({ iconAppearance: "brand" })} />
           </fieldset>
           <FontPicker label="Tipografía" value={draft.button_font || "modern"} onChange={onFont} />
-          <Range label="Alto del botón" min={40} max={72} value={zone.height} onChange={(height) => onZone({ height })} />
-          <Range label="Espaciado entre botones" min={4} max={20} value={zone.gap} onChange={(gap) => onZone({ gap })} />
-          <Range label="Tamaño del ícono" min={22} max={38} value={zone.iconSize} onChange={(iconSize) => onZone({ iconSize })} />
-          <Range label="Tamaño del texto" min={12} max={18} value={zone.textSize} onChange={(textSize) => onZone({ textSize })} />
+          <div className="v2-fields-row">
+            <Range label="Alto del botón" min={40} max={72} value={zone.height} onChange={(height) => onZone({ height })} />
+            <Range label="Espaciado" min={4} max={20} value={zone.gap} onChange={(gap) => onZone({ gap })} />
+          </div>
+          <div className="v2-fields-row">
+            <Range label="Tamaño del ícono" min={22} max={38} value={zone.iconSize} onChange={(iconSize) => onZone({ iconSize })} />
+            <Range label="Tamaño del texto" min={12} max={18} value={zone.textSize} onChange={(textSize) => onZone({ textSize })} />
+          </div>
         </div>
       </details>
     </div>

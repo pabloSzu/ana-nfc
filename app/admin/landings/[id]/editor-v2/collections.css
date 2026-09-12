@@ -99,33 +99,33 @@
 .v2-template-art em { position: absolute; right: 7px; top: 7px; color: #fff; font-size: 6px; letter-spacing: .1em; font-style: normal; }
 /* The template picker is a gallery of small, faithful landing screenshots. The
    hierarchy stays identical in every style so the visual choice is predictable. */
-.v2-template-grid { grid-template-columns: 1fr; gap: 12px; }
+/* Two columns of compact vertical cards instead of one long column of wide rows — same
+   gallery, roughly half the scroll to get through it. */
+.v2-template-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
 .v2-template-grid > button {
   transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
 }
 .v2-template-grid > button:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
   border-color: #c9c4f4;
   box-shadow: 0 9px 24px rgba(40, 35, 67, .08);
 }
 .v2-template-grid:not(.v2-template-grid-compact) > button {
   display: grid;
-  grid-template-columns: 98px 1fr;
-  grid-template-rows: auto 1fr;
-  column-gap: 13px;
-  align-items: start;
+  grid-template-rows: auto auto 1fr;
+  justify-items: center;
   padding: 10px;
   border-radius: 17px;
+  text-align: center;
 }
 .v2-template-grid:not(.v2-template-grid-compact) > button.selected { padding: 9px; box-shadow: 0 0 0 3px rgba(102, 87, 232, .09); }
-.v2-template-grid:not(.v2-template-grid-compact) > button > b { align-self: end; margin-top: 13px; font-size: 13px; }
-.v2-template-grid:not(.v2-template-grid-compact) > button > small { margin-top: 5px; line-height: 1.4; }
+.v2-template-grid:not(.v2-template-grid-compact) > button > b { margin-top: 10px; font-size: 12px; }
+.v2-template-grid:not(.v2-template-grid-compact) > button > small { margin-top: 4px; line-height: 1.4; text-align: center; }
 
 .v2-template-shot {
   position: relative;
-  grid-row: 1 / 3;
-  width: 98px;
-  height: 174px;
+  width: 108px;
+  height: 190px;
   overflow: hidden;
   border: 4px solid #1c1d23;
   border-radius: 19px;

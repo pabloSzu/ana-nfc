@@ -9,6 +9,14 @@
   width: 100%;
   height: 100%;
   padding: 22px;
+  /* The phone used to sit dead-center in the FULL viewport while the panel floated as a
+     separate popover further right — on a wide screen that left a huge, disconnected gap of
+     empty space to the phone's left, with the panel and phone feeling like two unrelated
+     things. Anchoring the phone's left edge relative to viewport width (instead of centering
+     it) keeps it close to the panel at any screen size — see the matching formula on
+     .v2-panel's `left` below, which keeps a constant ~40px gap between the two. */
+  justify-items: start;
+  padding-left: max(32px, calc(50vw - 560px));
 }
 
 .v2-phone {
@@ -26,8 +34,12 @@
   position: fixed;
   z-index: 60;
   top: 88px;
-  left: calc(50% + 218px);
-  width: 400px;
+  /* Same anchor family as .v2-stage's padding-left above (50vw - 560, plus the phone's own
+     ~400px width and a ~40px gap folded in as a constant: -560+400+40 = -120), so the gap
+     between the phone's right edge and the panel's left edge stays ~40px at any viewport
+     width instead of the two drifting apart on wide screens. */
+  left: max(472px, calc(50vw - 120px));
+  width: 500px;
   max-height: calc(100dvh - 108px);
   border: 1px solid rgba(224, 226, 236, 0.95);
   border-radius: 24px;
@@ -41,7 +53,7 @@
   content: "";
   position: fixed;
   top: 48%;
-  left: calc(50% + 208px);
+  left: max(462px, calc(50vw - 130px));
   width: 18px;
   height: 18px;
   border-left: 1px solid #e1e3eb;
@@ -64,7 +76,8 @@
 
 @media (max-width: 1240px) {
   .v2-stage { justify-items: start; padding-left: max(28px, calc(50vw - 420px)); }
-  .v2-panel { left: auto; right: 22px; width: 370px; }
+  .v2-stage-toolbar { left: max(223px, calc(50vw - 225px)); }
+  .v2-panel { left: auto; right: 22px; width: 440px; }
   .v2-panel::before { display: none; }
 }
 
@@ -102,7 +115,11 @@
   position: absolute;
   z-index: 12;
   top: 14px;
-  left: 50%;
+  /* Once the phone moved off dead-center (see .v2-stage above), a plain `left:50%` here
+     centered the toolbar in the FULL stage instead of over the phone — it landed floating in
+     the gap between phone and panel. Same anchor family as the phone's own left edge, offset
+     by half the phone's ~390px width, so the toolbar tracks the phone instead of the viewport. */
+  left: max(227px, calc(50vw - 365px));
   display: flex;
   align-items: center;
   gap: 10px;
@@ -125,7 +142,7 @@
 
 @media (max-width: 840px) {
   .v2-stage { padding-top: 62px; }
-  .v2-stage-toolbar { top: 9px; max-width: calc(100vw - 16px); }
+  .v2-stage-toolbar { top: 9px; left: 50%; max-width: calc(100vw - 16px); }
   .v2-stage-toolbar > span { display: none; }
   .v2-device-switcher button { padding-inline: 7px; }
   .v2-phone.device-small,
