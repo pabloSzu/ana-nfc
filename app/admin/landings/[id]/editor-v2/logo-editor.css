@@ -29,3 +29,70 @@
 
 .v2-logo-editor .v2-upload { padding: 9px !important; }
 .v2-logo-editor .v2-delete { cursor: pointer; }
+.v2-logo-recommended-button {
+  min-height: 46px;
+  border: 2px solid #6657e8;
+  border-radius: 13px;
+  background: linear-gradient(135deg,#f8f6ff,#eeebff);
+  box-shadow: 0 7px 18px rgba(89,73,195,.12);
+  text-align: center;
+}
+
+.v2-logo-style-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+.v2-logo-style-grid > button {
+  position: relative;
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  padding: 11px 7px 9px;
+  border: 1px solid #e1e2e9;
+  border-radius: 13px;
+  background: #fff;
+  color: #3c3f4a;
+  cursor: pointer;
+  transition: border-color .15s,background .15s,transform .15s;
+}
+.v2-logo-style-grid > button:hover { transform: translateY(-1px); border-color: #c8c2ef; }
+.v2-logo-style-grid > button.active { border: 2px solid #6657e8; padding: 10px 6px 8px; background: #f7f5ff; }
+.v2-logo-style-grid > button.is-recommended {
+  grid-column: 1 / -1;
+  min-height: 94px;
+  border: 2px solid #7465eb;
+  padding: 13px 10px 10px;
+  background: linear-gradient(135deg,#f8f6ff,#eeebff);
+  box-shadow: 0 7px 20px rgba(82,67,180,.13),inset 0 0 0 1px rgba(255,255,255,.8);
+}
+.v2-logo-style-grid > button.is-recommended:hover { border-color: #5747db; box-shadow: 0 10px 25px rgba(82,67,180,.18); }
+.v2-logo-style-grid > button.is-recommended.active {
+  border: 3px solid #5847d8;
+  padding: 12px 9px 9px;
+  background: linear-gradient(135deg,#f0edff,#e4dfff);
+  box-shadow: 0 0 0 4px rgba(102,87,232,.12),0 10px 25px rgba(82,67,180,.2);
+}
+.v2-logo-recommended {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: #6657e8;
+  color: #fff;
+  font-size: 7px;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+.v2-logo-style-grid > button b { margin-top: 4px; font-size: 11px; }
+.v2-logo-style-grid > button small { color: #858995; font-size: 8.5px; line-height: 1.2; text-align: center; }
+.v2-logo-style-preview {
+  width: 43px;
+  height: 43px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  font-weight: 900;
+}
+.v2-logo-style-preview > i { width: 100%; height: 100%; display: block; background-repeat: no-repeat; }

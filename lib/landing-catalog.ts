@@ -150,7 +150,19 @@ export function parseButtonZone(raw: unknown): ButtonZoneStyle {
 // not just the app's older shared font_pair + text_color + one text_panel toggle.
 export type TitleStyle = { font: string; weight: number; size: number; color: string; bgMode: "none" | "solid"; bg: string; align: "left" | "center" | "right" };
 export type SubtitleStyle = { font: string; weight: number; size: number; color: string; bgMode: "none" | "solid"; bg: string };
-export type LogoStyle = { shape: "round" | "square"; size: number; zoom: number; x: number; y: number; fallback: string };
+export type LogoStyle = {
+  treatment: "template" | "clean" | "badge" | "card" | "highlight" | "custom";
+  shape: "round" | "square";
+  size: number;
+  zoom: number;
+  x: number;
+  y: number;
+  backgroundMode: "auto" | "custom";
+  fallback: string;
+  borderWidth: number;
+  borderColor: string;
+  shadow: "none" | "soft" | "glow";
+};
 export type BackgroundPosition = { zoom: number; x: number; y: number; tint: number };
 
 export const TEXT_FONT_OPTIONS: { value: string; label: string }[] = [
@@ -163,7 +175,7 @@ export const TEXT_FONT_OPTIONS: { value: string; label: string }[] = [
 
 const DEFAULT_TITLE_STYLE: TitleStyle = { font: TEXT_FONT_OPTIONS[0].value, weight: 900, size: 28, color: "#ffffff", bgMode: "none", bg: "#111111", align: "center" };
 const DEFAULT_SUBTITLE_STYLE: SubtitleStyle = { font: TEXT_FONT_OPTIONS[0].value, weight: 500, size: 14, color: "#ffffff", bgMode: "none", bg: "#111111" };
-const DEFAULT_LOGO_STYLE: LogoStyle = { shape: "round", size: 124, zoom: 1, x: 50, y: 50, fallback: "#f5eddf" };
+const DEFAULT_LOGO_STYLE: LogoStyle = { treatment: "template", shape: "round", size: 124, zoom: 1, x: 50, y: 50, backgroundMode: "auto", fallback: "#f5eddf", borderWidth: 0, borderColor: "#ffffff", shadow: "soft" };
 const DEFAULT_BG_POSITION: BackgroundPosition = { zoom: 1, x: 50, y: 50, tint: 0.18 };
 
 function hasKeys(raw: unknown): raw is Record<string, unknown> {
@@ -185,7 +197,26 @@ export function parseSubtitleStyle(landing: BackgroundLike & { text_color?: stri
 export function parseLogoStyle(raw: unknown): LogoStyle {
   const value = hasKeys(raw) ? { ...DEFAULT_LOGO_STYLE, ...(raw as Partial<LogoStyle>) } : { ...DEFAULT_LOGO_STYLE };
   const finite = (candidate: unknown, fallback: number) => Number.isFinite(Number(candidate)) ? Number(candidate) : fallback;
-  return { ...value, shape: value.shape === "square" ? "square" : "round", size: Math.min(190, Math.max(72, finite(value.size, 124))), zoom: Math.min(2.5, Math.max(1, finite(value.zoom, 1))), x: Math.min(100, Math.max(0, finite(value.x, 50))), y: Math.min(100, Math.max(0, finite(value.y, 50))) };
+  const treatments: LogoStyle["treatment"][] = ["template","clean","badge","card","highlight","custom"];
+  const shadows: LogoStyle["shadow"][] = ["none","soft","glow"];
+  return { ...value, treatment: treatments.includes(value.treatment) ? value.treatment : "template", shape: value.shape === "square" ? "square" : "round", backgroundMode: value.backgroundMode === "custom" ? "custom" : "auto", fallback: /^#[0-9a-f]{6}$/i.test(value.fallback) ? value.fallback : DEFAULT_LOGO_STYLE.fallback, borderWidth: Math.min(10, Math.max(0, finite(value.borderWidth, 0))), borderColor: /^#[0-9a-f]{6}$/i.test(value.borderColor) ? value.borderColor : "#ffffff", shadow: shadows.includes(value.shadow) ? value.shadow : "soft", size: Math.min(190, Math.max(72, finite(value.size, 124))), zoom: Math.min(2.5, Math.max(1, finite(value.zoom, 1))), x: Math.min(100, Math.max(0, finite(value.x, 50))), y: Math.min(100, Math.max(0, finite(value.y, 50))) };
+}
+
+export function logoBackgroundColor(style: LogoStyle, primary: string): string {
+  return style.backgroundMode === "custom" ? style.fallback : primary;
+}
+
+export function logoFrameStyle(style: LogoStyle, primary: string, hasImage: boolean): CSSProperties {
+  const background = style.treatment === "clean" && hasImage ? "transparent" : logoBackgroundColor(style, primary);
+  const shadow = style.shadow === "glow"
+    ? `0 0 0 3px ${hexToRgba(style.borderColor, .2)}, 0 0 28px ${hexToRgba(style.borderColor, .58)}`
+    : style.shadow === "soft" ? "0 10px 28px rgba(18,20,30,.18)" : "none";
+  return {
+    background,
+    color: contrastTextColor(background === "transparent" ? primary : background),
+    border: style.borderWidth ? `${style.borderWidth}px solid ${style.borderColor}` : "none",
+    boxShadow: shadow,
+  };
 }
 export function parseBackgroundPosition(raw: unknown): BackgroundPosition {
   const parsed = hasKeys(raw) ? raw as Partial<BackgroundPosition> : {};

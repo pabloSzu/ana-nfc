@@ -131,6 +131,20 @@
 .v2-btn-label small { font-size: 10px; font-weight: 700; opacity: .82; }
 .v2-pencil { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.25); }
 .v2-pencil svg { width: 11px; height: 11px; }
+.v2-own-badge {
+  position: absolute;
+  top: -8px;
+  right: 38px;
+  padding: 3px 6px;
+  border: 1px solid rgba(255,255,255,.7);
+  border-radius: 999px;
+  background: #fff;
+  color: #5145c8;
+  box-shadow: 0 3px 9px rgba(20,20,30,.18);
+  font-size: 8px;
+  font-weight: 900;
+  line-height: 1;
+}
 .v2-drag { color: currentColor; opacity: .72; font-size: 17px; line-height: 1; cursor: grab; touch-action: none; user-select: none; }
 .v2-drag:active { cursor: grabbing; opacity: 1; }
 .v2-link.is-dragging {

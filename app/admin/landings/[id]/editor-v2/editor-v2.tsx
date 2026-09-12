@@ -4,8 +4,9 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { ActionTypeIcon } from "@/components/action-icons";
 import { IconEdit } from "@/components/icons";
+import LandingRenderer from "@/components/landing-renderer";
 import { compressImage } from "@/lib/compress-image";
-import { AUTO_COLORS, buttonFillStyle, buttonZoneShadow, contrastTextColor, getAllActions, getFontFamily, hexToRgba, resolveBackgroundTint, TEXT_FONT_OPTIONS, type BackgroundPosition, type ButtonZoneStyle, type LogoStyle, type SubtitleStyle, type TitleStyle } from "@/lib/landing-catalog";
+import { AUTO_COLORS, buttonZoneShadow, contrastTextColor, getAllActions, getFontFamily, hexToRgba, logoFrameStyle, resolveBackgroundTint, TEXT_FONT_OPTIONS, type BackgroundPosition, type ButtonZoneStyle, type LogoStyle, type SubtitleStyle, type TitleStyle } from "@/lib/landing-catalog";
 import { DESIGN_PRESETS_V2, buttonCollectionStyle, buttonCollectionWidth, resolveButtonColors, type DesignPreset } from "@/lib/design-presets";
 
 type ButtonItem = { id: string; type: string; title: string; subtitle: string; url: string; message: string; icon: string; background_color: string; text_color: string; use_auto_color: boolean; position: number };
@@ -16,6 +17,7 @@ type LandingDraft = {
   published?: boolean | null; buttonZone: ButtonZoneStyle; titleStyle: TitleStyle; subtitleStyle: SubtitleStyle; logoStyle: LogoStyle; bgPosition: BackgroundPosition;
 };
 type Panel = "templates" | "buttons" | "background" | "profile" | "title" | "subtitle" | "logo" | "add" | { buttonId: string } | null;
+type DeviceMode = "small" | "standard" | "large";
 type SaveAction = (formData: FormData) => void | Promise<void>;
 
 const FONT_LABEL: Record<string, string> = { modern: "Actual", minimal: "Limpia", friendly: "Cercana", classic: "Elegante" };
@@ -24,12 +26,38 @@ const SIZES = [
   { label: "Normales", patch: { height: 52, textSize: 14, iconSize: 29, gap: 9 } },
   { label: "Grandes", patch: { height: 60, textSize: 16, iconSize: 32, gap: 12 } },
 ];
+const DEVICE_OPTIONS: { id: DeviceMode; label: string; size: string }[] = [
+  { id: "small", label: "Chico", size: "360 px" },
+  { id: "standard", label: "Común", size: "390 px" },
+  { id: "large", label: "Grande", size: "430 px" },
+];
+const BUTTON_LOOKS = [
+  { id: "minimal", label: "Limpio", note: "Aireado y discreto" },
+  { id: "corporate", label: "Suave", note: "Prolijo y versátil" },
+  { id: "neobrutal", label: "Marcado", note: "Borde y sombra fuerte" },
+  { id: "glass", label: "Cristal", note: "Transparente y luminoso" },
+  { id: "elegant", label: "Elegante", note: "Oscuro y refinado" },
+  { id: "creator", label: "Vibrante", note: "Redondo y expresivo" },
+] as const;
+type LogoTreatment = "template" | "clean" | "badge" | "card" | "highlight";
+
+function logoTreatmentPatch(treatment: LogoTreatment, templateId = "minimal"): Partial<LogoStyle> {
+  if (treatment === "template") {
+    const recommended: Record<string, Exclude<LogoTreatment, "template">> = { minimal: "clean", brutalism: "card", neobrutal: "highlight", glass: "badge", elegant: "badge", corporate: "card", vibrant: "highlight", natural: "badge", pastel: "badge", neon: "highlight", creator: "card" };
+    return { ...logoTreatmentPatch(recommended[templateId] || "badge", templateId), treatment: "template" };
+  }
+  if (treatment === "clean") return { treatment, borderWidth: 0, shadow: "none", backgroundMode: "auto" };
+  if (treatment === "card") return { treatment, shape: "square", borderWidth: 1, borderColor: "#ffffff", shadow: "soft", backgroundMode: "auto" };
+  if (treatment === "highlight") return { treatment, shape: "round", borderWidth: 5, borderColor: "#ffffff", shadow: "glow", backgroundMode: "auto" };
+  return { treatment, shape: "round", borderWidth: 3, borderColor: "#ffffff", shadow: "soft", backgroundMode: "auto" };
+}
 
 export default function EditorV2({ landing, initialButtons, saveAction }: { landing: LandingDraft; initialButtons: ButtonItem[]; saveAction: SaveAction }) {
   const [draft, setDraft] = useState(landing);
   const [buttons, setButtons] = useState(initialButtons);
   const [panel, setPanel] = useState<Panel>("templates");
   const [preview, setPreview] = useState(false);
+  const [device, setDevice] = useState<DeviceMode>("standard");
   const [dirty, setDirty] = useState(false);
   const [leaveOpen, setLeaveOpen] = useState(false);
   const [bgPreview, setBgPreview] = useState<string | null>(null);
@@ -138,7 +166,7 @@ export default function EditorV2({ landing, initialButtons, saveAction }: { land
 
   const patchDraft = (patch: Partial<LandingDraft>) => { setDraft((current) => ({ ...current, ...patch })); setDirty(true); };
   const change = (patch: Partial<LandingDraft>) => { commitContinuous(); patchDraft(patch); };
-  const changeZone = (patch: Partial<ButtonZoneStyle>) => change({ buttonZone: { ...draft.buttonZone, ...patch, preset: patch.preset || "custom" } });
+  const changeZone = (patch: Partial<ButtonZoneStyle>) => change({ buttonZone: { ...draft.buttonZone, ...patch } });
   const patchButtons = (updater: (current: ButtonItem[]) => ButtonItem[]) => { setButtons(updater); setDirty(true); };
   const changeButton = (id: string, patch: Partial<ButtonItem>) => { commitContinuous(); patchButtons((current) => current.map((button) => button.id === id ? { ...button, ...patch } : button)); };
 
@@ -150,20 +178,23 @@ export default function EditorV2({ landing, initialButtons, saveAction }: { land
       primary_color: preset.accent, button_font: preset.buttonFont,
       background_type: "gradient", background_color: preset.bg1, background_gradient_to: preset.bg2,
       buttonZone: { ...draft.buttonZone, ...preset.buttonZone, layout: "center", oneColor: preset.oneColor, templateId: id },
-      titleStyle: { ...draft.titleStyle, ...preset.title, color: preset.foreground }, subtitleStyle: { ...draft.subtitleStyle, ...preset.subtitle, color: preset.foreground }, logoStyle: { ...draft.logoStyle, ...preset.logo },
+      titleStyle: { ...draft.titleStyle, ...preset.title, color: preset.foreground }, subtitleStyle: { ...draft.subtitleStyle, ...preset.subtitle, color: preset.foreground }, logoStyle: { ...draft.logoStyle, ...logoTreatmentPatch("template", id), ...preset.logo },
     });
   }
 
-  // Applying a button-only template (from the Botones panel) touches just the button
-  // look + font — background, title and logo stay whatever they already were, and
-  // templateId (which general template the rest of the design matches) is untouched.
-  function applyButtonPreset(id: string) {
+  function applyButtonLook(id: string) {
     const preset = DESIGN_PRESETS_V2.find((item) => item.id === id);
     if (!preset) return;
     commitDiscrete();
     patchDraft({
-      button_font: preset.buttonFont,
-      buttonZone: { ...draft.buttonZone, ...preset.buttonZone, layout: "center", oneColor: preset.oneColor },
+      buttonZone: {
+        ...draft.buttonZone,
+        preset: id,
+        collection: preset.buttonZone.collection,
+        radius: preset.buttonZone.radius,
+        shadow: preset.buttonZone.shadow,
+        finish: preset.buttonZone.finish,
+      },
     });
   }
 
@@ -290,6 +321,16 @@ export default function EditorV2({ landing, initialButtons, saveAction }: { land
   const bgStyle: CSSProperties = draft.background_type === "image" && backgroundImage
     ? { backgroundColor: draft.background_color || "#f5f5f5", backgroundImage: `url(${backgroundImage})`, backgroundSize: "cover", backgroundPosition: `${draft.bgPosition.x}% ${draft.bgPosition.y}%`, transform: `scale(${draft.bgPosition.zoom})`, transformOrigin: `${draft.bgPosition.x}% ${draft.bgPosition.y}%` }
     : draft.background_type === "gradient" ? { background: `linear-gradient(145deg,${draft.background_color},${draft.background_gradient_to})` } : { background: draft.background_color || "#f5f5f5" };
+  const rendererLanding = {
+    ...draft,
+    logo_url: logoImage,
+    background_image_url: backgroundImage,
+    button_style: draft.buttonZone,
+    title_style: draft.titleStyle,
+    subtitle_style: draft.subtitleStyle,
+    logo_style: draft.logoStyle,
+    background_style: draft.bgPosition,
+  };
 
   return (
     <main className="v2-shell">
@@ -324,7 +365,7 @@ export default function EditorV2({ landing, initialButtons, saveAction }: { land
         {!preview && panel && <aside className="v2-panel">
           <div className="v2-panel-head"><div><span>Paso simple</span><h2>{panelTitle(panel)}</h2></div><button onClick={() => setPanel(null)}>×</button></div>
           {panel === "templates" && <Templates selected={draft.buttonZone.templateId} onApply={applyPreset} />}
-          {panel === "buttons" && <ButtonDesign draft={draft} onZone={changeZone} onFont={(button_font) => change({ button_font })} onApplyButtonPreset={applyButtonPreset} />}
+          {panel === "buttons" && <ButtonDesign draft={draft} buttons={buttons} onZone={changeZone} onFont={(button_font) => change({ button_font })} onApplyButtonLook={applyButtonLook} />}
           {panel === "background" && <BackgroundControls draft={draft} onChange={change} onFile={onBackgroundFile} />}
           {panel === "profile" && <ProfileControls draft={draft} onChange={change} />}
           {panel === "title" && <TitleControls draft={draft} onChange={change} />}
@@ -334,10 +375,11 @@ export default function EditorV2({ landing, initialButtons, saveAction }: { land
           {activeButton && <ButtonControls button={activeButton} draft={draft} onChange={(patch) => changeButton(activeButton.id, patch)} onDelete={() => { commitDiscrete(); patchButtons((current) => current.filter((item) => item.id !== activeButton.id)); setPanel(null); }} />}
         </aside>}
 
-        <section className="v2-stage">
-          {preview && <div className="v2-preview-note">Así la verá tu cliente</div>}
-          <div className="v2-phone">
+        <section className={`v2-stage device-${device}`}>
+          <div className="v2-stage-toolbar"><span>{preview ? "Vista limpia" : "Tamaño de pantalla"}</span><div className="v2-device-switcher">{DEVICE_OPTIONS.map((option) => <button key={option.id} type="button" className={device === option.id ? "active" : ""} title={option.size} onClick={() => setDevice(option.id)}>{option.label}</button>)}</div></div>
+          <div className={`v2-phone device-${device}`}>
             <div className="v2-phone-screen">
+              {preview ? <LandingRenderer landing={rendererLanding} actions={buttons} preview /> : <>
               <div className="v2-bg" style={bgStyle} />
               <div className="v2-tint" style={{ background: `rgba(5,8,11,${resolveBackgroundTint(draft.background_type, draft.bgPosition.tint)})` }} />
               {!preview && <div className="v2-phone-tools"><button type="button" className={panel === "templates" ? "active" : ""} onClick={() => setPanel("templates")}>✦ Plantillas</button><button type="button" className={panel === "background" ? "active" : ""} onClick={() => setPanel("background")}>▧ Fondo</button></div>}
@@ -345,7 +387,7 @@ export default function EditorV2({ landing, initialButtons, saveAction }: { land
               <div className={`v2-content layout-${draft.buttonZone.layout}`}>
                 <div className="v2-identity-block">
                 <button className={`v2-edit-element v2-logo-hit ${panel === "logo" ? "is-selected" : ""}`} type="button" onClick={() => !preview && setPanel("logo")} aria-label="Editar logo">
-                  <div className="v2-avatar" style={{ width: draft.logoStyle.size, height: draft.logoStyle.size, borderRadius: draft.logoStyle.shape === "round" ? "50%" : 24, background: draft.logoStyle.fallback }}>
+                  <div className="v2-avatar" style={{ ...logoFrameStyle(draft.logoStyle, draft.primary_color || "#1f2937", Boolean(logoImage)), width: draft.logoStyle.size, height: draft.logoStyle.size, borderRadius: draft.logoStyle.shape === "round" ? "50%" : 24 }}>
                     {logoImage ? <span style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${draft.logoStyle.zoom * 100}%`, backgroundPosition: `${draft.logoStyle.x}% ${draft.logoStyle.y}%` }} /> : draft.business_name.slice(0, 1)}
                   </div>
                   {!preview && <span className="v2-element-tag">Logo</span>}
@@ -360,17 +402,19 @@ export default function EditorV2({ landing, initialButtons, saveAction }: { land
                 </button>
                 </div>
                 <div ref={buttonsContainerRef} className={`v2-links ${panel === "buttons" ? "is-selected" : ""}`} style={{ display: "flex", flexDirection: "column", gap: draft.buttonZone.gap }}>
-                  {!preview && <button type="button" className="v2-zone-tag" onClick={() => setPanel("buttons")}>✦ Diseño de la botonera</button>}
+                  {!preview && <button type="button" className="v2-zone-tag" onClick={() => setPanel("buttons")}>✦ Editar todos los botones</button>}
                   {buttons.map((button, index) => { const colors = resolveButtonColors({ zone: draft.buttonZone, type: button.type, position: index, primary: draft.primary_color || "#1f2937", customColor: button.background_color, useAutoColor: button.use_auto_color }); return (
-                    <button ref={(element) => { if (element) buttonElements.current.set(button.id, element); else buttonElements.current.delete(button.id); }} key={button.id} data-button-id={button.id} type="button" className={`v2-link button-collection-${draft.buttonZone.collection} ${panel && typeof panel === "object" && panel.buttonId === button.id ? "is-selected" : ""} ${draggingId === button.id ? "is-dragging" : ""}`} onClick={() => !preview && setPanel({ buttonId: button.id })} style={{ ...buttonFillStyle(draft.buttonZone.finish, colors.background, colors.text), ...buttonCollectionStyle(draft.buttonZone.collection, colors.background, colors.text, index), width: buttonCollectionWidth(draft.buttonZone, index), minHeight: draft.buttonZone.height, margin: "0 auto", borderRadius: draft.buttonZone.radius, boxShadow: buttonCollectionStyle(draft.buttonZone.collection, colors.background, colors.text, index).boxShadow || buttonZoneShadow(draft.buttonZone.shadow), fontFamily: getFontFamily(draft.button_font || "modern"), fontSize: draft.buttonZone.textSize }}>
+                    <button ref={(element) => { if (element) buttonElements.current.set(button.id, element); else buttonElements.current.delete(button.id); }} key={button.id} data-button-id={button.id} type="button" className={`v2-link button-collection-${draft.buttonZone.collection} ${panel && typeof panel === "object" && panel.buttonId === button.id ? "is-selected" : ""} ${draggingId === button.id ? "is-dragging" : ""}`} onClick={() => !preview && setPanel({ buttonId: button.id })} style={{ ...buttonCollectionStyle(draft.buttonZone.collection, colors.background, colors.text, index), width: buttonCollectionWidth(draft.buttonZone, index), minHeight: draft.buttonZone.height, margin: "0 auto", borderRadius: draft.buttonZone.radius, boxShadow: buttonCollectionStyle(draft.buttonZone.collection, colors.background, colors.text, index).boxShadow || buttonZoneShadow(draft.buttonZone.shadow), fontFamily: getFontFamily(draft.button_font || "modern"), fontSize: draft.buttonZone.textSize }}>
                       <span className="v2-btn-icon" style={{ width: draft.buttonZone.iconSize, height: draft.buttonZone.iconSize, fontSize: draft.buttonZone.iconSize * 0.52 }}><ActionTypeIcon type={button.type} icon={button.icon} /></span>
                       <span className="v2-btn-label"><b>{button.title}</b>{button.subtitle && <small>{button.subtitle}</small>}</span>
+                      {!preview && !button.use_auto_color && <span className="v2-own-badge">Propio</span>}
                       {!preview && <span className="v2-pencil" title="Editar botón"><IconEdit /></span>}
                       {!preview && <span className="v2-drag" title="Arrastrar para cambiar el orden" aria-label="Mover botón" onClick={(event)=>event.stopPropagation()} onPointerDown={(event)=>{ event.preventDefault(); startDrag(event.clientY, button.id); }}>⠿</span>}
                     </button> ); })}
-                  {!preview && <button className="v2-add-link" type="button" onClick={() => setPanel("add")}>＋ Agregar botón</button>}
+                  {!preview && <button className="v2-add-link" type="button" style={{ borderRadius: draft.buttonZone.radius, minHeight: draft.buttonZone.height }} onClick={() => setPanel("add")}><span className="v2-add-icon">＋</span><span>Agregar botón</span></button>}
                 </div>
               </div>
+              </>}
             </div>
           </div>
         </section>
@@ -381,7 +425,7 @@ export default function EditorV2({ landing, initialButtons, saveAction }: { land
   );
 }
 
-function panelTitle(panel: Exclude<Panel, null>) { if (typeof panel === "object") return "Editar botón"; return ({ templates: "Elegí una plantilla", buttons: "Diseño de la botonera", background: "Editar fondo", profile: "Contenido del perfil", title: "Editar título", subtitle: "Editar subtítulo", logo: "Editar logo", add: "Agregar un botón" } as const)[panel]; }
+function panelTitle(panel: Exclude<Panel, null>) { if (typeof panel === "object") return "Editar botón"; return ({ templates: "Elegí una plantilla", buttons: "Editar todos los botones", background: "Editar fondo", profile: "Contenido del perfil", title: "Editar título", subtitle: "Editar subtítulo", logo: "Editar logo", add: "Agregar un botón" } as const)[panel]; }
 
 function TemplateSwatch({ preset }: { preset: DesignPreset }) {
   const colors = preset.buttonZone.colorMode === "auto"
@@ -429,51 +473,55 @@ function TemplateSwatch({ preset }: { preset: DesignPreset }) {
 
 function Templates({ selected, onApply }: { selected: string; onApply: (id: string) => void }) { return <div><p className="v2-help">Todas mantienen la estructura simple tipo Linktree: logo, título, subtítulo y botones centrados. La miniatura muestra el resultado real de colores, tipografía y botones.</p><div className="v2-template-grid">{DESIGN_PRESETS_V2.map((preset) => <button key={preset.id} type="button" className={selected === preset.id ? "selected" : ""} onClick={() => onApply(preset.id)}><TemplateSwatch preset={preset} /><b>{preset.name}</b><small>{preset.description}</small></button>)}</div></div>; }
 
-// Button-only template picker: literally the same catalog as the general "Plantillas" tab,
-// applying just the button slice (see applyButtonPreset). Keeping one single catalog of
-// looks — instead of a separate raw list of button "collections" — is what stops mismatched,
-// ugly combinations from happening in the first place.
-function ButtonDesign({ draft, onZone, onFont, onApplyButtonPreset }: { draft: LandingDraft; onZone: (p: Partial<ButtonZoneStyle>) => void; onFont: (font: string) => void; onApplyButtonPreset: (id: string) => void }) {
+function ButtonLookSwatch({ preset, zone }: { preset: DesignPreset; zone: ButtonZoneStyle }) {
+  const backgrounds = zone.colorMode === "one"
+    ? [zone.oneColor, zone.oneColor]
+    : [AUTO_COLORS.whatsapp, AUTO_COLORS.instagram];
+  return <span className="v2-look-swatch" aria-hidden="true">
+    {backgrounds.map((background, index) => (
+      <i key={index} style={{ ...buttonCollectionStyle(preset.buttonZone.collection, background, contrastTextColor(background), index), borderRadius: preset.buttonZone.radius * .35 }} />
+    ))}
+  </span>;
+}
+
+function ButtonDesign({ draft, buttons, onZone, onFont, onApplyButtonLook }: { draft: LandingDraft; buttons: ButtonItem[]; onZone: (p: Partial<ButtonZoneStyle>) => void; onFont: (font: string) => void; onApplyButtonLook: (id: string) => void }) {
   const zone = draft.buttonZone;
-  const matchesTemplate = zone.templateId !== "custom" && zone.preset === zone.templateId;
-  const [pickingTemplate, setPickingTemplate] = useState(!matchesTemplate);
-  const activeTemplate = DESIGN_PRESETS_V2.find((item) => item.id === zone.preset);
+  const customCount = buttons.filter((button) => !button.use_auto_color).length;
   return (
     <div className="v2-fields">
+      {buttons.length > 0 && (
+        <div className="v2-scope-summary">
+          <b>Este diseño se aplica a todos</b>
+          <span>
+          {customCount === 0
+            ? `${buttons.length} de ${buttons.length} botones lo usan.`
+            : `${buttons.length - customCount} lo usan · ${customCount} ${customCount === 1 ? "tiene color propio" : "tienen color propio"}.`}
+          </span>
+        </div>
+      )}
       <fieldset>
-        <legend>Estilo de los botones</legend>
-        <Choice
-          active={!pickingTemplate && matchesTemplate}
-          title="Usar el estilo de la plantilla actual"
-          note={zone.templateId !== "custom" ? `Coordinado con tu plantilla (${DESIGN_PRESETS_V2.find((item) => item.id === zone.templateId)?.name ?? zone.templateId}).` : "Elegí primero una plantilla general en el panel de Plantillas."}
-          onClick={() => { setPickingTemplate(false); if (zone.templateId !== "custom") onApplyButtonPreset(zone.templateId); }}
-        />
-        <Choice
-          active={pickingTemplate || (!matchesTemplate && zone.templateId !== "custom")}
-          title="Elegir otra plantilla solo para los botones"
-          note={activeTemplate && (pickingTemplate || !matchesTemplate) ? `Usando "${activeTemplate.name}" en los botones.` : "Mezclá el estilo de otra plantilla sin cambiar el resto del diseño."}
-          onClick={() => setPickingTemplate(true)}
-        />
-        {pickingTemplate && (
-          <div className="v2-template-grid v2-template-grid-compact">
-            {DESIGN_PRESETS_V2.map((preset) => (
-              <button key={preset.id} type="button" className={zone.preset === preset.id ? "selected" : ""} onClick={() => { onApplyButtonPreset(preset.id); setPickingTemplate(false); }}>
-                <TemplateSwatch preset={preset} />
-                <b>{preset.name}</b>
-              </button>
-            ))}
-          </div>
-        )}
+        <legend>Apariencia</legend>
+        <div className="v2-look-grid">
+          {BUTTON_LOOKS.map((look) => {
+            const preset = DESIGN_PRESETS_V2.find((item) => item.id === look.id)!;
+            return <button type="button" key={look.id} className={zone.preset === look.id ? "active" : ""} onClick={() => onApplyButtonLook(look.id)}>
+              <ButtonLookSwatch preset={preset} zone={zone} />
+              <b>{look.label}</b><small>{look.note}</small>
+            </button>;
+          })}
+        </div>
       </fieldset>
       <fieldset>
-        <legend>Colores</legend>
-        <Choice active={draft.buttonZone.colorMode === "auto"} title="Colores originales" note="WhatsApp verde, Instagram rosa y cada marca con su color." onClick={() => onZone({ colorMode: "auto" })} />
-        <Choice active={draft.buttonZone.colorMode === "one"} title="Un color para todos" note="Un look uniforme con el color de tu marca." onClick={() => onZone({ colorMode: "one" })} />
+        <legend>Regla de color</legend>
+        <Choice active={draft.buttonZone.colorMode === "one"} swatch={draft.buttonZone.oneColor} title="Un color para todos" note="Los botones que usan el diseño general tendrán este color." onClick={() => onZone({ colorMode: "one" })} />
         {draft.buttonZone.colorMode === "one" && <ColorField label="Color de los botones" value={draft.buttonZone.oneColor} onChange={(oneColor) => onZone({ oneColor })} />}
-      </fieldset><fieldset><legend>Tamaño</legend><div className="v2-segment">{SIZES.map((item) => <button type="button" className={draft.buttonZone.height === item.patch.height ? "active" : ""} key={item.label} onClick={() => onZone(item.patch)}>{item.label}</button>)}</div></fieldset><label>Tipografía<select value={draft.button_font || "modern"} onChange={(event) => onFont(event.target.value)}>{Object.entries(FONT_LABEL).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+        <Choice active={draft.buttonZone.colorMode === "auto"} title="Cada red con su color" note="WhatsApp verde, Instagram rosa y cada marca con su color oficial." onClick={() => onZone({ colorMode: "auto" })} />
+      </fieldset>
+      <fieldset><legend>Tamaño</legend><div className="v2-segment">{SIZES.map((item) => <button type="button" className={draft.buttonZone.height === item.patch.height ? "active" : ""} key={item.label} onClick={() => onZone(item.patch)}>{item.label}</button>)}</div></fieldset>
       <details className="v2-advanced">
-        <summary>Opciones avanzadas</summary>
+        <summary>Más opciones</summary>
         <div className="v2-fields" style={{ marginTop: 10 }}>
+          <label>Tipografía<select value={draft.button_font || "modern"} onChange={(event) => onFont(event.target.value)}>{Object.entries(FONT_LABEL).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label>
           <Range label="Alto del botón" min={40} max={72} value={zone.height} onChange={(height) => onZone({ height })} />
           <Range label="Espaciado entre botones" min={4} max={20} value={zone.gap} onChange={(gap) => onZone({ gap })} />
           <Range label="Tamaño del ícono" min={22} max={38} value={zone.iconSize} onChange={(iconSize) => onZone({ iconSize })} />
@@ -499,7 +547,19 @@ function TitleControls({ draft, onChange }: { draft: LandingDraft; onChange: (p:
 
 function SubtitleControls({ draft, onChange }: { draft: LandingDraft; onChange: (p: Partial<LandingDraft>) => void }) { const style=draft.subtitleStyle; const update=(patch:Partial<SubtitleStyle>)=>onChange({subtitleStyle:{...style,...patch}}); const preset=suggestedPreset(draft.buttonZone.templateId); return <div className="v2-fields"><label>Texto del subtítulo<textarea rows={3} value={draft.description || ""} onChange={(e)=>onChange({description:e.target.value})}/></label><button type="button" className="v2-suggested" onClick={()=>update({...preset.subtitle,color:preset.foreground})}>✦ Usar estilos recomendados ({preset.name})</button><label>Tipografía<select value={style.font} onChange={(e)=>update({font:e.target.value})}>{TEXT_FONT_OPTIONS.map((font)=><option key={font.value} value={font.value}>{font.label}</option>)}</select></label><Range label="Tamaño" min={11} max={26} value={style.size} onChange={(size)=>update({size})}/><fieldset><legend>Grosor</legend><div className="v2-segment">{[400,600,800].map((weight)=><button key={weight} className={style.weight===weight?"active":""} onClick={()=>update({weight})}>{weight===400?"Normal":weight===600?"Medio":"Fuerte"}</button>)}</div></fieldset><ColorField label="Color del texto" value={style.color} onChange={(color)=>update({color})}/><Choice active={style.bgMode==="solid"} title="Fondo detrás del texto" note="Mejora la lectura cuando hay una imagen." onClick={()=>update({bgMode:style.bgMode==="solid"?"none":"solid"})}/>{style.bgMode==="solid"&&<ColorField label="Color del fondo" value={style.bg} onChange={(bg)=>update({bg})}/>}</div>; }
 
-function LogoControls({ draft, logoImage, onChange, onLogo, onRemoveLogo }: { draft: LandingDraft; logoImage: string; onChange: (p: Partial<LandingDraft>) => void; onLogo: (file?: File) => void; onRemoveLogo: () => void }) { const preset=suggestedPreset(draft.buttonZone.templateId); return <div className="v2-fields"><p className="v2-help">La plantilla recomienda una forma y tamaño, pero podés cambiar todo.</p><div className="v2-logo-editor"><div style={{borderRadius:draft.logoStyle.shape === "round" ? "50%" : 18,background:draft.logoStyle.fallback}}>{logoImage ? <span style={{backgroundImage:`url(${logoImage})`,backgroundSize:`${draft.logoStyle.zoom*100}%`,backgroundPosition:`${draft.logoStyle.x}% ${draft.logoStyle.y}%`}}/> : draft.business_name.slice(0,1)}</div><span><label className="v2-upload">Elegir imagen<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event)=>onLogo(event.target.files?.[0])}/></label>{logoImage && <button type="button" className="v2-delete" onClick={onRemoveLogo}>Quitar</button>}</span></div><button type="button" className="v2-suggested" onClick={()=>onChange({logoStyle:{...draft.logoStyle,...preset.logo}})}>✦ Usar estilos recomendados ({preset.name})</button><div className="v2-segment"><button className={draft.logoStyle.shape === "round" ? "active" : ""} onClick={()=>onChange({logoStyle:{...draft.logoStyle,shape:"round"}})}>Redondo</button><button className={draft.logoStyle.shape === "square" ? "active" : ""} onClick={()=>onChange({logoStyle:{...draft.logoStyle,shape:"square"}})}>Cuadrado</button></div><Range label="Tamaño" min={72} max={190} value={draft.logoStyle.size} onChange={(size)=>onChange({logoStyle:{...draft.logoStyle,size}})}/><ColorField label="Color si no hay imagen" value={draft.logoStyle.fallback} onChange={(fallback)=>onChange({logoStyle:{...draft.logoStyle,fallback}})}/>{logoImage && <><Range label="Acercar imagen" min={1} max={2.5} step={.01} value={draft.logoStyle.zoom} onChange={(zoom)=>onChange({logoStyle:{...draft.logoStyle,zoom}})}/><Range label="Mover horizontal" min={0} max={100} value={draft.logoStyle.x} onChange={(x)=>onChange({logoStyle:{...draft.logoStyle,x}})}/><Range label="Mover vertical" min={0} max={100} value={draft.logoStyle.y} onChange={(y)=>onChange({logoStyle:{...draft.logoStyle,y}})}/></>}</div>; }
+function LogoControls({ draft, logoImage, onChange, onLogo, onRemoveLogo }: { draft: LandingDraft; logoImage: string; onChange: (p: Partial<LandingDraft>) => void; onLogo: (file?: File) => void; onRemoveLogo: () => void }) {
+  const preset = suggestedPreset(draft.buttonZone.templateId);
+  const style = draft.logoStyle;
+  const primary = draft.primary_color || "#1f2937";
+  const update = (patch: Partial<LogoStyle>) => onChange({ logoStyle: { ...style, ...patch } });
+  return <div className="v2-fields">
+    <div className="v2-logo-editor"><div style={{ ...logoFrameStyle(style, primary, Boolean(logoImage)), borderRadius: style.shape === "round" ? "50%" : 18 }}>{logoImage ? <span style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${style.zoom * 100}%`, backgroundPosition: `${style.x}% ${style.y}%` }} /> : draft.business_name.slice(0,1)}</div><span><label className="v2-upload">{logoImage ? "Cambiar imagen" : "Elegir imagen"}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => onLogo(event.target.files?.[0])} /></label>{logoImage && <button type="button" className="v2-delete" onClick={onRemoveLogo}>Quitar</button>}</span></div>
+    <button type="button" className="v2-suggested v2-logo-recommended-button" onClick={() => onChange({ logoStyle: { ...style, ...logoTreatmentPatch("template", draft.buttonZone.templateId), ...preset.logo, zoom: 1, x: 50, y: 50 } })}>✦ Usar estilos recomendados ({preset.name})</button>
+    <Range label="Tamaño" min={72} max={190} value={style.size} onChange={(size) => update({ size })} />
+    <Range label="Borde" min={0} max={10} value={style.borderWidth} onChange={(borderWidth) => update({ borderWidth, treatment: "custom" })} />
+    {logoImage && <><Range label="Zoom" min={1} max={2.5} step={.01} value={style.zoom} onChange={(zoom) => update({ zoom })} /><Range label="Horizontal" min={0} max={100} value={style.x} onChange={(x) => update({ x })} /><Range label="Vertical" min={0} max={100} value={style.y} onChange={(y) => update({ y })} /></>}
+  </div>;
+}
 
 function ActionCatalog({ onAdd }: { onAdd: (type: string) => void }) { return <div><p className="v2-help">Elegí la acción. Ya viene con su nombre, icono y color oficial.</p><div className="v2-action-grid">{getAllActions().map((action)=><button type="button" key={action.type} onClick={()=>onAdd(action.type)}><ActionTypeIcon type={action.type}/><span><b>{action.label}</b><small>{action.input === "phone" ? "Número de teléfono" : action.input === "username" ? "Nombre de usuario" : "Enlace"}</small></span><em>＋</em></button>)}</div></div>; }
 
@@ -507,15 +567,10 @@ function ButtonControls({ button,draft,onChange,onDelete }: { button: ButtonItem
   const def=getAllActions().find((item)=>item.type===button.type);
   const brandColor = AUTO_COLORS[button.type] || draft.primary_color || "#1f2937";
   const globalColor = resolveButtonColors({ zone: draft.buttonZone, type: button.type, position: 0, primary: draft.primary_color || "#1f2937", customColor: null, useAutoColor: true }).background;
-  // "Color de marca" only makes sense as its OWN choice when it would actually differ from
-  // "Como el resto" — if the botonera is already set to colores originales (auto), the two
-  // are the exact same color, so showing both as separate options was the confusing part.
-  const showBrandOption = brandColor !== globalColor;
-  const mode: "global" | "brand" | "custom" =
-    button.use_auto_color ? "global"
-    : showBrandOption && button.background_color === brandColor ? "brand"
-    : button.background_color === globalColor ? "global"
-    : "custom";
+  const globalDescription = draft.buttonZone.colorMode === "one"
+    ? `Usa el color general ${globalColor.toUpperCase()}.`
+    : `Usa el color oficial de ${def?.label || "esta acción"}.`;
+  const ownColor = button.background_color || brandColor;
   return <div className="v2-fields">
     <div className="v2-brand"><ActionTypeIcon type={button.type}/><span><b>{def?.label || "Enlace"}</b><small>Icono incluido automáticamente</small></span></div>
     <label>Texto del botón<input value={button.title} onChange={(e)=>onChange({title:e.target.value})}/></label>
@@ -523,16 +578,19 @@ function ButtonControls({ button,draft,onChange,onDelete }: { button: ButtonItem
     <label>{def?.input === "phone" ? "Número" : def?.input === "email" ? "Email" : def?.input === "username" ? "Usuario" : "Enlace"}<input value={button.url} placeholder={def?.placeholder} onChange={(e)=>onChange({url:e.target.value})}/></label>
     {def?.message && <label>Mensaje de WhatsApp<textarea rows={3} value={button.message} onChange={(e)=>onChange({message:e.target.value})}/></label>}
     <fieldset>
-      <legend>Color de este botón</legend>
-      <Choice active={mode==="global"} swatch={globalColor} title="Como el resto de los botones" note={showBrandOption ? "Lo que definiste en Diseño de la botonera → Colores." : "El color de marca de esta red, igual que los demás botones."} onClick={()=>onChange({use_auto_color:true})}/>
-      {showBrandOption && <Choice active={mode==="brand"} swatch={brandColor} title={`Color de marca${def ? ` (${def.label})` : ""}`} note="El color oficial de esta red, aunque los demás botones tengan otro." onClick={()=>onChange({use_auto_color:false,background_color:brandColor})}/>}
-      <Choice active={mode==="custom"} swatch={mode==="custom" ? (button.background_color || undefined) : undefined} title="Color personalizado" note="Elegí cualquier color, solo para este botón." onClick={()=>onChange({use_auto_color:false,background_color: mode==="custom" ? (button.background_color || "#1f2937") : (draft.primary_color || "#1f2937")})}/>
-      {mode==="custom" && <ColorField label="Elegí el color" value={button.background_color || "#1f2937"} onChange={(background_color)=>onChange({background_color})}/>}
+      <legend>Apariencia de este botón</legend>
+      <Choice active={button.use_auto_color} swatch={globalColor} title="Usar el diseño general" note={globalDescription} onClick={()=>onChange({use_auto_color:true})}/>
+      <Choice active={!button.use_auto_color} swatch={ownColor} title="Usar un color propio" note="Solo este botón queda separado de la regla general." onClick={()=>onChange({use_auto_color:false,background_color:ownColor})}/>
+      {!button.use_auto_color && <div className="v2-own-color">
+        <ColorField label="Color propio" value={ownColor} onChange={(background_color)=>onChange({background_color})}/>
+        {ownColor.toLowerCase() !== brandColor.toLowerCase() && <button type="button" className="v2-inline-action" onClick={()=>onChange({background_color:brandColor})}><i style={{background:brandColor}} /> Usar color oficial de {def?.label || "la marca"}</button>}
+        <button type="button" className="v2-reset-action" onClick={()=>onChange({use_auto_color:true})}>↩ Volver al diseño general</button>
+      </div>}
     </fieldset>
-    <button className="v2-delete" onClick={onDelete}>Eliminar botón</button>
+    <button type="button" className="v2-delete" onClick={onDelete}>Eliminar botón</button>
   </div>;
 }
 
 function Choice({active,title,note,onClick,swatch}:{active:boolean;title:string;note:string;onClick:()=>void;swatch?:string}) { return <button type="button" className={`v2-choice ${active?"active":""}`} onClick={onClick}><i>{active?"✓":""}</i>{swatch && <em className="v2-choice-swatch" style={{background:swatch}} />}<span><b>{title}</b><small>{note}</small></span></button>; }
 function ColorField({label,value,onChange}:{label:string;value:string;onChange:(v:string)=>void}) { return <label className="v2-color"><span>{label}</span><input type="color" value={value} onChange={(e)=>onChange(e.target.value)}/><code>{value.toUpperCase()}</code></label>; }
-function Range({label,min,max,step=1,value,onChange}:{label:string;min:number;max:number;step?:number;value:number;onChange:(v:number)=>void}) { return <label className="v2-range"><span>{label}<b>{Math.round(value*(max<=2.2?100:1))}{max<=.65?"%":""}</b></span><input type="range" min={min} max={max} step={step} value={value} onChange={(e)=>onChange(Number(e.target.value))}/></label>; }
+function Range({label,min,max,step=1,value,onChange}:{label:string;min:number;max:number;step?:number;value:number;onChange:(v:number)=>void}) { const scaledPercent=max<=3; const percent=scaledPercent||label==="Horizontal"||label==="Vertical"; const pixels=!percent&&(label==="Tamaño"||label==="Borde"||label.includes("Alto")||label.includes("Espaciado")||label.includes("ícono")||label.includes("texto")); return <label className="v2-range"><span>{label}<b>{Math.round(value*(scaledPercent?100:1))}{percent?"%":pixels?" px":""}</b></span><input type="range" min={min} max={max} step={step} value={value} onChange={(e)=>onChange(Number(e.target.value))}/></label>; }

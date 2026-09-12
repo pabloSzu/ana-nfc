@@ -123,7 +123,12 @@ export const BUTTON_COLLECTIONS: { id: ButtonZoneStyle["collection"]; name: stri
 ];
 
 export function buttonCollectionStyle(collection: ButtonZoneStyle["collection"], bg: string, text: string, index = 0): CSSProperties {
-  if (collection === "glass") return { background: `linear-gradient(135deg, color-mix(in srgb, ${bg} 34%, transparent), rgba(255,255,255,.12))`, color: text, border: "1px solid rgba(255,255,255,.42)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.35), 0 10px 25px rgba(0,0,0,.16)", backdropFilter: "blur(14px) saturate(1.25)" };
+  // Glass sits on a busy/vivid background, so it needs two things a plain translucent tint
+  // doesn't give on its own: a bright diagonal sheen (the actual visual cue for "glass", not
+  // just "see-through") and a crisp light rim to separate it from whatever's behind it. Mixing
+  // only the button's own color into transparent (the previous version) produced a muddy tint
+  // with no highlight — technically translucent, but nothing read as glass.
+  if (collection === "glass") return { background: `linear-gradient(135deg, rgba(255,255,255,.5), rgba(255,255,255,.14) 45%, color-mix(in srgb, ${bg} 55%, transparent) 100%)`, color: "#ffffff", textShadow: "0 1px 5px rgba(0,0,0,.4)", border: "1.5px solid rgba(255,255,255,.75)", boxShadow: "inset 0 1.5px 0 rgba(255,255,255,.85), inset 0 -12px 18px -12px rgba(255,255,255,.35), 0 14px 30px rgba(0,0,0,.25)", backdropFilter: "blur(20px) saturate(1.6)" };
   if (collection === "brand") return { background: `linear-gradient(135deg, color-mix(in srgb, ${bg} 88%, white), color-mix(in srgb, ${bg} 78%, black))`, color: text, border: "1px solid rgba(255,255,255,.2)", boxShadow: `0 9px 22px color-mix(in srgb, ${bg} 30%, transparent), inset 0 1px 0 rgba(255,255,255,.28)` };
   if (collection === "glow") return { background: `linear-gradient(135deg, color-mix(in srgb, ${bg} 78%, #10101a), #12121d)`, color: "#ffffff", border: `1px solid color-mix(in srgb, ${bg} 78%, white)`, boxShadow: `0 0 0 1px color-mix(in srgb, ${bg} 18%, transparent), 0 8px 26px color-mix(in srgb, ${bg} 44%, transparent), inset 0 1px 0 rgba(255,255,255,.16)` };
   // These two used to hardcode their background/text and quietly ignore the chosen color —

@@ -6,7 +6,7 @@ import { useDraft, type Draft } from "../draft-context";
 import BackgroundPicker from "../background-picker";
 import { compressImage } from "@/lib/compress-image";
 import {
-  getAllActions, AUTO_COLORS, displayUsername, contrastTextColor, buttonZoneShadow, buttonFillStyle, autoTextColor, resolveBackgroundTint,
+  getAllActions, AUTO_COLORS, displayUsername, contrastTextColor, buttonZoneShadow, buttonFillStyle, autoTextColor, logoBackgroundColor, logoFrameStyle, resolveBackgroundTint,
   TEXT_FONT_OPTIONS, hexToRgba,
 } from "@/lib/landing-catalog";
 import { ActionTypeIcon } from "@/components/action-icons";
@@ -114,6 +114,7 @@ export default function VisualEditor({
   const title = draft.titleStyle;
   const subtitle = draft.subtitleStyle;
   const logo = draft.logoStyle;
+  const logoBackground = logoBackgroundColor(logo, draft.primary_color || "#1f2937");
   const bgPos = draft.bgPosition;
   const backgroundTint = resolveBackgroundTint(draft.background_type, bgPos.tint);
   const backgroundImageSrc = backgroundPreviewUrl || (!backgroundRemoved ? draft.background_image_url : "");
@@ -408,7 +409,7 @@ export default function VisualEditor({
               <div className="visual-statusbar"><span>9:41</span><span>▮▮▮ ● ▰</span></div>
 
               <div className="visual-scroll">
-                <div className={previewMode ? "visual-logo" : "visual-logo editable"} style={{ width: logo.size, height: logo.size, borderRadius: logo.shape === "round" ? "50%" : "28px", background: draft.primary_color || logo.fallback }} onClick={(e) => { if (!previewMode) openSheet("logo", e.currentTarget); }}>
+                <div className={previewMode ? "visual-logo" : "visual-logo editable"} style={{ ...logoFrameStyle(logo, draft.primary_color || "#1f2937", Boolean(draft.logo_url)), width: logo.size, height: logo.size, borderRadius: logo.shape === "round" ? "50%" : "28px" }} onClick={(e) => { if (!previewMode) openSheet("logo", e.currentTarget); }}>
                   {draft.logo_url ? <div style={{ width: "100%", height: "100%", backgroundImage: `url(${draft.logo_url})`, backgroundSize: `${logo.zoom * 100}%`, backgroundPosition: `${logo.x}% ${logo.y}%` }} /> : <span className="visual-initial">{draft.business_name.slice(0, 1) || "?"}</span>}
                   {!previewMode && <span className="visual-edit-bubble"><IconEdit /></span>}
                 </div>
@@ -527,7 +528,7 @@ export default function VisualEditor({
                       src={draft.logo_url}
                       width={Math.min(logo.size, 140)} height={Math.min(logo.size, 140)}
                       radius={logo.shape === "round" ? "50%" : 20}
-                      zoom={logo.zoom} x={logo.x} y={logo.y} fallback={draft.primary_color || logo.fallback}
+                      zoom={logo.zoom} x={logo.x} y={logo.y} fallback={logoBackground}
                       minZoom={1} maxZoom={2.5}
                       onChange={(next) => update({ logoStyle: { ...logo, ...next } })}
                     />
