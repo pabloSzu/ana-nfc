@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ActionTypeIcon } from "@/components/action-icons";
+import { FiLink } from "react-icons/fi";
 import LandingRenderer, { type LandingEditControls } from "@/components/landing-renderer";
 import { compressImage } from "@/lib/compress-image";
 import { AUTO_COLORS, contrastTextColor, getAllActions, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize, type BackgroundPosition, type ButtonZoneStyle, type LogoStyle, type SubtitleStyle, type TitleStyle } from "@/lib/landing-catalog";
 import FontPicker from "../font-picker";
+import IconPicker from "../icon-picker";
 import { DESIGN_PRESETS_V2, buttonCollectionStyle, buttonIconStyle, recommendedIconAppearance, resolveButtonColors, type DesignPreset } from "@/lib/design-presets";
 
 type ButtonItem = { id: string; type: string; title: string; subtitle: string; url: string; message: string; icon: string; background_color: string; text_color: string; use_auto_color: boolean; position: number };
@@ -623,7 +625,18 @@ function LogoControls({ draft, logoImage, onChange, onLogo, onRemoveLogo }: { dr
   </div>;
 }
 
-function ActionCatalog({ onAdd }: { onAdd: (type: string) => void }) { return <div><p className="v2-help">Elegí la acción. Ya viene con su nombre, icono y color oficial.</p><div className="v2-action-grid">{getAllActions().map((action)=><button type="button" key={action.type} onClick={()=>onAdd(action.type)}><ActionTypeIcon type={action.type}/><span><b>{action.label}</b><small>{action.input === "phone" ? "Número de teléfono" : action.input === "username" ? "Nombre de usuario" : "Enlace"}</small></span><em>＋</em></button>)}</div></div>; }
+function ActionCatalog({ onAdd }: { onAdd: (type: string) => void }) {
+  const networkActions = getAllActions().filter((action) => action.type !== "url");
+  return <div>
+    <p className="v2-help">Elegí la red o acción. Ya viene con su nombre, ícono y color oficial.</p>
+    <div className="v2-action-grid">{networkActions.map((action)=><button type="button" key={action.type} onClick={()=>onAdd(action.type)}><ActionTypeIcon type={action.type}/><span><b>{action.label}</b><small>{action.input === "phone" ? "Número de teléfono" : action.input === "username" ? "Nombre de usuario" : "Enlace"}</small></span><em>＋</em></button>)}</div>
+    <button type="button" className="v2-custom-action" onClick={()=>onAdd("url")}>
+      <span className="v2-custom-action-icon"><FiLink /></span>
+      <span><b>Agregar botón personalizado</b><small>Cualquier enlace: tu menú, un formulario, otra red, lo que necesites.</small></span>
+      <em>＋</em>
+    </button>
+  </div>;
+}
 
 function ButtonControls({ button,draft,onChange,onDelete }: { button: ButtonItem; draft: LandingDraft; onChange:(p:Partial<ButtonItem>)=>void; onDelete:()=>void }) {
   const def=getAllActions().find((item)=>item.type===button.type);
@@ -634,11 +647,12 @@ function ButtonControls({ button,draft,onChange,onDelete }: { button: ButtonItem
     : `Usa el color oficial de ${def?.label || "esta acción"}.`;
   const ownColor = button.background_color || brandColor;
   return <div className="v2-fields">
-    <div className="v2-brand"><ActionTypeIcon type={button.type}/><span><b>{def?.label || "Enlace"}</b><small>Icono incluido automáticamente</small></span></div>
+    <div className="v2-brand"><ActionTypeIcon type={button.type} icon={button.icon}/><span><b>{def?.label || "Enlace"}</b><small>{button.icon ? "Ícono personalizado" : "Ícono incluido automáticamente"}</small></span></div>
     <label>Texto del botón<input value={button.title} onChange={(e)=>onChange({title:e.target.value})}/></label>
     <label>Texto secundario <small>Opcional</small><input value={button.subtitle} onChange={(e)=>onChange({subtitle:e.target.value})}/></label>
     <label>{def?.input === "phone" ? "Número" : def?.input === "email" ? "Email" : def?.input === "username" ? "Usuario" : "Enlace"}<input value={button.url} placeholder={def?.placeholder} onChange={(e)=>onChange({url:e.target.value})}/></label>
     {def?.message && <label>Mensaje de WhatsApp<textarea rows={3} value={button.message} onChange={(e)=>onChange({message:e.target.value})}/></label>}
+    <IconPicker type={button.type} value={button.icon} onChange={(icon)=>onChange({icon})}/>
     <fieldset>
       <legend>Apariencia de este botón</legend>
       <Choice active={button.use_auto_color} swatch={globalColor} title="Usar el diseño general" note={globalDescription} onClick={()=>onChange({use_auto_color:true})}/>

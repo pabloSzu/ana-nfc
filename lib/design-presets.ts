@@ -63,7 +63,7 @@ export const DESIGN_PRESETS_V2: DesignPreset[] = [
     id: "corporate", name: "Corporativo", description: "Confiado y preciso, con un toque técnico. Consultoras, software y servicios profesionales.",
     background: "linear-gradient(165deg,#0f172a,#1e2a44)", bg1: "#0f172a", bg2: "#1e2a44", accent: "#2563eb", oneColor: "#2563eb", foreground: "#f1f5f9",
     buttonFont: "mono",
-    buttonZone: { preset: "corporate", layout: "center", gap: 10, height: 54, radius: 10, width: 100, shadow: "soft", finish: "solid", collection: "metallic", colorMode: "one", textSize: 13, iconSize: 26, contentAlign: "left" },
+    buttonZone: { preset: "corporate", layout: "center", gap: 10, height: 54, radius: 10, width: 100, shadow: "soft", finish: "solid", collection: "corporate", colorMode: "one", textSize: 13, iconSize: 26, contentAlign: "left" },
     title: { font: "minimal", weight: 800, size: 27, align: "center" }, subtitle: { font: "mono", weight: 500, size: 13 }, logo: { shape: "square", size: 112 },
   },
   {
@@ -178,6 +178,7 @@ const BRAND_ICON_COLORS: Record<string, { background: string; color: string }> =
   whatsapp: { background: "#25d366", color: "#ffffff" },
   tiktok: { background: "#090909", color: "#ffffff" },
   facebook: { background: "#1877f2", color: "#ffffff" },
+  linkedin: { background: "#0a66c2", color: "#ffffff" },
   telegram: { background: "#229ed9", color: "#ffffff" },
   website: { background: "#665cf6", color: "#ffffff" },
   email: { background: "#ffca52", color: "#17191f" },

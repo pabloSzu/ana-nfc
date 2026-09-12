@@ -1,12 +1,13 @@
 import type { IconType } from "react-icons";
 import {
-  FaCarSide, FaFacebookF, FaInstagram, FaSpotify, FaTelegram, FaTicket,
+  FaCarSide, FaFacebookF, FaInstagram, FaLinkedinIn, FaSpotify, FaTelegram, FaTicket,
   FaTiktok, FaUtensils, FaWallet, FaWhatsapp, FaYoutube,
 } from "react-icons/fa6";
 import {
-  FiBell, FiBookOpen, FiBriefcase, FiCamera, FiClock, FiCoffee, FiDownload,
-  FiFlag, FiGift, FiGlobe, FiHeart, FiHelpCircle, FiHome, FiInfo, FiLink,
-  FiMail, FiMapPin, FiMusic, FiPhone, FiShoppingCart, FiStar, FiTag,
+  FiAward, FiBell, FiBookOpen, FiBriefcase, FiCamera, FiClock, FiCoffee, FiDownload,
+  FiFlag, FiGift, FiGlobe, FiHeart, FiHelpCircle, FiHome, FiInfo, FiLink, FiLock,
+  FiMail, FiMapPin, FiMusic, FiPercent, FiPhone, FiShare2, FiShoppingCart, FiStar,
+  FiTag, FiThumbsUp, FiTruck, FiUsers, FiVideo, FiWifi,
 } from "react-icons/fi";
 
 function SpotifyWavesIcon({ className }: { className?: string }) {
@@ -32,6 +33,7 @@ const actionIcons: Record<string, IconType> = {
   instagram: FaInstagram,
   tiktok: FaTiktok,
   facebook: FaFacebookF,
+  linkedin: FaLinkedinIn,
   website: FiGlobe,
   email: FiMail,
   phone: FiPhone,
@@ -65,6 +67,16 @@ const customIcons: Record<string, IconType> = {
   download: FiDownload,
   flag: FiFlag,
   bell: FiBell,
+  location: FiMapPin,
+  users: FiUsers,
+  award: FiAward,
+  video: FiVideo,
+  share: FiShare2,
+  percent: FiPercent,
+  lock: FiLock,
+  truck: FiTruck,
+  wifi: FiWifi,
+  thumbsup: FiThumbsUp,
 };
 
 export const CUSTOM_ICON_OPTIONS: { id: string; label: string }[] = [
@@ -72,9 +84,12 @@ export const CUSTOM_ICON_OPTIONS: { id: string; label: string }[] = [
   { id: "heart", label: "Corazón" },
   { id: "gift", label: "Regalo" },
   { id: "tag", label: "Precio" },
+  { id: "percent", label: "Descuento" },
   { id: "cart", label: "Carrito" },
   { id: "ticket", label: "Entrada" },
+  { id: "location", label: "Ubicación" },
   { id: "camera", label: "Cámara" },
+  { id: "video", label: "Video" },
   { id: "music", label: "Música" },
   { id: "clock", label: "Horario" },
   { id: "info", label: "Info" },
@@ -85,6 +100,13 @@ export const CUSTOM_ICON_OPTIONS: { id: string; label: string }[] = [
   { id: "coffee", label: "Café" },
   { id: "utensils", label: "Comida" },
   { id: "car", label: "Auto" },
+  { id: "truck", label: "Envío" },
+  { id: "users", label: "Comunidad" },
+  { id: "award", label: "Premio" },
+  { id: "thumbsup", label: "Me gusta" },
+  { id: "share", label: "Compartir" },
+  { id: "lock", label: "Seguro" },
+  { id: "wifi", label: "WiFi" },
   { id: "download", label: "Descarga" },
   { id: "flag", label: "Bandera" },
   { id: "bell", label: "Aviso" },

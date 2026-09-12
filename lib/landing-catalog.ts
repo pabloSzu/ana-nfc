@@ -289,7 +289,7 @@ export function isPlausiblePhone(value: string): boolean {
 }
 
 export const AUTO_COLORS: Record<string, string> = {
-  whatsapp: "#25d366", instagram: "#e4405f", tiktok: "#111111", facebook: "#1877f2", maps: "#db4437",
+  whatsapp: "#25d366", instagram: "#e4405f", tiktok: "#111111", facebook: "#1877f2", linkedin: "#0a66c2", maps: "#db4437",
   youtube: "#ff0033", spotify: "#1db954", mercadopago: "#009ee3", telegram: "#229ed9", email: "#334155",
   phone: "#475569", calendar: "#e05252", website: "#1f2937", url: "#1f2937",
 };
@@ -320,7 +320,7 @@ export function getBusinessProfile(value: string) {
   return businessProfiles.find((profile) => profile.value === value) || businessProfiles[0];
 }
 
-type ActionType = "whatsapp" | "instagram" | "tiktok" | "facebook" | "website" | "email" | "phone" | "maps" | "youtube" | "spotify" | "mercadopago" | "calendar" | "telegram" | "url";
+type ActionType = "whatsapp" | "instagram" | "tiktok" | "facebook" | "linkedin" | "website" | "email" | "phone" | "maps" | "youtube" | "spotify" | "mercadopago" | "calendar" | "telegram" | "url";
 
 type ActionDef = {
   type: ActionType;
@@ -332,13 +332,14 @@ type ActionDef = {
   prefix?: string;
 };
 
-const ACTION_ORDER: ActionType[] = ["whatsapp", "instagram", "tiktok", "facebook", "website", "maps", "email", "phone", "youtube", "spotify", "mercadopago", "calendar", "telegram", "url"];
+const ACTION_ORDER: ActionType[] = ["whatsapp", "instagram", "tiktok", "facebook", "linkedin", "website", "maps", "email", "phone", "youtube", "spotify", "mercadopago", "calendar", "telegram", "url"];
 
 const ACTION_DEFS: Record<ActionType, ActionDef> = {
   whatsapp: { type: "whatsapp", label: "WhatsApp", icon: "💬", input: "phone", placeholder: "549351XXXXXXXX", message: true },
   instagram: { type: "instagram", label: "Instagram", icon: "📸", input: "username", placeholder: "tuusuario", prefix: "instagram.com/", message: false },
   tiktok: { type: "tiktok", label: "TikTok", icon: "🎵", input: "username", placeholder: "tuusuario", prefix: "tiktok.com/@", message: false },
   facebook: { type: "facebook", label: "Facebook", icon: "📘", input: "url", placeholder: "https://facebook.com/tupagina", message: false },
+  linkedin: { type: "linkedin", label: "LinkedIn", icon: "💼", input: "url", placeholder: "https://linkedin.com/in/tuperfil", message: false },
   website: { type: "website", label: "Sitio web", icon: "🌐", input: "url", placeholder: "https://tusitio.com", message: false },
   email: { type: "email", label: "Email", icon: "✉️", input: "email", placeholder: "contacto@negocio.com", message: false },
   phone: { type: "phone", label: "Teléfono", icon: "📞", input: "phone", placeholder: "549351XXXXXXXX", message: false },
