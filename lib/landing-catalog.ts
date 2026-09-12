@@ -245,15 +245,14 @@ export function logoFrameStyle(style: LogoStyle, primary: string): CSSProperties
   return {
     background,
     color: contrastTextColor(background),
-    // `outline` instead of `border`: a real `border` eats into the box under box-sizing:
-    // border-box, shrinking the content area the logo image sits in — so every time someone
-    // changed the border width, the visible photo would visibly shrink/grow along with it, and
-    // a gap of the frame's own background color would appear around the (now smaller) image.
-    // `outline` draws on top without ever affecting sizing, so the photo always fills the frame
-    // exactly and the ring is purely decorative.
-    outline: style.borderWidth ? `${style.borderWidth}px solid ${style.borderColor}` : "none",
-    outlineOffset: style.borderWidth ? -style.borderWidth : 0,
-    boxShadow: shadow,
+    // A real `border` eats into the box under box-sizing: border-box, shrinking the content
+    // area the logo image sits in — so changing the border width would visibly shrink/grow the
+    // photo and leave a gap of the frame's own background color around it. `outline` avoids
+    // that sizing bug but doesn't reliably follow a circular border-radius across browsers —
+    // it rendered as a rough, dotted/stepped ring instead of a smooth circle. A box-shadow
+    // ring (spread, no blur) gets the best of both: it never affects layout/sizing, and browsers
+    // always rasterize it following the element's actual rounded shape, so it stays smooth.
+    boxShadow: [style.borderWidth ? `0 0 0 ${style.borderWidth}px ${style.borderColor}` : null, shadow !== "none" ? shadow : null].filter(Boolean).join(", ") || "none",
   };
 }
 
