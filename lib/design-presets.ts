@@ -29,91 +29,91 @@ export const DESIGN_PRESETS_V2: DesignPreset[] = [
     background: "linear-gradient(160deg,#fbfbfd,#eef0f5)", bg1: "#fbfbfd", bg2: "#eef0f5", accent: "#16181d", oneColor: "#16181d", foreground: "#16181d",
     buttonFont: "minimal",
     buttonZone: { preset: "minimal", layout: "center", gap: 10, height: 52, radius: 12, width: 100, shadow: "none", finish: "solid", collection: "minimal", colorMode: "one", textSize: 14, iconSize: 27, contentAlign: "center" },
-    title: { font: "Inter,ui-sans-serif,system-ui,sans-serif", weight: 800, size: 27, align: "center" }, subtitle: { font: "Inter,ui-sans-serif,system-ui,sans-serif", weight: 500, size: 14 }, logo: { shape: "round", size: 116 },
+    title: { font: "minimal", weight: 800, size: 27, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "round", size: 116 },
   },
   {
     id: "brutalism", name: "Brutalismo", description: "Blanco y negro puro, bordes duros, cero adornos. Estudios, moda y marcas con carácter.",
     background: "#f4f3ee", bg1: "#f4f3ee", bg2: "#e6e4db", accent: "#0a0a0a", oneColor: "#ffffff", foreground: "#0a0a0a",
-    buttonFont: "modern",
+    buttonFont: "bold",
     buttonZone: { preset: "brutalism", layout: "center", gap: 13, height: 56, radius: 0, width: 100, shadow: "none", finish: "solid", collection: "brutal", colorMode: "one", textSize: 15, iconSize: 28, contentAlign: "left" },
-    title: { font: "'Arial Black',Arial,sans-serif", weight: 900, size: 32, align: "center" }, subtitle: { font: "'Courier New',monospace", weight: 700, size: 13 }, logo: { shape: "square", size: 120 },
+    title: { font: "bold", weight: 900, size: 32, align: "center" }, subtitle: { font: "mono", weight: 700, size: 13 }, logo: { shape: "square", size: 120 },
   },
   {
     id: "neobrutal", name: "Neobrutalismo", description: "Colores fuertes, bordes marcados y sombra dura. Marcas jóvenes, apps y creadores.",
     background: "linear-gradient(150deg,#fff267,#ff8bd0)", bg1: "#fff267", bg2: "#ff8bd0", accent: "#1a1a1a", oneColor: "#7c5cff", foreground: "#171923",
     buttonFont: "friendly",
     buttonZone: { preset: "neobrutal", layout: "center", gap: 13, height: 56, radius: 14, width: 100, shadow: "none", finish: "solid", collection: "retro", colorMode: "auto", textSize: 14, iconSize: 27, contentAlign: "left" },
-    title: { font: "'Arial Black',Arial,sans-serif", weight: 900, size: 30, align: "center" }, subtitle: { font: "'Trebuchet MS',sans-serif", weight: 700, size: 14 }, logo: { shape: "square", size: 122 },
+    title: { font: "bold", weight: 900, size: 30, align: "center" }, subtitle: { font: "friendly", weight: 700, size: 14 }, logo: { shape: "square", size: 122 },
   },
   {
     id: "glass", name: "Glassmorfismo", description: "Vidrio esmerilado sobre un fondo vivo. Fotografía, eventos y vida nocturna.",
     background: "linear-gradient(150deg,#1c0f3d,#ff4fa3)", bg1: "#1c0f3d", bg2: "#ff4fa3", accent: "#ffffff", oneColor: "#ffffff", foreground: "#ffffff",
-    buttonFont: "minimal",
-    buttonZone: { preset: "glass", layout: "center", gap: 11, height: 56, radius: 18, width: 100, shadow: "soft", finish: "glass", collection: "glass", colorMode: "one", textSize: 14, iconSize: 29, contentAlign: "center" },
-    title: { font: "Inter,ui-sans-serif,system-ui,sans-serif", weight: 800, size: 29, align: "center" }, subtitle: { font: "Inter,ui-sans-serif,system-ui,sans-serif", weight: 500, size: 14 }, logo: { shape: "round", size: 124 },
+    buttonFont: "modern",
+    buttonZone: { preset: "glass", layout: "profile-card", gap: 11, height: 56, radius: 18, width: 100, shadow: "soft", finish: "glass", collection: "glass", colorMode: "one", textSize: 14, iconSize: 29, contentAlign: "center" },
+    title: { font: "modern", weight: 800, size: 29, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "round", size: 124 },
   },
   {
     id: "elegant", name: "Elegante", description: "Marfil, serif refinada y detalles dorados. Hoteles boutique, joyerías y alta gama.",
     background: "linear-gradient(150deg,#fbf7ef,#e7d7c2)", bg1: "#fbf7ef", bg2: "#e7d7c2", accent: "#8c6b3f", oneColor: "#8c6b3f", foreground: "#2c241c",
     buttonFont: "minimal",
-    buttonZone: { preset: "elegant", layout: "center", gap: 12, height: 54, radius: 10, width: 100, shadow: "soft", finish: "solid", collection: "luxury", colorMode: "one", textSize: 14, iconSize: 26, contentAlign: "center" },
-    title: { font: "Georgia,serif", weight: 700, size: 31, align: "center" }, subtitle: { font: "Inter,ui-sans-serif,system-ui,sans-serif", weight: 500, size: 14 }, logo: { shape: "round", size: 114 },
+    buttonZone: { preset: "elegant", layout: "poster", gap: 12, height: 54, radius: 10, width: 100, shadow: "soft", finish: "solid", collection: "luxury", colorMode: "one", textSize: 14, iconSize: 26, contentAlign: "center" },
+    title: { font: "elegant", weight: 700, size: 31, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "round", size: 114 },
   },
   {
-    id: "corporate", name: "Corporativo", description: "Prolijo, confiable y sobrio. Estudios, consultoras y servicios profesionales.",
-    background: "linear-gradient(160deg,#f4f6fb,#dfe6f3)", bg1: "#f4f6fb", bg2: "#dfe6f3", accent: "#1d4ed8", oneColor: "#1d4ed8", foreground: "#111827",
-    buttonFont: "minimal",
-    buttonZone: { preset: "corporate", layout: "center", gap: 10, height: 52, radius: 10, width: 100, shadow: "soft", finish: "solid", collection: "corporate", colorMode: "one", textSize: 14, iconSize: 26, contentAlign: "left" },
-    title: { font: "Inter,ui-sans-serif,system-ui,sans-serif", weight: 800, size: 26, align: "center" }, subtitle: { font: "Inter,ui-sans-serif,system-ui,sans-serif", weight: 500, size: 14 }, logo: { shape: "square", size: 112 },
+    id: "corporate", name: "Corporativo", description: "Confiado y preciso, con un toque técnico. Consultoras, software y servicios profesionales.",
+    background: "linear-gradient(165deg,#0f172a,#1e2a44)", bg1: "#0f172a", bg2: "#1e2a44", accent: "#2563eb", oneColor: "#2563eb", foreground: "#f1f5f9",
+    buttonFont: "mono",
+    buttonZone: { preset: "corporate", layout: "center", gap: 10, height: 54, radius: 10, width: 100, shadow: "soft", finish: "solid", collection: "metallic", colorMode: "one", textSize: 13, iconSize: 26, contentAlign: "left" },
+    title: { font: "minimal", weight: 800, size: 27, align: "center" }, subtitle: { font: "mono", weight: 500, size: 13 }, logo: { shape: "square", size: 112 },
   },
   {
     id: "vibrant", name: "Vibrante", description: "Cada red conserva su color oficial. Perfil personal o multi-marca.",
     background: "linear-gradient(150deg,#302061,#c74878)", bg1: "#302061", bg2: "#c74878", accent: "#ff6b8d", oneColor: "#ff6b8d", foreground: "#ffffff",
     buttonFont: "modern",
     buttonZone: { preset: "vibrant", layout: "center", gap: 11, height: 57, radius: 18, width: 100, shadow: "strong", finish: "solid", collection: "brand", colorMode: "auto", textSize: 14, iconSize: 30, contentAlign: "left" },
-    title: { font: "Inter,ui-sans-serif,system-ui,sans-serif", weight: 900, size: 29, align: "center" }, subtitle: { font: "Inter,ui-sans-serif,system-ui,sans-serif", weight: 600, size: 14 }, logo: { shape: "square", size: 122 },
+    title: { font: "modern", weight: 900, size: 29, align: "center" }, subtitle: { font: "minimal", weight: 600, size: 14 }, logo: { shape: "square", size: 122 },
   },
   {
     id: "natural", name: "Natural", description: "Cálida y orgánica. Wellness, gastronomía consciente y turismo rural.",
     background: "linear-gradient(150deg,#f7f3e8,#d7e4cf)", bg1: "#f7f3e8", bg2: "#d7e4cf", accent: "#355b3e", oneColor: "#355b3e", foreground: "#26382a",
-    buttonFont: "minimal",
+    buttonFont: "friendly",
     buttonZone: { preset: "natural", layout: "center", gap: 11, height: 55, radius: 18, width: 100, shadow: "soft", finish: "solid", collection: "soft", colorMode: "one", textSize: 14, iconSize: 27, contentAlign: "left" },
-    title: { font: "Georgia,serif", weight: 700, size: 29, align: "center" }, subtitle: { font: "Inter,ui-sans-serif,system-ui,sans-serif", weight: 500, size: 14 }, logo: { shape: "round", size: 122 },
+    title: { font: "handwritten", weight: 700, size: 38, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "round", size: 122 },
   },
   {
     id: "pastel", name: "Pastel", description: "Suave, luminosa y delicada. Belleza, salud y cuidado personal.",
     background: "linear-gradient(150deg,#ffe6ef,#e3e6ff)", bg1: "#ffe6ef", bg2: "#e3e6ff", accent: "#cf7fb9", oneColor: "#cf7fb9", foreground: "#3d2a3c",
     buttonFont: "friendly",
     buttonZone: { preset: "pastel", layout: "center", gap: 11, height: 54, radius: 22, width: 100, shadow: "soft", finish: "solid", collection: "pastel", colorMode: "one", textSize: 14, iconSize: 27, contentAlign: "center" },
-    title: { font: "Inter,ui-sans-serif,system-ui,sans-serif", weight: 700, size: 27, align: "center" }, subtitle: { font: "Inter,ui-sans-serif,system-ui,sans-serif", weight: 500, size: 14 }, logo: { shape: "round", size: 118 },
+    title: { font: "friendly", weight: 700, size: 27, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "round", size: 118 },
   },
   {
     id: "neon", name: "Neon Night", description: "Oscura y magnética con brillo ambiental. Bares, boliches y eventos nocturnos.",
     background: "linear-gradient(150deg,#060817,#17113f)", bg1: "#060817", bg2: "#17113f", accent: "#8b72ff", oneColor: "#755cff", foreground: "#f7f5ff",
     buttonFont: "modern",
     buttonZone: { preset: "neon", layout: "center", gap: 12, height: 56, radius: 16, width: 100, shadow: "strong", finish: "solid", collection: "glow", colorMode: "one", textSize: 14, iconSize: 29, contentAlign: "center" },
-    title: { font: "Inter,ui-sans-serif,system-ui,sans-serif", weight: 900, size: 29, align: "center" }, subtitle: { font: "Inter,ui-sans-serif,system-ui,sans-serif", weight: 500, size: 14 }, logo: { shape: "square", size: 118 },
+    title: { font: "modern", weight: 900, size: 29, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "square", size: 118 },
   },
   {
     id: "creator", name: "Pop Studio", description: "Audaz y expresiva, pero siempre ordenada. Creadores y marcas digitales.",
     background: "linear-gradient(150deg,#ff3e88,#ff9a3d)", bg1: "#ff3e88", bg2: "#ff9a3d", accent: "#5b2be0", oneColor: "#5b2be0", foreground: "#ffffff",
-    buttonFont: "friendly",
+    buttonFont: "bold",
     buttonZone: { preset: "creator", layout: "center", gap: 12, height: 58, radius: 22, width: 100, shadow: "strong", finish: "solid", collection: "candy", colorMode: "one", textSize: 14, iconSize: 29, contentAlign: "left" },
-    title: { font: "'Arial Black',Arial,sans-serif", weight: 900, size: 30, align: "center" }, subtitle: { font: "'Trebuchet MS',sans-serif", weight: 700, size: 14 }, logo: { shape: "square", size: 118 },
+    title: { font: "bold", weight: 900, size: 30, align: "center" }, subtitle: { font: "handwritten", weight: 600, size: 18 }, logo: { shape: "square", size: 118 },
   },
   {
     id: "brand-signature", name: "Firma de Marca", description: "Tarjetas claras con insignias oficiales protagonistas. Limpia, reconocible y premium.",
     background: "linear-gradient(155deg,#fffdf7,#ebeef5)", bg1: "#fffdf7", bg2: "#ebeef5", accent: "#17191f", oneColor: "#ffffff", foreground: "#17191f",
     buttonFont: "minimal",
-    buttonZone: { preset: "brand-signature", layout: "center", gap: 11, height: 61, radius: 19, width: 100, shadow: "soft", finish: "solid", collection: "brandmark", colorMode: "one", textSize: 14, iconSize: 36, contentAlign: "left" },
-    title: { font: "Inter,ui-sans-serif,system-ui,sans-serif", weight: 850, size: 29, align: "center" }, subtitle: { font: "Inter,ui-sans-serif,system-ui,sans-serif", weight: 500, size: 14 }, logo: { shape: "round", size: 120 },
+    buttonZone: { preset: "brand-signature", layout: "profile-card", gap: 11, height: 61, radius: 19, width: 100, shadow: "soft", finish: "solid", collection: "brandmark", colorMode: "one", textSize: 14, iconSize: 36, contentAlign: "left" },
+    title: { font: "minimal", weight: 850, size: 29, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "round", size: 120 },
   },
   {
     id: "brand-stage", name: "Brand Stage", description: "Botones oscuros de alto impacto con cada marca iluminada en su color real.",
     background: "linear-gradient(145deg,#26304a,#07090e)", bg1: "#26304a", bg2: "#07090e", accent: "#ffffff", oneColor: "#151922", foreground: "#ffffff",
-    buttonFont: "modern",
-    buttonZone: { preset: "brand-stage", layout: "center", gap: 12, height: 63, radius: 20, width: 100, shadow: "strong", finish: "solid", collection: "brandpanel", colorMode: "one", textSize: 14, iconSize: 38, contentAlign: "left" },
-    title: { font: "Inter,ui-sans-serif,system-ui,sans-serif", weight: 900, size: 30, align: "center" }, subtitle: { font: "Inter,ui-sans-serif,system-ui,sans-serif", weight: 500, size: 14 }, logo: { shape: "square", size: 122 },
+    buttonFont: "minimal",
+    buttonZone: { preset: "brand-stage", layout: "poster", gap: 12, height: 63, radius: 20, width: 100, shadow: "strong", finish: "solid", collection: "brandpanel", colorMode: "one", textSize: 14, iconSize: 38, contentAlign: "left" },
+    title: { font: "minimal", weight: 900, size: 30, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "square", size: 122 },
   },
 ];
 
@@ -157,7 +157,11 @@ export function buttonCollectionStyle(collection: ButtonZoneStyle["collection"],
   if (collection === "split") return { background: `linear-gradient(135deg, color-mix(in srgb, ${bg} 94%, white), color-mix(in srgb, ${bg} 85%, black))`, color: text, border: "1px solid rgba(255,255,255,.22)", boxShadow: `0 10px 22px color-mix(in srgb, ${bg} 25%, transparent), inset 0 1px 0 rgba(255,255,255,.24)` };
   if (collection === "bento") return { background: index % 3 === 1 ? `linear-gradient(135deg,${bg},color-mix(in srgb, ${bg} 72%, black))` : `color-mix(in srgb, ${bg} 88%, white)`, color: text, border: "1px solid rgba(255,255,255,.3)", boxShadow: "0 9px 22px rgba(20,22,30,.15)" };
   if (collection === "pastel") return { background: `linear-gradient(125deg, color-mix(in srgb, ${bg} 34%, #fff), color-mix(in srgb, ${bg} 58%, #f8efff))`, color: "#343044", border: "1px solid rgba(255,255,255,.72)", boxShadow: "inset 0 1px 0 #fff, 0 8px 20px rgba(83,65,112,.12)" };
-  if (collection === "metallic") return { background: `linear-gradient(115deg, color-mix(in srgb, ${bg} 66%, #252735), color-mix(in srgb, ${bg} 30%, #f2f4fa) 48%, color-mix(in srgb, ${bg} 72%, #171923))`, color: "#fff", border: "1px solid rgba(255,255,255,.4)", boxShadow: "inset 0 1px 1px rgba(255,255,255,.52), inset 0 -1px 1px rgba(0,0,0,.25), 0 8px 20px rgba(16,18,28,.2)" };
+  // Text color used to be hardcoded white, which assumed the gradient always trended dark —
+  // true for a saturated color mixed with dark/light bands, but a light color like sky blue
+  // keeps the whole gradient pale, and white-on-pale is nearly unreadable. Using the real
+  // contrast-computed `text` (like every other collection does) fixes that for any base color.
+  if (collection === "metallic") return { background: `linear-gradient(115deg, color-mix(in srgb, ${bg} 66%, #252735), color-mix(in srgb, ${bg} 30%, #f2f4fa) 48%, color-mix(in srgb, ${bg} 72%, #171923))`, color: text, border: "1px solid rgba(255,255,255,.4)", boxShadow: "inset 0 1px 1px rgba(255,255,255,.52), inset 0 -1px 1px rgba(0,0,0,.25), 0 8px 20px rgba(16,18,28,.2)" };
   if (collection === "retro") return { background: bg, color: text, border: "2px solid #191724", boxShadow: "3px 3px 0 #191724" };
   if (collection === "editorial") return { background: "rgba(255,255,255,.08)", color: text, border: "0", borderTop: `1px solid color-mix(in srgb, ${bg} 62%, white)`, borderBottom: `1px solid color-mix(in srgb, ${bg} 62%, white)`, boxShadow: "none" };
   if (collection === "candy") return { background: `linear-gradient(120deg, color-mix(in srgb, ${bg} 82%, #ff8bd5), color-mix(in srgb, ${bg} 78%, #8d7bff))`, color: "#fff", border: "2px solid rgba(255,255,255,.65)", boxShadow: `inset 0 2px 0 rgba(255,255,255,.4), 0 8px 18px color-mix(in srgb, ${bg} 24%, transparent)` };
@@ -195,21 +199,38 @@ export function buttonIconStyle(collection: ButtonZoneStyle["collection"], bg: s
   const base: CSSProperties = { width: size, height: size, flexGrow: 0, flexShrink: 0, flexBasis: size, display: "inline-grid", placeItems: "center", lineHeight: 0 };
   if (appearance === "brand") {
     const palette = BRAND_ICON_COLORS[type || ""] || { background: "#6c63ff", color: "#ffffff" };
-    return { ...base, borderRadius: collection === "brandmark" ? "50%" : 13, background: palette.background, color: palette.color, boxShadow: collection === "brandmark" ? "0 5px 12px rgba(22,27,39,.16)" : `0 6px 16px color-mix(in srgb, ${typeof palette.background === "string" && palette.background.startsWith("#") ? palette.background : "#e1306c"} 30%, transparent)` };
+    // No shadow on the badge itself — even a soft spread-only ring rendered visibly diffuse
+    // against the button's own pale surface (confirmed by A/B testing with it removed), and the
+    // button already carries its own shadow for depth. Simpler and reads clean at any zoom.
+    return { ...base, borderRadius: collection === "brandmark" ? "50%" : 13, background: palette.background, color: palette.color, boxShadow: "none" };
   }
   if (collection === "brandmark") return { ...base, width: size - 4, height: size - 4, flexBasis: size - 4, color: "#17191f" };
   if (collection === "brandpanel") return { ...base, width: size - 4, height: size - 4, flexBasis: size - 4, color: "#ffffff" };
   if (collection === "minimal") return { ...base, width: size - 4, height: size - 4, flexBasis: size - 4, color: bg };
-  if (collection === "brutal") return { ...base, borderRadius: 2, background: "#0a0a0a", color: "#ffffff" };
-  if (collection === "retro") return { ...base, borderRadius: 7, background: "rgba(255,255,255,.34)", border: "1.5px solid #191724" };
+  // brutal/retro used to force a fixed dark or fixed white badge behind the icon — looked fine
+  // for whatever single color the template shipped with, but colorMode "auto" cycles the
+  // button through every network's own color (including near-black ones like TikTok), and a
+  // fixed-color badge/glyph combo can't stay legible across all of them. Falling through to no
+  // special case here means the icon just inherits the button's own already-correct contrast
+  // color (`text`, computed per-button) — plain and safe rather than a shape that can go
+  // invisible or clash depending on which color the button ends up being.
   if (collection === "glass") return { ...base, borderRadius: "50%", background: "rgba(255,255,255,.14)", border: "1px solid rgba(255,255,255,.38)" };
-  if (collection === "luxury") return { ...base, width: size - 3, height: size - 3, flexBasis: size - 3, color: bg };
+  // Luxury advertises "golden details" but used to leave the icon completely bare — a thin
+  // gold ring on a warm cream disc actually delivers on that promise at the icon level, not
+  // just on the card border.
+  if (collection === "luxury") return { ...base, width: size - 2, height: size - 2, flexBasis: size - 2, borderRadius: "50%", color: bg, background: "rgba(255,248,232,.55)", border: `1px solid color-mix(in srgb, ${bg} 62%, #f1dfb0)` };
   if (collection === "corporate") return { ...base, borderRadius: 7, background: "rgba(255,255,255,.14)", border: "1px solid rgba(255,255,255,.18)" };
   if (collection === "brand") return { ...base, borderRadius: "50%", background: "rgba(255,255,255,.17)", border: "1px solid rgba(255,255,255,.16)" };
   if (collection === "pastel") return { ...base, borderRadius: "50%", background: "rgba(255,255,255,.68)", border: "1px solid rgba(255,255,255,.85)" };
-  if (collection === "glow") return { ...base, width: size - 2, height: size - 2, flexBasis: size - 2 };
+  // Glow's icon used to have zero frame — just a bare glyph — leaving the "ambient light" idea
+  // entirely to the button's own shadow. A soft colored halo around the icon itself sells the
+  // neon identity at a glance, even before reading the button label.
+  if (collection === "glow") return { ...base, width: size - 2, height: size - 2, flexBasis: size - 2, borderRadius: "50%", border: `1px solid color-mix(in srgb, ${bg} 55%, white)`, boxShadow: `0 0 10px color-mix(in srgb, ${bg} 65%, transparent), 0 0 2px color-mix(in srgb, ${bg} 80%, transparent)` };
   if (collection === "candy") return { ...base, borderRadius: "50%", background: "rgba(255,255,255,.2)", border: "1px solid rgba(255,255,255,.28)" };
-  return { ...base, borderRadius: 8, background: "rgba(255,255,255,.16)" };
+  // Shared fallback for collections without a bespoke treatment (soft/bento/editorial/ocean) —
+  // a full circle instead of a squarish chip reads softer/more organic, which fits "Natural"
+  // (the only preset template currently using it) better than a generic rounded-square badge.
+  return { ...base, borderRadius: "50%", background: "rgba(255,255,255,.2)", border: "1px solid rgba(255,255,255,.26)" };
 }
 
 export function buttonCollectionWidth(zone: ButtonZoneStyle, index: number) {

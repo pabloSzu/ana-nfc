@@ -42,7 +42,7 @@ function logoTreatmentPatch(treatment: LogoTreatment, templateId = "minimal"): P
     return { ...logoTreatmentPatch(recommended[templateId] || "badge", templateId), treatment: "template" };
   }
   if (treatment === "clean") return { treatment, borderWidth: 0, shadow: "none", backgroundMode: "auto" };
-  if (treatment === "card") return { treatment, shape: "square", borderWidth: 1, borderColor: "#ffffff", shadow: "soft", backgroundMode: "auto" };
+  if (treatment === "card") return { treatment, shape: "square", borderWidth: 2, borderColor: "#ffffff", shadow: "soft", backgroundMode: "auto" };
   if (treatment === "highlight") return { treatment, shape: "round", borderWidth: 5, borderColor: "#ffffff", shadow: "glow", backgroundMode: "auto" };
   return { treatment, shape: "round", borderWidth: 3, borderColor: "#ffffff", shadow: "soft", backgroundMode: "auto" };
 }
@@ -182,7 +182,6 @@ export default function EditorV2({ landing, initialButtons, saveAction }: { land
         ...preset.buttonZone,
         contentAlign: draft.buttonZone.contentAlignMode === "manual" ? draft.buttonZone.contentAlign : preset.buttonZone.contentAlign,
         contentAlignMode: draft.buttonZone.contentAlignMode,
-        layout: "center",
         oneColor: preset.oneColor,
         iconAppearance: recommendedIconAppearance(preset.buttonZone.collection),
         templateId: id,
@@ -602,7 +601,10 @@ function LogoControls({ draft, logoImage, onChange, onLogo, onRemoveLogo }: { dr
     )}
     <Range label="Tamaño" min={72} max={190} value={style.size} onChange={(size) => update({ size })} />
     <div className="v2-inline-row">
-      <Range label="Borde" min={0} max={10} value={style.borderWidth} onChange={(borderWidth) => update({ borderWidth, treatment: "custom" })} />
+      {/* Step 2 instead of 1 on purpose: a 1px border on a small logo circle/square reads as a
+          broken hairline (looks cut off at the corners) rather than an intentional border — so
+          the slider only ever lands on 0 (no border) or 2px+. */}
+      <Range label="Borde" min={0} max={10} step={2} value={style.borderWidth} onChange={(borderWidth) => update({ borderWidth, treatment: "custom" })} />
       {style.borderWidth > 0 && <label className="v2-mini-color" title="Color de borde"><span>Color</span><input type="color" value={style.borderColor} onChange={(event) => update({ borderColor: event.target.value, treatment: "custom" })} /></label>}
     </div>
     <fieldset>

@@ -135,9 +135,7 @@ export function parseButtonZone(raw: unknown): ButtonZoneStyle {
   return {
     ...merged,
     preset: typeof parsed.preset === "string" ? parsed.preset : "custom",
-    // La estructura de identidad es siempre tipo Linktree; las plantillas cambian
-    // estética, nunca el orden logo → título → subtítulo → botones.
-    layout: "center",
+    layout: layouts.includes(merged.layout) ? merged.layout : "center",
     templateId: typeof parsed.templateId === "string" ? parsed.templateId : "custom",
     gap: clamp(parsed.gap, 4, 20, DEFAULT_BUTTON_ZONE.gap),
     height: clamp(parsed.height, 40, 72, DEFAULT_BUTTON_ZONE.height),
@@ -211,7 +209,7 @@ export function parseLogoStyle(raw: unknown): LogoStyle {
   const treatments: LogoStyle["treatment"][] = ["template","clean","badge","card","highlight","custom"];
   const shadows: LogoStyle["shadow"][] = ["none","soft","glow"];
   const initialsModes: LogoStyle["initials"][] = ["one","two"];
-  return { ...value, treatment: treatments.includes(value.treatment) ? value.treatment : "template", shape: value.shape === "square" ? "square" : "round", backgroundMode: value.backgroundMode === "custom" ? "custom" : "auto", fallback: /^#[0-9a-f]{6}$/i.test(value.fallback) ? value.fallback : DEFAULT_LOGO_STYLE.fallback, borderWidth: Math.min(10, Math.max(0, finite(value.borderWidth, 0))), borderColor: /^#[0-9a-f]{6}$/i.test(value.borderColor) ? value.borderColor : "#ffffff", shadow: shadows.includes(value.shadow) ? value.shadow : "soft", initials: initialsModes.includes(value.initials) ? value.initials : "one", size: Math.min(190, Math.max(72, finite(value.size, 124))), zoom: Math.min(2.5, Math.max(1, finite(value.zoom, 1))), x: Math.min(100, Math.max(0, finite(value.x, 50))), y: Math.min(100, Math.max(0, finite(value.y, 50))) };
+  return { ...value, treatment: treatments.includes(value.treatment) ? value.treatment : "template", shape: value.shape === "square" ? "square" : "round", backgroundMode: value.backgroundMode === "custom" ? "custom" : "auto", fallback: /^#[0-9a-f]{6}$/i.test(value.fallback) ? value.fallback : DEFAULT_LOGO_STYLE.fallback, borderWidth: (() => { const w = Math.min(10, Math.max(0, finite(value.borderWidth, 0))); return w === 1 ? 2 : w; })(), borderColor: /^#[0-9a-f]{6}$/i.test(value.borderColor) ? value.borderColor : "#ffffff", shadow: shadows.includes(value.shadow) ? value.shadow : "soft", initials: initialsModes.includes(value.initials) ? value.initials : "one", size: Math.min(190, Math.max(72, finite(value.size, 124))), zoom: Math.min(2.5, Math.max(1, finite(value.zoom, 1))), x: Math.min(100, Math.max(0, finite(value.x, 50))), y: Math.min(100, Math.max(0, finite(value.y, 50))) };
 }
 
 // Derives the fallback initial(s) shown when there's no logo image yet. "two" tries one
@@ -247,7 +245,14 @@ export function logoFrameStyle(style: LogoStyle, primary: string): CSSProperties
   return {
     background,
     color: contrastTextColor(background),
-    border: style.borderWidth ? `${style.borderWidth}px solid ${style.borderColor}` : "none",
+    // `outline` instead of `border`: a real `border` eats into the box under box-sizing:
+    // border-box, shrinking the content area the logo image sits in — so every time someone
+    // changed the border width, the visible photo would visibly shrink/grow along with it, and
+    // a gap of the frame's own background color would appear around the (now smaller) image.
+    // `outline` draws on top without ever affecting sizing, so the photo always fills the frame
+    // exactly and the ring is purely decorative.
+    outline: style.borderWidth ? `${style.borderWidth}px solid ${style.borderColor}` : "none",
+    outlineOffset: style.borderWidth ? -style.borderWidth : 0,
     boxShadow: shadow,
   };
 }
@@ -285,7 +290,7 @@ export function isPlausiblePhone(value: string): boolean {
 }
 
 export const AUTO_COLORS: Record<string, string> = {
-  whatsapp: "#25d366", instagram: "#e1306c", tiktok: "#111111", facebook: "#1877f2", maps: "#db4437",
+  whatsapp: "#25d366", instagram: "#e4405f", tiktok: "#111111", facebook: "#1877f2", maps: "#db4437",
   youtube: "#ff0033", spotify: "#1db954", mercadopago: "#009ee3", telegram: "#229ed9", email: "#334155",
   phone: "#475569", calendar: "#e05252", website: "#1f2937", url: "#1f2937",
 };

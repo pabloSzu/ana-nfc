@@ -96,5 +96,8 @@ export function ActionTypeIcon({ type, icon, className, brandMark = false }: { t
   if (brandMark && !icon && type === "spotify") return <SpotifyWavesIcon className={sharedClassName} />;
   if (brandMark && !icon && type === "youtube") return <YoutubePlayIcon className={sharedClassName} />;
   const Icon = (icon && customIcons[icon]) || actionIcons[type] || FiLink;
-  return <Icon className={sharedClassName} aria-hidden="true" focusable="false" />;
+  // Feather-style (Fi) icons draw with a 2px stroke by default, which reads as thin/hard to
+  // make out at button-icon sizes — bumping it here (ignored by the solid-fill Fa6 brand marks,
+  // which have no stroke to speak of) makes every outline icon read bolder across the board.
+  return <Icon className={sharedClassName} strokeWidth={2.5} aria-hidden="true" focusable="false" />;
 }
