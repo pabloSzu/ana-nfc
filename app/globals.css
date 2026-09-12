@@ -398,7 +398,6 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; letter-spacing: -0.01e
 .action-type-icon-facebook { width: 62%; height: 62%; }
 .action-type-icon-tiktok { width: 62%; height: 62%; }
 .action-type-icon-instagram { width: 64%; height: 64%; }
-.action-type-icon-linkedin { width: 64%; height: 64%; }
 /* Real, verified centering fix — not a guess: measured each brand glyph's own drawn-ink
    bounding box against its SVG box's true center, using the browser's own
    getBoundingClientRect (not a pixel-color scan against a background, which earlier turned out
@@ -411,7 +410,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; letter-spacing: -0.01e
    artwork sits a real, repeatable 6.25% above center within its viewBox (extra empty space
    below it, baked into the icon file), in EVERY context, so this correction (like the sizing
    above) is a single shared rule, not scoped to any one appearance. */
-.action-type-icon-linkedin { transform: translateY(6.25%); }
+.action-type-icon-linkedin { width: 64%; height: 64%; transform: translateY(6.25%); }
 .action-brand-icon { align-self: center; }
 .action-copy { display: grid; min-width: 0; gap: 2px; text-align: left; }
 .action-title { display: block; min-width: 0; overflow: hidden; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }

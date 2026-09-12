@@ -231,9 +231,11 @@ export function buttonIconStyle(collection: ButtonZoneStyle["collection"], bg: s
   // smear — brighter toward the button's center, visibly cut off toward the near edge.
   if (collection === "glow") return { ...base, width: size - 2, height: size - 2, flexBasis: size - 2, borderRadius: "50%", border: `1px solid color-mix(in srgb, ${bg} 55%, white)`, boxShadow: `0 0 4px color-mix(in srgb, ${bg} 65%, transparent)` };
   if (collection === "candy") return { ...base, borderRadius: "50%", background: "rgba(255,255,255,.2)", border: "1px solid rgba(255,255,255,.28)" };
-  // Shared fallback for collections without a bespoke treatment (soft/bento/editorial/ocean) —
-  // a full circle instead of a squarish chip reads softer/more organic, which fits "Natural"
-  // (the only preset template currently using it) better than a generic rounded-square badge.
+  // Shared fallback for every collection without a bespoke treatment above — currently soft
+  // (Natural), brutal (Brutalismo) and retro (Neobrutalismo), plus bento/editorial/ocean which
+  // no preset template uses yet. The icon just inherits the button's own contrast color (no
+  // background override), so it's always legible no matter what color the button ends up being
+  // — a plain full circle reads softer/more organic than a generic rounded-square badge would.
   return { ...base, borderRadius: "50%", background: "rgba(255,255,255,.2)", border: "1px solid rgba(255,255,255,.26)" };
 }
 
