@@ -673,9 +673,19 @@ input[type="color"] { padding: 5px; height: 46px; cursor: pointer; }
 .phone-preview h2 { font-size: 1.25rem; font-weight: 700; margin: 0 0 7px; }
 .phone-preview > p { color: var(--text-muted); font-size: 0.8125rem; line-height: 1.5; margin: 0 0 var(--space-5); }
 
-.preview-action, .action {
+.preview-action {
   display: flex; align-items: center; justify-content: center; gap: 9px; padding: 13px 16px; border-radius: var(--radius-md);
   margin: 9px 0; font-weight: 600; font-size: 0.875rem; text-align: center;
+  transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+/* Padding/margin/weight matched to the editor's own .v2-link (editor-v2.tsx) so the public
+   page and "Vista previa" render buttons the same size and spacing the editor already showed —
+   this used to add its own 9px margin on top of the botonera's own gap, and pad more than the
+   editor did, so a button that looked right while editing came out taller and further apart
+   the moment you switched to preview or published it. */
+.action {
+  display: flex; align-items: center; justify-content: center; gap: 9px; padding: 8px 12px; border-radius: var(--radius-md);
+  margin: 0; font-weight: 700; font-size: 0.875rem; text-align: center;
   transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
 }
 .preview-action svg, .action svg { display: block; width: 18px; height: 18px; flex: none; }

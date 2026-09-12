@@ -1,5 +1,5 @@
 import {
-  buildActionLink, buttonZoneShadow, resolveBackgroundTint,
+  buildActionLink, buttonZoneShadow, resolveBackgroundTint, getFontFamily,
   parseTitleStyle, parseSubtitleStyle, parseLogoStyle, parseBackgroundPosition, parseButtonZone, hexToRgba, logoBorderRadius, logoFrameStyle,
 } from "@/lib/landing-catalog";
 import { buttonCollectionStyle, buttonCollectionWidth, resolveButtonColors } from "@/lib/design-presets";
@@ -42,9 +42,6 @@ type Landing = {
 };
 
 const noBlank = new Set(["whatsapp", "email", "phone"]);
-const BUTTON_FONT_FAMILY: Record<string, string> = {
-  modern: "'Space Grotesk', sans-serif", classic: "'Playfair Display', serif", friendly: "'Poppins', sans-serif", minimal: "'Inter', sans-serif",
-};
 
 function actionHref(action: LandingAction) {
   if (action.type === "whatsapp") {
@@ -65,7 +62,7 @@ export default function LandingRenderer({ landing, actions, preview = false }: {
   const zone = parseButtonZone(landing.button_style);
   const hasSavedButtonStyle = Boolean(landing.button_style && typeof landing.button_style === "object" && Object.keys(landing.button_style).length);
   if (!hasSavedButtonStyle) zone.oneColor = primary;
-  const buttonFont = BUTTON_FONT_FAMILY[landing.button_font || "modern"] || BUTTON_FONT_FAMILY.modern;
+  const buttonFont = getFontFamily(landing.button_font || "modern");
 
   const bgLayerStyle: CSSProperties =
     landing.background_type === "image" && landing.background_image_url
@@ -78,7 +75,7 @@ export default function LandingRenderer({ landing, actions, preview = false }: {
           transformOrigin: `${bgPos.x}% ${bgPos.y}%`,
         }
       : landing.background_type === "gradient" && landing.background_gradient_to
-        ? { background: `linear-gradient(135deg, ${landing.background_color || "#f7f5f0"}, ${landing.background_gradient_to})` }
+        ? { background: `linear-gradient(145deg, ${landing.background_color || "#f7f5f0"}, ${landing.background_gradient_to})` }
         : { background: landing.background_color || "#f7f5f0" };
 
   const heading = (
@@ -99,7 +96,7 @@ export default function LandingRenderer({ landing, actions, preview = false }: {
       <div className={`public-inner layout-${zone.layout}`} style={{ position: "relative", zIndex: 2 }}>
         {preview && <span className="preview-badge">Vista previa</span>}
         <div className="landing-identity-block">
-        <div className="avatar" style={{ ...logoFrameStyle(logo, primary, Boolean(landing.logo_url)), width: logo.size, height: logo.size, borderRadius: logoBorderRadius(logo.shape, logo.size), margin: "0 auto 18px", overflow: "hidden" }}>
+        <div className="avatar" style={{ ...logoFrameStyle(logo, primary), width: logo.size, height: logo.size, borderRadius: logoBorderRadius(logo.shape, logo.size), margin: "0 auto 18px", overflow: "hidden" }}>
           {landing.logo_url ? <div style={{ width: "100%", height: "100%", backgroundImage: `url(${landing.logo_url})`, backgroundSize: `${logo.zoom * 100}%`, backgroundPosition: `${logo.x}% ${logo.y}%` }} /> : landing.business_name.slice(0, 1)}
         </div>
         {heading}
@@ -129,10 +126,11 @@ export default function LandingRenderer({ landing, actions, preview = false }: {
                   fontFamily: buttonFont,
                   fontSize: zone.textSize,
                   flexDirection: "column",
+                  alignItems: zone.contentAlign === "left" ? "flex-start" : "center",
                   gap: action.subtitle ? 2 : 9,
                 }}
               >
-                <span className="action-main" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 9 }}><span style={{ fontSize: zone.iconSize * 0.52, flex: "none", display: "inline-flex" }}><ActionTypeIcon type={action.type} icon={action.icon} /></span> {action.title}</span>
+                <span className="action-main" style={{ display: "flex", alignItems: "center", justifyContent: zone.contentAlign === "left" ? "flex-start" : "center", gap: 9 }}><span style={{ fontSize: zone.iconSize * 0.52, flex: "none", display: "inline-flex" }}><ActionTypeIcon type={action.type} icon={action.icon} /></span> {action.title}</span>
                 {action.subtitle && <small style={{ fontSize: 11, opacity: 0.85, fontWeight: 600 }}>{action.subtitle}</small>}
               </a>
             );

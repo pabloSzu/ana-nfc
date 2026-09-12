@@ -388,23 +388,23 @@ export default function EditorV2({ landing, initialButtons, saveAction }: { land
             <div className="v2-phone-screen">
               {preview ? <LandingRenderer landing={rendererLanding} actions={buttons} preview /> : <>
               <div className="v2-bg" style={bgStyle} />
-              <div className="v2-tint" style={{ background: `rgba(5,8,11,${resolveBackgroundTint(draft.background_type, draft.bgPosition.tint)})` }} />
+              <div className="v2-tint" style={{ background: `linear-gradient(180deg, rgba(4,8,10,.03), rgba(5,8,11,${resolveBackgroundTint(draft.background_type, draft.bgPosition.tint)}))` }} />
               {!preview && <div className="v2-phone-tools"><button type="button" className={panel === "templates" ? "active" : ""} onClick={() => setPanel("templates")}>✦ Plantillas</button><button type="button" className={panel === "background" ? "active" : ""} onClick={() => setPanel("background")}>▧ Fondo</button></div>}
               {!preview && <button type="button" className={`v2-background-hit ${panel === "background" ? "is-selected" : ""}`} onClick={() => setPanel("background")} aria-label="Editar fondo"><span>Editar fondo</span></button>}
               <div className={`v2-content layout-${draft.buttonZone.layout}`}>
                 <div className="v2-identity-block">
                 <button className={`v2-edit-element v2-logo-hit ${panel === "logo" ? "is-selected" : ""}`} type="button" onClick={() => !preview && setPanel("logo")} aria-label="Editar logo">
-                  <div className="v2-avatar" style={{ ...logoFrameStyle(draft.logoStyle, draft.primary_color || "#1f2937", Boolean(logoImage)), width: draft.logoStyle.size, height: draft.logoStyle.size, borderRadius: logoBorderRadius(draft.logoStyle.shape, draft.logoStyle.size) }}>
+                  <div className="v2-avatar" style={{ ...logoFrameStyle(draft.logoStyle, draft.primary_color || "#1f2937"), width: draft.logoStyle.size, height: draft.logoStyle.size, borderRadius: logoBorderRadius(draft.logoStyle.shape, draft.logoStyle.size), margin: "0 auto 18px" }}>
                     {logoImage ? <span style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${draft.logoStyle.zoom * 100}%`, backgroundPosition: `${draft.logoStyle.x}% ${draft.logoStyle.y}%` }} /> : draft.business_name.slice(0, 1)}
                   </div>
                   {!preview && <span className="v2-element-tag">Logo</span>}
                 </button>
                 <button className={`v2-edit-element v2-title-hit ${panel === "title" ? "is-selected" : ""}`} type="button" onClick={() => !preview && setPanel("title")}>
-                  <h1 style={{ fontFamily: draft.titleStyle.font, fontWeight: draft.titleStyle.weight, fontSize: draft.titleStyle.size, color: draft.titleStyle.color, textAlign: draft.titleStyle.align, background: draft.titleStyle.bgMode === "solid" ? hexToRgba(draft.titleStyle.bg,.55) : "transparent" }}>{draft.business_name}</h1>
+                  <h1 style={{ fontFamily: draft.titleStyle.font, fontWeight: draft.titleStyle.weight, fontSize: draft.titleStyle.size, color: draft.titleStyle.color, textAlign: draft.titleStyle.align, background: draft.titleStyle.bgMode === "solid" ? hexToRgba(draft.titleStyle.bg,.55) : "transparent", borderRadius: 12, padding: draft.titleStyle.bgMode === "solid" ? "4px 10px" : 0, margin: "0 0 7px" }}>{draft.business_name}</h1>
                   {!preview && <span className="v2-element-tag">Título</span>}
                 </button>
                 <button className={`v2-edit-element v2-subtitle-hit ${panel === "subtitle" ? "is-selected" : ""}`} type="button" onClick={() => !preview && setPanel("subtitle")}>
-                  <p style={{ fontFamily: draft.subtitleStyle.font, fontWeight: draft.subtitleStyle.weight, fontSize: draft.subtitleStyle.size, color: draft.subtitleStyle.color, background: draft.subtitleStyle.bgMode === "solid" ? hexToRgba(draft.subtitleStyle.bg,.55) : "transparent" }}>{draft.description || (!preview ? "Tocá para agregar una descripción" : "")}</p>
+                  <p style={{ fontFamily: draft.subtitleStyle.font, fontWeight: draft.subtitleStyle.weight, fontSize: draft.subtitleStyle.size, color: draft.subtitleStyle.color, background: draft.subtitleStyle.bgMode === "solid" ? hexToRgba(draft.subtitleStyle.bg,.55) : "transparent", borderRadius: 10, padding: draft.subtitleStyle.bgMode === "solid" ? "4px 9px" : 0, maxWidth: 340, margin: "0 auto 24px" }}>{draft.description || (!preview ? "Tocá para agregar una descripción" : "")}</p>
                   {!preview && <span className="v2-element-tag">Subtítulo</span>}
                 </button>
                 </div>
@@ -412,8 +412,13 @@ export default function EditorV2({ landing, initialButtons, saveAction }: { land
                   {!preview && <button type="button" className="v2-zone-tag" onClick={() => setPanel("buttons")}>✦ Editar todos los botones</button>}
                   {buttons.map((button, index) => { const colors = resolveButtonColors({ zone: draft.buttonZone, type: button.type, position: index, primary: draft.primary_color || "#1f2937", customColor: button.background_color, useAutoColor: button.use_auto_color }); return (
                     <button ref={(element) => { if (element) buttonElements.current.set(button.id, element); else buttonElements.current.delete(button.id); }} key={button.id} data-button-id={button.id} type="button" className={`v2-link button-collection-${draft.buttonZone.collection} ${panel && typeof panel === "object" && panel.buttonId === button.id ? "is-selected" : ""} ${draggingId === button.id ? "is-dragging" : ""}`} onClick={() => !preview && setPanel({ buttonId: button.id })} style={{ ...buttonCollectionStyle(draft.buttonZone.collection, colors.background, colors.text, index), width: buttonCollectionWidth(draft.buttonZone, index), minHeight: draft.buttonZone.height, margin: "0 auto", borderRadius: draft.buttonZone.radius, boxShadow: buttonCollectionStyle(draft.buttonZone.collection, colors.background, colors.text, index).boxShadow || buttonZoneShadow(draft.buttonZone.shadow), fontFamily: getFontFamily(draft.button_font || "modern"), fontSize: draft.buttonZone.textSize }}>
-                      <span className="v2-btn-icon" style={{ width: draft.buttonZone.iconSize, height: draft.buttonZone.iconSize, fontSize: draft.buttonZone.iconSize * 0.52 }}><ActionTypeIcon type={button.type} icon={button.icon} /></span>
-                      <span className="v2-btn-label"><b>{button.title}</b>{button.subtitle && <small>{button.subtitle}</small>}</span>
+                      <span className="v2-btn-content" style={{ alignItems: draft.buttonZone.contentAlign === "left" ? "flex-start" : "center", gap: button.subtitle ? 2 : 9 }}>
+                        <span className="v2-btn-main" style={{ justifyContent: draft.buttonZone.contentAlign === "left" ? "flex-start" : "center" }}>
+                          <span className="v2-btn-icon" style={{ width: draft.buttonZone.iconSize, height: draft.buttonZone.iconSize, fontSize: draft.buttonZone.iconSize * 0.52 }}><ActionTypeIcon type={button.type} icon={button.icon} /></span>
+                          <b className="v2-btn-title">{button.title}</b>
+                        </span>
+                        {button.subtitle && <small className="v2-btn-subtitle">{button.subtitle}</small>}
+                      </span>
                       {!preview && !button.use_auto_color && <span className="v2-own-badge">Propio</span>}
                       {!preview && <span className="v2-pencil" title="Editar botón"><IconEdit /></span>}
                       {!preview && <span className="v2-drag" title="Arrastrar para cambiar el orden" aria-label="Mover botón" onClick={(event)=>event.stopPropagation()} onPointerDown={(event)=>{ event.preventDefault(); startDrag(event.clientY, button.id); }}>⠿</span>}
@@ -535,6 +540,7 @@ function ButtonDesign({ draft, buttons, onZone, onFont, onApplyButtonLook, onRes
         <summary>Más opciones</summary>
         <div className="v2-fields" style={{ marginTop: 10 }}>
           <label>Tipografía<select value={draft.button_font || "modern"} onChange={(event) => onFont(event.target.value)}>{Object.entries(FONT_LABEL).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+          <fieldset><legend>Alineación</legend><div className="v2-segment"><button type="button" className={zone.contentAlign === "center" ? "active" : ""} onClick={() => onZone({ contentAlign: "center" })}>Centrada</button><button type="button" className={zone.contentAlign === "left" ? "active" : ""} onClick={() => onZone({ contentAlign: "left" })}>Izquierda</button></div></fieldset>
           <Range label="Alto del botón" min={40} max={72} value={zone.height} onChange={(height) => onZone({ height })} />
           <Range label="Espaciado entre botones" min={4} max={20} value={zone.gap} onChange={(gap) => onZone({ gap })} />
           <Range label="Tamaño del ícono" min={22} max={38} value={zone.iconSize} onChange={(iconSize) => onZone({ iconSize })} />
@@ -566,14 +572,14 @@ function LogoControls({ draft, logoImage, onChange, onLogo, onRemoveLogo }: { dr
   const primary = draft.primary_color || "#1f2937";
   const update = (patch: Partial<LogoStyle>) => onChange({ logoStyle: { ...style, ...patch } });
   return <div className="v2-fields">
-    <div className="v2-logo-editor"><div style={{ ...logoFrameStyle(style, primary, Boolean(logoImage)), borderRadius: logoBorderRadius(style.shape, 76) }}>{logoImage ? <span style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${style.zoom * 100}%`, backgroundPosition: `${style.x}% ${style.y}%` }} /> : draft.business_name.slice(0,1)}</div><span><label className="v2-upload">{logoImage ? "Cambiar imagen" : "Elegir imagen"}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => onLogo(event.target.files?.[0])} /></label>{logoImage && <button type="button" className="v2-delete" onClick={onRemoveLogo}>Quitar</button>}</span></div>
+    <div className="v2-logo-editor"><div style={{ ...logoFrameStyle(style, primary), borderRadius: logoBorderRadius(style.shape, 76) }}>{logoImage ? <span style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${style.zoom * 100}%`, backgroundPosition: `${style.x}% ${style.y}%` }} /> : draft.business_name.slice(0,1)}</div><span><label className="v2-upload">{logoImage ? "Cambiar imagen" : "Elegir imagen"}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => onLogo(event.target.files?.[0])} /></label>{logoImage && <button type="button" className="v2-delete" onClick={onRemoveLogo}>Quitar</button>}</span></div>
     <button type="button" className="v2-suggested v2-logo-recommended-button" onClick={() => onChange({ logoStyle: { ...style, ...logoTreatmentPatch("template", draft.buttonZone.templateId), ...preset.logo, zoom: 1, x: 50, y: 50 } })}>✦ Usar estilos recomendados ({preset.name})</button>
     <fieldset>
       <legend>Forma del logo</legend>
       <div className="v2-logo-shape-grid">
         {LOGO_SHAPE_OPTIONS.map((option) => (
           <button type="button" key={option.id} className={style.shape === option.id ? "active" : ""} aria-pressed={style.shape === option.id} onClick={() => update({ shape: option.id, treatment: "custom" })}>
-            <span className="v2-logo-shape-preview" style={{ ...logoFrameStyle({ ...style, shape: option.id }, primary, Boolean(logoImage)), borderRadius: logoBorderRadius(option.id, 48) }}>
+            <span className="v2-logo-shape-preview" style={{ ...logoFrameStyle({ ...style, shape: option.id }, primary), borderRadius: logoBorderRadius(option.id, 48) }}>
               {logoImage ? <i style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${style.zoom * 100}%`, backgroundPosition: `${style.x}% ${style.y}%` }} /> : draft.business_name.slice(0,1)}
             </span>
             <b>{option.label}</b>
@@ -582,8 +588,23 @@ function LogoControls({ draft, logoImage, onChange, onLogo, onRemoveLogo }: { dr
       </div>
     </fieldset>
     <Range label="Tamaño" min={72} max={190} value={style.size} onChange={(size) => update({ size })} />
-    <Range label="Borde" min={0} max={10} value={style.borderWidth} onChange={(borderWidth) => update({ borderWidth, treatment: "custom" })} />
-    {logoImage && <><Range label="Zoom" min={1} max={2.5} step={.01} value={style.zoom} onChange={(zoom) => update({ zoom })} /><Range label="Horizontal" min={0} max={100} value={style.x} onChange={(x) => update({ x })} /><Range label="Vertical" min={0} max={100} value={style.y} onChange={(y) => update({ y })} /></>}
+    <div className="v2-inline-row">
+      <Range label="Borde" min={0} max={10} value={style.borderWidth} onChange={(borderWidth) => update({ borderWidth, treatment: "custom" })} />
+      {style.borderWidth > 0 && <label className="v2-mini-color" title="Color de borde"><span>Color</span><input type="color" value={style.borderColor} onChange={(event) => update({ borderColor: event.target.value, treatment: "custom" })} /></label>}
+    </div>
+    <fieldset>
+      <legend>Color de fondo</legend>
+      <p className="v2-help" style={{ margin: "0 0 4px" }}>Se ve detrás del círculo del logo (si no subiste foto, es el color de fondo de la inicial).</p>
+      <Choice active={style.backgroundMode === "auto"} swatch={primary} title="Automático" note="El color sugerido por tu plantilla." onClick={() => update({ backgroundMode: "auto" })} />
+      <Choice active={style.backgroundMode === "custom"} swatch={style.fallback} title="Personalizado" note="Elegí cualquier color para el fondo del logo." onClick={() => update({ backgroundMode: "custom" })} />
+      {style.backgroundMode === "custom" && <ColorField label="Color de fondo" value={style.fallback} onChange={(fallback) => update({ fallback })} />}
+    </fieldset>
+    {logoImage && <>
+      <Range label="Zoom" min={1} max={2.5} step={.01} value={style.zoom} onChange={(zoom) => update({ zoom })} />
+      {style.zoom > 1
+        ? <><Range label="Horizontal" min={0} max={100} value={style.x} onChange={(x) => update({ x })} /><Range label="Vertical" min={0} max={100} value={style.y} onChange={(y) => update({ y })} /></>
+        : <p className="v2-help" style={{ margin: 0 }}>Subí el zoom para poder mover la imagen dentro del marco.</p>}
+    </>}
   </div>;
 }
 

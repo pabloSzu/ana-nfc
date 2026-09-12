@@ -13,7 +13,7 @@ export type DesignPreset = {
   oneColor: string;
   foreground: string;
   buttonFont: string;
-  buttonZone: Omit<ButtonZoneStyle, "oneColor" | "templateId">;
+  buttonZone: Omit<ButtonZoneStyle, "oneColor" | "templateId" | "contentAlign">;
   title: Pick<TitleStyle, "font" | "weight" | "size" | "align">;
   subtitle: Pick<SubtitleStyle, "font" | "weight" | "size">;
   logo: Pick<LogoStyle, "shape" | "size">;
@@ -47,14 +47,14 @@ export const DESIGN_PRESETS_V2: DesignPreset[] = [
   },
   {
     id: "glass", name: "Glassmorfismo", description: "Vidrio esmerilado sobre un fondo vivo. Fotografía, eventos y vida nocturna.",
-    background: "linear-gradient(150deg,#3a1c71,#d76d77,#ffaf7b)", bg1: "#3a1c71", bg2: "#ffaf7b", accent: "#ffffff", oneColor: "#ffffff", foreground: "#ffffff",
+    background: "linear-gradient(150deg,#1c0f3d,#ff4fa3)", bg1: "#1c0f3d", bg2: "#ff4fa3", accent: "#ffffff", oneColor: "#ffffff", foreground: "#ffffff",
     buttonFont: "minimal",
     buttonZone: { preset: "glass", layout: "center", gap: 11, height: 56, radius: 18, width: 100, shadow: "soft", finish: "glass", collection: "glass", colorMode: "one", textSize: 14, iconSize: 29 },
     title: { font: "Inter,ui-sans-serif,system-ui,sans-serif", weight: 800, size: 29, align: "center" }, subtitle: { font: "Inter,ui-sans-serif,system-ui,sans-serif", weight: 500, size: 14 }, logo: { shape: "round", size: 124 },
   },
   {
     id: "elegant", name: "Elegante", description: "Editorial, oscura y con detalles dorados. Hoteles boutique, joyerías y alta gama.",
-    background: "linear-gradient(150deg,#221c18,#4a3626)", bg1: "#221c18", bg2: "#4a3626", accent: "#d9b26a", oneColor: "#d9b26a", foreground: "#f3e6cf",
+    background: "linear-gradient(150deg,#181310,#3d2b1f)", bg1: "#181310", bg2: "#3d2b1f", accent: "#d9b26a", oneColor: "#d9b26a", foreground: "#f3e6cf",
     buttonFont: "classic",
     buttonZone: { preset: "elegant", layout: "center", gap: 14, height: 54, radius: 6, width: 100, shadow: "soft", finish: "solid", collection: "luxury", colorMode: "one", textSize: 14, iconSize: 26 },
     title: { font: "Georgia,serif", weight: 700, size: 30, align: "center" }, subtitle: { font: "Georgia,serif", weight: 400, size: 14 }, logo: { shape: "round", size: 114 },
@@ -82,7 +82,7 @@ export const DESIGN_PRESETS_V2: DesignPreset[] = [
   },
   {
     id: "pastel", name: "Pastel", description: "Suave, luminosa y delicada. Belleza, salud y cuidado personal.",
-    background: "linear-gradient(150deg,#ffe6ef,#e3e6ff)", bg1: "#ffe6ef", bg2: "#e3e6ff", accent: "#b25fae", oneColor: "#b25fae", foreground: "#3d2a3c",
+    background: "linear-gradient(150deg,#ffe6ef,#e3e6ff)", bg1: "#ffe6ef", bg2: "#e3e6ff", accent: "#cf7fb9", oneColor: "#cf7fb9", foreground: "#3d2a3c",
     buttonFont: "friendly",
     buttonZone: { preset: "pastel", layout: "center", gap: 11, height: 54, radius: 22, width: 100, shadow: "soft", finish: "solid", collection: "pastel", colorMode: "one", textSize: 14, iconSize: 27 },
     title: { font: "Inter,ui-sans-serif,system-ui,sans-serif", weight: 700, size: 27, align: "center" }, subtitle: { font: "Inter,ui-sans-serif,system-ui,sans-serif", weight: 500, size: 14 }, logo: { shape: "round", size: 118 },
@@ -96,7 +96,7 @@ export const DESIGN_PRESETS_V2: DesignPreset[] = [
   },
   {
     id: "creator", name: "Pop Studio", description: "Audaz y expresiva, pero siempre ordenada. Creadores y marcas digitales.",
-    background: "linear-gradient(150deg,#ffcc35,#ff596d)", bg1: "#ffcc35", bg2: "#ff596d", accent: "#5b2be0", oneColor: "#5b2be0", foreground: "#241a4d",
+    background: "linear-gradient(150deg,#ff3e88,#ff9a3d)", bg1: "#ff3e88", bg2: "#ff9a3d", accent: "#5b2be0", oneColor: "#5b2be0", foreground: "#ffffff",
     buttonFont: "friendly",
     buttonZone: { preset: "creator", layout: "center", gap: 12, height: 58, radius: 22, width: 100, shadow: "strong", finish: "solid", collection: "candy", colorMode: "one", textSize: 15, iconSize: 31 },
     title: { font: "'Arial Black',Arial,sans-serif", weight: 900, size: 30, align: "center" }, subtitle: { font: "'Trebuchet MS',sans-serif", weight: 700, size: 14 }, logo: { shape: "square", size: 118 },

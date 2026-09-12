@@ -104,6 +104,10 @@ export type ButtonZoneStyle = {
   shadow: "none" | "soft" | "strong"; finish: "solid" | "glass" | "outline";
   collection: "soft" | "brand" | "glass" | "glow" | "luxury" | "minimal" | "split" | "bento" | "pastel" | "metallic" | "retro" | "editorial" | "candy" | "ocean" | "brutal" | "corporate";
   colorMode: "auto" | "one"; oneColor: string; textSize: number; iconSize: number;
+  // How the icon+text sit inside each button — independent of the template, same as color:
+  // a design decision that lives in one place and doesn't get silently reset when you pick
+  // a different plantilla.
+  contentAlign: "center" | "left";
 };
 
 export const DEFAULT_BUTTON_ZONE: ButtonZoneStyle = {
@@ -112,7 +116,7 @@ export const DEFAULT_BUTTON_ZONE: ButtonZoneStyle = {
   templateId: "custom",
   gap: 9, height: 52, radius: 16, width: 100,
   shadow: "soft", finish: "solid", collection: "soft", colorMode: "auto", oneColor: "#6d5cff",
-  textSize: 14, iconSize: 29,
+  textSize: 14, iconSize: 29, contentAlign: "left",
 };
 
 export function parseButtonZone(raw: unknown): ButtonZoneStyle {
@@ -125,6 +129,7 @@ export function parseButtonZone(raw: unknown): ButtonZoneStyle {
   const finishes: ButtonZoneStyle["finish"][] = ["solid","glass","outline"];
   const shadows: ButtonZoneStyle["shadow"][] = ["none","soft","strong"];
   const layouts: ButtonZoneStyle["layout"][] = ["center","editorial","profile-card","compact","poster"];
+  const contentAligns: ButtonZoneStyle["contentAlign"][] = ["center","left"];
   return {
     ...merged,
     preset: typeof parsed.preset === "string" ? parsed.preset : "custom",
@@ -142,6 +147,7 @@ export function parseButtonZone(raw: unknown): ButtonZoneStyle {
     colorMode: colorModes.includes(merged.colorMode) ? merged.colorMode : "auto",
     finish: finishes.includes(merged.finish) ? merged.finish : "solid",
     shadow: shadows.includes(merged.shadow) ? merged.shadow : "soft",
+    contentAlign: contentAligns.includes(merged.contentAlign) ? merged.contentAlign : "left",
   };
 }
 
@@ -206,14 +212,18 @@ export function logoBackgroundColor(style: LogoStyle, primary: string): string {
   return style.backgroundMode === "custom" ? style.fallback : primary;
 }
 
-export function logoFrameStyle(style: LogoStyle, primary: string, hasImage: boolean): CSSProperties {
-  const background = style.treatment === "clean" && hasImage ? "transparent" : logoBackgroundColor(style, primary);
+// One rule, always: the circle's background is either "Automático" (the landing's primary
+// color) or a custom color the person picked — never a hidden extra case depending on the
+// logo's shape/border treatment. That used to make the circle silently go fully transparent
+// for one specific treatment, which was surprising and impossible to predict from the UI.
+export function logoFrameStyle(style: LogoStyle, primary: string): CSSProperties {
+  const background = logoBackgroundColor(style, primary);
   const shadow = style.shadow === "glow"
     ? `0 0 0 3px ${hexToRgba(style.borderColor, .2)}, 0 0 28px ${hexToRgba(style.borderColor, .58)}`
     : style.shadow === "soft" ? "0 10px 28px rgba(18,20,30,.18)" : "none";
   return {
     background,
-    color: contrastTextColor(background === "transparent" ? primary : background),
+    color: contrastTextColor(background),
     border: style.borderWidth ? `${style.borderWidth}px solid ${style.borderColor}` : "none",
     boxShadow: shadow,
   };

@@ -11,10 +11,16 @@ export async function compressImage(file: File, maxDimension = 1600, quality = 0
     const ctx = canvas.getContext("2d");
     if (!ctx) return file;
     ctx.drawImage(bitmap, 0, 0, width, height);
-    const blob: Blob | null = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+    // JPEG has no alpha channel — encoding a transparent PNG/WebP through it turns every
+    // transparent pixel solid black. Only formats that never had transparency to begin with
+    // (JPEG sources) get the smaller lossy output; anything that could carry an alpha channel
+    // stays PNG so a logo with a transparent background actually stays transparent.
+    const preserveAlpha = file.type === "image/png" || file.type === "image/webp";
+    const outputType = preserveAlpha ? "image/png" : "image/jpeg";
+    const blob: Blob | null = await new Promise((resolve) => canvas.toBlob(resolve, outputType, preserveAlpha ? undefined : quality));
     bitmap.close();
     if (!blob || blob.size >= file.size) return file;
-    return new File([blob], file.name.replace(/\.\w+$/, ".jpg"), { type: "image/jpeg" });
+    return new File([blob], file.name.replace(/\.\w+$/, preserveAlpha ? ".png" : ".jpg"), { type: outputType });
   } catch {
     return file;
   }

@@ -42,7 +42,7 @@ const FORMAT_HINTS: Record<string, string> = {
 type DesignPreset = {
   id: string; name: string; description: string; accent: string;
   buttonFont: string;
-  buttonZone: Omit<Draft["buttonZone"], "oneColor" | "preset" | "templateId">;
+  buttonZone: Omit<Draft["buttonZone"], "oneColor" | "preset" | "templateId" | "contentAlign">;
   title: Pick<Draft["titleStyle"], "font" | "weight" | "size" | "align">;
   subtitle: Pick<Draft["subtitleStyle"], "font" | "weight" | "size">;
   logo: Pick<Draft["logoStyle"], "shape" | "size">;
@@ -409,7 +409,7 @@ export default function VisualEditor({
               <div className="visual-statusbar"><span>9:41</span><span>▮▮▮ ● ▰</span></div>
 
               <div className="visual-scroll">
-                <div className={previewMode ? "visual-logo" : "visual-logo editable"} style={{ ...logoFrameStyle(logo, draft.primary_color || "#1f2937", Boolean(draft.logo_url)), width: logo.size, height: logo.size, borderRadius: logoBorderRadius(logo.shape, logo.size) }} onClick={(e) => { if (!previewMode) openSheet("logo", e.currentTarget); }}>
+                <div className={previewMode ? "visual-logo" : "visual-logo editable"} style={{ ...logoFrameStyle(logo, draft.primary_color || "#1f2937"), width: logo.size, height: logo.size, borderRadius: logoBorderRadius(logo.shape, logo.size) }} onClick={(e) => { if (!previewMode) openSheet("logo", e.currentTarget); }}>
                   {draft.logo_url ? <div style={{ width: "100%", height: "100%", backgroundImage: `url(${draft.logo_url})`, backgroundSize: `${logo.zoom * 100}%`, backgroundPosition: `${logo.x}% ${logo.y}%` }} /> : <span className="visual-initial">{draft.business_name.slice(0, 1) || "?"}</span>}
                   {!previewMode && <span className="visual-edit-bubble"><IconEdit /></span>}
                 </div>
@@ -881,7 +881,7 @@ function DesignSheet({ draft, update, onDone, onCancel }: { draft: Draft; update
     const textColor = autoTextColor(draft);
     update({
       button_font: preset.buttonFont,
-      buttonZone: { ...preset.buttonZone, preset: preset.id, templateId: "custom", oneColor: draft.primary_color },
+      buttonZone: { ...preset.buttonZone, preset: preset.id, templateId: "custom", oneColor: draft.primary_color, contentAlign: draft.buttonZone.contentAlign },
       titleStyle: { ...draft.titleStyle, ...preset.title, color: textColor, bgMode: "none" },
       subtitleStyle: { ...draft.subtitleStyle, ...preset.subtitle, color: textColor, bgMode: "none" },
       logoStyle: { ...draft.logoStyle, ...preset.logo },
