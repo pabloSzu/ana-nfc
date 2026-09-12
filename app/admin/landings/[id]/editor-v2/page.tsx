@@ -8,7 +8,6 @@ import { Suspense } from "react";
 import "./editor-v2.css";
 import "./logo-editor.css";
 import "./collections.css";
-import "./direct-edit.css";
 import "./phone-first.css";
 
 export default async function EditorV2Page({ params }: { params: Promise<{ id: string }> }) {

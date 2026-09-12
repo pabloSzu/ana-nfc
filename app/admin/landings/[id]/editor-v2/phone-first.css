@@ -21,38 +21,6 @@
 }
 
 .v2-phone-screen { border-radius: 39px; }
-.v2-content { padding: 63px 27px 30px; }
-
-.v2-phone-tools {
-  position: absolute;
-  z-index: 4;
-  top: 14px;
-  left: 15px;
-  right: 15px;
-  display: flex;
-  justify-content: space-between;
-  pointer-events: none;
-}
-
-.v2-phone-tools button {
-  pointer-events: auto;
-  border: 1px solid rgba(255, 255, 255, 0.38);
-  border-radius: 999px;
-  padding: 7px 10px;
-  background: rgba(255, 255, 255, 0.86);
-  color: #35394d;
-  box-shadow: 0 6px 18px rgba(15, 17, 25, 0.16);
-  backdrop-filter: blur(12px);
-  font-size: 10px;
-  font-weight: 900;
-  cursor: pointer;
-}
-
-.v2-phone-tools button.active {
-  color: #fff;
-  background: #6556df;
-  border-color: #6556df;
-}
 
 .v2-panel {
   position: fixed;
@@ -89,28 +57,6 @@
   color: #9296a5;
 }
 
-.v2-background-hit > span { display: none; }
-.v2-element-tag {
-  width: 23px;
-  height: 23px;
-  overflow: hidden;
-  padding: 0;
-  color: transparent !important;
-  border-radius: 50%;
-}
-
-.v2-element-tag::after {
-  content: "✎";
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  color: #5145c9;
-  font-size: 11px;
-}
-
-.v2-zone-tag { opacity: 0.92; }
-
 @keyframes v2-popover-in {
   from { opacity: 0; transform: translateX(-8px) scale(0.985); }
   to { opacity: 1; transform: translateX(0) scale(1); }
@@ -127,7 +73,6 @@
   .v2-stage { justify-items: center; padding: 10px 8px; }
   .v2-phone { width: min(400px, 96vw); height: calc(100dvh - 84px); min-height: 0; border-radius: 43px; border-width: 8px; }
   .v2-phone-screen { border-radius: 33px; }
-  .v2-content { padding: 58px 22px 28px; }
   .v2-panel {
     position: fixed;
     top: auto;

@@ -1,13 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ActionTypeIcon } from "@/components/action-icons";
-import { IconEdit } from "@/components/icons";
-import LandingRenderer from "@/components/landing-renderer";
+import LandingRenderer, { type LandingEditControls } from "@/components/landing-renderer";
 import { compressImage } from "@/lib/compress-image";
-import { AUTO_COLORS, buttonZoneShadow, contrastTextColor, getAllActions, getFontFamily, hexToRgba, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize, resolveBackgroundTint, TEXT_FONT_OPTIONS, type BackgroundPosition, type ButtonZoneStyle, type LogoStyle, type SubtitleStyle, type TitleStyle } from "@/lib/landing-catalog";
-import { DESIGN_PRESETS_V2, buttonCollectionStyle, buttonCollectionWidth, resolveButtonColors, type DesignPreset } from "@/lib/design-presets";
+import { AUTO_COLORS, contrastTextColor, getAllActions, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize, TEXT_FONT_OPTIONS, type BackgroundPosition, type ButtonZoneStyle, type LogoStyle, type SubtitleStyle, type TitleStyle } from "@/lib/landing-catalog";
+import { DESIGN_PRESETS_V2, buttonCollectionStyle, resolveButtonColors, type DesignPreset } from "@/lib/design-presets";
 
 type ButtonItem = { id: string; type: string; title: string; subtitle: string; url: string; message: string; icon: string; background_color: string; text_color: string; use_auto_color: boolean; position: number };
 type LandingDraft = {
@@ -63,7 +62,7 @@ export default function EditorV2({ landing, initialButtons, saveAction }: { land
   const actionDefs = useMemo(() => getAllActions(), []);
   const draggedButton = useRef<string | null>(null);
   const lastDragTargetIndex = useRef<number | null>(null);
-  const buttonElements = useRef(new Map<string, HTMLButtonElement>());
+  const buttonElements = useRef(new Map<string, HTMLAnchorElement>());
   const buttonsContainerRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLElement>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -325,9 +324,6 @@ export default function EditorV2({ landing, initialButtons, saveAction }: { land
 
   const backgroundImage = bgPreview || draft.background_image_url || "";
   const logoImage = logoPreview || (!logoRemoved ? draft.logo_url || "" : "");
-  const bgStyle: CSSProperties = draft.background_type === "image" && backgroundImage
-    ? { backgroundColor: draft.background_color || "#f5f5f5", backgroundImage: `url(${backgroundImage})`, backgroundSize: "cover", backgroundPosition: `${draft.bgPosition.x}% ${draft.bgPosition.y}%`, transform: `scale(${draft.bgPosition.zoom})`, transformOrigin: `${draft.bgPosition.x}% ${draft.bgPosition.y}%` }
-    : draft.background_type === "gradient" ? { background: `linear-gradient(145deg,${draft.background_color},${draft.background_gradient_to})` } : { background: draft.background_color || "#f5f5f5" };
   const rendererLanding = {
     ...draft,
     logo_url: logoImage,
@@ -337,6 +333,23 @@ export default function EditorV2({ landing, initialButtons, saveAction }: { land
     subtitle_style: draft.subtitleStyle,
     logo_style: draft.logoStyle,
     background_style: draft.bgPosition,
+  };
+  // Wires the editor's own state (selection, drag) into LandingRenderer's `edit` prop — the
+  // canvas below is the same component the public page uses, not a parallel re-implementation,
+  // so "what you see while editing" and "what gets published" can't drift apart anymore.
+  const editControls: LandingEditControls = {
+    selected: panel,
+    draggingId,
+    onSelectTemplates: () => setPanel("templates"),
+    onSelectLogo: () => setPanel("logo"),
+    onSelectTitle: () => setPanel("title"),
+    onSelectSubtitle: () => setPanel("subtitle"),
+    onSelectBackground: () => setPanel("background"),
+    onSelectZone: () => setPanel("buttons"),
+    onSelectButton: (id) => setPanel({ buttonId: id }),
+    onAddButton: () => setPanel("add"),
+    onButtonRef: (id, element) => { if (element) buttonElements.current.set(id, element); else buttonElements.current.delete(id); },
+    onDragStart: (clientY, id) => startDrag(clientY, id),
   };
 
   return (
@@ -385,48 +398,8 @@ export default function EditorV2({ landing, initialButtons, saveAction }: { land
         <section className={`v2-stage device-${device}`}>
           <div className="v2-stage-toolbar"><span>{preview ? "Vista limpia" : "Tamaño de pantalla"}</span><div className="v2-device-switcher">{DEVICE_OPTIONS.map((option) => <button key={option.id} type="button" className={device === option.id ? "active" : ""} title={option.size} onClick={() => setDevice(option.id)}>{option.label}</button>)}</div></div>
           <div className={`v2-phone device-${device}`}>
-            <div className="v2-phone-screen">
-              {preview ? <LandingRenderer landing={rendererLanding} actions={buttons} preview /> : <>
-              <div className="v2-bg" style={bgStyle} />
-              <div className="v2-tint" style={{ background: `linear-gradient(180deg, rgba(4,8,10,.03), rgba(5,8,11,${resolveBackgroundTint(draft.background_type, draft.bgPosition.tint)}))` }} />
-              {!preview && <div className="v2-phone-tools"><button type="button" className={panel === "templates" ? "active" : ""} onClick={() => setPanel("templates")}>✦ Plantillas</button><button type="button" className={panel === "background" ? "active" : ""} onClick={() => setPanel("background")}>▧ Fondo</button></div>}
-              {!preview && <button type="button" className={`v2-background-hit ${panel === "background" ? "is-selected" : ""}`} onClick={() => setPanel("background")} aria-label="Editar fondo"><span>Editar fondo</span></button>}
-              <div className={`v2-content layout-${draft.buttonZone.layout}`}>
-                <div className="v2-identity-block">
-                <button className={`v2-edit-element v2-logo-hit ${panel === "logo" ? "is-selected" : ""}`} type="button" onClick={() => !preview && setPanel("logo")} aria-label="Editar logo">
-                  <div className="v2-avatar" style={{ ...logoFrameStyle(draft.logoStyle, draft.primary_color || "#1f2937"), width: draft.logoStyle.size, height: draft.logoStyle.size, borderRadius: logoBorderRadius(draft.logoStyle.shape, draft.logoStyle.size), margin: "0 auto 18px", fontSize: logoLetterSize(draft.logoStyle.size, draft.logoStyle.initials) }}>
-                    {logoImage ? <span style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${draft.logoStyle.zoom * 100}%`, backgroundPosition: `${draft.logoStyle.x}% ${draft.logoStyle.y}%` }} /> : logoInitials(draft.business_name, draft.logoStyle.initials)}
-                  </div>
-                  {!preview && <span className="v2-element-tag">Logo</span>}
-                </button>
-                <button className={`v2-edit-element v2-title-hit ${panel === "title" ? "is-selected" : ""}`} type="button" onClick={() => !preview && setPanel("title")}>
-                  <h1 style={{ fontFamily: draft.titleStyle.font, fontWeight: draft.titleStyle.weight, fontSize: draft.titleStyle.size, color: draft.titleStyle.color, textAlign: draft.titleStyle.align, background: draft.titleStyle.bgMode === "solid" ? hexToRgba(draft.titleStyle.bg,.55) : "transparent", borderRadius: 12, padding: draft.titleStyle.bgMode === "solid" ? "4px 10px" : 0, margin: "0 0 7px" }}>{draft.business_name}</h1>
-                  {!preview && <span className="v2-element-tag">Título</span>}
-                </button>
-                <button className={`v2-edit-element v2-subtitle-hit ${panel === "subtitle" ? "is-selected" : ""}`} type="button" onClick={() => !preview && setPanel("subtitle")}>
-                  <p style={{ fontFamily: draft.subtitleStyle.font, fontWeight: draft.subtitleStyle.weight, fontSize: draft.subtitleStyle.size, color: draft.subtitleStyle.color, background: draft.subtitleStyle.bgMode === "solid" ? hexToRgba(draft.subtitleStyle.bg,.55) : "transparent", borderRadius: 10, padding: draft.subtitleStyle.bgMode === "solid" ? "4px 9px" : 0, maxWidth: 340, margin: "0 auto 24px" }}>{draft.description || (!preview ? "Tocá para agregar una descripción" : "")}</p>
-                  {!preview && <span className="v2-element-tag">Subtítulo</span>}
-                </button>
-                </div>
-                <div ref={buttonsContainerRef} className={`v2-links ${panel === "buttons" ? "is-selected" : ""}`} style={{ display: "flex", flexDirection: "column", gap: draft.buttonZone.gap }}>
-                  {!preview && <button type="button" className="v2-zone-tag" onClick={() => setPanel("buttons")}>✦ Editar todos los botones</button>}
-                  {buttons.map((button, index) => { const colors = resolveButtonColors({ zone: draft.buttonZone, type: button.type, position: index, primary: draft.primary_color || "#1f2937", customColor: button.background_color, useAutoColor: button.use_auto_color }); return (
-                    <button ref={(element) => { if (element) buttonElements.current.set(button.id, element); else buttonElements.current.delete(button.id); }} key={button.id} data-button-id={button.id} type="button" className={`v2-link button-collection-${draft.buttonZone.collection} ${panel && typeof panel === "object" && panel.buttonId === button.id ? "is-selected" : ""} ${draggingId === button.id ? "is-dragging" : ""}`} onClick={() => !preview && setPanel({ buttonId: button.id })} style={{ ...buttonCollectionStyle(draft.buttonZone.collection, colors.background, colors.text, index), width: buttonCollectionWidth(draft.buttonZone, index), minHeight: draft.buttonZone.height, margin: "0 auto", borderRadius: draft.buttonZone.radius, boxShadow: buttonCollectionStyle(draft.buttonZone.collection, colors.background, colors.text, index).boxShadow || buttonZoneShadow(draft.buttonZone.shadow), fontFamily: getFontFamily(draft.button_font || "modern"), fontSize: draft.buttonZone.textSize }}>
-                      <span className="v2-btn-content" style={{ alignItems: draft.buttonZone.contentAlign === "left" ? "flex-start" : "center", gap: button.subtitle ? 2 : 9 }}>
-                        <span className="v2-btn-main" style={{ justifyContent: draft.buttonZone.contentAlign === "left" ? "flex-start" : "center" }}>
-                          <span className="v2-btn-icon" style={{ width: draft.buttonZone.iconSize, height: draft.buttonZone.iconSize, fontSize: draft.buttonZone.iconSize * 0.52 }}><ActionTypeIcon type={button.type} icon={button.icon} /></span>
-                          <b className="v2-btn-title">{button.title}</b>
-                        </span>
-                        {button.subtitle && <small className="v2-btn-subtitle">{button.subtitle}</small>}
-                      </span>
-                      {!preview && !button.use_auto_color && <span className="v2-own-badge">Propio</span>}
-                      {!preview && <span className="v2-pencil" title="Editar botón"><IconEdit /></span>}
-                      {!preview && <span className="v2-drag" title="Arrastrar para cambiar el orden" aria-label="Mover botón" onClick={(event)=>event.stopPropagation()} onPointerDown={(event)=>{ event.preventDefault(); startDrag(event.clientY, button.id); }}>⠿</span>}
-                    </button> ); })}
-                  {!preview && <button className="v2-add-link" type="button" style={{ borderRadius: draft.buttonZone.radius, minHeight: draft.buttonZone.height }} onClick={() => setPanel("add")}><span className="v2-add-icon">＋</span><span>Agregar botón</span></button>}
-                </div>
-              </div>
-              </>}
+            <div className="v2-phone-screen" ref={buttonsContainerRef}>
+              <LandingRenderer landing={rendererLanding} actions={buttons} edit={preview ? undefined : editControls} />
             </div>
           </div>
         </section>

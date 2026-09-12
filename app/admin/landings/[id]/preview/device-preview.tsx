@@ -24,7 +24,7 @@ export default function DevicePreview({ landing, actions, backHref }: RendererPr
       </header>
       <section className="device-preview-stage">
         <div className={`device-preview-frame device-${device}`}>
-          <LandingRenderer landing={landing} actions={actions} preview />
+          <LandingRenderer landing={landing} actions={actions} />
         </div>
       </section>
     </main>

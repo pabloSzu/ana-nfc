@@ -372,6 +372,17 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; letter-spacing: -0.01e
 .public-inner { padding-inline: 14px; }
 .public .action { max-width: 100%; min-width: 0; overflow: hidden; }
 .public .action > .action-main { max-width: 100%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Edit mode adds badges/pencil/tags that intentionally poke outside the button's own box
+   (e.g. the "Propio" badge sits above the top edge) — the ellipsis clipping above already
+   lives on .action-main itself, so the outer overflow:hidden here is only needed for the
+   real published page and can be lifted while editing without touching real layout. */
+.public .action.editor-hit { overflow: visible; }
+/* .avatar's own class rule sets overflow:hidden (needed to crop the logo image/initials to
+   the circle) — that clips the "Logo" tag and would clip any badge the avatar gets in edit
+   mode. The actual image/initials cropping now lives on the inner wrapper div instead
+   (borderRadius: inherit + its own overflow:hidden), so the outer hit target is free to
+   show content that pokes outside its box. */
+.avatar.editor-hit { overflow: visible; }
 .button-collection-retro:hover { box-shadow: 5px 5px 0 #191724; }
 .button-collection-editorial { text-transform: uppercase; letter-spacing: .06em; }
 .button-collection-candy { border-radius: 999px !important; }
@@ -699,6 +710,185 @@ input[type="color"] { padding: 5px; height: 46px; cursor: pointer; }
 .public .avatar { width: 96px; height: 96px; border-radius: 50%; margin-bottom: 22px; }
 .public-actions { padding: 4px 14px 18px; }
 
+/* Editing overlay for LandingRenderer's `edit` prop — every rule here only ever adds an
+   outline, an absolutely-positioned badge, or a background/border color on top of the exact
+   real markup. None of it touches padding, margin or size, so turning edit mode on can never
+   change how the real content is laid out — the editable canvas and the published page are
+   now literally the same render, not two implementations kept in sync by hand. */
+.editor-hit { cursor: pointer; outline-offset: 4px; transition: outline-color .15s ease; }
+.editor-hit:hover, .editor-hit.is-selected { outline: 2px dashed rgba(255, 255, 255, .85); }
+.editor-hit::after {
+  content: attr(data-tag);
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: #fff;
+  color: #4f43ca;
+  font-size: 8px;
+  font-weight: 900;
+  padding: 3px 5px;
+  border-radius: 6px;
+  box-shadow: 0 3px 9px rgba(20, 20, 30, .18);
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 3;
+}
+.editor-hit:hover::after, .editor-hit.is-selected::after { opacity: 1; }
+
+/* Just the invisible full-bleed hit-zone for "click empty background to edit it" — no visible
+   hover label anymore: it used to float at the same top-right corner as the always-visible
+   "Fondo" pill in .editor-quick-tools, so hovering anywhere on the phone made a second badge
+   flicker in right behind that pill. The pill itself already shows selected state (it turns
+   purple), so the label was pure redundant overlap, not a needed affordance. */
+.editor-bg-hit { position: absolute; inset: 0; z-index: 1; border: 0; background: transparent; cursor: pointer; padding: 0; }
+
+.editor-quick-tools { position: absolute; z-index: 4; top: 14px; left: 15px; right: 15px; display: flex; justify-content: space-between; pointer-events: none; }
+.editor-quick-tools button {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid rgba(255, 255, 255, .38);
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: rgba(255, 255, 255, .86);
+  color: #35394d;
+  box-shadow: 0 6px 18px rgba(15, 17, 25, .16);
+  backdrop-filter: blur(12px);
+  font-size: 10px;
+  font-weight: 900;
+  cursor: pointer;
+}
+.editor-quick-tools button svg { width: 12px; height: 12px; flex: none; }
+.editor-quick-tools button.active { color: #fff; background: #6556df; border-color: #6556df; }
+
+@property --editor-ring-angle { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+@keyframes editor-ring-spin { to { --editor-ring-angle: 360deg; } }
+.editor-zone-tag, .editor-add-link { position: relative; z-index: 3; }
+.editor-zone-tag::before, .editor-add-link::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(from var(--editor-ring-angle, 0deg), #00d4c8, #6657e8, #ff5da2, #00d4c8);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: editor-ring-spin 3.4s linear infinite;
+  z-index: -1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .editor-zone-tag::before, .editor-add-link::before { animation: none; }
+}
+
+.editor-zone-tag {
+  top: -34px;
+  left: 50%;
+  transform: translateX(-50%);
+  position: absolute;
+  padding: 5px 9px;
+  border: 1px solid rgba(255, 255, 255, .6);
+  border-radius: 20px;
+  color: #fff;
+  background: rgba(102, 87, 232, .85);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 14px rgba(102, 87, 232, .35);
+  font-size: 9px;
+  font-weight: 850;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* Dashed ring wrapping the whole button group while "Editar todos los botones" is open — an
+   outline, not a border, so it floats around the real buttons without adding any padding that
+   would shift their real size or spacing. */
+.editor-zone-selected { outline: 1.5px dashed rgba(102, 87, 232, .75); outline-offset: 10px; border-radius: 18px; }
+
+.editor-own-badge {
+  position: absolute;
+  top: -8px;
+  right: 38px;
+  padding: 3px 6px;
+  border: 1px solid rgba(255, 255, 255, .7);
+  border-radius: 999px;
+  background: #fff;
+  color: #5145c8;
+  box-shadow: 0 3px 9px rgba(20, 20, 30, .18);
+  font-size: 8px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.editor-pencil {
+  position: absolute;
+  right: 34px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, .25);
+  color: inherit;
+}
+.editor-pencil svg { width: 11px; height: 11px; }
+
+.editor-drag {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: currentColor;
+  opacity: .72;
+  font-size: 17px;
+  line-height: 1;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.editor-drag:active { cursor: grabbing; opacity: 1; }
+
+.public .action.editor-hit { transition: transform .15s, scale .15s, box-shadow .15s, outline-color .15s; }
+/* Same specificity as the rule above (three classes each) — placed after AND with an extra
+   class (.editor-hit.is-dragging, not just .is-dragging) so this always wins regardless of
+   source order. Without it, the .15s transition above fights the raw, per-pixel transform
+   the drag logic writes on every pointer move, so the button visibly lags/rubber-bands behind
+   the cursor instead of tracking it instantly. */
+.public .action.editor-hit.is-dragging {
+  z-index: 5;
+  scale: 1.03;
+  opacity: .96;
+  pointer-events: none;
+  outline: 2px solid rgba(255, 255, 255, .85);
+  outline-offset: 2px;
+  box-shadow: 0 16px 30px rgba(0, 0, 0, .32);
+  transition: none;
+}
+
+.editor-add-link {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 46px;
+  border: 1.5px dashed rgba(255, 255, 255, .7);
+  background: rgba(102, 87, 232, .75);
+  backdrop-filter: blur(10px);
+  color: #fff;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(102, 87, 232, .35);
+  border-radius: 16px;
+  transition: transform .15s ease, background .15s ease, border-color .15s ease;
+}
+.editor-add-link:hover { background: rgba(102, 87, 232, .9); border-color: #fff; transform: translateY(-1px); }
+.editor-add-icon { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: rgba(255, 255, 255, .25); font-size: 13px; line-height: 1; }
+
 /* Device-aware preview: the public renderer itself is mounted inside each viewport. */
 .device-preview-shell { height: 100dvh; overflow: hidden; background: radial-gradient(circle at 50% 10%,#fff 0,#eeeff5 56%,#e5e6ed 100%); }
 .device-preview-toolbar {
@@ -807,11 +997,6 @@ input[type="color"] { padding: 5px; height: 46px; cursor: pointer; }
   display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-4) var(--space-5);
   background: var(--surface); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10;
 }
-.preview-badge {
-  display: inline-block; margin: 0 auto var(--space-5); padding: 6px 12px; border-radius: var(--radius-full);
-  background: var(--accent-subtle); color: var(--accent); font-size: 0.6875rem; font-weight: 700;
-}
-
 /* ---------- Auth screen ---------- */
 .auth-shell { min-height: 100vh; display: grid; place-items: center; padding: var(--space-5); }
 .auth-card {

@@ -4,6 +4,7 @@ import {
 } from "@/lib/landing-catalog";
 import { buttonCollectionStyle, buttonCollectionWidth, resolveButtonColors } from "@/lib/design-presets";
 import { ActionTypeIcon } from "@/components/action-icons";
+import { IconEdit, IconImage } from "@/components/icons";
 import type { CSSProperties } from "react";
 
 type LandingAction = {
@@ -41,6 +42,30 @@ type Landing = {
   background_style?: unknown;
 };
 
+// What's "selected" right now, for the highlight outline — mirrors editor-v2's own Panel
+// type structurally (kept independent here, not imported, to avoid a circular dependency
+// between the admin editor and this shared public-facing component).
+export type LandingEditSelection = "templates" | "buttons" | "background" | "profile" | "title" | "subtitle" | "logo" | "add" | { buttonId: string } | null;
+
+// Everything the editor needs to turn this same real render into a live, click-to-edit
+// canvas — no separate mock. Every hook here only ever *adds* non-layout-affecting behavior
+// (onClick, outline, absolutely-positioned badges) on top of the exact real markup, so an
+// edited landing and its published page can never silently drift apart again.
+export type LandingEditControls = {
+  selected: LandingEditSelection;
+  draggingId: string | null;
+  onSelectTemplates: () => void;
+  onSelectLogo: () => void;
+  onSelectTitle: () => void;
+  onSelectSubtitle: () => void;
+  onSelectBackground: () => void;
+  onSelectZone: () => void;
+  onSelectButton: (id: string) => void;
+  onAddButton: () => void;
+  onButtonRef: (id: string, el: HTMLAnchorElement | null) => void;
+  onDragStart: (clientY: number, id: string) => void;
+};
+
 const noBlank = new Set(["whatsapp", "email", "phone"]);
 
 function actionHref(action: LandingAction) {
@@ -53,7 +78,7 @@ function actionHref(action: LandingAction) {
   return buildActionLink(action.type, action.url || "") || "#";
 }
 
-export default function LandingRenderer({ landing, actions, preview = false }: { landing: Landing; actions: LandingAction[]; preview?: boolean }) {
+export default function LandingRenderer({ landing, actions, edit }: { landing: Landing; actions: LandingAction[]; edit?: LandingEditControls }) {
   const primary = landing.primary_color || "#1f2937";
   const title = parseTitleStyle(landing);
   const subtitle = parseSubtitleStyle(landing);
@@ -78,14 +103,25 @@ export default function LandingRenderer({ landing, actions, preview = false }: {
         ? { background: `linear-gradient(145deg, ${landing.background_color || "#f7f5f0"}, ${landing.background_gradient_to})` }
         : { background: landing.background_color || "#f7f5f0" };
 
+  const showDescription = Boolean(landing.description) || Boolean(edit);
   const heading = (
-    <h1 style={{ fontFamily: title.font, fontWeight: title.weight, fontSize: title.size, color: title.color, background: title.bgMode === "solid" ? hexToRgba(title.bg, 0.55) : "transparent", textAlign: title.align, borderRadius: 12, padding: title.bgMode === "solid" ? "4px 10px" : 0, margin: "0 0 7px", display: "inline-block" }}>
+    <h1
+      className={edit ? "editor-hit" : undefined}
+      data-tag="Título"
+      onClick={edit?.onSelectTitle}
+      style={{ fontFamily: title.font, fontWeight: title.weight, fontSize: title.size, color: title.color, background: title.bgMode === "solid" ? hexToRgba(title.bg, 0.55) : "transparent", textAlign: title.align, borderRadius: 12, padding: title.bgMode === "solid" ? "4px 10px" : 0, margin: "0 0 7px", display: "inline-block", position: edit ? "relative" : undefined }}
+    >
       {landing.business_name}
     </h1>
   );
-  const description = landing.description && (
-    <p className="landing-desc" style={{ fontFamily: subtitle.font, fontWeight: subtitle.weight, fontSize: subtitle.size, color: subtitle.color, background: subtitle.bgMode === "solid" ? hexToRgba(subtitle.bg, 0.55) : "transparent", borderRadius: 10, padding: subtitle.bgMode === "solid" ? "4px 9px" : 0, display: "inline-block" }}>
-      {landing.description}
+  const description = showDescription && (
+    <p
+      className={`landing-desc${edit ? " editor-hit" : ""}${edit?.selected === "subtitle" ? " is-selected" : ""}`}
+      data-tag="Subtítulo"
+      onClick={edit?.onSelectSubtitle}
+      style={{ fontFamily: subtitle.font, fontWeight: subtitle.weight, fontSize: subtitle.size, color: subtitle.color, background: subtitle.bgMode === "solid" ? hexToRgba(subtitle.bg, 0.55) : "transparent", borderRadius: 10, padding: subtitle.bgMode === "solid" ? "4px 9px" : 0, display: "inline-block", position: edit ? "relative" : undefined }}
+    >
+      {landing.description || (edit ? "Tocá para agregar una descripción" : "")}
     </p>
   );
 
@@ -93,29 +129,52 @@ export default function LandingRenderer({ landing, actions, preview = false }: {
     <main className="public" style={{ position: "relative", overflow: "hidden", background: landing.background_color || "#f7f5f0" }}>
       <div className="public-bg-layer" style={{ position: "absolute", inset: 0, zIndex: 0, backgroundRepeat: "no-repeat", ...bgLayerStyle }} />
       <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none", background: `linear-gradient(180deg, rgba(4,8,10,.03), rgba(5,8,11,${resolveBackgroundTint(landing.background_type, bgPos.tint)}))` }} />
+      {edit && (
+        <>
+          <button type="button" className="editor-bg-hit" onClick={edit.onSelectBackground} aria-label="Editar fondo" />
+          <div className="editor-quick-tools">
+            <button type="button" className={edit.selected === "templates" ? "active" : ""} onClick={edit.onSelectTemplates}>✦ Plantillas</button>
+            <button type="button" className={edit.selected === "background" ? "active" : ""} onClick={edit.onSelectBackground}><IconImage /> Fondo</button>
+          </div>
+        </>
+      )}
       <div className={`public-inner layout-${zone.layout}`} style={{ position: "relative", zIndex: 2 }}>
-        {preview && <span className="preview-badge">Vista previa</span>}
         <div className="landing-identity-block">
-        <div className="avatar" style={{ ...logoFrameStyle(logo, primary), width: logo.size, height: logo.size, borderRadius: logoBorderRadius(logo.shape, logo.size), margin: "0 auto 18px", overflow: "hidden", fontSize: logoLetterSize(logo.size, logo.initials) }}>
-          {landing.logo_url ? <div style={{ width: "100%", height: "100%", backgroundImage: `url(${landing.logo_url})`, backgroundSize: `${logo.zoom * 100}%`, backgroundPosition: `${logo.x}% ${logo.y}%` }} /> : logoInitials(landing.business_name, logo.initials)}
+        <div
+          className={edit ? "avatar editor-hit" : "avatar"}
+          data-tag="Logo"
+          onClick={edit?.onSelectLogo}
+          style={{ ...logoFrameStyle(logo, primary), width: logo.size, height: logo.size, borderRadius: logoBorderRadius(logo.shape, logo.size), margin: "0 auto 18px", fontSize: logoLetterSize(logo.size, logo.initials), position: edit ? "relative" : undefined }}
+        >
+          {landing.logo_url ? (
+            <div style={{ width: "100%", height: "100%", borderRadius: "inherit", overflow: "hidden", backgroundImage: `url(${landing.logo_url})`, backgroundSize: `${logo.zoom * 100}%`, backgroundPosition: `${logo.x}% ${logo.y}%` }} />
+          ) : (
+            <div style={{ width: "100%", height: "100%", borderRadius: "inherit", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>{logoInitials(landing.business_name, logo.initials)}</div>
+          )}
         </div>
         {heading}
         <br />
         {description}
         </div>
-        <div className="public-actions" style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: zone.gap }}>
+        <div className={`public-actions${edit?.selected === "buttons" ? " editor-zone-selected" : ""}`} style={{ position: edit ? "relative" : undefined, marginTop: edit ? 44 : 10, display: "flex", flexDirection: "column", gap: zone.gap }}>
+          {edit && <button type="button" className="editor-zone-tag" onClick={edit.onSelectZone}>✦ Editar todos los botones</button>}
           {actions.map((action, index) => {
             const { background: bg, text } = resolveButtonColors({
               zone, type: action.type, position: index, primary,
               customColor: action.background_color, useAutoColor: action.use_auto_color,
             });
+            const isSelected = Boolean(edit && typeof edit.selected === "object" && edit.selected?.buttonId === action.id);
+            const isDragging = edit?.draggingId === action.id;
             return (
               <a
                 key={action.id}
-                className={`action button-collection-${zone.collection}`}
+                ref={edit ? (el) => edit.onButtonRef(action.id, el) : undefined}
+                data-button-id={edit ? action.id : undefined}
+                className={`action button-collection-${zone.collection}${edit ? " editor-hit" : ""}${isSelected ? " is-selected" : ""}${isDragging ? " is-dragging" : ""}`}
                 href={actionHref(action)}
-                target={noBlank.has(action.type) ? undefined : "_blank"}
+                target={edit ? undefined : (noBlank.has(action.type) ? undefined : "_blank")}
                 rel="noreferrer"
+                onClick={edit ? (event) => { event.preventDefault(); edit.onSelectButton(action.id); } : undefined}
                 style={{
                   ...buttonCollectionStyle(zone.collection, bg, text, index),
                   width: buttonCollectionWidth(zone, index),
@@ -128,13 +187,26 @@ export default function LandingRenderer({ landing, actions, preview = false }: {
                   flexDirection: "column",
                   alignItems: zone.contentAlign === "left" ? "flex-start" : "center",
                   gap: action.subtitle ? 2 : 9,
+                  position: edit ? "relative" : undefined,
                 }}
               >
                 <span className="action-main" style={{ display: "flex", alignItems: "center", justifyContent: zone.contentAlign === "left" ? "flex-start" : "center", gap: 9 }}><span style={{ fontSize: zone.iconSize * 0.52, flex: "none", display: "inline-flex" }}><ActionTypeIcon type={action.type} icon={action.icon} /></span> {action.title}</span>
                 {action.subtitle && <small style={{ fontSize: 11, opacity: 0.85, fontWeight: 600 }}>{action.subtitle}</small>}
+                {edit && !action.use_auto_color && <span className="editor-own-badge">Propio</span>}
+                {edit && <span className="editor-pencil" title="Editar botón"><IconEdit /></span>}
+                {edit && (
+                  <span
+                    className="editor-drag"
+                    title="Arrastrar para cambiar el orden"
+                    aria-label="Mover botón"
+                    onClick={(event) => event.stopPropagation()}
+                    onPointerDown={(event) => { event.preventDefault(); edit.onDragStart(event.clientY, action.id); }}
+                  >⠿</span>
+                )}
               </a>
             );
           })}
+          {edit && <button type="button" className="editor-add-link" onClick={edit.onAddButton}><span className="editor-add-icon">＋</span> Agregar botón</button>}
         </div>
       </div>
     </main>
