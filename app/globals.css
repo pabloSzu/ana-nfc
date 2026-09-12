@@ -367,45 +367,38 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; letter-spacing: -0.01e
 .button-collection-glass { overflow: hidden; }
 .action-type-icon {
   display: block;
-  width: 72%;
-  height: 72%;
+  width: 70%;
+  height: 70%;
   overflow: visible;
   transform-origin: center;
 }
-/* Brand glyphs have different viewBox proportions, so each gets its own fill percentage to
-   look optically the same size as the rest — sized up across the board from the original
-   62-72% since at the smaller end they read as thin/hard to make out at a glance. The old
-   translateX(-.5px) nudge these used to carry (meant to optically re-center a couple of them)
-   is gone: it was never actually centering anything, just shifting every one of these five
-   icons half a pixel left, which reads as a visibly bigger gap on their right side once the
-   icon is this much bigger. */
-.action-type-icon-youtube { width: 80%; height: 80%; }
-.action-type-icon-instagram { width: 78%; height: 78%; }
-.action-type-icon-tiktok { width: 74%; height: 74%; }
-.action-type-icon-facebook { width: 70%; height: 70%; }
-.action-type-icon-telegram { width: 75%; height: 75%; }
-.action-type-icon-linkedin { width: 68%; height: 68%; }
-/* Every brand glyph's own artwork fills a different fraction of its own viewBox — WhatsApp's
+/* One set of sizes, used everywhere this icon renders — a plain button row, a circular brand
+   badge, a "glow" ring, any of it. There used to be a second, separate set of numbers scoped
+   under .icon-appearance-brand for the circular-badge case specifically, on the theory that
+   only that context needed smaller icons to avoid crowding a circle's edge. That theory was
+   wrong: any collection can frame an icon inside a circle (Neon Night's "glow" ring does, and
+   it uses the plain, non-badge icon path), so the same crowding showed up there too, unfixed,
+   while the two sets of numbers drifted out of sync. A single shared value per icon, sized once
+   from real geometry, cannot drift out of sync with itself.
+
+   Every brand glyph's own artwork fills a different fraction of its own viewBox — WhatsApp's
    and Instagram's glyphs use ~87.5% of theirs, Spotify's and Telegram's ~97%, while Facebook's
    "f" and TikTok's note run edge-to-edge at 100% of their viewBox height with zero built-in
-   margin. Sizing every icon to the same CSS width/height percentage (the old approach) made
-   the full-bleed ones — Facebook above all, but also TikTok, Spotify, YouTube, Telegram to a
-   smaller degree — render visibly larger than the rest and crowd right up against the circular
-   badge's edge, even though none of their bounding boxes were ever off-center.
-   These numbers instead solve for one consistent target: every glyph's actual drawn ink ends
-   up at ~60% of the badge's diameter in its longest dimension, computed from each icon's real
-   fill ratio (measured from its own path bounding box) — not eyeballed per icon. Instagram and
-   LinkedIn are the exception: they're solid rounded squares, which need to stay further under
-   the ~70.7% (1/√2) a circle can inscribe before corners clip, so they're pinned at a smaller,
-   separately-verified 64% rather than this formula's ~69%. */
-.icon-appearance-brand .action-type-icon { width: 68%; height: 68%; }
-.icon-appearance-brand .action-type-icon-youtube { width: 63%; height: 63%; }
-.icon-appearance-brand .action-type-icon-spotify { width: 62%; height: 62%; }
-.icon-appearance-brand .action-type-icon-telegram { width: 62%; height: 62%; }
-.icon-appearance-brand .action-type-icon-facebook { width: 60%; height: 60%; }
-.icon-appearance-brand .action-type-icon-instagram { width: 64%; height: 64%; }
-.icon-appearance-brand .action-type-icon-linkedin { width: 64%; height: 64%; }
-.icon-appearance-brand .action-type-icon-tiktok { width: 60%; height: 60%; }
+   margin. Sizing every icon to the same CSS percentage made the full-bleed ones — Facebook
+   above all — render visibly larger than the rest and crowd right up against a circular frame's
+   edge, even though none of their bounding boxes were ever off-center. These numbers instead
+   solve for one consistent target — every glyph's actual drawn ink ends up at ~60-62% of its
+   box's diameter in its longest dimension, computed from each icon's real fill ratio (measured
+   from its own path bounding box), not eyeballed. Instagram and LinkedIn are pinned a little
+   smaller still (64% box size, ~56% resulting ink) because they're solid rounded squares, which
+   need to stay further under the ~70.7% (1/√2) a circle can inscribe before its corners clip. */
+.action-type-icon-youtube { width: 65%; height: 65%; }
+.action-type-icon-spotify { width: 64%; height: 64%; }
+.action-type-icon-telegram { width: 64%; height: 64%; }
+.action-type-icon-facebook { width: 62%; height: 62%; }
+.action-type-icon-tiktok { width: 62%; height: 62%; }
+.action-type-icon-instagram { width: 64%; height: 64%; }
+.action-type-icon-linkedin { width: 64%; height: 64%; }
 /* Real, verified centering fix — not a guess: measured each brand glyph's own drawn-ink
    bounding box against its SVG box's true center, using the browser's own
    getBoundingClientRect (not a pixel-color scan against a background, which earlier turned out
@@ -416,9 +409,8 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; letter-spacing: -0.01e
    Spotify, Telegram) are already centered to within 0.03% — true noise, not a real offset, and
    need no correction anywhere. LinkedIn's "in" mark is the one genuine exception: its own
    artwork sits a real, repeatable 6.25% above center within its viewBox (extra empty space
-   below it, baked into the icon file), in EVERY context, so unlike the icon-specific sizing
-   above this correction is NOT scoped to any one appearance — it needs to apply everywhere
-   this glyph renders. */
+   below it, baked into the icon file), in EVERY context, so this correction (like the sizing
+   above) is a single shared rule, not scoped to any one appearance. */
 .action-type-icon-linkedin { transform: translateY(6.25%); }
 .action-brand-icon { align-self: center; }
 .action-copy { display: grid; min-width: 0; gap: 2px; text-align: left; }
