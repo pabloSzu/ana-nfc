@@ -13,9 +13,9 @@ import {
 function SpotifyWavesIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M5 8.3c4.4-1.25 9.8-.94 14 1.12" fill="none" stroke="currentColor" strokeWidth="2.35" strokeLinecap="round" />
-      <path d="M5.8 12.15c3.75-1 8.55-.7 12.2 1.05" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" />
-      <path d="M6.55 15.75c3.05-.72 6.88-.47 9.92.96" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+      <path d="M5 8.3c4.4-1.25 9.8-.94 14 1.12" fill="none" stroke="currentColor" strokeWidth="3.3" strokeLinecap="round" />
+      <path d="M5.8 12.15c3.75-1 8.55-.7 12.2 1.05" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+      <path d="M6.55 15.75c3.05-.72 6.88-.47 9.92.96" fill="none" stroke="currentColor" strokeWidth="2.7" strokeLinecap="round" />
     </svg>
   );
 }
