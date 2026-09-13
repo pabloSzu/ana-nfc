@@ -95,6 +95,10 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
   // 2-3 fonts this specific landing actually uses — visitors never download the other five.
   const fontIds = edit ? ALL_FONT_IDS : [title.font, subtitle.font, landing.button_font];
 
+  // Always set the same longhand background properties (never the `background` shorthand)
+  // so React never has to reconcile a shorthand against the sibling `backgroundRepeat` set
+  // where this style is used — mixing the two across renders is what triggers React's
+  // "removing a style property during rerender" warning when background_type changes.
   const bgLayerStyle: CSSProperties =
     landing.background_type === "image" && landing.background_image_url
       ? {
@@ -106,8 +110,11 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
           transformOrigin: `${bgPos.x}% ${bgPos.y}%`,
         }
       : landing.background_type === "gradient" && landing.background_gradient_to
-        ? { background: `linear-gradient(145deg, ${landing.background_color || "#f7f5f0"}, ${landing.background_gradient_to})` }
-        : { background: landing.background_color || "#f7f5f0" };
+        ? {
+            backgroundColor: landing.background_color || "#f7f5f0",
+            backgroundImage: `linear-gradient(145deg, ${landing.background_color || "#f7f5f0"}, ${landing.background_gradient_to})`,
+          }
+        : { backgroundColor: landing.background_color || "#f7f5f0", backgroundImage: "none" };
 
   const showDescription = Boolean(landing.description) || Boolean(edit);
   const heading = (
