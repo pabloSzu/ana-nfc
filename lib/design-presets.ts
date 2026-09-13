@@ -258,7 +258,12 @@ export function buttonIconStyle(collection: ButtonZoneStyle["collection"], bg: s
     // No shadow on the badge itself — even a soft spread-only ring rendered visibly diffuse
     // against the button's own pale surface (confirmed by A/B testing with it removed), and the
     // button already carries its own shadow for depth. Simpler and reads clean at any zoom.
-    return { ...base, borderRadius: collection === "brandmark" ? "50%" : 13, background: palette.background, color: palette.color, boxShadow: "none" };
+    // A thin translucent border, though, is worth keeping even so: when "Cada red con su color"
+    // is active, the button's own fill can end up the exact same color as the badge (Spotify is
+    // the clearest case — same green in both places) and the badge silently disappears, leaving
+    // the glyph floating with no boundary. The border costs nothing when colors differ and saves
+    // the badge when they match.
+    return { ...base, borderRadius: collection === "brandmark" ? "50%" : 13, background: palette.background, color: palette.color, border: "1px solid rgba(255,255,255,.4)", boxShadow: "none" };
   }
   if (collection === "brandmark") return { ...base, width: size - 4, height: size - 4, flexBasis: size - 4, color: "#17191f" };
   if (collection === "brandpanel") return { ...base, width: size - 4, height: size - 4, flexBasis: size - 4, color: "#ffffff" };
