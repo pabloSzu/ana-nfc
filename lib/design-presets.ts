@@ -171,7 +171,44 @@ function brandVivid(bg: string, type?: string): string {
   return (type && BRAND_VIVID[type]) || bg;
 }
 
-export function buttonCollectionStyle(collection: ButtonZoneStyle["collection"], bg: string, text: string, index = 0, type?: string): CSSProperties {
+// "Cada red con su color" (colorMode auto) means the person explicitly asked for each
+// network's own real identity — but every collection above still routes that color through
+// its own signature treatment (a diagonal fade to black, a translucent card, whatever the
+// template's "look" is), which can leave a network reading as an oddly-tinted version of
+// itself instead of just... itself. For these two — the ones actually flagged as looking off —
+// this replaces the collection's formula outright with each network's real, unmixed look:
+// Instagram's actual gradient mark (not a flat stand-in color), and Spotify's own convention of
+// black text/badge on its green (its real app icon is a black circle with the green glyph
+// inside, the opposite of the default here). Applies regardless of which collection/template
+// is active, since the whole point is "this is what Instagram/Spotify actually look like,"
+// not a per-template variant.
+const BRAND_AUTHENTIC: Record<string, { background: string; color: string; badgeBackground: string; badgeColor: string }> = {
+  instagram: {
+    background: "linear-gradient(115deg, #833ab4 0%, #c13584 28%, #e1306c 50%, #fd1d1d 73%, #fcb045 100%)",
+    color: "#ffffff",
+    badgeBackground: "rgba(255,255,255,.2)",
+    badgeColor: "#ffffff",
+  },
+  spotify: {
+    background: "#1ed760",
+    color: "#0a0a0a",
+    badgeBackground: "#0a0a0a",
+    badgeColor: "#1ed760",
+  },
+};
+
+export function hasAuthenticLook(type?: string): boolean {
+  return Boolean(type && BRAND_AUTHENTIC[type]);
+}
+
+export function buttonCollectionStyle(collection: ButtonZoneStyle["collection"], bg: string, text: string, index = 0, type?: string, isAuthentic = false): CSSProperties {
+  // Halo and Arcade already give every network its own well-tuned, authentic-feeling look in
+  // their own idiom (neon outline / tactile 3D) via brandVivid — forcing the flat card treatment
+  // below on top of those would fight their whole visual language instead of complementing it.
+  if (isAuthentic && type && BRAND_AUTHENTIC[type] && collection !== "aura" && collection !== "gummy") {
+    const a = BRAND_AUTHENTIC[type];
+    return { background: a.background, color: a.color, border: "none", boxShadow: "0 10px 24px rgba(20,10,30,.22)" };
+  }
   // Glass sits on a busy/vivid background, so it needs two things a plain translucent tint
   // doesn't give on its own: a bright diagonal sheen (the actual visual cue for "glass", not
   // just "see-through") and a crisp light rim to separate it from whatever's behind it. Mixing
@@ -247,8 +284,12 @@ export function recommendedIconAppearance(collection: ButtonZoneStyle["collectio
   return isBrandIconCollection(collection) ? "brand" : "minimal";
 }
 
-export function buttonIconStyle(collection: ButtonZoneStyle["collection"], bg: string, size: number, type?: string, appearance = recommendedIconAppearance(collection)): CSSProperties {
+export function buttonIconStyle(collection: ButtonZoneStyle["collection"], bg: string, size: number, type?: string, appearance = recommendedIconAppearance(collection), isAuthentic = false): CSSProperties {
   const base: CSSProperties = { width: size, height: size, flexGrow: 0, flexShrink: 0, flexBasis: size, display: "inline-grid", placeItems: "center", lineHeight: 0 };
+  if (isAuthentic && type && BRAND_AUTHENTIC[type] && collection !== "aura" && collection !== "gummy") {
+    const a = BRAND_AUTHENTIC[type];
+    return { ...base, borderRadius: "50%", background: a.badgeBackground, color: a.badgeColor, border: "1px solid rgba(255,255,255,.22)" };
+  }
   // Halo always uses the same clean circular icon system, even when an older saved landing
   // still carries `iconAppearance: "brand"`. Keeping this before the generic brand branch
   // prevents rounded-square badges and, deliberately, applies no icon shadow at all.
@@ -311,5 +352,11 @@ export function resolveButtonColors({
     : zone.colorMode === "one"
       ? zone.oneColor || primary
       : AUTO_COLORS[type] || primary;
-  return { background, text: contrastTextColor(background) };
+  // True only when this button's color is genuinely "cada red con su color" (auto) and nobody
+  // picked a custom override for it. Scoped to just the "vibrant" template for now — this is
+  // being tried out on one template on purpose, not rolled out everywhere at once, since other
+  // collections (Brutalismo's icon layout, for one) assume the plain per-collection icon
+  // treatment and visibly mis-center when a differently-sized badge is swapped in underneath.
+  const isAuthentic = !hasCustomColor && zone.colorMode === "auto" && zone.templateId === "vibrant";
+  return { background, text: contrastTextColor(background), isAuthentic };
 }

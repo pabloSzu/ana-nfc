@@ -11,7 +11,7 @@ import { compressImage } from "@/lib/compress-image";
 import { AUTO_COLORS, contrastTextColor, getAllActions, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize, type BackgroundPosition, type ButtonZoneStyle, type LogoStyle, type SubtitleStyle, type TitleStyle } from "@/lib/landing-catalog";
 import FontPicker from "../font-picker";
 import IconPicker from "../icon-picker";
-import { DESIGN_PRESETS_V2, buttonCollectionStyle, buttonIconStyle, recommendedIconAppearance, resolveButtonColors, type DesignPreset } from "@/lib/design-presets";
+import { DESIGN_PRESETS_V2, buttonCollectionStyle, buttonIconStyle, hasAuthenticLook, recommendedIconAppearance, resolveButtonColors, type DesignPreset } from "@/lib/design-presets";
 
 type ButtonItem = { id: string; type: string; title: string; subtitle: string; url: string; message: string; icon: string; background_color: string; text_color: string; use_auto_color: boolean; position: number };
 type LandingDraft = {
@@ -460,13 +460,14 @@ function TemplateSwatch({ preset }: { preset: DesignPreset }) {
           {examples.map((example, index) => {
             const color = colors[index];
             const text = contrastTextColor(color);
+            const isAuthentic = preset.buttonZone.colorMode === "auto" && preset.id === "vibrant";
             return (
               <span
                 className={`template-shot-button icon-appearance-${iconAppearance}`}
                 key={example.type}
-                style={{ ...buttonCollectionStyle(preset.buttonZone.collection, color, text, index, example.type), borderRadius: Math.max(0, preset.buttonZone.radius * .42), display: "grid", gridTemplateColumns: preset.buttonZone.contentAlign === "center" ? "11px minmax(0,1fr) 11px" : "11px minmax(0,1fr)", alignItems: "center", columnGap: 4, textAlign: preset.buttonZone.contentAlign === "center" ? "center" : "left" }}
+                style={{ ...buttonCollectionStyle(preset.buttonZone.collection, color, text, index, example.type, isAuthentic), borderRadius: Math.max(0, preset.buttonZone.radius * .42), display: "grid", gridTemplateColumns: preset.buttonZone.contentAlign === "center" ? "11px minmax(0,1fr) 11px" : "11px minmax(0,1fr)", alignItems: "center", columnGap: 4, textAlign: preset.buttonZone.contentAlign === "center" ? "center" : "left" }}
               >
-                <span className="template-shot-icon" style={buttonIconStyle(preset.buttonZone.collection, color, 11, example.type, iconAppearance)}><ActionTypeIcon type={example.type} brandMark={iconAppearance === "brand"} /></span>
+                <span className="template-shot-icon" style={buttonIconStyle(preset.buttonZone.collection, color, 11, example.type, iconAppearance, isAuthentic)}><ActionTypeIcon type={example.type} brandMark={iconAppearance === "brand" && !(isAuthentic && hasAuthenticLook(example.type))} /></span>
                 <span>{example.label}</span>
                 {preset.buttonZone.contentAlign === "center" && <span aria-hidden="true" />}
               </span>
@@ -492,8 +493,9 @@ function ButtonLookSwatch({ preset }: { preset: DesignPreset }) {
   return <span className="v2-look-swatch" aria-hidden="true">
     {examples.map((example, index) => {
       const background = backgrounds[index];
-      return <span className={`v2-look-button icon-appearance-${iconAppearance}`} key={example.type} style={{ ...buttonCollectionStyle(preset.buttonZone.collection, background, contrastTextColor(background), index, example.type), borderRadius: Math.max(0, preset.buttonZone.radius * .35), display: "grid", gridTemplateColumns: preset.buttonZone.contentAlign === "center" ? "15px minmax(0,1fr) 15px" : "15px minmax(0,1fr)", alignItems: "center", columnGap: 5, textAlign: preset.buttonZone.contentAlign === "center" ? "center" : "left" }}>
-        <span className="v2-look-button-icon" style={buttonIconStyle(preset.buttonZone.collection, background, 15, example.type, iconAppearance)}><ActionTypeIcon type={example.type} brandMark={iconAppearance === "brand"} /></span>
+      const isAuthentic = preset.buttonZone.colorMode === "auto";
+      return <span className={`v2-look-button icon-appearance-${iconAppearance}`} key={example.type} style={{ ...buttonCollectionStyle(preset.buttonZone.collection, background, contrastTextColor(background), index, example.type, isAuthentic), borderRadius: Math.max(0, preset.buttonZone.radius * .35), display: "grid", gridTemplateColumns: preset.buttonZone.contentAlign === "center" ? "15px minmax(0,1fr) 15px" : "15px minmax(0,1fr)", alignItems: "center", columnGap: 5, textAlign: preset.buttonZone.contentAlign === "center" ? "center" : "left" }}>
+        <span className="v2-look-button-icon" style={buttonIconStyle(preset.buttonZone.collection, background, 15, example.type, iconAppearance, isAuthentic)}><ActionTypeIcon type={example.type} brandMark={iconAppearance === "brand" && !(isAuthentic && hasAuthenticLook(example.type))} /></span>
         <span>{example.label}</span>
         {preset.buttonZone.contentAlign === "center" && <span aria-hidden="true" />}
       </span>;
