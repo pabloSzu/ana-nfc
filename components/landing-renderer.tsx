@@ -197,12 +197,12 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
                 rel="noreferrer"
                 onClick={edit ? (event) => { event.preventDefault(); edit.onSelectButton(action.id); } : undefined}
                 style={{
-                  ...buttonCollectionStyle(zone.collection, bg, text, index),
+                  ...buttonCollectionStyle(zone.collection, bg, text, index, action.type),
                   width: buttonCollectionWidth(zone, index),
                   minHeight: zone.height,
                   margin: "0 auto",
                   borderRadius: zone.radius,
-                  boxShadow: buttonCollectionStyle(zone.collection, bg, text, index).boxShadow || buttonZoneShadow(zone.shadow),
+                  boxShadow: buttonCollectionStyle(zone.collection, bg, text, index, action.type).boxShadow || buttonZoneShadow(zone.shadow),
                   fontFamily: buttonFont,
                   fontSize: zone.textSize,
                   flexDirection: "column",
@@ -227,7 +227,7 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
                     title="Arrastrar para cambiar el orden"
                     aria-label="Mover botón"
                     onClick={(event) => event.stopPropagation()}
-                    onPointerDown={(event) => { event.preventDefault(); edit.onDragStart(event.clientY, action.id); }}
+                    onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); edit.onDragStart(event.clientY, action.id); }}
                   >⠿</span>
                 )}
               </a>

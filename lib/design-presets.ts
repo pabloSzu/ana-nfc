@@ -115,6 +115,20 @@ export const DESIGN_PRESETS_V2: DesignPreset[] = [
     buttonZone: { preset: "brand-stage", layout: "poster", gap: 12, height: 63, radius: 20, width: 100, shadow: "strong", finish: "solid", collection: "brandpanel", colorMode: "one", textSize: 14, iconSize: 38, contentAlign: "left" },
     title: { font: "minimal", weight: 900, size: 30, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "square", size: 122 },
   },
+  {
+    id: "arcade", name: "Arcade", description: "Controles digitales premium con profundidad precisa. Apps, gaming, gimnasios y marcas jóvenes.",
+    background: "linear-gradient(155deg,#20162c,#09070d)", bg1: "#20162c", bg2: "#09070d", accent: "#ff4f72", oneColor: "#ff4f72", foreground: "#fff8fc",
+    buttonFont: "modern",
+    buttonZone: { preset: "arcade", layout: "center", gap: 14, height: 58, radius: 14, width: 100, shadow: "strong", finish: "solid", collection: "gummy", colorMode: "auto", textSize: 14, iconSize: 30, contentAlign: "center" },
+    title: { font: "bold", weight: 900, size: 31, align: "center" }, subtitle: { font: "minimal", weight: 600, size: 14 }, logo: { shape: "square", size: 120 },
+  },
+  {
+    id: "halo", name: "Halo", description: "Anillos de luz por marca sobre una superficie nocturna. Tecnología, música y eventos.",
+    background: "linear-gradient(155deg,#111827,#020407)", bg1: "#111827", bg2: "#020407", accent: "#55eaff", oneColor: "#55eaff", foreground: "#f7fcff",
+    buttonFont: "modern",
+    buttonZone: { preset: "halo", layout: "center", gap: 16, height: 60, radius: 30, width: 100, shadow: "none", finish: "outline", collection: "aura", colorMode: "auto", textSize: 15, iconSize: 31, contentAlign: "center" },
+    title: { font: "modern", weight: 900, size: 31, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "round", size: 122 },
+  },
 ];
 
 export const BUTTON_COLLECTIONS: { id: ButtonZoneStyle["collection"]; name: string; description: string }[] = [
@@ -136,9 +150,26 @@ export const BUTTON_COLLECTIONS: { id: ButtonZoneStyle["collection"]; name: stri
   { id: "ocean", name: "Ocean", description: "Azules profundos con reflejos acuáticos." },
   { id: "brutal", name: "Brutalismo", description: "Blanco y negro, bordes duros, cero curvas." },
   { id: "corporate", name: "Corporativo", description: "Plano, prolijo y confiable." },
+  { id: "gummy", name: "3D Táctil", description: "Botón sólido y extruido, como si se pudiera apretar." },
+  { id: "aura", name: "Halo", description: "Contorno luminoso sobre fondo oscuro, sin relleno." },
 ];
 
-export function buttonCollectionStyle(collection: ButtonZoneStyle["collection"], bg: string, text: string, index = 0): CSSProperties {
+// Dark templates need brighter stand-ins for a handful of deliberately muted AUTO_COLORS.
+// Arcade uses only these fallbacks, while Halo has a complete calibrated neon palette.
+const VIVID_ON_DARK: Record<string, string> = {
+  website: "#38bdf8", url: "#38bdf8", tiktok: "#ff2e88", email: "#fbbf24", phone: "#34d399",
+};
+const HALO_ACCENTS: Record<string, string> = {
+  spotify: "#1ed760", whatsapp: "#21e778", instagram: "#ff4f91", facebook: "#3b91ff",
+  linkedin: "#18a8ff", youtube: "#ff3158", telegram: "#35c8ff", maps: "#ff655c",
+  mercadopago: "#1bc4ff", calendar: "#ff6685", website: "#39d0ff", url: "#39d0ff",
+  tiktok: "#ff3b9d", email: "#ffc83d", phone: "#35e6a1",
+};
+function haloAccent(bg: string, type?: string): string {
+  return (type && HALO_ACCENTS[type]) || bg;
+}
+
+export function buttonCollectionStyle(collection: ButtonZoneStyle["collection"], bg: string, text: string, index = 0, type?: string): CSSProperties {
   // Glass sits on a busy/vivid background, so it needs two things a plain translucent tint
   // doesn't give on its own: a bright diagonal sheen (the actual visual cue for "glass", not
   // just "see-through") and a crisp light rim to separate it from whatever's behind it. Mixing
@@ -168,6 +199,21 @@ export function buttonCollectionStyle(collection: ButtonZoneStyle["collection"],
   if (collection === "ocean") return { background: `linear-gradient(125deg, color-mix(in srgb, ${bg} 62%, #083b66), color-mix(in srgb, ${bg} 72%, #16b8ca))`, color: "#fff", border: "1px solid rgba(173,244,255,.48)", boxShadow: "inset 0 1px 0 rgba(220,251,255,.38), 0 9px 22px rgba(5,69,96,.25)" };
   if (collection === "brutal") return { background: bg, color: text, border: "3px solid #0a0a0a", boxShadow: "5px 5px 0 #0a0a0a" };
   if (collection === "corporate") return { background: bg, color: text, border: "1px solid rgba(255,255,255,.22)", boxShadow: "0 6px 16px rgba(15,23,42,.16)" };
+  // Arcade: restrained digital controls. A shallow tonal gradient and short hard-edged base
+  // create physical depth at rest; no hover or oversized gloss is needed on a mobile landing.
+  if (collection === "gummy") {
+    const c = (type && VIVID_ON_DARK[type]) || bg;
+    const vars = { "--button-accent": c, "--button-on-accent": contrastTextColor(c) } as CSSProperties;
+    return { ...vars, background: `linear-gradient(160deg, color-mix(in srgb, ${c} 86%, #293241) 0%, color-mix(in srgb, ${c} 88%, #111827) 56%, color-mix(in srgb, ${c} 70%, #080b12) 100%)`, color: contrastTextColor(c), border: "1px solid rgba(255,255,255,.24)", boxShadow: `inset 0 1px 0 rgba(255,255,255,.38), inset 0 -1px 0 rgba(0,0,0,.28), 0 4px 0 color-mix(in srgb, ${c} 48%, #070911), 0 8px 17px rgba(3,5,10,.42)` };
+  }
+  // "Halo": a transparent outline with the button's own color as text/border, plus a layered
+  // glow — the glow itself is the whole visual, so it has to be there at rest (no hover reveal
+  // to lean on). The curated accent keeps dark auto-colors from disappearing on the page.
+  if (collection === "aura") {
+    const c = haloAccent(bg, type);
+    const vars = { "--button-accent": c, "--button-on-accent": contrastTextColor(c) } as CSSProperties;
+    return { ...vars, background: `linear-gradient(135deg, color-mix(in srgb, ${c} 44%, #14232d), color-mix(in srgb, ${c} 27%, #08121a))`, color: "#ffffff", border: `2px solid color-mix(in srgb, ${c} 84%, white)`, boxShadow: `0 0 0 1px color-mix(in srgb, ${c} 18%, transparent), 0 0 12px color-mix(in srgb, ${c} 54%, transparent), 0 0 30px color-mix(in srgb, ${c} 25%, transparent), inset 0 1px 0 rgba(255,255,255,.2), inset 0 0 20px color-mix(in srgb, ${c} 19%, transparent)` };
+  }
   return { background: `linear-gradient(180deg, color-mix(in srgb, ${bg} 92%, white), ${bg})`, color: text, border: "1px solid rgba(255,255,255,.3)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.4), 0 8px 18px rgba(20,22,30,.13)" };
 }
 
@@ -198,6 +244,10 @@ export function recommendedIconAppearance(collection: ButtonZoneStyle["collectio
 
 export function buttonIconStyle(collection: ButtonZoneStyle["collection"], bg: string, size: number, type?: string, appearance = recommendedIconAppearance(collection)): CSSProperties {
   const base: CSSProperties = { width: size, height: size, flexGrow: 0, flexShrink: 0, flexBasis: size, display: "inline-grid", placeItems: "center", lineHeight: 0 };
+  // Halo always uses the same clean circular icon system, even when an older saved landing
+  // still carries `iconAppearance: "brand"`. Keeping this before the generic brand branch
+  // prevents rounded-square badges and, deliberately, applies no icon shadow at all.
+  if (collection === "aura") { const c = haloAccent(bg, type); return { ...base, borderRadius: "50%", color: c, background: "rgba(3,8,12,.78)", border: `1.5px solid ${c}`, boxShadow: "none" }; }
   if (appearance === "brand") {
     const palette = BRAND_ICON_COLORS[type || ""] || { background: "#6c63ff", color: "#ffffff" };
     // No shadow on the badge itself — even a soft spread-only ring rendered visibly diffuse
@@ -231,6 +281,7 @@ export function buttonIconStyle(collection: ButtonZoneStyle["collection"], bg: s
   // smear — brighter toward the button's center, visibly cut off toward the near edge.
   if (collection === "glow") return { ...base, width: size - 2, height: size - 2, flexBasis: size - 2, borderRadius: "50%", border: `1px solid color-mix(in srgb, ${bg} 55%, white)`, boxShadow: `0 0 4px color-mix(in srgb, ${bg} 65%, transparent)` };
   if (collection === "candy") return { ...base, borderRadius: "50%", background: "rgba(255,255,255,.2)", border: "1px solid rgba(255,255,255,.28)" };
+  if (collection === "gummy") return { ...base, borderRadius: 9, color: "#ffffff", background: "rgba(6,9,15,.58)", border: "1px solid rgba(255,255,255,.24)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.13)" };
   // Shared fallback for every collection without a bespoke treatment above — currently soft
   // (Natural), brutal (Brutalismo) and retro (Neobrutalismo), plus bento/editorial/ocean which
   // no preset template uses yet. The icon just inherits the button's own contrast color (no

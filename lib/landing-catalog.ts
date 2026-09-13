@@ -105,7 +105,7 @@ export type ButtonZoneStyle = {
   templateId: string;
   gap: number; height: number; radius: number; width: number;
   shadow: "none" | "soft" | "strong"; finish: "solid" | "glass" | "outline";
-  collection: "soft" | "brand" | "brandmark" | "brandpanel" | "glass" | "glow" | "luxury" | "minimal" | "split" | "bento" | "pastel" | "metallic" | "retro" | "editorial" | "candy" | "ocean" | "brutal" | "corporate";
+  collection: "soft" | "brand" | "brandmark" | "brandpanel" | "glass" | "glow" | "luxury" | "minimal" | "split" | "bento" | "pastel" | "metallic" | "retro" | "editorial" | "candy" | "ocean" | "brutal" | "corporate" | "gummy" | "aura";
   colorMode: "auto" | "one"; oneColor: string; textSize: number; iconSize: number;
   iconAppearance: "brand" | "minimal";
   contentAlign: "center" | "left";
@@ -126,7 +126,7 @@ export function parseButtonZone(raw: unknown): ButtonZoneStyle {
   const parsed = raw as Partial<ButtonZoneStyle>;
   const merged = { ...DEFAULT_BUTTON_ZONE, ...parsed };
   const clamp = (value: unknown, min: number, max: number, fallback: number) => typeof value === "number" && Number.isFinite(value) ? Math.min(max, Math.max(min, value)) : fallback;
-  const collections: ButtonZoneStyle["collection"][] = ["soft","brand","brandmark","brandpanel","glass","glow","luxury","minimal","split","bento","pastel","metallic","retro","editorial","candy","ocean","brutal","corporate"];
+  const collections: ButtonZoneStyle["collection"][] = ["soft","brand","brandmark","brandpanel","glass","glow","luxury","minimal","split","bento","pastel","metallic","retro","editorial","candy","ocean","brutal","corporate","gummy","aura"];
   const colorModes: ButtonZoneStyle["colorMode"][] = ["auto","one"];
   const finishes: ButtonZoneStyle["finish"][] = ["solid","glass","outline"];
   const shadows: ButtonZoneStyle["shadow"][] = ["none","soft","strong"];

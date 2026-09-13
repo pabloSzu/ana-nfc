@@ -300,6 +300,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
 
     const handleMove = (event: PointerEvent) => {
       if (draggedButton.current !== draggedId) return;
+      if (event.cancelable) event.preventDefault();
       updateDrag(event.clientX, event.clientY, draggedId);
     };
     const handleUp = () => {
@@ -459,7 +460,7 @@ function TemplateSwatch({ preset }: { preset: DesignPreset }) {
               <span
                 className={`template-shot-button icon-appearance-${iconAppearance}`}
                 key={example.type}
-                style={{ ...buttonCollectionStyle(preset.buttonZone.collection, color, text, index), borderRadius: Math.max(0, preset.buttonZone.radius * .42), display: "grid", gridTemplateColumns: preset.buttonZone.contentAlign === "center" ? "11px minmax(0,1fr) 11px" : "11px minmax(0,1fr)", alignItems: "center", columnGap: 4, textAlign: preset.buttonZone.contentAlign === "center" ? "center" : "left" }}
+                style={{ ...buttonCollectionStyle(preset.buttonZone.collection, color, text, index, example.type), borderRadius: Math.max(0, preset.buttonZone.radius * .42), display: "grid", gridTemplateColumns: preset.buttonZone.contentAlign === "center" ? "11px minmax(0,1fr) 11px" : "11px minmax(0,1fr)", alignItems: "center", columnGap: 4, textAlign: preset.buttonZone.contentAlign === "center" ? "center" : "left" }}
               >
                 <span className="template-shot-icon" style={buttonIconStyle(preset.buttonZone.collection, color, 11, example.type, iconAppearance)}><ActionTypeIcon type={example.type} brandMark={iconAppearance === "brand"} /></span>
                 <span>{example.label}</span>
@@ -487,7 +488,7 @@ function ButtonLookSwatch({ preset }: { preset: DesignPreset }) {
   return <span className="v2-look-swatch" aria-hidden="true">
     {examples.map((example, index) => {
       const background = backgrounds[index];
-      return <span className={`v2-look-button icon-appearance-${iconAppearance}`} key={example.type} style={{ ...buttonCollectionStyle(preset.buttonZone.collection, background, contrastTextColor(background), index), borderRadius: Math.max(0, preset.buttonZone.radius * .35), display: "grid", gridTemplateColumns: preset.buttonZone.contentAlign === "center" ? "15px minmax(0,1fr) 15px" : "15px minmax(0,1fr)", alignItems: "center", columnGap: 5, textAlign: preset.buttonZone.contentAlign === "center" ? "center" : "left" }}>
+      return <span className={`v2-look-button icon-appearance-${iconAppearance}`} key={example.type} style={{ ...buttonCollectionStyle(preset.buttonZone.collection, background, contrastTextColor(background), index, example.type), borderRadius: Math.max(0, preset.buttonZone.radius * .35), display: "grid", gridTemplateColumns: preset.buttonZone.contentAlign === "center" ? "15px minmax(0,1fr) 15px" : "15px minmax(0,1fr)", alignItems: "center", columnGap: 5, textAlign: preset.buttonZone.contentAlign === "center" ? "center" : "left" }}>
         <span className="v2-look-button-icon" style={buttonIconStyle(preset.buttonZone.collection, background, 15, example.type, iconAppearance)}><ActionTypeIcon type={example.type} brandMark={iconAppearance === "brand"} /></span>
         <span>{example.label}</span>
         {preset.buttonZone.contentAlign === "center" && <span aria-hidden="true" />}
