@@ -99,6 +99,12 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
   // so React never has to reconcile a shorthand against the sibling `backgroundRepeat` set
   // where this style is used — mixing the two across renders is what triggers React's
   // "removing a style property during rerender" warning when background_type changes.
+  // "Oscurecer imagen" used to be a translucent black overlay that faded to almost nothing
+  // at the top of the image — at low/medium slider values it barely read as darker at all.
+  // A `brightness()` filter on the image itself scales evenly across the whole photo (a real
+  // darkening "filter", not a veil on top of it), and pairs with the overlay below for extra
+  // punch near the buttons at the bottom without needing to crank the slider to its max.
+  const bgTint = resolveBackgroundTint(landing.background_type, bgPos.tint);
   const bgLayerStyle: CSSProperties =
     landing.background_type === "image" && landing.background_image_url
       ? {
@@ -108,6 +114,7 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
           backgroundPosition: `${bgPos.x}% ${bgPos.y}%`,
           transform: `scale(${bgPos.zoom})`,
           transformOrigin: `${bgPos.x}% ${bgPos.y}%`,
+          filter: bgTint > 0 ? `brightness(${(1 - bgTint * 0.72).toFixed(3)})` : undefined,
         }
       : landing.background_type === "gradient" && landing.background_gradient_to
         ? {
@@ -142,7 +149,7 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
     <main className="public" style={{ position: "relative", overflow: "hidden", background: landing.background_color || "#f7f5f0" }}>
       <FontLinks ids={fontIds} />
       <div className="public-bg-layer" style={{ position: "absolute", inset: 0, zIndex: 0, backgroundRepeat: "no-repeat", ...bgLayerStyle }} />
-      <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none", background: `linear-gradient(180deg, rgba(4,8,10,.03), rgba(5,8,11,${resolveBackgroundTint(landing.background_type, bgPos.tint)}))` }} />
+      <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none", backgroundImage: `linear-gradient(180deg, rgba(4,8,10,${(bgTint * 0.55).toFixed(3)}), rgba(5,8,11,${bgTint}))` }} />
       {edit && (
         <>
           <button type="button" className="editor-bg-hit" onClick={edit.onSelectBackground} aria-label="Editar fondo" />

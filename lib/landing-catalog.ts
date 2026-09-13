@@ -53,7 +53,7 @@ export function autoTextColor(landing: BackgroundLike): string {
 export function resolveBackgroundTint(backgroundType?: string | null, tint?: number | null): number {
   if (backgroundType !== "image") return 0;
   const value = typeof tint === "number" && Number.isFinite(tint) ? tint : 0.18;
-  return Math.min(0.65, Math.max(0, value));
+  return Math.min(0.85, Math.max(0, value));
 }
 
 export function resolveTextColor(landing: BackgroundLike & { text_color?: string | null }): string {
@@ -263,7 +263,7 @@ export function logoBorderRadius(shape: LogoStyle["shape"], size: number): strin
 export function parseBackgroundPosition(raw: unknown): BackgroundPosition {
   const parsed = hasKeys(raw) ? raw as Partial<BackgroundPosition> : {};
   const clamp = (value: unknown, min: number, max: number, fallback: number) => typeof value === "number" && Number.isFinite(value) ? Math.min(max, Math.max(min, value)) : fallback;
-  return { zoom: clamp(parsed.zoom, 1, 2.5, 1), x: clamp(parsed.x, 0, 100, 50), y: clamp(parsed.y, 0, 100, 50), tint: clamp(parsed.tint, 0, .65, .18) };
+  return { zoom: clamp(parsed.zoom, 1, 2.5, 1), x: clamp(parsed.x, 0, 100, 50), y: clamp(parsed.y, 0, 100, 50), tint: clamp(parsed.tint, 0, .85, .18) };
 }
 
 export function buttonZoneShadow(shadow: ButtonZoneStyle["shadow"]): string {
