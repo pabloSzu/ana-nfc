@@ -288,9 +288,18 @@ export function isPlausiblePhone(value: string): boolean {
   return (value || "").replace(/\D/g, "").length >= 8;
 }
 
+// Spotify has two official greens: #1DB954 (the darker logo/print green) and #1ED760 (the
+// bright green Spotify itself uses in buttons and UI). This used the darker one while
+// BRAND_ICON_COLORS (in design-presets.ts) already used the brighter one for the icon badge —
+// two different greens on the same button. Standardizing on the bright #1ED760 here matches
+// what people actually recognize as "Spotify" on a button-sized surface.
+// Instagram has no single official color (its mark is a purple→pink→orange gradient); #E4405F
+// is technically one of the 4 flat colors in Instagram's own brand palette, but reads as a
+// generic pink rather than "Instagram" at a glance. #E1306C — also from that same official
+// palette — sits closer to the gradient's recognizable magenta-pink midpoint.
 export const AUTO_COLORS: Record<string, string> = {
-  whatsapp: "#25d366", instagram: "#e4405f", tiktok: "#111111", facebook: "#1877f2", linkedin: "#0a66c2", maps: "#db4437",
-  youtube: "#ff0033", spotify: "#1db954", mercadopago: "#009ee3", telegram: "#229ed9", email: "#334155",
+  whatsapp: "#25d366", instagram: "#e1306c", tiktok: "#111111", facebook: "#1877f2", linkedin: "#0a66c2", maps: "#db4437",
+  youtube: "#ff0033", spotify: "#1ed760", mercadopago: "#009ee3", telegram: "#229ed9", email: "#334155",
   phone: "#475569", calendar: "#e05252", website: "#1f2937", url: "#1f2937",
 };
 
