@@ -110,6 +110,11 @@ export type ButtonZoneStyle = {
   iconAppearance: "brand" | "minimal";
   contentAlign: "center" | "left";
   contentAlignMode: "auto" | "manual";
+  // Same "auto until you touch it, then it sticks" pattern as contentAlignMode: once someone
+  // explicitly picks "Un color para todos" / "Cada red con su color" (and, in one-color mode,
+  // a specific color), that choice should survive picking a different template or button-look
+  // preset — those used to overwrite colorMode/oneColor unconditionally every time.
+  colorModeManual: boolean;
 };
 
 export const DEFAULT_BUTTON_ZONE: ButtonZoneStyle = {
@@ -119,6 +124,7 @@ export const DEFAULT_BUTTON_ZONE: ButtonZoneStyle = {
   gap: 9, height: 52, radius: 16, width: 100,
   shadow: "soft", finish: "solid", collection: "soft", colorMode: "auto", oneColor: "#6d5cff",
   textSize: 14, iconSize: 29, iconAppearance: "minimal", contentAlign: "center", contentAlignMode: "auto",
+  colorModeManual: false,
 };
 
 export function parseButtonZone(raw: unknown): ButtonZoneStyle {
@@ -154,6 +160,7 @@ export function parseButtonZone(raw: unknown): ButtonZoneStyle {
     contentAlignMode: parsed.contentAlignMode === "auto" || parsed.contentAlignMode === "manual"
       ? parsed.contentAlignMode
       : contentAligns.includes(parsed.contentAlign as ButtonZoneStyle["contentAlign"]) ? "manual" : "auto",
+    colorModeManual: parsed.colorModeManual === true,
   };
 }
 

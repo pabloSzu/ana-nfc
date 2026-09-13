@@ -13,7 +13,7 @@ export type DesignPreset = {
   oneColor: string;
   foreground: string;
   buttonFont: string;
-  buttonZone: Omit<ButtonZoneStyle, "oneColor" | "templateId" | "contentAlignMode" | "iconAppearance">;
+  buttonZone: Omit<ButtonZoneStyle, "oneColor" | "templateId" | "contentAlignMode" | "iconAppearance" | "colorModeManual">;
   title: Pick<TitleStyle, "font" | "weight" | "size" | "align">;
   subtitle: Pick<SubtitleStyle, "font" | "weight" | "size">;
   logo: Pick<LogoStyle, "shape" | "size">;

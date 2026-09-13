@@ -186,7 +186,9 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
         ...preset.buttonZone,
         contentAlign: draft.buttonZone.contentAlignMode === "manual" ? draft.buttonZone.contentAlign : preset.buttonZone.contentAlign,
         contentAlignMode: draft.buttonZone.contentAlignMode,
-        oneColor: preset.oneColor,
+        colorMode: draft.buttonZone.colorModeManual ? draft.buttonZone.colorMode : preset.buttonZone.colorMode,
+        oneColor: draft.buttonZone.colorModeManual ? draft.buttonZone.oneColor : preset.oneColor,
+        colorModeManual: draft.buttonZone.colorModeManual,
         iconAppearance: recommendedIconAppearance(preset.buttonZone.collection),
         templateId: id,
       },
@@ -206,7 +208,9 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
         contentAlign: draft.buttonZone.contentAlignMode === "manual" ? draft.buttonZone.contentAlign : preset.buttonZone.contentAlign,
         contentAlignMode: draft.buttonZone.contentAlignMode,
         templateId: draft.buttonZone.templateId,
-        oneColor: preset.oneColor,
+        colorMode: draft.buttonZone.colorModeManual ? draft.buttonZone.colorMode : preset.buttonZone.colorMode,
+        oneColor: draft.buttonZone.colorModeManual ? draft.buttonZone.oneColor : preset.oneColor,
+        colorModeManual: draft.buttonZone.colorModeManual,
         iconAppearance: recommendedIconAppearance(preset.buttonZone.collection),
       },
     });
@@ -526,9 +530,27 @@ function ButtonDesign({ draft, buttons, onZone, onFont, onApplyButtonLook, onRes
             {customCount > 0 && <button type="button" className="v2-restore-all" onClick={onResetButtonColors}>↩ Restaurar todos al diseño general</button>}
           </div>
         )}
-        <Choice active={draft.buttonZone.colorMode === "one"} swatch={draft.buttonZone.oneColor} title="Un color para todos" note="Los botones que usan el diseño general tendrán este color." onClick={() => onZone({ colorMode: "one" })} />
-        {draft.buttonZone.colorMode === "one" && <ColorField label="Color de los botones" value={draft.buttonZone.oneColor} onChange={(oneColor) => onZone({ oneColor })} />}
-        <Choice active={draft.buttonZone.colorMode === "auto"} title="Cada red con su color" note="WhatsApp verde, Instagram rosa y cada marca con su color oficial." onClick={() => onZone({ colorMode: "auto" })} />
+        <Choice active={draft.buttonZone.colorMode === "one"} swatch={draft.buttonZone.oneColor} title="Un color para todos" note="Los botones que usan el diseño general tendrán este color." onClick={() => onZone({ colorMode: "one", colorModeManual: true })} />
+        {draft.buttonZone.colorMode === "one" && <ColorField label="Color de los botones" value={draft.buttonZone.oneColor} onChange={(oneColor) => onZone({ oneColor, colorModeManual: true })} />}
+        <Choice active={draft.buttonZone.colorMode === "auto"} title="Cada red con su color" note="WhatsApp verde, Instagram rosa y cada marca con su color oficial." onClick={() => onZone({ colorMode: "auto", colorModeManual: true })} />
+        <p className="v2-help" style={{ margin: 0 }}>
+          {draft.buttonZone.colorModeManual
+            ? "Tu elección se mantendrá aunque cambies de plantilla. "
+            : "Sigue lo que recomienda cada plantilla hasta que elijas una regla vos mismo. "}
+          {draft.buttonZone.colorModeManual && (
+            <button
+              type="button"
+              className="v2-restore-all"
+              style={{ display: "inline", marginTop: 6 }}
+              onClick={() => {
+                const preset = DESIGN_PRESETS_V2.find((item) => item.id === draft.buttonZone.templateId);
+                onZone({ colorModeManual: false, colorMode: preset?.buttonZone.colorMode ?? "auto", oneColor: preset?.oneColor ?? draft.buttonZone.oneColor });
+              }}
+            >
+              ↩ Que lo decida la plantilla
+            </button>
+          )}
+        </p>
       </fieldset>
       <div className="v2-fields-row">
         <fieldset><legend>Tamaño</legend><div className="v2-segment">{SIZES.map((item) => <button type="button" className={draft.buttonZone.height === item.patch.height ? "active" : ""} key={item.label} onClick={() => onZone(item.patch)}>{item.label}</button>)}</div></fieldset>
