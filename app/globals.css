@@ -1287,3 +1287,67 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
   .table-actions { flex-wrap: wrap; }
   .table-actions .icon-text-button { min-width: auto; }
 }
+
+/* ============ Theme scene — shared animated backdrop (components/theme-scene.tsx) ============
+   Used two ways: absolutely inside editor-v2's already-`position:relative` stage (clipped to
+   its rounded bounds, behind the phone), or `fixed` full-viewport behind /admin's whole page
+   (which has no single "stage" element to anchor to). Default position is `absolute` so it
+   does the right thing with no extra markup wherever there's already a positioned ancestor;
+   the `.is-fixed` modifier is the opt-in for the page-covering case. */
+.theme-scene { position: absolute; inset: 0; overflow: hidden; z-index: 0; pointer-events: none; }
+.theme-scene.is-fixed { position: fixed; }
+
+/* Aurora — four soft drifting color blobs on near-black. */
+.theme-scene[data-theme="aurora"] { background: #070811; }
+.theme-scene-blob { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .35; animation: theme-scene-float 16s ease-in-out infinite alternate; }
+.theme-scene-blob-1 { width: 480px; height: 480px; background: #6851ff; left: -140px; top: -120px; }
+.theme-scene-blob-2 { width: 480px; height: 480px; background: #13baf7; right: -160px; top: 4%; animation-delay: -5s; }
+.theme-scene-blob-3 { width: 480px; height: 480px; background: #fb407d; bottom: -260px; left: 30%; animation-delay: -9s; }
+.theme-scene-blob-4 { width: 420px; height: 420px; background: #36e0bd; bottom: -220px; right: -80px; opacity: .16; }
+@keyframes theme-scene-float { from { transform: translate3d(-30px,-15px,0) scale(.9); } to { transform: translate3d(70px,55px,0) scale(1.12); } }
+
+/* Orbital — a glowing core with three slow-spinning rings, each carrying one bright point. */
+.theme-scene[data-theme="orbital"] { background: radial-gradient(circle at center,#11132a 0%,#060710 65%); }
+.theme-scene-core { width: 220px; height: 220px; position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); border-radius: 50%; background: radial-gradient(circle, rgba(139,95,255,.25), rgba(66,189,255,.08) 35%, transparent 70%); filter: blur(5px); }
+.theme-scene-orbit { position: absolute; top: 50%; left: 50%; border: 1px solid rgba(255,255,255,.11); border-radius: 50%; transform: translate(-50%,-50%); }
+.theme-scene-orbit::after { content: ""; width: 8px; height: 8px; position: absolute; top: 50%; left: -4px; border-radius: 50%; background: #6edcff; box-shadow: 0 0 16px #6edcff; }
+.theme-scene-orbit-1 { width: 340px; height: 340px; animation: theme-scene-rotate 20s linear infinite; }
+.theme-scene-orbit-2 { width: 540px; height: 540px; animation: theme-scene-rotate 32s linear infinite reverse; }
+.theme-scene-orbit-3 { width: 760px; height: 760px; animation: theme-scene-rotate 46s linear infinite; }
+@keyframes theme-scene-rotate { to { transform: translate(-50%,-50%) rotate(360deg); } }
+
+/* Mesh — soft pastel gradient blobs plus a fine grid, on a light ground (the one daylight theme). */
+.theme-scene[data-theme="mesh"] { background: #faf9ff; }
+.theme-scene-mesh-blobs { position: absolute; inset: -30%; background:
+    radial-gradient(circle at 20% 30%, #8c75ff 0 11%, transparent 31%),
+    radial-gradient(circle at 80% 30%, #51c9ff 0 9%, transparent 31%),
+    radial-gradient(circle at 60% 80%, #ff70b3 0 9%, transparent 31%),
+    radial-gradient(circle at 25% 85%, #75e8c3 0 8%, transparent 27%);
+  filter: blur(70px); opacity: .55; animation: theme-scene-mesh-move 14s ease-in-out infinite alternate; }
+@keyframes theme-scene-mesh-move { from { transform: rotate(-4deg) scale(1); } to { transform: rotate(4deg) scale(1.1); } }
+.theme-scene-mesh-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(0,0,0,.035) 1px,transparent 1px), linear-gradient(90deg,rgba(0,0,0,.035) 1px,transparent 1px); background-size: 50px 50px; }
+
+/* Digital — a receding perspective grid meeting a glowing horizon line, dev-console dark. */
+.theme-scene[data-theme="digital"] { background: #04050a; perspective: 600px; }
+.theme-scene-glow { position: absolute; width: 700px; height: 320px; left: 50%; top: 60%; transform: translate(-50%,-50%); border-radius: 50%; background: #435eff; opacity: .14; filter: blur(100px); }
+.theme-scene-horizon { position: absolute; width: 85%; height: 2px; left: 7.5%; top: 60%; background: linear-gradient(90deg, transparent, #735dff, #42d5ff, #735dff, transparent); box-shadow: 0 0 20px #635dff, 0 0 80px rgba(83,112,255,.6); }
+.theme-scene-grid-plane { position: absolute; width: 180%; height: 100%; left: -40%; bottom: -30%; transform: rotateX(68deg); background-image: linear-gradient(rgba(91,120,255,.16) 1px,transparent 1px), linear-gradient(90deg,rgba(91,120,255,.16) 1px,transparent 1px); background-size: 48px 48px; animation: theme-scene-grid-move 4s linear infinite; mask-image: linear-gradient(to bottom, transparent 2%, black 45%); }
+@keyframes theme-scene-grid-move { to { background-position: 0 48px, 48px 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-scene-blob, .theme-scene-orbit, .theme-scene-mesh-blobs, .theme-scene-grid-plane { animation: none; }
+}
+
+/* Theme picker — small icon button + popover, used in both the editor topbar and /admin's header. */
+.theme-picker { position: relative; }
+.theme-picker-trigger { border: 1px solid #dfe1e8; background: #fff; border-radius: 12px; width: 40px; height: 40px; font-size: 17px; cursor: pointer; line-height: 1; }
+/* z-index above the editor's floating template/button panel (.v2-panel, z-index:60 in
+   phone-first.css) — that panel is open by default, and without this the popover rendered
+   underneath it, making its buttons unclickable even though they were visibly on top. */
+.theme-picker-pop { position: absolute; top: calc(100% + 8px); right: 0; z-index: 70; width: 240px; background: #fff; border: 1px solid #e1e2e9; border-radius: 16px; padding: 14px; box-shadow: 0 20px 50px rgba(20,20,35,.18); }
+.theme-picker-pop p { margin: 0 0 10px; font-size: 11px; font-weight: 850; text-transform: uppercase; letter-spacing: .06em; color: #7264df; }
+.theme-picker-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.theme-picker-grid button { border: 1.5px solid #e4e5eb; background: #fff; border-radius: 12px; padding: 7px; cursor: pointer; display: grid; gap: 6px; justify-items: center; }
+.theme-picker-grid button.active { border-color: #6657e8; }
+.theme-picker-swatch { display: block; width: 100%; height: 34px; border-radius: 8px; }
+.theme-picker-grid b { font-size: 10px; font-weight: 800; color: #373b47; }

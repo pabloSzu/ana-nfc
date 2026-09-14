@@ -12,6 +12,7 @@ import { AUTO_COLORS, contrastTextColor, getAllActions, logoBorderRadius, logoFr
 import FontPicker from "../font-picker";
 import IconPicker from "../icon-picker";
 import { DESIGN_PRESETS_V2, buttonCollectionStyle, buttonIconStyle, hasAuthenticLook, recommendedIconAppearance, resolveButtonColors, type DesignPreset } from "@/lib/design-presets";
+import { ThemeSceneLayer, ThemePickerButton, useSharedTheme } from "@/components/theme-scene";
 
 type ButtonItem = { id: string; type: string; title: string; subtitle: string; url: string; message: string; icon: string; background_color: string; text_color: string; use_auto_color: boolean; position: number };
 type LandingDraft = {
@@ -36,13 +37,6 @@ const SIZES = [
 // a network whose two icon versions look the same wouldn't demonstrate the choice at all.
 const COLOR_RULE_PREVIEW_TYPES = ["whatsapp", "instagram", "spotify"];
 const ICON_APPEARANCE_PREVIEW_TYPES = ["instagram", "spotify", "youtube"];
-const EDITOR_THEME_OPTIONS: { id: string; label: string; swatch: string }[] = [
-  { id: "default", label: "Clásico", swatch: "linear-gradient(135deg,#fff,#e4e5ec)" },
-  { id: "aurora", label: "Aurora", swatch: "radial-gradient(circle at 30% 30%,#6851ff,#070811 70%)" },
-  { id: "orbital", label: "Orbital", swatch: "radial-gradient(circle at center,#2a2f5c,#060710 70%)" },
-  { id: "mesh", label: "Mesh", swatch: "radial-gradient(circle at 30% 30%,#8c75ff,#faf9ff 65%)" },
-  { id: "digital", label: "Digital", swatch: "linear-gradient(180deg,#04050a,#1b2160)" },
-];
 const DEVICE_OPTIONS: { id: DeviceMode; label: string; size: string }[] = [
   { id: "small", label: "Chico", size: "360 px" },
   { id: "standard", label: "Común", size: "390 px" },
@@ -73,21 +67,10 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
   const [device, setDevice] = useState<DeviceMode>("standard");
   const [dirty, setDirty] = useState(false);
   const [leaveOpen, setLeaveOpen] = useState(false);
-  // Purely a personal viewing preference for the editor's OWN canvas backdrop — nothing to do
-  // with the landing being edited, so it lives in localStorage, not the draft/DB. Starts
-  // "default" on every load (matches server-rendered markup) and only picks up a saved choice
-  // after mount, so there's no SSR/client mismatch.
-  const [editorTheme, setEditorTheme] = useState<string>("default");
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem("v2-editor-theme");
-      if (stored) setEditorTheme(stored);
-    } catch {}
-  }, []);
-  function changeEditorTheme(theme: string) {
-    setEditorTheme(theme);
-    try { localStorage.setItem("v2-editor-theme", theme); } catch {}
-  }
+  // Purely a personal viewing preference for the app's OWN chrome — nothing to do with the
+  // landing being edited — shared with /admin via the same localStorage key (theme-scene.tsx),
+  // so switching it in either place keeps both in sync.
+  const [editorTheme, changeEditorTheme] = useSharedTheme();
   const [bgPreview, setBgPreview] = useState<string | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoRemoved, setLogoRemoved] = useState(false);
@@ -433,6 +416,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
           <button type="button" title="Deshacer (Ctrl+Z)" aria-label="Deshacer" disabled={pastRef.current.length === 0} onClick={undo}>↶</button>
           <button type="button" title="Rehacer (Ctrl+Y)" aria-label="Rehacer" disabled={futureRef.current.length === 0} onClick={redo}>↷</button>
         </div>
+        <ThemePickerButton theme={editorTheme} onChange={changeEditorTheme} />
         <button className="v2-ghost" type="button" onClick={() => { setPanel(panel === "settings" ? null : "settings"); setPreview(false); }}>Ajustes</button>
         <button className="v2-ghost" type="button" onClick={() => { setPreview(!preview); setPanel(preview ? "templates" : null); }}>{preview ? "Seguir editando" : "Vista previa"}</button>
         <button className="v2-save" form="v2-save" type="submit" name="return_to" value={`/admin/landings/${draft.id}/editor-v2`} disabled={!dirty}>Guardar cambios</button>
@@ -444,7 +428,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
           {panel === "templates" && <Templates selected={draft.buttonZone.templateId} onApply={applyPreset} />}
           {panel === "buttons" && <ButtonDesign draft={draft} buttons={buttons} onZone={changeZone} onFont={(button_font) => change({ button_font })} onApplyButtonLook={applyButtonLook} onResetButtonColors={resetButtonColors} />}
           {panel === "background" && <BackgroundControls draft={draft} onChange={change} onFile={onBackgroundFile} />}
-          {panel === "settings" && <SettingsControls draft={draft} publishAction={publishAction} deleteLandingAction={deleteLandingAction} editorTheme={editorTheme} onChangeEditorTheme={changeEditorTheme} />}
+          {panel === "settings" && <SettingsControls draft={draft} publishAction={publishAction} deleteLandingAction={deleteLandingAction} />}
           {panel === "title" && <TitleControls draft={draft} onChange={change} />}
           {panel === "subtitle" && <SubtitleControls draft={draft} onChange={change} />}
           {panel === "logo" && <LogoControls draft={draft} logoImage={logoImage} onChange={change} onLogo={onLogoFile} onRemoveLogo={() => { setLogoPreview(null); setLogoRemoved(true); setDirty(true); }} />}
@@ -452,30 +436,8 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
           {activeButton && <ButtonControls button={activeButton} draft={draft} onChange={(patch) => changeButton(activeButton.id, patch)} onDelete={() => { commitDiscrete(); patchButtons((current) => current.filter((item) => item.id !== activeButton.id)); setPanel(null); }} />}
         </aside>}
 
-        <section className={`v2-stage device-${device}`} data-theme={editorTheme}>
-          {editorTheme !== "default" && <div className="v2-theme-layer" aria-hidden="true">
-            {editorTheme === "aurora" && <>
-              <div className="v2-theme-blob v2-theme-blob-1" />
-              <div className="v2-theme-blob v2-theme-blob-2" />
-              <div className="v2-theme-blob v2-theme-blob-3" />
-              <div className="v2-theme-blob v2-theme-blob-4" />
-            </>}
-            {editorTheme === "orbital" && <>
-              <div className="v2-theme-core" />
-              <div className="v2-theme-orbit v2-theme-orbit-1" />
-              <div className="v2-theme-orbit v2-theme-orbit-2" />
-              <div className="v2-theme-orbit v2-theme-orbit-3" />
-            </>}
-            {editorTheme === "mesh" && <>
-              <div className="v2-theme-mesh-blobs" />
-              <div className="v2-theme-mesh-grid" />
-            </>}
-            {editorTheme === "digital" && <>
-              <div className="v2-theme-glow" />
-              <div className="v2-theme-horizon" />
-              <div className="v2-theme-grid-plane" />
-            </>}
-          </div>}
+        <section className={`v2-stage device-${device}`}>
+          <ThemeSceneLayer theme={editorTheme} />
           <div className="v2-stage-toolbar"><span>{preview ? "Vista limpia" : "Tamaño de pantalla"}</span><div className="v2-device-switcher">{DEVICE_OPTIONS.map((option) => <button key={option.id} type="button" className={device === option.id ? "active" : ""} title={option.size} onClick={() => setDevice(option.id)}>{option.label}</button>)}</div></div>
           <div className={`v2-phone device-${device}`}>
             <div className="v2-phone-screen" ref={buttonsContainerRef}>
@@ -670,7 +632,7 @@ function BackgroundControls({ draft, onChange, onFile }: { draft: LandingDraft; 
 // itself. Everything here posts straight to the same server actions the admin list uses
 // (`publishAction`/`deleteLandingAction`, both passed down from the page), so there's exactly
 // one place in the whole app that actually flips `published` or deletes a landing row.
-function SettingsControls({ draft, publishAction, deleteLandingAction, editorTheme, onChangeEditorTheme }: { draft: LandingDraft; publishAction: SaveAction; deleteLandingAction: SaveAction; editorTheme: string; onChangeEditorTheme: (theme: string) => void }) {
+function SettingsControls({ draft, publishAction, deleteLandingAction }: { draft: LandingDraft; publishAction: SaveAction; deleteLandingAction: SaveAction }) {
   const isPublished = Boolean(draft.published);
   return <div className="v2-fields">
     <div className="v2-brand">
@@ -684,18 +646,6 @@ function SettingsControls({ draft, publishAction, deleteLandingAction, editorThe
     </form>
     <a className="v2-suggested" href={`/${draft.slug}`} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", gap: 8 }}><IconEye /> Ver landing publicada</a>
     <Link className="v2-suggested" href={`/admin/landings/${draft.id}/qr`} style={{ display: "flex", alignItems: "center", gap: 8 }}><IconQrCode /> Código QR para el tag NFC</Link>
-    <fieldset>
-      <legend>Tema del editor</legend>
-      <p className="v2-help">Solo cambia el fondo de esta pantalla de edición — nunca afecta cómo se ve tu landing publicada.</p>
-      <div className="v2-theme-grid">
-        {EDITOR_THEME_OPTIONS.map((option) => (
-          <button type="button" key={option.id} className={editorTheme === option.id ? "active" : ""} onClick={() => onChangeEditorTheme(option.id)}>
-            <span className="v2-theme-swatch" style={{ background: option.swatch }} />
-            <b>{option.label}</b>
-          </button>
-        ))}
-      </div>
-    </fieldset>
     <DeleteLandingButton action={deleteLandingAction} landingId={draft.id} label="Eliminar landing" />
   </div>;
 }

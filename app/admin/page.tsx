@@ -9,6 +9,7 @@ import { IconPlus, IconEdit, IconEye, IconQrCode, IconPlay, IconPause, IconUsers
 import Toast from "@/components/toast";
 import Link from "next/link";
 import { Suspense } from "react";
+import { AdminThemeButton, AdminThemeBackdrop } from "@/components/admin-theme";
 
 export default async function Admin() {
   const supabase = await createClient();
@@ -29,6 +30,7 @@ export default async function Admin() {
   const publishRate = totalLandings ? Math.round((published / totalLandings) * 100) : 0;
 
   return <main className="shell admin-shell">
+    <AdminThemeBackdrop />
     <header className="app-header admin-hero">
       <div className="hero-copy">
         <div className="brand-lockup"><span className="brand-mark"><IconRocket /></span><p className="eyebrow">Mi Landing Web Fácil</p></div>
@@ -40,7 +42,10 @@ export default async function Admin() {
           <span><IconCheckCircle /> {publishRate}% publicadas</span>
         </div>
       </div>
-      <form action={logout}><button className="btn secondary glass" type="submit"><IconLogOut /> Salir</button></form>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+        <AdminThemeButton />
+        <form action={logout}><button className="btn secondary glass" type="submit"><IconLogOut /> Salir</button></form>
+      </div>
     </header>
     <Suspense fallback={null}><Toast /></Suspense>
 
