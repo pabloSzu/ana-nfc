@@ -1386,6 +1386,14 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
 .admin-shell-frame { height: 100dvh; display: flex; flex-direction: column; overflow-y: auto; }
 .admin-shell-frame > .global-nav { flex: 0 0 auto; }
 .admin-shell-frame > *:not(.global-nav) { flex: 1 1 auto; min-height: 0; }
+/* The editor manages 100% of its own scrolling internally already (the template/button panel,
+   the phone stage) — it should never ALSO be a page that scrolls, even by a couple of stray
+   pixels (borders/shadows can round differently than the flex math above expects). Scoping
+   overflow:hidden to specifically when the editor's .v2-shell is the frame's content — via
+   :has(), not a route check — means the dashboard/QR/clientes pages, which DO sometimes need
+   an actual page scroll, are untouched; only the one screen that explicitly never wants it
+   loses it, regardless of any small arithmetic drift. */
+.admin-shell-frame:has(> .v2-shell) { overflow: hidden; }
 .global-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 16px; min-height: var(--global-nav-h); background: #14152b; color: #fff; position: sticky; top: 0; z-index: 80; }
 .global-nav-brand { display: flex; align-items: center; gap: 8px; color: #fff; text-decoration: none; font-size: 13px; font-weight: 800; letter-spacing: -.01em; }
 .global-nav-mark { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 7px; background: #6657e8; }

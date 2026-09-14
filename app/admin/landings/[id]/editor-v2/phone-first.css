@@ -48,14 +48,19 @@
 .v2-panel {
   position: fixed;
   z-index: 60;
-  top: 88px;
+  /* `top`/`max-height` are relative to the TRUE viewport (position:fixed), not to .v2-shell —
+     they used to assume the editor's own 72px topbar was the only thing above the workspace.
+     Now the global nav (app/admin/layout.tsx) sits above that too, so both need to give up its
+     height as well or the panel starts too high, poking up underneath the topbar/nav (reported:
+     "las modales se ven tapadas por la navbar"). */
+  top: calc(var(--global-nav-h) + 88px);
   /* Same anchor family as .v2-stage's padding-left above (50vw - 560, plus the phone's own
      ~400px width and a ~40px gap folded in as a constant: -560+400+40 = -120), so the gap
      between the phone's right edge and the panel's left edge stays ~40px at any viewport
      width instead of the two drifting apart on wide screens. */
   left: max(472px, calc(50vw - 120px));
   width: 500px;
-  max-height: calc(100dvh - 108px);
+  max-height: calc(100dvh - var(--global-nav-h) - 108px);
   border: 1px solid rgba(224, 226, 236, 0.95);
   border-radius: 24px;
   padding: 21px;
