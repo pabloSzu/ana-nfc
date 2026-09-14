@@ -235,14 +235,54 @@ export function hasAuthenticLook(type?: string): boolean {
   return Boolean(type && BRAND_AUTHENTIC[type]);
 }
 
+// Collections the authentic override skips entirely — never gets to touch their button OR
+// their icon badge. Three different reasons:
+// - aura/gummy already give every network its own well-tuned, vivid identity in their own idiom
+//   (neon outline / tactile 3D) via brandVivid; forcing Instagram/Spotify's real color on top
+//   would fight that visual language instead of complementing it.
+// - minimal/pastel/luxury/glass are all deliberately soft/pale/translucent surfaces (every other
+//   button in these gets a light tint or see-through fill). Instagram's real gradient and
+//   Spotify's real green are full-strength, opaque colors — swapped in, they don't just clash in
+//   tone, they read as a completely different, much louder template dropped into two buttons out
+//   of the row (and for Glassmorfismo specifically, an opaque fill defeats the glass effect
+//   outright — there's nothing left to see through). Confirmed on screen across all four before
+//   adding this list, not a guess.
+// - brandmark/brandpanel (Firma de Marca, Brand Stage) are built entirely around "every button
+//   looks the same neutral card, the badge is what carries each network's identity" — that's
+//   the whole premise of the template. Excluding them from the button-level override doesn't
+//   lose anything: their icon badge already reads BRAND_ICON directly (appearance is "brand" by
+//   default on these two), so Instagram/Spotify still get their real badge look — only the
+//   button card itself stays the same neutral surface as every other network's button, per
+//   "deberían verse como los demás, solo el ícono de color".
+const AUTHENTIC_LOOK_EXCLUDED_COLLECTIONS: ButtonZoneStyle["collection"][] = ["aura", "gummy", "minimal", "pastel", "luxury", "glass", "brandmark", "brandpanel"];
+
 export function buttonCollectionStyle(collection: ButtonZoneStyle["collection"], bg: string, text: string, index = 0, type?: string, isAuthentic = false, useNetworkAccent = true): CSSProperties {
-  // Halo and Arcade already give every network its own well-tuned, authentic-feeling look in
-  // their own idiom (neon outline / tactile 3D) via brandVivid — forcing the flat card treatment
-  // below on top of those would fight their whole visual language instead of complementing it.
-  if (isAuthentic && type && BRAND_AUTHENTIC[type] && collection !== "aura" && collection !== "gummy") {
+  const style = collectionBaseStyle(collection, bg, text, index, type, useNetworkAccent);
+  // Merging just background/color onto the collection's own computed style — instead of
+  // replacing the whole object, like this used to — keeps every other collection's own shape
+  // intact: Brutalismo's hard black border and offset shadow, Corporativo's accent stripe,
+  // Retro's border, all still apply, just filled with Instagram's gradient or Spotify's real
+  // color instead of the flat per-network stand-in. Replacing the object outright is exactly
+  // what stripped that shape out from under a template the first time this went out to more than
+  // Vibrante — reported as templates "losing their border" — so this only ever touches these two
+  // fields, never the collection's own border/shadow/radius accents.
+  if (isAuthentic && type && BRAND_AUTHENTIC[type] && !AUTHENTIC_LOOK_EXCLUDED_COLLECTIONS.includes(collection)) {
     const a = BRAND_AUTHENTIC[type];
-    return { background: a.background, color: a.color, border: "none", boxShadow: "0 10px 24px rgba(20,10,30,.22)" };
+    // Most collections' own border is a thin, low-opacity translucent white rim — tuned to sit
+    // quietly on a gradient mixed from ONE hue (light-to-dark of the same color). Instagram's
+    // real gradient swings through five very different hues in one pass, so that same flat
+    // white rim reads inconsistently along its length — barely visible over the dark purple
+    // end, noticeably paler/"washed out" over the light orange end (reported: the sides look
+    // "desprolijos... sin rellenar"). Brutalismo/Neobrutalismo are the exception: their border
+    // is a thick, fully-opaque dark line that IS the collection's shape, not a soft accent, and
+    // reads fine over any background — confirmed on screen — so only those two keep it.
+    const keepsOwnBorder = collection === "brutal" || collection === "retro";
+    return { ...style, background: a.background, color: a.color, ...(keepsOwnBorder ? {} : { border: "none" }) };
   }
+  return style;
+}
+
+function collectionBaseStyle(collection: ButtonZoneStyle["collection"], bg: string, text: string, index: number, type: string | undefined, useNetworkAccent: boolean): CSSProperties {
   // Glass sits on a busy/vivid background, so it needs two things a plain translucent tint
   // doesn't give on its own: a bright diagonal sheen (the actual visual cue for "glass", not
   // just "see-through") and a crisp light rim to separate it from whatever's behind it. Mixing
@@ -312,7 +352,12 @@ export function isBrandIconCollection(collection: ButtonZoneStyle["collection"])
 }
 
 export function recommendedIconAppearance(collection: ButtonZoneStyle["collection"]): ButtonZoneStyle["iconAppearance"] {
-  return isBrandIconCollection(collection) ? "brand" : "minimal";
+  // Brutalismo (colorMode "one", every button the same flat color) reads flat two ways at once
+  // otherwise: the button surface and the icon underneath both carry zero color of their own.
+  // "Ícono real" gives each badge its own network color as the one accent in an otherwise
+  // monochrome row — the same "uniform card, colorful badge" pattern Firma de Marca/Brand Stage
+  // already use, requested specifically for Brutalismo's default.
+  return isBrandIconCollection(collection) || collection === "brutal" ? "brand" : "minimal";
 }
 
 export function buttonIconStyle(collection: ButtonZoneStyle["collection"], bg: string, size: number, type?: string, appearance = recommendedIconAppearance(collection), isAuthentic = false, useNetworkAccent = true): CSSProperties {
@@ -320,7 +365,7 @@ export function buttonIconStyle(collection: ButtonZoneStyle["collection"], bg: s
   // Gated on `appearance === "brand"` — this used to fire for Instagram/Spotify on Vibrante no
   // matter which icon appearance was selected, so "Ícono minimalista" vs "Ícono real" had no
   // visible effect on their badge at all (reported: "casi ni cambian los iconos").
-  if (isAuthentic && type && BRAND_AUTHENTIC[type] && collection !== "aura" && collection !== "gummy") {
+  if (isAuthentic && type && BRAND_AUTHENTIC[type] && !AUTHENTIC_LOOK_EXCLUDED_COLLECTIONS.includes(collection)) {
     if (appearance === "brand") {
       const a = BRAND_ICON[type] || BRAND_AUTHENTIC[type];
       return { ...base, borderRadius: "50%", background: a.background, color: a.color, border: "1px solid rgba(255,255,255,.22)" };
@@ -408,19 +453,15 @@ export function resolveButtonColors({
     : zone.colorMode === "one"
       ? zone.oneColor || primary
       : AUTO_COLORS[type] || primary;
-  // True only when this button's color is genuinely "cada red con su color" (auto) and nobody
-  // picked a custom override for it. Scoped to just the "vibrant" button look for now — this is
-  // being tried out on one look on purpose, not rolled out everywhere at once, since other
-  // collections (Brutalismo's icon layout, for one) assume the plain per-collection icon
-  // treatment and visibly mis-center when a differently-sized badge is swapped in underneath.
-  // This checks `zone.preset`, NOT `zone.templateId` — `templateId` tracks the last FULL
-  // template applied and deliberately stays put when someone changes only the button look (so
-  // the rest of the design doesn't reshuffle), while `preset` always tracks whichever button
-  // look is active right now. Reading `templateId` here used to mean: pick Vibrante, then
-  // switch just the botonera to any other auto-color look (Arcade, Neobrutalismo, Halo...) —
-  // `templateId` stayed "vibrant" from before, so Instagram's forced gradient kept overriding
-  // the new look's own shape/border/shadow instead of stepping aside for it.
-  const isAuthentic = !hasCustomColor && zone.colorMode === "auto" && zone.preset === "vibrant";
+  // True whenever this button's color is genuinely "cada red con su color" (auto) and nobody
+  // picked a custom override for it — Instagram/Spotify then get their real look (gradient /
+  // true green) on ANY template, not just Vibrante. This used to be scoped to zone.preset ===
+  // "vibrant" while the feature was still being proven out on one template at a time; now that
+  // buttonCollectionStyle merges the authentic background/color onto each collection's own
+  // shape instead of replacing it outright (see collectionBaseStyle below), every collection
+  // keeps its own border/shadow/radius identity, so there's no more reason to hold it back to
+  // one preset — the person can turn it on anywhere just by picking "Cada red con su color".
+  const isAuthentic = !hasCustomColor && zone.colorMode === "auto";
   // Whether Halo/Arcade (the only two collections that read this) should swap in their own
   // curated "vivid accent" per network instead of the color resolved just above. Must be false
   // whenever a specific color was actually chosen for this button — either "Un color para

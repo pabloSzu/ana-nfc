@@ -188,14 +188,21 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
     patchDraft({
       primary_color: preset.accent, button_font: preset.buttonFont,
       background_type: "gradient", background_color: preset.bg1, background_gradient_to: preset.bg2,
+      // Picking a whole new template is a fresh start, not a tweak — it always applies that
+      // template's own recommended color rule and icon appearance, even if "Regla de color"
+      // had been set manually before. The "keep my choice" stickiness (colorModeManual) still
+      // applies when only the button LOOK changes via applyButtonLook below — that's the one
+      // case it was actually built for ("cambio la plantilla de la botonera, no toda la
+      // plantilla, así que mi color sigue"). Reset to false here so it doesn't carry over and
+      // silently block the next template pick too.
       buttonZone: {
         ...draft.buttonZone,
         ...preset.buttonZone,
         contentAlign: draft.buttonZone.contentAlignMode === "manual" ? draft.buttonZone.contentAlign : preset.buttonZone.contentAlign,
         contentAlignMode: draft.buttonZone.contentAlignMode,
-        colorMode: draft.buttonZone.colorModeManual ? draft.buttonZone.colorMode : preset.buttonZone.colorMode,
-        oneColor: draft.buttonZone.colorModeManual ? draft.buttonZone.oneColor : preset.oneColor,
-        colorModeManual: draft.buttonZone.colorModeManual,
+        colorMode: preset.buttonZone.colorMode,
+        oneColor: preset.oneColor,
+        colorModeManual: false,
         iconAppearance: recommendedIconAppearance(preset.buttonZone.collection),
         templateId: id,
       },
@@ -467,7 +474,7 @@ function TemplateSwatch({ preset }: { preset: DesignPreset }) {
           {examples.map((example, index) => {
             const color = colors[index];
             const text = contrastTextColor(color);
-            const isAuthentic = preset.buttonZone.colorMode === "auto" && preset.id === "vibrant";
+            const isAuthentic = preset.buttonZone.colorMode === "auto";
             const useNetworkAccent = preset.buttonZone.colorMode === "auto";
             return (
               <span
@@ -501,7 +508,7 @@ function ButtonLookSwatch({ preset }: { preset: DesignPreset }) {
   return <span className="v2-look-swatch" aria-hidden="true">
     {examples.map((example, index) => {
       const background = backgrounds[index];
-      const isAuthentic = preset.buttonZone.colorMode === "auto" && preset.id === "vibrant";
+      const isAuthentic = preset.buttonZone.colorMode === "auto";
       const useNetworkAccent = preset.buttonZone.colorMode === "auto";
       return <span className={`v2-look-button icon-appearance-${iconAppearance}`} key={example.type} style={{ ...buttonCollectionStyle(preset.buttonZone.collection, background, contrastTextColor(background), index, example.type, isAuthentic, useNetworkAccent), borderRadius: Math.max(0, preset.buttonZone.radius * .35), display: "grid", gridTemplateColumns: preset.buttonZone.contentAlign === "center" ? "15px minmax(0,1fr) 15px" : "15px minmax(0,1fr)", alignItems: "center", columnGap: 5, textAlign: preset.buttonZone.contentAlign === "center" ? "center" : "left" }}>
         <span className="v2-look-button-icon" style={buttonIconStyle(preset.buttonZone.collection, background, 15, example.type, iconAppearance, isAuthentic, useNetworkAccent)}><ActionTypeIcon type={example.type} brandMark={iconAppearance === "brand" && !(isAuthentic && hasAuthenticLook(example.type))} /></span>
@@ -555,7 +562,7 @@ function ButtonDesign({ draft, buttons, onZone, onFont, onApplyButtonLook, onRes
           title="Cada red con su color"
           note="WhatsApp verde, Instagram rosa y cada marca con su color oficial."
           onClick={() => onZone({ colorMode: "auto", colorModeManual: true })}
-          preview={<ChoicePreviewChips zone={zone} types={COLOR_RULE_PREVIEW_TYPES} background={(type) => AUTO_COLORS[type] || draft.buttonZone.oneColor} iconAppearance={zone.iconAppearance} isAuthentic={zone.preset === "vibrant"} useNetworkAccent={true} />}
+          preview={<ChoicePreviewChips zone={zone} types={COLOR_RULE_PREVIEW_TYPES} background={(type) => AUTO_COLORS[type] || draft.buttonZone.oneColor} iconAppearance={zone.iconAppearance} isAuthentic={true} useNetworkAccent={true} />}
         />
         <p className="v2-help" style={{ margin: 0 }}>
           {draft.buttonZone.colorModeManual
@@ -604,7 +611,7 @@ function ButtonDesign({ draft, buttons, onZone, onFont, onApplyButtonLook, onRes
               title="Icono minimalista"
               note="Todos usan un tratamiento monocromático coordinado con la botonera."
               onClick={() => onZone({ iconAppearance: "minimal" })}
-              preview={<ChoicePreviewChips zone={zone} types={ICON_APPEARANCE_PREVIEW_TYPES} background={(type) => zone.colorMode === "one" ? zone.oneColor : (AUTO_COLORS[type] || zone.oneColor)} iconAppearance="minimal" isAuthentic={zone.colorMode === "auto" && zone.preset === "vibrant"} useNetworkAccent={zone.colorMode === "auto"} />}
+              preview={<ChoicePreviewChips zone={zone} types={ICON_APPEARANCE_PREVIEW_TYPES} background={(type) => zone.colorMode === "one" ? zone.oneColor : (AUTO_COLORS[type] || zone.oneColor)} iconAppearance="minimal" isAuthentic={zone.colorMode === "auto"} useNetworkAccent={zone.colorMode === "auto"} />}
             />
             <Choice
               active={zone.iconAppearance === "brand"}
@@ -612,7 +619,7 @@ function ButtonDesign({ draft, buttons, onZone, onFont, onApplyButtonLook, onRes
               title="Icono real"
               note="Cada marca conserva su apariencia reconocible: Spotify verde, YouTube rojo, Instagram degradado…"
               onClick={() => onZone({ iconAppearance: "brand" })}
-              preview={<ChoicePreviewChips zone={zone} types={ICON_APPEARANCE_PREVIEW_TYPES} background={(type) => zone.colorMode === "one" ? zone.oneColor : (AUTO_COLORS[type] || zone.oneColor)} iconAppearance="brand" isAuthentic={zone.colorMode === "auto" && zone.preset === "vibrant"} useNetworkAccent={zone.colorMode === "auto"} />}
+              preview={<ChoicePreviewChips zone={zone} types={ICON_APPEARANCE_PREVIEW_TYPES} background={(type) => zone.colorMode === "one" ? zone.oneColor : (AUTO_COLORS[type] || zone.oneColor)} iconAppearance="brand" isAuthentic={zone.colorMode === "auto"} useNetworkAccent={zone.colorMode === "auto"} />}
             />
           </fieldset>
           <FontPicker label="Tipografía" value={draft.button_font || "modern"} onChange={onFont} />
