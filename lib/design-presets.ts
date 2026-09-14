@@ -64,7 +64,11 @@ export const DESIGN_PRESETS_V2: DesignPreset[] = [
     background: "linear-gradient(165deg,#0f172a,#1e2a44)", bg1: "#0f172a", bg2: "#1e2a44", accent: "#2563eb", oneColor: "#2563eb", foreground: "#f1f5f9",
     buttonFont: "mono",
     buttonZone: { preset: "corporate", layout: "center", gap: 10, height: 54, radius: 10, width: 100, shadow: "soft", finish: "solid", collection: "corporate", colorMode: "one", textSize: 13, iconSize: 26, contentAlign: "left" },
-    title: { font: "minimal", weight: 800, size: 27, align: "center" }, subtitle: { font: "mono", weight: 500, size: 13 }, logo: { shape: "square", size: 112 },
+    // Space Grotesk for the title pairs more deliberately with JetBrains Mono on the subtitle
+    // and buttons than the previous Inter — both are geometric/technical faces (the pairing
+    // startup and dev-tool product pages already reach for), where Inter read as generically
+    // safe rather than actually "técnico" the way the description promises.
+    title: { font: "modern", weight: 800, size: 27, align: "center" }, subtitle: { font: "mono", weight: 500, size: 13 }, logo: { shape: "square", size: 112 },
   },
   {
     id: "vibrant", name: "Vibrante", description: "Cada red conserva su color oficial. Perfil personal o multi-marca.",
@@ -267,7 +271,13 @@ export function buttonCollectionStyle(collection: ButtonZoneStyle["collection"],
   if (collection === "candy") return { background: `linear-gradient(120deg, color-mix(in srgb, ${bg} 82%, #ff8bd5), color-mix(in srgb, ${bg} 78%, #8d7bff))`, color: "#fff", border: "2px solid rgba(255,255,255,.65)", boxShadow: `inset 0 2px 0 rgba(255,255,255,.4), 0 8px 18px color-mix(in srgb, ${bg} 24%, transparent)` };
   if (collection === "ocean") return { background: `linear-gradient(125deg, color-mix(in srgb, ${bg} 62%, #083b66), color-mix(in srgb, ${bg} 72%, #16b8ca))`, color: "#fff", border: "1px solid rgba(173,244,255,.48)", boxShadow: "inset 0 1px 0 rgba(220,251,255,.38), 0 9px 22px rgba(5,69,96,.25)" };
   if (collection === "brutal") return { background: bg, color: text, border: "3px solid #0a0a0a", boxShadow: "5px 5px 0 #0a0a0a" };
-  if (collection === "corporate") return { background: bg, color: text, border: "1px solid rgba(255,255,255,.22)", boxShadow: "0 6px 16px rgba(15,23,42,.16)" };
+  // Corporativo was a plain flat-fill pill — technically fine, but the flattest-looking
+  // collection in the whole catalog, with nothing to signal "precise/technical" beyond the
+  // color itself. A left accent stripe borrows the visual language of a status marker on an
+  // enterprise dashboard or report line (the one place this template's audience already reads
+  // that pattern as "confident and exact"), and a whisper of gradient plus a crisper shadow
+  // give it real depth without turning decorative.
+  if (collection === "corporate") return { background: `linear-gradient(155deg, color-mix(in srgb, ${bg} 94%, white), color-mix(in srgb, ${bg} 86%, #060b18))`, color: text, border: "1px solid rgba(255,255,255,.14)", borderLeft: `3px solid color-mix(in srgb, ${bg} 22%, white)`, boxShadow: "0 10px 24px rgba(4,8,20,.28), inset 0 1px 0 rgba(255,255,255,.08)" };
   // "3D Táctil": a tactile, slightly raised card — real color through the middle, a soft sheen
   // top and a gentle inner shade at the bottom sell the depth. This used to be a much louder
   // gumdrop-button skeuomorphism (a stark white 30%-opacity border, a hard 5px flat color
@@ -360,7 +370,7 @@ export function buttonIconStyle(collection: ButtonZoneStyle["collection"], bg: s
   // gold ring on a warm cream disc actually delivers on that promise at the icon level, not
   // just on the card border.
   if (collection === "luxury") return { ...base, width: size - 2, height: size - 2, flexBasis: size - 2, borderRadius: "50%", color: bg, background: "rgba(255,248,232,.55)", border: `1px solid color-mix(in srgb, ${bg} 62%, #f1dfb0)` };
-  if (collection === "corporate") return { ...base, borderRadius: 7, background: "rgba(255,255,255,.14)", border: "1px solid rgba(255,255,255,.18)" };
+  if (collection === "corporate") return { ...base, borderRadius: 7, background: "rgba(255,255,255,.12)", border: `1px solid color-mix(in srgb, ${bg} 45%, rgba(255,255,255,.22))` };
   if (collection === "brand") return { ...base, borderRadius: "50%", background: "rgba(255,255,255,.17)", border: "1px solid rgba(255,255,255,.16)" };
   if (collection === "pastel") return { ...base, borderRadius: "50%", background: "rgba(255,255,255,.68)", border: "1px solid rgba(255,255,255,.85)" };
   // Glow's icon used to have zero frame — just a bare glyph — leaving the "ambient light" idea
