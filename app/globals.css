@@ -1357,7 +1357,36 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
    Deliberately NOT part of each page's own header (the dashboard hero, the editor's toolbar) —
    those stay exactly as they are, this is one more layer on top so identity/theme are always
    in the same place regardless of which screen you're on. */
-.global-nav { height: var(--global-nav-h); display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 16px; background: #14152b; color: #fff; position: sticky; top: 0; z-index: 80; }
+/* .admin-shell-frame (wraps <nav> + the page below it in app/admin/layout.tsx) uses flex, not a
+   fixed nav height subtracted from 100dvh/100vh on each page's own shell — that was two
+   independently-computed heights that had to always sum exactly right, and on a real mobile
+   browser (where 100dvh itself shifts as the address bar shows/hides) they could drift out of
+   sync: the page ended up taller than the viewport, the whole frame scrolled as one block, and
+   since only the nav was `position:sticky`, the editor's OWN topbar (plain, non-sticky, one
+   level down) scrolled out from under it — reported as "la navbar del editor se tapa" when
+   scrolling. Flex has no such arithmetic to keep in sync: the nav claims exactly its own
+   content height, the page below gets the rest, always, on any device. `position:sticky` on the
+   nav stays anyway, purely as a second line of defense for the one case flex can't prevent by
+   itself — a page whose OWN content genuinely needs to scroll (the plain dashboard list, not
+   the editor, which manages its own internal scroll) — so the nav still tracks to the top there
+   instead of scrolling away with that content.
+
+   `height: 100dvh` here, not `min-height` — that was the actual bug even after the flex switch:
+   with only a minimum, a flex item sized `auto` (the default) still lays out to its own
+   content's natural height first and only compares against the container's min-height
+   afterward, so a tall child (the dashboard list, or the editor's own un-clipped inner content)
+   just grows the whole frame taller than the viewport regardless of flex-grow — flex-grow only
+   ever REDISTRIBUTES a container's already-fixed extra space, it can't create shrinking that
+   isn't there to begin with. A definite height forces the browser to actually divide a fixed
+   budget between nav and content, so the content pane's min-height:0 can do its job. Scrolling
+   also happens on the frame itself now (not the page) — this is what makes the sticky nav sticky
+   even here: elements only stick within their nearest actual scroll container, and previously
+   that was BODY (frame had no scroll of its own), so on the editor — which never scrolls itself
+   — sticky had nothing to hold onto. */
+.admin-shell-frame { height: 100dvh; display: flex; flex-direction: column; overflow-y: auto; }
+.admin-shell-frame > .global-nav { flex: 0 0 auto; }
+.admin-shell-frame > *:not(.global-nav) { flex: 1 1 auto; min-height: 0; }
+.global-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 16px; min-height: var(--global-nav-h); background: #14152b; color: #fff; position: sticky; top: 0; z-index: 80; }
 .global-nav-brand { display: flex; align-items: center; gap: 8px; color: #fff; text-decoration: none; font-size: 13px; font-weight: 800; letter-spacing: -.01em; }
 .global-nav-mark { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 7px; background: #6657e8; }
 .global-nav-mark svg { width: 13px; height: 13px; }
@@ -1374,9 +1403,3 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
 .global-nav-logout svg { width: 14px; height: 14px; }
 @media (max-width: 560px) { .global-nav-user { display: none; } }
 
-/* The login shell sizes itself to the full viewport (min-height:100vh) — now that the global
-   nav sits above it as a sibling, it needs to give up exactly that height or the page runs
-   taller than the viewport instead of filling it. (editor-v2.css carries the equivalent fix
-   for .v2-shell directly, since that file loads after this one and would otherwise win the
-   cascade with its own un-adjusted 100dvh.) */
-.auth-shell { min-height: calc(100vh - var(--global-nav-h)); }
