@@ -297,7 +297,7 @@ export function isPlausiblePhone(value: string): boolean {
 
 // Spotify has two official greens: #1DB954 (the darker logo/print green) and #1ED760 (the
 // bright green Spotify itself uses in buttons and UI). This used the darker one while
-// BRAND_ICON_COLORS (in design-presets.ts) already used the brighter one for the icon badge —
+// BRAND_ICON (in design-presets.ts) already used the brighter one for the icon badge —
 // two different greens on the same button. Standardizing on the bright #1ED760 here matches
 // what people actually recognize as "Spotify" on a button-sized surface.
 // Instagram has no single official color (its mark is a purple→pink→orange gradient); #E4405F

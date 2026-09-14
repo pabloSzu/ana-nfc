@@ -180,7 +180,7 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
         <div className={`public-actions${edit?.selected === "buttons" ? " editor-zone-selected" : ""}`} style={{ position: edit ? "relative" : undefined, marginTop: edit ? 44 : 10, display: "flex", flexDirection: "column", gap: zone.gap }}>
           {edit && <button type="button" className="editor-zone-tag" onClick={edit.onSelectZone}>✦ Editar todos los botones</button>}
           {actions.map((action, index) => {
-            const { background: bg, text, isAuthentic } = resolveButtonColors({
+            const { background: bg, text, isAuthentic, useNetworkAccent } = resolveButtonColors({
               zone, type: action.type, position: index, primary,
               customColor: action.background_color, useAutoColor: action.use_auto_color,
             });
@@ -197,12 +197,12 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
                 rel="noreferrer"
                 onClick={edit ? (event) => { event.preventDefault(); edit.onSelectButton(action.id); } : undefined}
                 style={{
-                  ...buttonCollectionStyle(zone.collection, bg, text, index, action.type, isAuthentic),
+                  ...buttonCollectionStyle(zone.collection, bg, text, index, action.type, isAuthentic, useNetworkAccent),
                   width: buttonCollectionWidth(zone, index),
                   minHeight: zone.height,
                   margin: "0 auto",
                   borderRadius: zone.radius,
-                  boxShadow: buttonCollectionStyle(zone.collection, bg, text, index, action.type, isAuthentic).boxShadow || buttonZoneShadow(zone.shadow),
+                  boxShadow: buttonCollectionStyle(zone.collection, bg, text, index, action.type, isAuthentic, useNetworkAccent).boxShadow || buttonZoneShadow(zone.shadow),
                   fontFamily: buttonFont,
                   fontSize: zone.textSize,
                   flexDirection: "column",
@@ -212,7 +212,7 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
                 }}
               >
                 <span className={`action-main action-main-${zone.contentAlign}`} style={zone.contentAlign === "center" ? { width: "100%", display: "grid", gridTemplateColumns: `${zone.iconSize}px minmax(0,1fr) ${zone.iconSize}px`, alignItems: "center", columnGap: 10 } : { width: "100%", display: "flex", alignItems: "center", justifyContent: "flex-start", gap: 10 }}>
-                  <span className="action-brand-icon" style={buttonIconStyle(zone.collection, bg, zone.iconSize, action.type, iconAppearance, isAuthentic)}><ActionTypeIcon type={action.type} icon={action.icon} brandMark={iconAppearance === "brand" && !(isAuthentic && hasAuthenticLook(action.type))} /></span>
+                  <span className="action-brand-icon" style={buttonIconStyle(zone.collection, bg, zone.iconSize, action.type, iconAppearance, isAuthentic, useNetworkAccent)}><ActionTypeIcon type={action.type} icon={action.icon} brandMark={iconAppearance === "brand" && !(isAuthentic && hasAuthenticLook(action.type))} /></span>
                   <span className="action-copy" style={{ textAlign: zone.contentAlign === "center" ? "center" : "left" }}>
                     <span className="action-title">{action.title}</span>
                     {action.subtitle && <small style={{ fontSize: 11, opacity: 0.82, fontWeight: 600 }}>{action.subtitle}</small>}

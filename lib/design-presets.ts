@@ -167,9 +167,43 @@ const BRAND_VIVID: Record<string, string> = {
   mercadopago: "#1bc4ff", calendar: "#ff6685", website: "#39d0ff", url: "#39d0ff",
   tiktok: "#ff3b9d", email: "#ffc83d", phone: "#35e6a1",
 };
-function brandVivid(bg: string, type?: string): string {
+// `useNetworkAccent` gates this: true only means "nobody asked for one specific color here —
+// go ahead and substitute this network's own curated vivid accent." Called with it false (one
+// uniform color picked for every button, or this one button has its own custom color), it must
+// return `bg` untouched — that resolved color is exactly what the person asked for, and BRAND_VIVID
+// used to override it unconditionally whenever `type` matched a known network (nearly always),
+// which is why "Un color para todos" visibly did nothing on Halo/Arcade: every button's color
+// kept getting silently replaced by its network's fixed accent regardless of the chosen color.
+function brandVivid(bg: string, type: string | undefined, useNetworkAccent: boolean): string {
+  if (!useNetworkAccent) return bg;
   return (type && BRAND_VIVID[type]) || bg;
 }
+
+// The single source of truth for "what does this network's icon actually look like" — used
+// wherever "Ícono real" is selected: the generic per-collection brand badge below, AND
+// Instagram/Spotify's extra-authentic badge on Vibrante. Those two used to be two separate maps
+// (BRAND_ICON_COLORS here, plus badgeBackground/badgeColor duplicated inside BRAND_AUTHENTIC)
+// carrying near-identical values that had already drifted apart in small ways — e.g. Spotify's
+// black landed on two slightly different hex codes in the two places, Instagram's gradient had
+// two different stop positions — exactly the kind of duplicate-data bug that's easy to introduce
+// once and never notice, because each copy still looks "right" on its own. One map per network,
+// read by both call sites, means a color only ever has one value to get right.
+const BRAND_ICON: Record<string, { background: string; color: string }> = {
+  spotify: { background: "#1ed760", color: "#0a0a0a" },
+  youtube: { background: "#ff0033", color: "#ffffff" },
+  instagram: { background: "linear-gradient(135deg, #833ab4 0%, #c13584 30%, #fd1d1d 62%, #fcb045 100%)", color: "#ffffff" },
+  whatsapp: { background: "#25d366", color: "#ffffff" },
+  tiktok: { background: "#090909", color: "#ffffff" },
+  facebook: { background: "#1877f2", color: "#ffffff" },
+  linkedin: { background: "#0a66c2", color: "#ffffff" },
+  telegram: { background: "#229ed9", color: "#ffffff" },
+  website: { background: "#665cf6", color: "#ffffff" },
+  email: { background: "#ffca52", color: "#17191f" },
+  phone: { background: "#32b768", color: "#ffffff" },
+  maps: { background: "#ea4335", color: "#ffffff" },
+  calendar: { background: "#5b6ff5", color: "#ffffff" },
+  mercadopago: { background: "#009ee3", color: "#ffffff" },
+};
 
 // "Cada red con su color" (colorMode auto) means the person explicitly asked for each
 // network's own real identity — but every collection above still routes that color through
@@ -177,23 +211,19 @@ function brandVivid(bg: string, type?: string): string {
 // template's "look" is), which can leave a network reading as an oddly-tinted version of
 // itself instead of just... itself. For these two — the ones actually flagged as looking off —
 // this replaces the collection's formula outright with each network's real, unmixed look:
-// Instagram's actual gradient mark (not a flat stand-in color), and Spotify's own convention of
-// black text/badge on its green (its real app icon is a black circle with the green glyph
-// inside, the opposite of the default here). Applies regardless of which collection/template
-// is active, since the whole point is "this is what Instagram/Spotify actually look like,"
-// not a per-template variant.
-const BRAND_AUTHENTIC: Record<string, { background: string; color: string; badgeBackground: string; badgeColor: string }> = {
+// Instagram's actual gradient mark (not a flat stand-in color), and Spotify's real app icon — a
+// green circle with the black wave mark (BRAND_ICON above, same values the generic badge path
+// uses). Applies regardless of which collection/template is active, since the whole point is
+// "this is what Instagram/Spotify actually look like," not a per-template variant. This is the
+// BUTTON's own background/text only now — the badge itself reads BRAND_ICON directly, see below.
+const BRAND_AUTHENTIC: Record<string, { background: string; color: string }> = {
   instagram: {
     background: "linear-gradient(115deg, #833ab4 0%, #c13584 28%, #e1306c 50%, #fd1d1d 73%, #fcb045 100%)",
     color: "#ffffff",
-    badgeBackground: "rgba(255,255,255,.2)",
-    badgeColor: "#ffffff",
   },
   spotify: {
     background: "#1ed760",
     color: "#0a0a0a",
-    badgeBackground: "#0a0a0a",
-    badgeColor: "#1ed760",
   },
 };
 
@@ -201,7 +231,7 @@ export function hasAuthenticLook(type?: string): boolean {
   return Boolean(type && BRAND_AUTHENTIC[type]);
 }
 
-export function buttonCollectionStyle(collection: ButtonZoneStyle["collection"], bg: string, text: string, index = 0, type?: string, isAuthentic = false): CSSProperties {
+export function buttonCollectionStyle(collection: ButtonZoneStyle["collection"], bg: string, text: string, index = 0, type?: string, isAuthentic = false, useNetworkAccent = true): CSSProperties {
   // Halo and Arcade already give every network its own well-tuned, authentic-feeling look in
   // their own idiom (neon outline / tactile 3D) via brandVivid — forcing the flat card treatment
   // below on top of those would fight their whole visual language instead of complementing it.
@@ -238,43 +268,34 @@ export function buttonCollectionStyle(collection: ButtonZoneStyle["collection"],
   if (collection === "ocean") return { background: `linear-gradient(125deg, color-mix(in srgb, ${bg} 62%, #083b66), color-mix(in srgb, ${bg} 72%, #16b8ca))`, color: "#fff", border: "1px solid rgba(173,244,255,.48)", boxShadow: "inset 0 1px 0 rgba(220,251,255,.38), 0 9px 22px rgba(5,69,96,.25)" };
   if (collection === "brutal") return { background: bg, color: text, border: "3px solid #0a0a0a", boxShadow: "5px 5px 0 #0a0a0a" };
   if (collection === "corporate") return { background: bg, color: text, border: "1px solid rgba(255,255,255,.22)", boxShadow: "0 6px 16px rgba(15,23,42,.16)" };
-  // "3D Táctil": a skeuomorphic gumdrop button — glossy top, true color through the middle,
-  // a modest darken at the bottom. The mix targets are WHITE and BLACK (never a fixed navy
-  // base) so the actual brand color stays the dominant thing on screen at every stop, instead
-  // of being diluted into a same-ish dark-slate tone regardless of which network it is.
+  // "3D Táctil": a tactile, slightly raised card — real color through the middle, a soft sheen
+  // top and a gentle inner shade at the bottom sell the depth. This used to be a much louder
+  // gumdrop-button skeuomorphism (a stark white 30%-opacity border, a hard 5px flat color
+  // "shelf" directly under the button with zero blur, and a top gloss bright enough to read as
+  // a second border of its own) that clashed badly against Arcade's near-black backdrop —
+  // reported as "ugly, dreadful borders" and confirmed on screen: the hard shelf edge and the
+  // stark white rim both read as competing outlines instead of one coherent shape. Softening
+  // every one of those edges (shorter/blurred shelf, dimmer gloss, color-tinted border instead
+  // of flat white) keeps the tactile 3D read without any single edge fighting for attention.
+  // The mix targets stay WHITE and BLACK (never a fixed navy base) so the actual brand color
+  // remains the dominant thing on screen at every stop, instead of being diluted into a
+  // same-ish dark-slate tone regardless of which network it is.
   if (collection === "gummy") {
-    const c = brandVivid(bg, type);
+    const c = brandVivid(bg, type, useNetworkAccent);
     const vars = { "--button-accent": c, "--button-on-accent": contrastTextColor(c) } as CSSProperties;
-    return { ...vars, background: `linear-gradient(180deg, color-mix(in srgb, ${c} 80%, white) 0%, ${c} 45%, color-mix(in srgb, ${c} 82%, black) 100%)`, color: contrastTextColor(c), border: "1px solid rgba(255,255,255,.3)", boxShadow: `inset 0 1px 0 rgba(255,255,255,.55), inset 0 -2px 0 rgba(0,0,0,.2), 0 5px 0 color-mix(in srgb, ${c} 62%, black), 0 8px 14px rgba(10,8,20,.35), 0 13px 26px color-mix(in srgb, ${c} 30%, transparent)` };
+    return { ...vars, background: `linear-gradient(180deg, color-mix(in srgb, ${c} 42%, white) 0%, ${c} 58%, color-mix(in srgb, ${c} 80%, black) 100%)`, color: contrastTextColor(c), border: `1px solid color-mix(in srgb, ${c} 45%, white)`, boxShadow: `inset 0 1px 0 rgba(255,255,255,.32), inset 0 -6px 10px -6px rgba(0,0,0,.35), 0 3px 0 color-mix(in srgb, ${c} 58%, black), 0 10px 22px rgba(10,8,20,.3)` };
   }
   // "Halo": a transparent outline with the button's own color as text/border, plus a layered
   // glow — the glow itself is the whole visual, so it has to be there at rest (no hover reveal
   // to lean on). The fill is only a faint tint of the SAME color (not a dark navy base) so nothing
   // dilutes it, and text/border use the full accent directly instead of a fixed white.
   if (collection === "aura") {
-    const c = brandVivid(bg, type);
+    const c = brandVivid(bg, type, useNetworkAccent);
     const vars = { "--button-accent": c, "--button-on-accent": contrastTextColor(c) } as CSSProperties;
     return { ...vars, background: `color-mix(in srgb, ${c} 12%, transparent)`, color: c, border: `2px solid ${c}`, boxShadow: `0 0 14px color-mix(in srgb, ${c} 60%, transparent), 0 0 32px color-mix(in srgb, ${c} 34%, transparent), inset 0 0 14px color-mix(in srgb, ${c} 16%, transparent)` };
   }
   return { background: `linear-gradient(180deg, color-mix(in srgb, ${bg} 92%, white), ${bg})`, color: text, border: "1px solid rgba(255,255,255,.3)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.4), 0 8px 18px rgba(20,22,30,.13)" };
 }
-
-const BRAND_ICON_COLORS: Record<string, { background: string; color: string }> = {
-  spotify: { background: "#1ed760", color: "#0b0b0b" },
-  youtube: { background: "#ff0033", color: "#ffffff" },
-  instagram: { background: "linear-gradient(135deg,#833ab4 5%,#fd1d1d 52%,#fcb045 100%)", color: "#ffffff" },
-  whatsapp: { background: "#25d366", color: "#ffffff" },
-  tiktok: { background: "#090909", color: "#ffffff" },
-  facebook: { background: "#1877f2", color: "#ffffff" },
-  linkedin: { background: "#0a66c2", color: "#ffffff" },
-  telegram: { background: "#229ed9", color: "#ffffff" },
-  website: { background: "#665cf6", color: "#ffffff" },
-  email: { background: "#ffca52", color: "#17191f" },
-  phone: { background: "#32b768", color: "#ffffff" },
-  maps: { background: "#ea4335", color: "#ffffff" },
-  calendar: { background: "#5b6ff5", color: "#ffffff" },
-  mercadopago: { background: "#009ee3", color: "#ffffff" },
-};
 
 export function isBrandIconCollection(collection: ButtonZoneStyle["collection"]) {
   return collection === "brandmark" || collection === "brandpanel";
@@ -284,18 +305,41 @@ export function recommendedIconAppearance(collection: ButtonZoneStyle["collectio
   return isBrandIconCollection(collection) ? "brand" : "minimal";
 }
 
-export function buttonIconStyle(collection: ButtonZoneStyle["collection"], bg: string, size: number, type?: string, appearance = recommendedIconAppearance(collection), isAuthentic = false): CSSProperties {
+export function buttonIconStyle(collection: ButtonZoneStyle["collection"], bg: string, size: number, type?: string, appearance = recommendedIconAppearance(collection), isAuthentic = false, useNetworkAccent = true): CSSProperties {
   const base: CSSProperties = { width: size, height: size, flexGrow: 0, flexShrink: 0, flexBasis: size, display: "inline-grid", placeItems: "center", lineHeight: 0 };
+  // Gated on `appearance === "brand"` — this used to fire for Instagram/Spotify on Vibrante no
+  // matter which icon appearance was selected, so "Ícono minimalista" vs "Ícono real" had no
+  // visible effect on their badge at all (reported: "casi ni cambian los iconos").
   if (isAuthentic && type && BRAND_AUTHENTIC[type] && collection !== "aura" && collection !== "gummy") {
-    const a = BRAND_AUTHENTIC[type];
-    return { ...base, borderRadius: "50%", background: a.badgeBackground, color: a.badgeColor, border: "1px solid rgba(255,255,255,.22)" };
+    if (appearance === "brand") {
+      const a = BRAND_ICON[type] || BRAND_AUTHENTIC[type];
+      return { ...base, borderRadius: "50%", background: a.background, color: a.color, border: "1px solid rgba(255,255,255,.22)" };
+    }
+    // Falling through to the generic collection treatment below (a translucent-WHITE badge)
+    // technically differs in code but, for Spotify specifically, renders almost identically to
+    // "real" by coincidence: white blended over a vivid green button reads as roughly the same
+    // green the authentic badge itself uses. A deliberately dark, neutral badge here instead —
+    // reused for both Instagram and Spotify so the rule stays simple — guarantees minimal and
+    // real never accidentally converge on the same button color again.
+    return { ...base, borderRadius: "50%", background: "rgba(10,10,16,.34)", color: "#ffffff", border: "1px solid rgba(255,255,255,.3)" };
   }
-  // Halo always uses the same clean circular icon system, even when an older saved landing
-  // still carries `iconAppearance: "brand"`. Keeping this before the generic brand branch
-  // prevents rounded-square badges and, deliberately, applies no icon shadow at all.
-  if (collection === "aura") { const c = brandVivid(bg, type); return { ...base, borderRadius: "50%", color: c, background: "rgba(3,8,12,.78)", border: `1.5px solid ${c}`, boxShadow: "none" }; }
+  // Halo and Arcade had the exact same problem as Vibrante above, just structurally: their
+  // per-network "vivid accent" badge used to render identically regardless of `appearance`, so
+  // the icon toggle did nothing for every network on these two templates, not just two of them.
+  // "Real" keeps that vivid per-network accent (unchanged below). "Minimal" now genuinely means
+  // monochrome — one neutral tone for every icon regardless of which network it is, matching
+  // what the toggle's own label already promises ("tratamiento monocromático coordinado con la
+  // botonera") instead of silently reusing the colored version under a different name.
+  if (collection === "aura") {
+    const c = appearance === "brand" ? brandVivid(bg, type, useNetworkAccent) : "#eef6ff";
+    return { ...base, borderRadius: "50%", color: c, background: "rgba(3,8,12,.78)", border: `1.5px solid ${appearance === "brand" ? c : "rgba(238,246,255,.55)"}`, boxShadow: "none" };
+  }
+  if (collection === "gummy") {
+    const c = appearance === "brand" ? brandVivid(bg, type, useNetworkAccent) : "#ffffff";
+    return { ...base, borderRadius: 9, color: c, background: "rgba(6,9,15,.62)", border: `1px solid ${appearance === "brand" ? `color-mix(in srgb, ${c} 42%, rgba(255,255,255,.28))` : "rgba(255,255,255,.3)"}`, boxShadow: "inset 0 1px 0 rgba(255,255,255,.13)" };
+  }
   if (appearance === "brand") {
-    const palette = BRAND_ICON_COLORS[type || ""] || { background: "#6c63ff", color: "#ffffff" };
+    const palette = BRAND_ICON[type || ""] || { background: "#6c63ff", color: "#ffffff" };
     // No shadow on the badge itself — even a soft spread-only ring rendered visibly diffuse
     // against the button's own pale surface (confirmed by A/B testing with it removed), and the
     // button already carries its own shadow for depth. Simpler and reads clean at any zoom.
@@ -327,7 +371,6 @@ export function buttonIconStyle(collection: ButtonZoneStyle["collection"], bg: s
   // smear — brighter toward the button's center, visibly cut off toward the near edge.
   if (collection === "glow") return { ...base, width: size - 2, height: size - 2, flexBasis: size - 2, borderRadius: "50%", border: `1px solid color-mix(in srgb, ${bg} 55%, white)`, boxShadow: `0 0 4px color-mix(in srgb, ${bg} 65%, transparent)` };
   if (collection === "candy") return { ...base, borderRadius: "50%", background: "rgba(255,255,255,.2)", border: "1px solid rgba(255,255,255,.28)" };
-  if (collection === "gummy") return { ...base, borderRadius: 9, color: "#ffffff", background: "rgba(6,9,15,.58)", border: "1px solid rgba(255,255,255,.24)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.13)" };
   // Shared fallback for every collection without a bespoke treatment above — currently soft
   // (Natural), brutal (Brutalismo) and retro (Neobrutalismo), plus bento/editorial/ocean which
   // no preset template uses yet. The badge tint used to be hardcoded translucent white — fine on
@@ -356,10 +399,23 @@ export function resolveButtonColors({
       ? zone.oneColor || primary
       : AUTO_COLORS[type] || primary;
   // True only when this button's color is genuinely "cada red con su color" (auto) and nobody
-  // picked a custom override for it. Scoped to just the "vibrant" template for now — this is
-  // being tried out on one template on purpose, not rolled out everywhere at once, since other
+  // picked a custom override for it. Scoped to just the "vibrant" button look for now — this is
+  // being tried out on one look on purpose, not rolled out everywhere at once, since other
   // collections (Brutalismo's icon layout, for one) assume the plain per-collection icon
   // treatment and visibly mis-center when a differently-sized badge is swapped in underneath.
-  const isAuthentic = !hasCustomColor && zone.colorMode === "auto" && zone.templateId === "vibrant";
-  return { background, text: contrastTextColor(background), isAuthentic };
+  // This checks `zone.preset`, NOT `zone.templateId` — `templateId` tracks the last FULL
+  // template applied and deliberately stays put when someone changes only the button look (so
+  // the rest of the design doesn't reshuffle), while `preset` always tracks whichever button
+  // look is active right now. Reading `templateId` here used to mean: pick Vibrante, then
+  // switch just the botonera to any other auto-color look (Arcade, Neobrutalismo, Halo...) —
+  // `templateId` stayed "vibrant" from before, so Instagram's forced gradient kept overriding
+  // the new look's own shape/border/shadow instead of stepping aside for it.
+  const isAuthentic = !hasCustomColor && zone.colorMode === "auto" && zone.preset === "vibrant";
+  // Whether Halo/Arcade (the only two collections that read this) should swap in their own
+  // curated "vivid accent" per network instead of the color resolved just above. Must be false
+  // whenever a specific color was actually chosen for this button — either "Un color para
+  // todos" (zone.colorMode "one") or a per-button custom override — otherwise that chosen color
+  // gets silently replaced by the network's fixed accent and picking a color does nothing.
+  const useNetworkAccent = !hasCustomColor && zone.colorMode === "auto";
+  return { background, text: contrastTextColor(background), isAuthentic, useNetworkAccent };
 }

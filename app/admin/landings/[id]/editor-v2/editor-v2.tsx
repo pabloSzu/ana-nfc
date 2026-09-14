@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ActionTypeIcon } from "@/components/action-icons";
 import { FiLink } from "react-icons/fi";
 import { IconEye, IconQrCode } from "@/components/icons";
@@ -29,6 +29,13 @@ const SIZES = [
   { label: "Medio", patch: { height: 52, textSize: 14, iconSize: 29, gap: 9 } },
   { label: "Grande", patch: { height: 60, textSize: 16, iconSize: 32, gap: 12 } },
 ];
+// Picked for maximum contrast between the two options they're previewing: WhatsApp/Instagram/
+// Spotify have three very different AUTO_COLORS hues (color-rule preview), and Instagram/
+// Spotify/YouTube are the three brand marks whose "real" icon differs the most from its
+// minimalist one (a full gradient badge, an inverted black badge, a custom play glyph) —
+// a network whose two icon versions look the same wouldn't demonstrate the choice at all.
+const COLOR_RULE_PREVIEW_TYPES = ["whatsapp", "instagram", "spotify"];
+const ICON_APPEARANCE_PREVIEW_TYPES = ["instagram", "spotify", "youtube"];
 const DEVICE_OPTIONS: { id: DeviceMode; label: string; size: string }[] = [
   { id: "small", label: "Chico", size: "360 px" },
   { id: "standard", label: "Común", size: "390 px" },
@@ -461,13 +468,14 @@ function TemplateSwatch({ preset }: { preset: DesignPreset }) {
             const color = colors[index];
             const text = contrastTextColor(color);
             const isAuthentic = preset.buttonZone.colorMode === "auto" && preset.id === "vibrant";
+            const useNetworkAccent = preset.buttonZone.colorMode === "auto";
             return (
               <span
                 className={`template-shot-button icon-appearance-${iconAppearance}`}
                 key={example.type}
-                style={{ ...buttonCollectionStyle(preset.buttonZone.collection, color, text, index, example.type, isAuthentic), borderRadius: Math.max(0, preset.buttonZone.radius * .42), display: "grid", gridTemplateColumns: preset.buttonZone.contentAlign === "center" ? "11px minmax(0,1fr) 11px" : "11px minmax(0,1fr)", alignItems: "center", columnGap: 4, textAlign: preset.buttonZone.contentAlign === "center" ? "center" : "left" }}
+                style={{ ...buttonCollectionStyle(preset.buttonZone.collection, color, text, index, example.type, isAuthentic, useNetworkAccent), borderRadius: Math.max(0, preset.buttonZone.radius * .42), display: "grid", gridTemplateColumns: preset.buttonZone.contentAlign === "center" ? "11px minmax(0,1fr) 11px" : "11px minmax(0,1fr)", alignItems: "center", columnGap: 4, textAlign: preset.buttonZone.contentAlign === "center" ? "center" : "left" }}
               >
-                <span className="template-shot-icon" style={buttonIconStyle(preset.buttonZone.collection, color, 11, example.type, iconAppearance, isAuthentic)}><ActionTypeIcon type={example.type} brandMark={iconAppearance === "brand" && !(isAuthentic && hasAuthenticLook(example.type))} /></span>
+                <span className="template-shot-icon" style={buttonIconStyle(preset.buttonZone.collection, color, 11, example.type, iconAppearance, isAuthentic, useNetworkAccent)}><ActionTypeIcon type={example.type} brandMark={iconAppearance === "brand" && !(isAuthentic && hasAuthenticLook(example.type))} /></span>
                 <span>{example.label}</span>
                 {preset.buttonZone.contentAlign === "center" && <span aria-hidden="true" />}
               </span>
@@ -493,9 +501,10 @@ function ButtonLookSwatch({ preset }: { preset: DesignPreset }) {
   return <span className="v2-look-swatch" aria-hidden="true">
     {examples.map((example, index) => {
       const background = backgrounds[index];
-      const isAuthentic = preset.buttonZone.colorMode === "auto";
-      return <span className={`v2-look-button icon-appearance-${iconAppearance}`} key={example.type} style={{ ...buttonCollectionStyle(preset.buttonZone.collection, background, contrastTextColor(background), index, example.type, isAuthentic), borderRadius: Math.max(0, preset.buttonZone.radius * .35), display: "grid", gridTemplateColumns: preset.buttonZone.contentAlign === "center" ? "15px minmax(0,1fr) 15px" : "15px minmax(0,1fr)", alignItems: "center", columnGap: 5, textAlign: preset.buttonZone.contentAlign === "center" ? "center" : "left" }}>
-        <span className="v2-look-button-icon" style={buttonIconStyle(preset.buttonZone.collection, background, 15, example.type, iconAppearance, isAuthentic)}><ActionTypeIcon type={example.type} brandMark={iconAppearance === "brand" && !(isAuthentic && hasAuthenticLook(example.type))} /></span>
+      const isAuthentic = preset.buttonZone.colorMode === "auto" && preset.id === "vibrant";
+      const useNetworkAccent = preset.buttonZone.colorMode === "auto";
+      return <span className={`v2-look-button icon-appearance-${iconAppearance}`} key={example.type} style={{ ...buttonCollectionStyle(preset.buttonZone.collection, background, contrastTextColor(background), index, example.type, isAuthentic, useNetworkAccent), borderRadius: Math.max(0, preset.buttonZone.radius * .35), display: "grid", gridTemplateColumns: preset.buttonZone.contentAlign === "center" ? "15px minmax(0,1fr) 15px" : "15px minmax(0,1fr)", alignItems: "center", columnGap: 5, textAlign: preset.buttonZone.contentAlign === "center" ? "center" : "left" }}>
+        <span className="v2-look-button-icon" style={buttonIconStyle(preset.buttonZone.collection, background, 15, example.type, iconAppearance, isAuthentic, useNetworkAccent)}><ActionTypeIcon type={example.type} brandMark={iconAppearance === "brand" && !(isAuthentic && hasAuthenticLook(example.type))} /></span>
         <span>{example.label}</span>
         {preset.buttonZone.contentAlign === "center" && <span aria-hidden="true" />}
       </span>;
@@ -532,9 +541,22 @@ function ButtonDesign({ draft, buttons, onZone, onFont, onApplyButtonLook, onRes
             {customCount > 0 && <button type="button" className="v2-restore-all" onClick={onResetButtonColors}>↩ Restaurar todos al diseño general</button>}
           </div>
         )}
-        <Choice active={draft.buttonZone.colorMode === "one"} swatch={draft.buttonZone.oneColor} title="Un color para todos" note="Los botones que usan el diseño general tendrán este color." onClick={() => onZone({ colorMode: "one", colorModeManual: true })} />
+        <Choice
+          active={draft.buttonZone.colorMode === "one"}
+          swatch={draft.buttonZone.oneColor}
+          title="Un color para todos"
+          note="Los botones que usan el diseño general tendrán este color."
+          onClick={() => onZone({ colorMode: "one", colorModeManual: true })}
+          preview={<ChoicePreviewChips zone={zone} types={COLOR_RULE_PREVIEW_TYPES} background={() => draft.buttonZone.oneColor} iconAppearance={zone.iconAppearance} isAuthentic={false} useNetworkAccent={false} />}
+        />
         {draft.buttonZone.colorMode === "one" && <ColorField label="Color de los botones" value={draft.buttonZone.oneColor} onChange={(oneColor) => onZone({ oneColor, colorModeManual: true })} />}
-        <Choice active={draft.buttonZone.colorMode === "auto"} title="Cada red con su color" note="WhatsApp verde, Instagram rosa y cada marca con su color oficial." onClick={() => onZone({ colorMode: "auto", colorModeManual: true })} />
+        <Choice
+          active={draft.buttonZone.colorMode === "auto"}
+          title="Cada red con su color"
+          note="WhatsApp verde, Instagram rosa y cada marca con su color oficial."
+          onClick={() => onZone({ colorMode: "auto", colorModeManual: true })}
+          preview={<ChoicePreviewChips zone={zone} types={COLOR_RULE_PREVIEW_TYPES} background={(type) => AUTO_COLORS[type] || draft.buttonZone.oneColor} iconAppearance={zone.iconAppearance} isAuthentic={zone.preset === "vibrant"} useNetworkAccent={true} />}
+        />
         <p className="v2-help" style={{ margin: 0 }}>
           {draft.buttonZone.colorModeManual
             ? "Tu elección se mantendrá aunque cambies de plantilla. "
@@ -545,7 +567,12 @@ function ButtonDesign({ draft, buttons, onZone, onFont, onApplyButtonLook, onRes
               className="v2-restore-all"
               style={{ display: "inline", marginTop: 6 }}
               onClick={() => {
-                const preset = DESIGN_PRESETS_V2.find((item) => item.id === draft.buttonZone.templateId);
+                // Same fix as `isAuthentic` above: look up by `preset` (the button look actually
+                // active right now), not `templateId` (the last FULL template, which stays put
+                // when only the button look changes). Reading `templateId` here meant this button
+                // could silently do nothing — or revert to the wrong look's color entirely —
+                // whenever the botonera had been changed apart from the full template.
+                const preset = DESIGN_PRESETS_V2.find((item) => item.id === draft.buttonZone.preset);
                 onZone({ colorModeManual: false, colorMode: preset?.buttonZone.colorMode ?? "auto", oneColor: preset?.oneColor ?? draft.buttonZone.oneColor });
               }}
             >
@@ -571,8 +598,22 @@ function ButtonDesign({ draft, buttons, onZone, onFont, onApplyButtonLook, onRes
         <div className="v2-fields" style={{ marginTop: 10 }}>
           <fieldset>
             <legend>Apariencia de los iconos</legend>
-            <Choice active={zone.iconAppearance === "minimal"} suggested={recommendedIcons === "minimal"} title="Icono minimalista" note="Todos usan un tratamiento monocromático coordinado con la botonera." onClick={() => onZone({ iconAppearance: "minimal" })} />
-            <Choice active={zone.iconAppearance === "brand"} suggested={recommendedIcons === "brand"} title="Icono real" note="Cada marca conserva su apariencia reconocible: Spotify verde, YouTube rojo, Instagram degradado…" onClick={() => onZone({ iconAppearance: "brand" })} />
+            <Choice
+              active={zone.iconAppearance === "minimal"}
+              suggested={recommendedIcons === "minimal"}
+              title="Icono minimalista"
+              note="Todos usan un tratamiento monocromático coordinado con la botonera."
+              onClick={() => onZone({ iconAppearance: "minimal" })}
+              preview={<ChoicePreviewChips zone={zone} types={ICON_APPEARANCE_PREVIEW_TYPES} background={(type) => zone.colorMode === "one" ? zone.oneColor : (AUTO_COLORS[type] || zone.oneColor)} iconAppearance="minimal" isAuthentic={zone.colorMode === "auto" && zone.preset === "vibrant"} useNetworkAccent={zone.colorMode === "auto"} />}
+            />
+            <Choice
+              active={zone.iconAppearance === "brand"}
+              suggested={recommendedIcons === "brand"}
+              title="Icono real"
+              note="Cada marca conserva su apariencia reconocible: Spotify verde, YouTube rojo, Instagram degradado…"
+              onClick={() => onZone({ iconAppearance: "brand" })}
+              preview={<ChoicePreviewChips zone={zone} types={ICON_APPEARANCE_PREVIEW_TYPES} background={(type) => zone.colorMode === "one" ? zone.oneColor : (AUTO_COLORS[type] || zone.oneColor)} iconAppearance="brand" isAuthentic={zone.colorMode === "auto" && zone.preset === "vibrant"} useNetworkAccent={zone.colorMode === "auto"} />}
+            />
           </fieldset>
           <FontPicker label="Tipografía" value={draft.button_font || "modern"} onChange={onFont} />
           <div className="v2-fields-row">
@@ -721,6 +762,33 @@ function ButtonControls({ button,draft,onChange,onDelete }: { button: ButtonItem
   </div>;
 }
 
-function Choice({active,title,note,onClick,swatch,suggested=false}:{active:boolean;title:string;note:string;onClick:()=>void;swatch?:string;suggested?:boolean}) { return <button type="button" className={`v2-choice ${active?"active":""}`} onClick={onClick}><i>{active?"✓":""}</i>{swatch && <em className="v2-choice-swatch" style={{background:swatch}} />}<span><b>{title}{suggested && <em className="v2-choice-suggested">(Sugerido para la plantilla)</em>}</b><small>{note}</small></span></button>; }
+function Choice({active,title,note,onClick,swatch,suggested=false,preview}:{active:boolean;title:string;note:string;onClick:()=>void;swatch?:string;suggested?:boolean;preview?: ReactNode}) { return <button type="button" className={`v2-choice ${active?"active":""}`} onClick={onClick}><i>{active?"✓":""}</i>{swatch && <em className="v2-choice-swatch" style={{background:swatch}} />}<span><b>{title}{suggested && <em className="v2-choice-suggested">(Sugerido para la plantilla)</em>}</b><small>{note}</small></span>{preview}</button>; }
+
+// Small real-rendered swatches shown inline on a Choice row, so "Un color para todos" vs "Cada
+// red con su color" (or "Ícono minimalista" vs "Ícono real") show their actual result instead of
+// asking the person to imagine it from a text label — especially needed for icon appearance,
+// where a custom-icon button has no "brand" variant at all and the two options can otherwise
+// look identical. Reuses the same style functions (and the same mini-swatch shape) as the
+// button-look picker's own preview cards above, just as standalone chips instead of a labeled
+// pill, so a colored badge that's only meant to sit on a matching button (e.g. "brand"
+// collection's translucent-white badge) still has that backdrop here instead of going invisible
+// on the panel's plain white row.
+function ChoicePreviewChips({ zone, types, background, iconAppearance, isAuthentic, useNetworkAccent }: { zone: ButtonZoneStyle; types: string[]; background: (type: string) => string; iconAppearance: "brand" | "minimal"; isAuthentic: boolean; useNetworkAccent: boolean }) {
+  return (
+    <span className="v2-choice-preview" aria-hidden="true">
+      {types.map((type, index) => {
+        const bg = background(type);
+        const text = contrastTextColor(bg);
+        return (
+          <span key={type} className="v2-choice-preview-chip" style={{ ...buttonCollectionStyle(zone.collection, bg, text, index, type, isAuthentic, useNetworkAccent), width: 30, height: 30, borderRadius: Math.max(6, zone.radius * .32) }}>
+            <span style={buttonIconStyle(zone.collection, bg, 16, type, iconAppearance, isAuthentic, useNetworkAccent)}>
+              <ActionTypeIcon type={type} brandMark={iconAppearance === "brand" && !(isAuthentic && hasAuthenticLook(type))} />
+            </span>
+          </span>
+        );
+      })}
+    </span>
+  );
+}
 function ColorField({label,value,onChange}:{label:string;value:string;onChange:(v:string)=>void}) { return <label className="v2-color"><span>{label}</span><input type="color" value={value} onChange={(e)=>onChange(e.target.value)}/><code>{value.toUpperCase()}</code></label>; }
 function Range({label,min,max,step=1,value,onChange}:{label:string;min:number;max:number;step?:number;value:number;onChange:(v:number)=>void}) { const scaledPercent=max<=3; const percent=scaledPercent||label==="Horizontal"||label==="Vertical"; const pixels=!percent&&(label==="Tamaño"||label==="Borde"||label.includes("Alto")||label.includes("Espaciado")||label.includes("ícono")||label.includes("texto")); return <label className="v2-range"><span>{label}<b>{Math.round(value*(scaledPercent?100:1))}{percent?"%":pixels?" px":""}</b></span><input type="range" min={min} max={max} step={step} value={value} onChange={(e)=>onChange(Number(e.target.value))}/></label>; }

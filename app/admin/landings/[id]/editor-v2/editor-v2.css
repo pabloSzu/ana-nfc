@@ -82,3 +82,13 @@
 .v2-custom-action small{font-size:11px;color:#6d6f8a;line-height:1.35;font-weight:500}
 .v2-custom-action em{font-style:normal;font-size:20px;color:#6657e8;font-weight:800}
 .v2-inline-row{display:flex;align-items:stretch;gap:14px}.v2-inline-row .v2-range{flex:1;min-width:0}.v2-mini-color{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;flex:0 0 auto;padding:8px 14px;border:1px solid #e2e3e9;border-radius:11px;background:#fff}.v2-mini-color span{font-size:11px;font-weight:850;color:#373b47;white-space:nowrap}.v2-mini-color input[type=color]{width:42px;height:42px;border:1px solid #dfe1e8;border-radius:9px;padding:2px;background:#fff;cursor:pointer}
+/* Inline real-rendered previews on a Regla de color / Apariencia de íconos row — pinned to the
+   row's right edge (margin-left:auto on the flex row) so the row reads as "label ... result",
+   sized down from the actual button/icon styling functions rather than a separate illustration.
+   Specificity note: the pre-existing ".v2-choice span" rule (class+type, further up this file)
+   targets every span inside a Choice row, including this one — it otherwise wins over a plain
+   ".v2-choice-preview" class selector regardless of source order and collapses the row into
+   ".v2-choice span"'s own display:grid, stacking the chips vertically instead of in a row. The
+   ".v2-choice .v2-choice-preview" form (two classes) outweighs it on purpose. */
+.v2-choice .v2-choice-preview{display:flex;gap:6px;align-items:center;margin-left:auto;flex:0 0 auto}
+.v2-choice-preview-chip{display:inline-grid;place-items:center;flex:0 0 auto}
