@@ -307,7 +307,15 @@ function collectionBaseStyle(collection: ButtonZoneStyle["collection"], bg: stri
   // contrast-computed `text` (like every other collection does) fixes that for any base color.
   if (collection === "metallic") return { background: `linear-gradient(115deg, color-mix(in srgb, ${bg} 66%, #252735), color-mix(in srgb, ${bg} 30%, #f2f4fa) 48%, color-mix(in srgb, ${bg} 72%, #171923))`, color: text, border: "1px solid rgba(255,255,255,.4)", boxShadow: "inset 0 1px 1px rgba(255,255,255,.52), inset 0 -1px 1px rgba(0,0,0,.25), 0 8px 20px rgba(16,18,28,.2)" };
   if (collection === "retro") return { background: bg, color: text, border: "2px solid #191724", boxShadow: "3px 3px 0 #191724" };
-  if (collection === "editorial") return { background: "rgba(255,255,255,.08)", color: text, border: "0", borderTop: `1px solid color-mix(in srgb, ${bg} 62%, white)`, borderBottom: `1px solid color-mix(in srgb, ${bg} 62%, white)`, boxShadow: "none" };
+  // Two horizontal rules (top + bottom, no sides) used to come from borderTop/borderBottom
+  // sitting alongside a `border: "0"` shorthand on the same object — mixing a shorthand and its
+  // own longhands like that is exactly the pattern React warns is unsafe across rerenders (see
+  // the corporate comment below): switch collections back and forth and the browser has to
+  // remove a longhand while a shorthand for the same property is present, which can leave stale
+  // styling behind. Two inset box-shadow layers draw the identical two rules without ever
+  // touching a border longhand, so `border` here can stay a single, uniform "none" like every
+  // other collection that has no border at all.
+  if (collection === "editorial") return { background: "rgba(255,255,255,.08)", color: text, border: "none", boxShadow: `inset 0 1px 0 color-mix(in srgb, ${bg} 62%, white), inset 0 -1px 0 color-mix(in srgb, ${bg} 62%, white)` };
   if (collection === "candy") return { background: `linear-gradient(120deg, color-mix(in srgb, ${bg} 82%, #ff8bd5), color-mix(in srgb, ${bg} 78%, #8d7bff))`, color: "#fff", border: "2px solid rgba(255,255,255,.65)", boxShadow: `inset 0 2px 0 rgba(255,255,255,.4), 0 8px 18px color-mix(in srgb, ${bg} 24%, transparent)` };
   if (collection === "ocean") return { background: `linear-gradient(125deg, color-mix(in srgb, ${bg} 62%, #083b66), color-mix(in srgb, ${bg} 72%, #16b8ca))`, color: "#fff", border: "1px solid rgba(173,244,255,.48)", boxShadow: "inset 0 1px 0 rgba(220,251,255,.38), 0 9px 22px rgba(5,69,96,.25)" };
   if (collection === "brutal") return { background: bg, color: text, border: "3px solid #0a0a0a", boxShadow: "5px 5px 0 #0a0a0a" };
@@ -316,8 +324,16 @@ function collectionBaseStyle(collection: ButtonZoneStyle["collection"], bg: stri
   // color itself. A left accent stripe borrows the visual language of a status marker on an
   // enterprise dashboard or report line (the one place this template's audience already reads
   // that pattern as "confident and exact"), and a whisper of gradient plus a crisper shadow
-  // give it real depth without turning decorative.
-  if (collection === "corporate") return { background: `linear-gradient(155deg, color-mix(in srgb, ${bg} 94%, white), color-mix(in srgb, ${bg} 86%, #060b18))`, color: text, border: "1px solid rgba(255,255,255,.14)", borderLeft: `3px solid color-mix(in srgb, ${bg} 22%, white)`, boxShadow: "0 10px 24px rgba(4,8,20,.28), inset 0 1px 0 rgba(255,255,255,.08)" };
+  // give it real depth without turning decorative. The stripe itself is drawn as an inset
+  // box-shadow, not a `borderLeft` alongside the plain `border` above — mixing a border
+  // shorthand and a border longhand on the same element is exactly what React flags as unsafe
+  // across rerenders ("removing a style property... when a conflicting property is set"): these
+  // button styles get reused across collection switches (this same preview chip, or the same
+  // live button, re-renders with a different collection's style object), and going from
+  // Corporativo (had borderLeft) to any other collection (doesn't) forces the browser to remove
+  // a longhand while a shorthand for the same property is still set. box-shadow has no
+  // shorthand/longhand split to worry about, so it sidesteps the hazard entirely.
+  if (collection === "corporate") return { background: `linear-gradient(155deg, color-mix(in srgb, ${bg} 94%, white), color-mix(in srgb, ${bg} 86%, #060b18))`, color: text, border: "1px solid rgba(255,255,255,.14)", boxShadow: `0 10px 24px rgba(4,8,20,.28), inset 0 1px 0 rgba(255,255,255,.08), inset 3px 0 0 0 color-mix(in srgb, ${bg} 22%, white)` };
   // "3D Táctil": a tactile, slightly raised card — real color through the middle, a soft sheen
   // top and a gentle inner shade at the bottom sell the depth. This used to be a much louder
   // gumdrop-button skeuomorphism (a stark white 30%-opacity border, a hard 5px flat color

@@ -188,13 +188,14 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
     patchDraft({
       primary_color: preset.accent, button_font: preset.buttonFont,
       background_type: "gradient", background_color: preset.bg1, background_gradient_to: preset.bg2,
-      // Picking a whole new template is a fresh start, not a tweak — it always applies that
-      // template's own recommended color rule and icon appearance, even if "Regla de color"
-      // had been set manually before. The "keep my choice" stickiness (colorModeManual) still
-      // applies when only the button LOOK changes via applyButtonLook below — that's the one
-      // case it was actually built for ("cambio la plantilla de la botonera, no toda la
-      // plantilla, así que mi color sigue"). Reset to false here so it doesn't carry over and
-      // silently block the next template pick too.
+      // Picking any look — full template or just the button look below — always applies its
+      // own recommended color rule and icon appearance now. This used to be "sticky" (kept
+      // whatever you'd manually set before) whenever only the button look changed, on the
+      // theory that a deliberate choice should survive a smaller change. In practice that meant
+      // the exact same click (pick a button look) behaved differently depending on invisible
+      // state nobody could see — confusing on its own terms. One predictable rule instead:
+      // picking a look always gives you that look, in full; Ctrl+Z is the way back if it wasn't
+      // what you wanted, same as any other edit here.
       buttonZone: {
         ...draft.buttonZone,
         ...preset.buttonZone,
@@ -222,9 +223,9 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
         contentAlign: draft.buttonZone.contentAlignMode === "manual" ? draft.buttonZone.contentAlign : preset.buttonZone.contentAlign,
         contentAlignMode: draft.buttonZone.contentAlignMode,
         templateId: draft.buttonZone.templateId,
-        colorMode: draft.buttonZone.colorModeManual ? draft.buttonZone.colorMode : preset.buttonZone.colorMode,
-        oneColor: draft.buttonZone.colorModeManual ? draft.buttonZone.oneColor : preset.oneColor,
-        colorModeManual: draft.buttonZone.colorModeManual,
+        colorMode: preset.buttonZone.colorMode,
+        oneColor: preset.oneColor,
+        colorModeManual: false,
         iconAppearance: recommendedIconAppearance(preset.buttonZone.collection),
       },
     });
@@ -553,40 +554,40 @@ function ButtonDesign({ draft, buttons, onZone, onFont, onApplyButtonLook, onRes
           swatch={draft.buttonZone.oneColor}
           title="Un color para todos"
           note="Los botones que usan el diseño general tendrán este color."
-          onClick={() => onZone({ colorMode: "one", colorModeManual: true })}
+          onClick={() => onZone({ colorMode: "one" })}
           preview={<ChoicePreviewChips zone={zone} types={COLOR_RULE_PREVIEW_TYPES} background={() => draft.buttonZone.oneColor} iconAppearance={zone.iconAppearance} isAuthentic={false} useNetworkAccent={false} />}
         />
-        {draft.buttonZone.colorMode === "one" && <ColorField label="Color de los botones" value={draft.buttonZone.oneColor} onChange={(oneColor) => onZone({ oneColor, colorModeManual: true })} />}
+        {draft.buttonZone.colorMode === "one" && <ColorField label="Color de los botones" value={draft.buttonZone.oneColor} onChange={(oneColor) => onZone({ oneColor })} />}
         <Choice
           active={draft.buttonZone.colorMode === "auto"}
           title="Cada red con su color"
           note="WhatsApp verde, Instagram rosa y cada marca con su color oficial."
-          onClick={() => onZone({ colorMode: "auto", colorModeManual: true })}
+          onClick={() => onZone({ colorMode: "auto" })}
           preview={<ChoicePreviewChips zone={zone} types={COLOR_RULE_PREVIEW_TYPES} background={(type) => AUTO_COLORS[type] || draft.buttonZone.oneColor} iconAppearance={zone.iconAppearance} isAuthentic={true} useNetworkAccent={true} />}
         />
-        <p className="v2-help" style={{ margin: 0 }}>
-          {draft.buttonZone.colorModeManual
-            ? "Tu elección se mantendrá aunque cambies de plantilla. "
-            : "Sigue lo que recomienda cada plantilla hasta que elijas una regla vos mismo. "}
-          {draft.buttonZone.colorModeManual && (
-            <button
-              type="button"
-              className="v2-restore-all"
-              style={{ display: "inline", marginTop: 6 }}
-              onClick={() => {
-                // Same fix as `isAuthentic` above: look up by `preset` (the button look actually
-                // active right now), not `templateId` (the last FULL template, which stays put
-                // when only the button look changes). Reading `templateId` here meant this button
-                // could silently do nothing — or revert to the wrong look's color entirely —
-                // whenever the botonera had been changed apart from the full template.
-                const preset = DESIGN_PRESETS_V2.find((item) => item.id === draft.buttonZone.preset);
-                onZone({ colorModeManual: false, colorMode: preset?.buttonZone.colorMode ?? "auto", oneColor: preset?.oneColor ?? draft.buttonZone.oneColor });
-              }}
-            >
-              ↩ Que lo decida la plantilla
-            </button>
-          )}
-        </p>
+        {/* Picking any look (plantilla general o de botonera) always applies its own recommended
+            color rule now — no more "sticky" state that made the same click behave differently
+            depending on invisible history. One predictable rule, Ctrl+Z as the way back. */}
+        <p className="v2-help" style={{ margin: 0 }}>Cada plantilla trae su propia regla de color recomendada — elegir una plantilla nueva siempre la aplica. Si no era lo que buscabas, deshacé con Ctrl+Z.</p>
+      </fieldset>
+      <fieldset>
+        <legend>Apariencia de los iconos</legend>
+        <Choice
+          active={zone.iconAppearance === "minimal"}
+          suggested={recommendedIcons === "minimal"}
+          title="Icono minimalista"
+          note="Todos usan un tratamiento monocromático coordinado con la botonera."
+          onClick={() => onZone({ iconAppearance: "minimal" })}
+          preview={<ChoicePreviewChips zone={zone} types={ICON_APPEARANCE_PREVIEW_TYPES} background={(type) => zone.colorMode === "one" ? zone.oneColor : (AUTO_COLORS[type] || zone.oneColor)} iconAppearance="minimal" isAuthentic={zone.colorMode === "auto"} useNetworkAccent={zone.colorMode === "auto"} />}
+        />
+        <Choice
+          active={zone.iconAppearance === "brand"}
+          suggested={recommendedIcons === "brand"}
+          title="Icono real"
+          note="Cada marca conserva su apariencia reconocible: Spotify verde, YouTube rojo, Instagram degradado…"
+          onClick={() => onZone({ iconAppearance: "brand" })}
+          preview={<ChoicePreviewChips zone={zone} types={ICON_APPEARANCE_PREVIEW_TYPES} background={(type) => zone.colorMode === "one" ? zone.oneColor : (AUTO_COLORS[type] || zone.oneColor)} iconAppearance="brand" isAuthentic={zone.colorMode === "auto"} useNetworkAccent={zone.colorMode === "auto"} />}
+        />
       </fieldset>
       <div className="v2-fields-row">
         <fieldset><legend>Tamaño</legend><div className="v2-segment">{SIZES.map((item) => <button type="button" className={draft.buttonZone.height === item.patch.height ? "active" : ""} key={item.label} onClick={() => onZone(item.patch)}>{item.label}</button>)}</div></fieldset>
@@ -603,25 +604,6 @@ function ButtonDesign({ draft, buttons, onZone, onFont, onApplyButtonLook, onRes
       <details className="v2-advanced">
         <summary>Más opciones</summary>
         <div className="v2-fields" style={{ marginTop: 10 }}>
-          <fieldset>
-            <legend>Apariencia de los iconos</legend>
-            <Choice
-              active={zone.iconAppearance === "minimal"}
-              suggested={recommendedIcons === "minimal"}
-              title="Icono minimalista"
-              note="Todos usan un tratamiento monocromático coordinado con la botonera."
-              onClick={() => onZone({ iconAppearance: "minimal" })}
-              preview={<ChoicePreviewChips zone={zone} types={ICON_APPEARANCE_PREVIEW_TYPES} background={(type) => zone.colorMode === "one" ? zone.oneColor : (AUTO_COLORS[type] || zone.oneColor)} iconAppearance="minimal" isAuthentic={zone.colorMode === "auto"} useNetworkAccent={zone.colorMode === "auto"} />}
-            />
-            <Choice
-              active={zone.iconAppearance === "brand"}
-              suggested={recommendedIcons === "brand"}
-              title="Icono real"
-              note="Cada marca conserva su apariencia reconocible: Spotify verde, YouTube rojo, Instagram degradado…"
-              onClick={() => onZone({ iconAppearance: "brand" })}
-              preview={<ChoicePreviewChips zone={zone} types={ICON_APPEARANCE_PREVIEW_TYPES} background={(type) => zone.colorMode === "one" ? zone.oneColor : (AUTO_COLORS[type] || zone.oneColor)} iconAppearance="brand" isAuthentic={zone.colorMode === "auto"} useNetworkAccent={zone.colorMode === "auto"} />}
-            />
-          </fieldset>
           <FontPicker label="Tipografía" value={draft.button_font || "modern"} onChange={onFont} />
           <div className="v2-fields-row">
             <Range label="Alto del botón" min={40} max={72} value={zone.height} onChange={(height) => onZone({ height })} />
