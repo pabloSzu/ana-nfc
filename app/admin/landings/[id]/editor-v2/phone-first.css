@@ -174,8 +174,13 @@
 
 /* Editor theme backdrop CSS now lives in globals.css as .theme-scene, shared with /admin —
    see ThemeSceneLayer/ThemePickerButton in components/theme-scene.tsx. Inside the stage
-   specifically, the layer needs to sit under the phone/toolbar and match the stage's own
-   rounded/clipped bounds instead of the page-covering `fixed` positioning it uses on /admin. */
-.v2-stage { position: relative; }
+   specifically, the layer needs to match the stage's own rounded/clipped bounds instead of the
+   page-covering `fixed` positioning it uses on /admin (.v2-stage is already `position:relative`
+   via its own base rule in editor-v2.css, which is what .theme-scene's `absolute` anchors to).
+   Stacking .v2-stage-toolbar/.v2-phone above the theme-scene layer needs nothing extra: DOM
+   order alone already paints them after it. Forcing `position:relative` on them to "be safe"
+   here previously overrode .v2-stage-toolbar's OWN required `position:absolute` (its whole
+   `top`/`left:50%` centering in Vista previa depends on being absolutely positioned) — with
+   position:relative instead, that same `left:50%` shifted it sideways from its normal flow
+   position rather than centering it, which is what broke "Vista limpia". */
 .v2-stage > .theme-scene { position: absolute; }
-.v2-stage > .v2-stage-toolbar, .v2-stage > .v2-phone { position: relative; z-index: 1; }
