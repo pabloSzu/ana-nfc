@@ -12,7 +12,7 @@ import { AUTO_COLORS, contrastTextColor, getAllActions, logoBorderRadius, logoFr
 import FontPicker from "../font-picker";
 import IconPicker from "../icon-picker";
 import { DESIGN_PRESETS_V2, buttonCollectionStyle, buttonIconStyle, hasAuthenticLook, recommendedIconAppearance, resolveButtonColors, type DesignPreset } from "@/lib/design-presets";
-import { ThemeSceneLayer, ThemePickerButton, useSharedTheme } from "@/components/theme-scene";
+import { ThemeSceneLayer, useSharedTheme } from "@/components/theme-scene";
 
 type ButtonItem = { id: string; type: string; title: string; subtitle: string; url: string; message: string; icon: string; background_color: string; text_color: string; use_auto_color: boolean; position: number };
 type LandingDraft = {
@@ -70,7 +70,9 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
   // Purely a personal viewing preference for the app's OWN chrome — nothing to do with the
   // landing being edited — shared with /admin via the same localStorage key (theme-scene.tsx),
   // so switching it in either place keeps both in sync.
-  const [editorTheme, changeEditorTheme] = useSharedTheme();
+  // The picker itself now lives in the global nav (app/admin/layout.tsx) — this just reads the
+  // shared theme to paint the stage backdrop below.
+  const [editorTheme] = useSharedTheme();
   const [bgPreview, setBgPreview] = useState<string | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoRemoved, setLogoRemoved] = useState(false);
@@ -416,7 +418,6 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
           <button type="button" title="Deshacer (Ctrl+Z)" aria-label="Deshacer" disabled={pastRef.current.length === 0} onClick={undo}>↶</button>
           <button type="button" title="Rehacer (Ctrl+Y)" aria-label="Rehacer" disabled={futureRef.current.length === 0} onClick={redo}>↷</button>
         </div>
-        <ThemePickerButton theme={editorTheme} onChange={changeEditorTheme} />
         <button className="v2-ghost" type="button" onClick={() => { setPanel(panel === "settings" ? null : "settings"); setPreview(false); }}>Ajustes</button>
         <button className="v2-ghost" type="button" onClick={() => { setPreview(!preview); setPanel(preview ? "templates" : null); }}>{preview ? "Seguir editando" : "Vista previa"}</button>
         <button className="v2-save" form="v2-save" type="submit" name="return_to" value={`/admin/landings/${draft.id}/editor-v2`} disabled={!dirty}>Guardar cambios</button>

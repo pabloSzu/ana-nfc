@@ -1,15 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
 import { newClient, newLanding, publish, deleteLanding, deleteClient } from "./actions";
-import { logout } from "./login/actions";
 import LandingCreationForm from "./landing-creation-form";
 import DeleteClientButton from "./delete-client-button";
 import DeleteLandingButton from "./delete-landing-button";
 import ModalTrigger from "./modal-trigger";
-import { IconPlus, IconEdit, IconEye, IconQrCode, IconPlay, IconPause, IconUsers, IconFileText, IconCheckCircle, IconLogOut, IconRocket, IconWifi, IconDroplet } from "@/components/icons";
+import { IconPlus, IconEdit, IconEye, IconQrCode, IconPlay, IconPause, IconUsers, IconFileText, IconCheckCircle, IconRocket, IconWifi, IconDroplet } from "@/components/icons";
 import Toast from "@/components/toast";
 import Link from "next/link";
 import { Suspense } from "react";
-import { AdminThemeButton, AdminThemeBackdrop } from "@/components/admin-theme";
+import { AdminThemeBackdrop } from "@/components/admin-theme";
 
 export default async function Admin() {
   const supabase = await createClient();
@@ -42,10 +41,6 @@ export default async function Admin() {
           <span><IconCheckCircle /> {publishRate}% publicadas</span>
         </div>
       </div>
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-        <AdminThemeButton />
-        <form action={logout}><button className="btn secondary glass" type="submit"><IconLogOut /> Salir</button></form>
-      </div>
     </header>
     <Suspense fallback={null}><Toast /></Suspense>
 
@@ -53,7 +48,11 @@ export default async function Admin() {
       <div className="stat-card"><span className="stat-icon"><IconUsers /></span><small>Clientes</small><strong>{totalClients}</strong><span>{activeClients} con landing</span></div>
       <div className="stat-card"><span className="stat-icon"><IconFileText /></span><small>Landings</small><strong>{totalLandings}</strong><span>{drafts} en borrador</span></div>
       <div className="stat-card"><span className="stat-icon"><IconCheckCircle /></span><small>Publicadas</small><strong>{published}</strong><span>{publishRate}% del total</span></div>
-      <div className="stat-card"><span className="stat-icon"><IconQrCode /></span><small>Tags listos</small><strong>{published}</strong><span>con QR activo</span></div>
+      {/* Same number as "Publicadas" on purpose, not a bug: a tag/QR's URL 404s until the
+          landing behind it is published (app/[slug]/page.tsx filters on published:true), so
+          "ready" and "published" are the same set. The old subtitle ("con QR activo") didn't
+          say why the two cards matched — this one names the actual condition instead. */}
+      <div className="stat-card"><span className="stat-icon"><IconQrCode /></span><small>Tags listos</small><strong>{published}</strong><span>= publicadas (el QR solo funciona así)</span></div>
     </section>
 
     <div className="admin-action-bar">
