@@ -17,7 +17,22 @@
      .v2-panel's `left` below, which keeps a constant ~40px gap between the two. */
   justify-items: start;
   padding-left: max(32px, calc(50vw - 560px));
+  /* A flat gray gradient left a lot of empty real estate around the phone with nothing to
+     anchor it. Two low-opacity brand-purple blobs plus a fine dot grid give the workspace some
+     depth without competing with the phone or the panel sitting on top of it. */
+  background:
+    radial-gradient(620px circle at 12% 12%, rgba(102, 87, 232, .11), transparent 60%),
+    radial-gradient(560px circle at 88% 90%, rgba(87, 73, 213, .09), transparent 60%),
+    radial-gradient(#d9dae7 1px, transparent 1px),
+    radial-gradient(circle at 50% 30%, #fff 0, #eeeef4 55%, #e4e5ec 100%);
+  background-size: auto, auto, 22px 22px, auto;
 }
+
+/* In "Vista previa" there's no floating panel to leave room for, so the left-anchor formula
+   above (meant to keep the phone close to the panel) just reads as an unexplained offset —
+   center the phone (and the size tabs riding above it) in the stage instead. */
+.is-preview .v2-stage { justify-items: center; padding-left: 22px; }
+.is-preview .v2-stage-toolbar { left: 50%; }
 
 .v2-phone {
   width: 400px;
@@ -79,6 +94,8 @@
   .v2-stage-toolbar { left: max(223px, calc(50vw - 225px)); }
   .v2-panel { left: auto; right: 22px; width: 440px; }
   .v2-panel::before { display: none; }
+  .is-preview .v2-stage { justify-items: center; padding-left: 28px; }
+  .is-preview .v2-stage-toolbar { left: 50%; }
 }
 
 @media (max-width: 840px) {

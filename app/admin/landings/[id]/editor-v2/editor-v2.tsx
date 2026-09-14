@@ -397,7 +397,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
           <button type="button" title="Rehacer (Ctrl+Y)" aria-label="Rehacer" disabled={futureRef.current.length === 0} onClick={redo}>↷</button>
         </div>
         <button className="v2-ghost" type="button" onClick={() => { setPanel(panel === "settings" ? null : "settings"); setPreview(false); }}>Ajustes</button>
-        <button className="v2-ghost" type="button" onClick={() => { setPreview(!preview); setPanel(null); }}>{preview ? "Seguir editando" : "Vista previa"}</button>
+        <button className="v2-ghost" type="button" onClick={() => { setPreview(!preview); setPanel(preview ? "templates" : null); }}>{preview ? "Seguir editando" : "Vista previa"}</button>
         <button className="v2-save" form="v2-save" type="submit" name="return_to" value={`/admin/landings/${draft.id}/editor-v2`} disabled={!dirty}>Guardar cambios</button>
       </header>
 

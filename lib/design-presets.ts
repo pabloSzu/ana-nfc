@@ -330,10 +330,13 @@ export function buttonIconStyle(collection: ButtonZoneStyle["collection"], bg: s
   if (collection === "gummy") return { ...base, borderRadius: 9, color: "#ffffff", background: "rgba(6,9,15,.58)", border: "1px solid rgba(255,255,255,.24)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.13)" };
   // Shared fallback for every collection without a bespoke treatment above — currently soft
   // (Natural), brutal (Brutalismo) and retro (Neobrutalismo), plus bento/editorial/ocean which
-  // no preset template uses yet. The icon just inherits the button's own contrast color (no
-  // background override), so it's always legible no matter what color the button ends up being
-  // — a plain full circle reads softer/more organic than a generic rounded-square badge would.
-  return { ...base, borderRadius: "50%", background: "rgba(255,255,255,.2)", border: "1px solid rgba(255,255,255,.26)" };
+  // no preset template uses yet. The badge tint used to be hardcoded translucent white — fine on
+  // a colorful button, but invisible on a light one (Brutalismo's default is a plain white
+  // button), leaving the icon with no visible circle to sit in and reading as a bare, oversized
+  // glyph. Picking white-vs-black tint from the button's own computed contrast color keeps the
+  // badge visible against any button color, the same way `text` already does for the label.
+  const badgeTint = contrastTextColor(bg) === "#ffffff" ? "255,255,255" : "0,0,0";
+  return { ...base, borderRadius: "50%", background: `rgba(${badgeTint},.14)`, border: `1px solid rgba(${badgeTint},.22)` };
 }
 
 export function buttonCollectionWidth(zone: ButtonZoneStyle, index: number) {
