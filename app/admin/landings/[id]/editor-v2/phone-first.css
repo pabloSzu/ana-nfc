@@ -166,3 +166,58 @@
   .v2-phone.device-standard,
   .v2-phone.device-large { height: calc(100dvh - 138px); }
 }
+
+/* ============ Editor themes — decorative backdrop behind the phone, opt-in via Ajustes ============
+   A single absolutely-positioned layer (clipped to the stage, sitting under the phone/toolbar)
+   holds each theme's decorative pieces. Only rendered past "default", so the plain dot-grid
+   backdrop (phone-first.css above) stays the untouched fallback. */
+.v2-theme-layer { position: absolute; inset: 0; overflow: hidden; z-index: 0; pointer-events: none; }
+.v2-stage > .v2-stage-toolbar, .v2-stage > .v2-phone { position: relative; z-index: 1; }
+
+/* Aurora — four soft drifting color blobs on near-black. */
+.v2-stage[data-theme="aurora"] { background: #070811; }
+.v2-theme-blob { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .35; animation: v2-theme-float 16s ease-in-out infinite alternate; }
+.v2-theme-blob-1 { width: 480px; height: 480px; background: #6851ff; left: -140px; top: -120px; }
+.v2-theme-blob-2 { width: 480px; height: 480px; background: #13baf7; right: -160px; top: 4%; animation-delay: -5s; }
+.v2-theme-blob-3 { width: 480px; height: 480px; background: #fb407d; bottom: -260px; left: 30%; animation-delay: -9s; }
+.v2-theme-blob-4 { width: 420px; height: 420px; background: #36e0bd; bottom: -220px; right: -80px; opacity: .16; }
+@keyframes v2-theme-float { from { transform: translate3d(-30px,-15px,0) scale(.9); } to { transform: translate3d(70px,55px,0) scale(1.12); } }
+
+/* Orbital — a glowing core with three slow-spinning rings, each carrying one bright point. */
+.v2-stage[data-theme="orbital"] { background: radial-gradient(circle at center,#11132a 0%,#060710 65%); }
+.v2-theme-core { width: 220px; height: 220px; position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); border-radius: 50%; background: radial-gradient(circle, rgba(139,95,255,.25), rgba(66,189,255,.08) 35%, transparent 70%); filter: blur(5px); }
+.v2-theme-orbit { position: absolute; top: 50%; left: 50%; border: 1px solid rgba(255,255,255,.11); border-radius: 50%; transform: translate(-50%,-50%); }
+.v2-theme-orbit::after { content: ""; width: 8px; height: 8px; position: absolute; top: 50%; left: -4px; border-radius: 50%; background: #6edcff; box-shadow: 0 0 16px #6edcff; }
+.v2-theme-orbit-1 { width: 340px; height: 340px; animation: v2-theme-rotate 20s linear infinite; }
+.v2-theme-orbit-2 { width: 540px; height: 540px; animation: v2-theme-rotate 32s linear infinite reverse; }
+.v2-theme-orbit-3 { width: 760px; height: 760px; animation: v2-theme-rotate 46s linear infinite; }
+@keyframes v2-theme-rotate { to { transform: translate(-50%,-50%) rotate(360deg); } }
+
+/* Mesh — soft pastel gradient blobs plus a fine grid, on a light ground (the one daylight theme). */
+.v2-stage[data-theme="mesh"] { background: #faf9ff; }
+.v2-theme-mesh-blobs { position: absolute; inset: -30%; background:
+    radial-gradient(circle at 20% 30%, #8c75ff 0 11%, transparent 31%),
+    radial-gradient(circle at 80% 30%, #51c9ff 0 9%, transparent 31%),
+    radial-gradient(circle at 60% 80%, #ff70b3 0 9%, transparent 31%),
+    radial-gradient(circle at 25% 85%, #75e8c3 0 8%, transparent 27%);
+  filter: blur(70px); opacity: .55; animation: v2-theme-mesh-move 14s ease-in-out infinite alternate; }
+@keyframes v2-theme-mesh-move { from { transform: rotate(-4deg) scale(1); } to { transform: rotate(4deg) scale(1.1); } }
+.v2-theme-mesh-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(0,0,0,.035) 1px,transparent 1px), linear-gradient(90deg,rgba(0,0,0,.035) 1px,transparent 1px); background-size: 50px 50px; }
+
+/* Digital — a receding perspective grid meeting a glowing horizon line, dev-console dark. */
+.v2-stage[data-theme="digital"] { background: #04050a; perspective: 600px; }
+.v2-theme-glow { position: absolute; width: 700px; height: 320px; left: 50%; top: 60%; transform: translate(-50%,-50%); border-radius: 50%; background: #435eff; opacity: .14; filter: blur(100px); }
+.v2-theme-horizon { position: absolute; width: 85%; height: 2px; left: 7.5%; top: 60%; background: linear-gradient(90deg, transparent, #735dff, #42d5ff, #735dff, transparent); box-shadow: 0 0 20px #635dff, 0 0 80px rgba(83,112,255,.6); }
+.v2-theme-grid-plane { position: absolute; width: 180%; height: 100%; left: -40%; bottom: -30%; transform: rotateX(68deg); background-image: linear-gradient(rgba(91,120,255,.16) 1px,transparent 1px), linear-gradient(90deg,rgba(91,120,255,.16) 1px,transparent 1px); background-size: 48px 48px; animation: v2-theme-grid-move 4s linear infinite; mask-image: linear-gradient(to bottom, transparent 2%, black 45%); }
+@keyframes v2-theme-grid-move { to { background-position: 0 48px, 48px 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .v2-theme-blob, .v2-theme-orbit, .v2-theme-mesh-blobs, .v2-theme-grid-plane { animation: none; }
+}
+
+/* Theme picker swatches in Ajustes. */
+.v2-theme-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.v2-theme-grid button { border: 1.5px solid #e4e5eb; background: #fff; border-radius: 12px; padding: 7px; cursor: pointer; display: grid; gap: 6px; justify-items: center; }
+.v2-theme-grid button.active { border-color: #6657e8; }
+.v2-theme-swatch { display: block; width: 100%; height: 40px; border-radius: 8px; }
+.v2-theme-grid b { font-size: 10.5px; font-weight: 800; color: #373b47; }
