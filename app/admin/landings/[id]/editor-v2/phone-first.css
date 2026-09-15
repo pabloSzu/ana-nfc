@@ -2,7 +2,13 @@
 .v2-workspace {
   position: relative;
   display: block;
-  height: calc(100dvh - 72px);
+  /* Same specificity as editor-v2.css's own .v2-workspace rule, and this file loads after it —
+     so this `height` always wins, silently undoing the flex-based sizing set there (which was
+     meant to replace exactly this kind of hardcoded dvh math). Keeping it consistent instead of
+     removing it outright (a bigger, riskier change here) — but it has to give up the global
+     nav's height too, same as every other dvh calc on this page, or v2-shell's overflow:hidden
+     just clips the extra off the bottom, which is what was cropping the phone. */
+  height: calc(100dvh - var(--global-nav-h) - 72px);
 }
 
 .v2-stage {
@@ -36,8 +42,14 @@
 
 .v2-phone {
   width: 400px;
-  height: min(780px, calc(100dvh - 104px));
-  min-height: 600px;
+  /* 104px assumed only the editor's own 72px topbar above the stage — it never accounted for
+     .v2-stage's own 68px+22px top/bottom padding (added later, for the toolbar). The real
+     subtrahend is nav(46, via the var) + topbar(72) + stage padding(90) = 208, i.e. 162 once the
+     var's 46 is factored out. Without this, on a typical 768px-tall screen the phone's floor
+     (min-height below) forced it past the room actually left in .v2-stage, causing an internal
+     scrollbar there (reported: "me gustaria que sea sin scroll"). */
+  height: min(780px, calc(100dvh - var(--global-nav-h) - 162px));
+  min-height: 520px;
   border-radius: 52px;
   border-width: 10px;
   box-shadow: 0 34px 90px rgba(27, 29, 44, 0.3), 0 5px 16px rgba(27, 29, 44, 0.18);
@@ -104,9 +116,9 @@
 }
 
 @media (max-width: 840px) {
-  .v2-workspace { height: calc(100dvh - 64px); }
+  .v2-workspace { height: calc(100dvh - var(--global-nav-h) - 64px); }
   .v2-stage { justify-items: center; padding: 10px 8px; }
-  .v2-phone { width: min(400px, 96vw); height: calc(100dvh - 84px); min-height: 0; border-radius: 43px; border-width: 8px; }
+  .v2-phone { width: min(400px, 96vw); height: calc(100dvh - var(--global-nav-h) - 84px); min-height: 0; border-radius: 43px; border-width: 8px; }
   .v2-phone-screen { border-radius: 33px; }
   .v2-panel {
     position: fixed;
@@ -157,9 +169,11 @@
 .v2-device-switcher { display: flex; gap: 2px; padding: 2px; border-radius: 10px; background: #f0f1f5; }
 .v2-device-switcher button { border: 0; border-radius: 8px; padding: 6px 8px; background: transparent; color: #6d7180; font-size: 9px; font-weight: 850; cursor: pointer; }
 .v2-device-switcher button.active { background: #fff; color: #5749d5; box-shadow: 0 2px 7px rgba(28,30,42,.11); }
-.v2-phone.device-small { width: min(360px, calc(100vw - 20px)); height: min(640px, calc(100dvh - 154px)); }
-.v2-phone.device-standard { width: min(390px, calc(100vw - 20px)); height: min(780px, calc(100dvh - 154px)); }
-.v2-phone.device-large { width: min(430px, calc(100vw - 20px)); height: min(840px, calc(100dvh - 154px)); }
+/* Same 162px subtrahend as the base .v2-phone rule above — these device-size variants sit in
+   the exact same .v2-stage, so they need to give up the same nav+topbar+stage-padding room. */
+.v2-phone.device-small { width: min(360px, calc(100vw - 20px)); height: min(640px, calc(100dvh - var(--global-nav-h) - 162px)); }
+.v2-phone.device-standard { width: min(390px, calc(100vw - 20px)); height: min(780px, calc(100dvh - var(--global-nav-h) - 162px)); }
+.v2-phone.device-large { width: min(430px, calc(100vw - 20px)); height: min(840px, calc(100dvh - var(--global-nav-h) - 162px)); }
 .v2-phone-screen > .public { height: 100%; min-height: 100%; overflow-y: auto; }
 
 @media (max-width: 840px) {
@@ -169,7 +183,7 @@
   .v2-device-switcher button { padding-inline: 7px; }
   .v2-phone.device-small,
   .v2-phone.device-standard,
-  .v2-phone.device-large { height: calc(100dvh - 138px); }
+  .v2-phone.device-large { height: calc(100dvh - var(--global-nav-h) - 138px); }
 }
 
 /* Editor theme backdrop CSS now lives in globals.css as .theme-scene, shared with /admin —

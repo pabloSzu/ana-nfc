@@ -14,7 +14,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const email = (claims?.claims as { email?: string } | undefined)?.email;
 
   return (
-    <>
+    <div className="admin-shell-frame">
       <nav className="global-nav">
         <Link href="/admin" className="global-nav-brand"><span className="global-nav-mark"><IconRocket /></span> Mi Landing Web Fácil</Link>
         <div className="global-nav-right">
@@ -24,6 +24,6 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         </div>
       </nav>
       {children}
-    </>
+    </div>
   );
 }
