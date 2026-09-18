@@ -10,5 +10,5 @@ export default async function Preview({ params }: { params: Promise<{ id: string
   const { data: landing } = await supabase.from("landings").select("*").eq("id", id).eq("owner_id", user.user.id).maybeSingle();
   if (!landing) notFound();
   const { data: actions } = await supabase.from("actions").select("*").eq("landing_id", id).order("position");
-  return <DevicePreview landing={landing} actions={actions || []} backHref={`/admin/landings/${id}`} />;
+  return <DevicePreview landing={landing} actions={actions || []} backHref={`/admin/landings/${id}/editor-v2`} />;
 }

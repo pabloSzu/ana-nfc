@@ -146,7 +146,7 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
   );
 
   return (
-    <main className="public" style={{ position: "relative", overflow: "hidden", background: landing.background_color || "#f7f5f0" }}>
+    <main className="public" style={{ position: "relative", overflowX: "hidden", overflowY: "auto", background: landing.background_color || "#f7f5f0" }}>
       <FontLinks ids={fontIds} />
       <div className="public-bg-layer" style={{ position: "absolute", inset: 0, zIndex: 0, backgroundRepeat: "no-repeat", ...bgLayerStyle }} />
       <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none", backgroundImage: `linear-gradient(180deg, rgba(4,8,10,${(bgTint * 0.55).toFixed(3)}), rgba(5,8,11,${bgTint}))` }} />

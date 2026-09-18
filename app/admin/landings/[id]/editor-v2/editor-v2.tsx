@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ActionTypeIcon } from "@/components/action-icons";
 import { FiLink } from "react-icons/fi";
-import { IconEye, IconQrCode } from "@/components/icons";
+import { IconEye, IconQrCode, IconSmartphone } from "@/components/icons";
 import DeleteLandingButton from "@/app/admin/delete-landing-button";
 import LandingRenderer, { type LandingEditControls } from "@/components/landing-renderer";
+import ScaledPhoneCanvas from "@/components/scaled-phone-canvas";
 import { compressImage } from "@/lib/compress-image";
 import { AUTO_COLORS, contrastTextColor, getAllActions, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize, type BackgroundPosition, type ButtonZoneStyle, type LogoStyle, type SubtitleStyle, type TitleStyle } from "@/lib/landing-catalog";
 import FontPicker from "../font-picker";
@@ -86,6 +87,9 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const grabOffsetRef = useRef(0);
   const dragOffsetRef = useRef(0);
+  // Kept as a ref (not state) since it only needs to be read inside imperative drag math that
+  // runs from window-level pointer listeners — a re-render on every resize tick would be wasted.
+  const phoneScaleRef = useRef(1);
 
   useEffect(() => {
     if (!dirty) return;
@@ -280,7 +284,12 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
         const previous = previousRects.get(id);
         if (!previous) return;
         const current = element.getBoundingClientRect();
-        const deltaY = previous.top - current.top;
+        // deltaY is a real screen-space delta (from getBoundingClientRect, which already
+        // reflects any ancestor CSS transform). But `transform` set here is a LOCAL transform
+        // on an element that itself lives inside the scaled phone canvas — the browser
+        // multiplies it by the ancestor's scale when painting, so without dividing by
+        // phoneScaleRef here the animation would visibly undershoot on any shrunk phone.
+        const deltaY = (previous.top - current.top) / phoneScaleRef.current;
         if (Math.abs(deltaY) > 1) element.animate([{ transform: `translateY(${deltaY}px)` }, { transform: "translateY(0)" }], { duration: 190, easing: "cubic-bezier(.2,.8,.2,1)" });
       });
     }));
@@ -291,8 +300,16 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
     const element = buttonElements.current.get(draggedId);
     if (element) {
       const rect = element.getBoundingClientRect();
-      const naturalTop = rect.top - dragOffsetRef.current;
-      dragOffsetRef.current = clientY - grabOffsetRef.current - naturalTop;
+      // naturalTop has to undo the LOCAL translateY from the previous frame (element.style.
+      // transform below), not the on-screen one — dragOffsetRef.current is already stored in
+      // local (pre-scale) units, so this stays entirely in local space, consistent with how
+      // it was set last frame.
+      const naturalTop = rect.top - dragOffsetRef.current * phoneScaleRef.current;
+      // clientY/grabOffsetRef/naturalTop are all real screen pixels — same reasoning as the
+      // animate() call in reorderButton above: dividing by the phone's current scale converts
+      // that screen-space delta into the local units this element's own `transform` needs, so
+      // the dragged button tracks the pointer 1:1 no matter how small the phone frame is.
+      dragOffsetRef.current = (clientY - grabOffsetRef.current - naturalTop) / phoneScaleRef.current;
       element.style.transform = `translateY(${dragOffsetRef.current}px)`;
     }
     // Target the slot whose vertical MIDPOINT the pointer has crossed, using each button's
@@ -418,6 +435,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
           <button type="button" title="Deshacer (Ctrl+Z)" aria-label="Deshacer" disabled={pastRef.current.length === 0} onClick={undo}>↶</button>
           <button type="button" title="Rehacer (Ctrl+Y)" aria-label="Rehacer" disabled={futureRef.current.length === 0} onClick={redo}>↷</button>
         </div>
+        <Link className="v2-device-preview-link" href={`/admin/landings/${draft.id}/preview`} title="Ver cómo se ve en un celular real"><IconSmartphone /><span>Ver en celular</span></Link>
         <button className="v2-ghost" type="button" onClick={() => { setPanel(panel === "settings" ? null : "settings"); setPreview(false); }}>Ajustes</button>
         <button className="v2-ghost" type="button" onClick={() => { setPreview(!preview); setPanel(preview ? "templates" : null); }}>{preview ? "Seguir editando" : "Vista previa"}</button>
         <button className="v2-save" form="v2-save" type="submit" name="return_to" value={`/admin/landings/${draft.id}/editor-v2`} disabled={!dirty}>Guardar cambios</button>
@@ -442,7 +460,9 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
           <div className="v2-stage-toolbar"><span>{preview ? "Vista limpia" : "Tamaño de pantalla"}</span><div className="v2-device-switcher">{DEVICE_OPTIONS.map((option) => <button key={option.id} type="button" className={device === option.id ? "active" : ""} title={option.size} onClick={() => setDevice(option.id)}>{option.label}</button>)}</div></div>
           <div className={`v2-phone device-${device}`}>
             <div className="v2-phone-screen" ref={buttonsContainerRef}>
-              <LandingRenderer landing={rendererLanding} actions={buttons} edit={preview ? undefined : editControls} />
+              <ScaledPhoneCanvas className="scaled-phone-canvas" onScaleChange={(next) => { phoneScaleRef.current = next; }}>
+                <LandingRenderer landing={rendererLanding} actions={buttons} edit={preview ? undefined : editControls} />
+              </ScaledPhoneCanvas>
             </div>
           </div>
         </section>

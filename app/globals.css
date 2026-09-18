@@ -46,6 +46,22 @@
   --dur-fast: 150ms; --dur-base: 250ms; --dur-slow: 400ms;
   --ease-out: cubic-bezier(.16,1,.3,1);
   --ease-spring: cubic-bezier(.34,1.56,.64,1);
+
+  /* ---------- Editor (.v2-*) fluid tokens ---------- */
+  /* editor-v2's own px-based scale (separate from the --space- and --font- tokens above, which
+     are for the marketing/admin chrome) had zero responsive treatment on its modal and its
+     densest form text
+     (fieldset legends, panel padding) — the exact same fixed px from a 1440px desktop down to a
+     340px phone, reported as "no se ven bien las modales" on medium/small screens. These clamp()
+     between a mobile floor and today's desktop value, so ~450px+ (tablet and up) renders exactly
+     as before — only phones actually shrink. */
+  --v2-fs-body: clamp(12.5px, 3vw, 14px);
+  --v2-fs-h2: clamp(18px, 4.4vw, 21px);
+  --v2-fs-legend: clamp(9px, 2.4vw, 10.5px);
+  --v2-fs-label: clamp(11px, 2.6vw, 12px);
+  --v2-space-field: clamp(12px, 3.6vw, 16px);
+  --v2-space-modal: clamp(18px, 6vw, 28px);
+  --v2-radius-modal: clamp(16px, 4vw, 22px);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -1045,7 +1061,15 @@ input[type="color"] { padding: 5px; height: 46px; cursor: pointer; }
 .editor-add-icon { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: rgba(255, 255, 255, .25); font-size: 13px; line-height: 1; }
 
 /* Device-aware preview: the public renderer itself is mounted inside each viewport. */
-.device-preview-shell { height: 100dvh; overflow: hidden; background: radial-gradient(circle at 50% 10%,#fff 0,#eeeff5 56%,#e5e6ed 100%); }
+/* This page sits under /admin, so app/admin/layout.tsx's sticky .global-nav (46px,
+   var(--global-nav-h)) always renders above it. .admin-shell-frame's flexbox squeezes this
+   shell down to fit in the room actually left (100dvh - 46px) — but every height calc below
+   was still written against the full 100dvh, unaware that 46px of it was already spoken for.
+   The result: .device-preview-stage claimed 46px more room than the (already-shrunk) shell
+   actually had, and since the shell itself is `overflow:hidden`, that excess just got clipped
+   off the bottom instead of becoming scrollable — reported as "la parte de abajo se ve tapada".
+   Same nav-height subtrahend the editor's own .v2-workspace/.v2-stage already use. */
+.device-preview-shell { height: calc(100dvh - var(--global-nav-h)); overflow: hidden; background: radial-gradient(circle at 50% 10%,#fff 0,#eeeff5 56%,#e5e6ed 100%); }
 .device-preview-toolbar {
   position: relative;
   z-index: 20;
@@ -1067,31 +1091,97 @@ input[type="color"] { padding: 5px; height: 46px; cursor: pointer; }
 .device-preview-switcher { justify-self: end; display: flex; gap: 3px; padding: 3px; border: 1px solid #e3e4ea; border-radius: 12px; background: #f2f3f6; }
 .device-preview-switcher button { border: 0; border-radius: 9px; padding: 7px 9px; background: transparent; color: #707482; font-size: 9px; font-weight: 850; cursor: pointer; }
 .device-preview-switcher button.active { background: #fff; color: #584bd0; box-shadow: 0 2px 8px rgba(31,33,45,.12); }
-.device-preview-stage { height: calc(100dvh - 68px); display: grid; place-items: center; overflow: auto; padding: 24px; }
+/* `safe center`: same reasoning as .v2-stage in the editor's phone-first.css — plain `center`
+   first for browsers that don't understand `safe`, then the real value for those that do, so
+   scrolling to see a phone taller than the stage starts from its true top edge instead of a
+   chunk of empty centered space. */
+.device-preview-stage { height: calc(100dvh - var(--global-nav-h) - 68px); display: grid; place-items: center; align-items: center; align-items: safe center; overflow: auto; padding: 24px; }
 .device-preview-frame {
+  position: relative;
   overflow: hidden;
   border: 9px solid #18191e;
   border-radius: 42px;
   background: #18191e;
   box-shadow: 0 30px 75px rgba(28,30,43,.28),0 5px 15px rgba(28,30,43,.16);
 }
-.device-preview-frame.device-small { width: 360px; height: min(640px,calc(100dvh - 104px)); }
-.device-preview-frame.device-standard { width: 390px; height: min(780px,calc(100dvh - 104px)); }
-.device-preview-frame.device-large { width: 430px; height: min(840px,calc(100dvh - 104px)); }
-.device-preview-frame > .public { height: 100%; min-height: 100%; overflow-y: auto; }
+/* The frame renders at its TRUE device size — never shrunk just because the browser window is
+   short. Width only ever gives way to the viewport being physically narrower than the phone
+   itself; height follows via `aspect-ratio` so the shape is always correct. If it doesn't fit
+   vertically, .device-preview-stage scrolls (it already has overflow:auto) — same as scrolling
+   a tall page on an actual phone, instead of showing a resized "photo" of one. This is what
+   "Vista previa" is FOR — an accurate 1:1 picture of the real device, so it has to stay 1:1. */
+.device-preview-frame.device-small { --preview-width: 360px; --preview-ratio: 360 / 640; }
+.device-preview-frame.device-standard { --preview-width: 390px; --preview-ratio: 390 / 780; }
+.device-preview-frame.device-large { --preview-width: 430px; --preview-ratio: 430 / 840; }
+.device-preview-frame.device-small,
+.device-preview-frame.device-standard,
+.device-preview-frame.device-large {
+  aspect-ratio: var(--preview-ratio);
+  width: min(var(--preview-width), calc(100vw - 48px));
+  height: auto;
+}
+/* The device-frame preview's content is the same <ScaledPhoneCanvas> used by the editor (see
+   components/scaled-phone-canvas.tsx and .scaled-phone-canvas below) — it renders the landing at
+   its real ~390px design size and scales the whole thing to fit whatever width .device-preview-
+   frame ends up with, so text/buttons are always proportionally correct instead of just the
+   frame resizing around fixed-px content. */
 @media (max-width: 720px) {
   .device-preview-toolbar { height: 112px; grid-template-columns: 1fr auto; grid-template-rows: 48px 48px; padding: 4px 10px 8px; }
   .device-preview-title { text-align: right; }
   .device-preview-switcher { grid-column: 1 / -1; width: 100%; overflow-x: auto; }
   .device-preview-switcher button { flex: 1 0 auto; }
-  .device-preview-stage { height: calc(100dvh - 112px); padding: 8px; }
+  .device-preview-stage { height: calc(100dvh - var(--global-nav-h) - 112px); padding: 8px; }
+  /* Mobile is the one place this frame DOES shrink to fit available height — the opposite of
+     the true-size-and-scroll rule above. On a real phone the frame already spans nearly the
+     whole screen, so a second internal scroll inside a phone-shaped box that big feels
+     redundant ("en mobile quiero que se vea entero el celular con todos sus botones, no
+     scrolleable"). Bringing back a height-driven term here (removed from the base rule on
+     purpose, desktop keeps true size) shrinks the WHOLE frame — bezel included — to fit; its
+     <ScaledPhoneCanvas fit="contain"> content (see device-preview.tsx) then shrinks to match
+     whatever room is left inside it, so nothing ever needs to scroll on mobile. */
   .device-preview-frame.device-small,
   .device-preview-frame.device-standard,
-  .device-preview-frame.device-large { width: min(var(--preview-width,390px),calc(100vw - 16px)); height: calc(100dvh - 128px); border-width: 6px; border-radius: 32px; }
-  .device-preview-frame.device-small { --preview-width: 360px; }
-  .device-preview-frame.device-standard { --preview-width: 390px; }
-  .device-preview-frame.device-large { --preview-width: 430px; }
+  .device-preview-frame.device-large {
+    width: min(var(--preview-width,390px), calc(100vw - 16px), calc((100dvh - var(--global-nav-h) - 128px) * var(--preview-ratio)));
+    border-width: 6px;
+    border-radius: 32px;
+  }
 }
+
+/* ---------- ScaledPhoneCanvas (components/scaled-phone-canvas.tsx) ---------- */
+/* Shared by the editor's phone frame (.v2-phone-screen) and the device-frame preview
+   (.device-preview-frame) — both mount <ScaledPhoneCanvas className="scaled-phone-canvas">
+   directly around LandingRenderer, so this is the element that actually needs to scroll,
+   own a themed scrollbar, and show the "more below" fade — not a selector reaching into
+   LandingRenderer's own markup (its `.public` root sets its own `background` inline, which
+   would silently swallow a gradient or scrollbar rule aimed at it instead of its wrapper). */
+.scaled-phone-canvas {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, .22) transparent;
+}
+.scaled-phone-canvas::-webkit-scrollbar { width: 5px; }
+.scaled-phone-canvas::-webkit-scrollbar-track { background: transparent; }
+.scaled-phone-canvas::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, .22); border-radius: 8px; }
+.scaled-phone-canvas::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, .32); }
+.scaled-phone-canvas::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  left: 0; right: 0; bottom: 0;
+  height: 28px;
+  background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, .07));
+  pointer-events: none;
+}
+/* fit="contain" (components/scaled-phone-canvas.tsx) means everything is always fully visible
+   by construction — no scrollbar ever appears, so a "there's more below" fade would be pointing
+   at nothing. */
+.scaled-phone-canvas[data-fit="contain"] { overflow: visible; }
+.scaled-phone-canvas[data-fit="contain"]::after { display: none; }
 
 /* Distinct template compositions — shared by editor and published landing. */
 .v2-identity-block,
@@ -1219,9 +1309,13 @@ dialog.modal {
 dialog.modal::backdrop { background: oklch(15% 0.01 260 / 0.5); backdrop-filter: blur(3px); }
 dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
 @keyframes modal-in { from { opacity: 0; transform: translateY(14px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
-.modal-content { padding: var(--space-6); position: relative; max-height: 82vh; overflow-y: auto; }
-.modal-content h2 { font-size: 1.25rem; margin-bottom: 4px; padding-right: var(--space-6); }
-.modal-content > p.muted { margin-bottom: var(--space-5); font-size: 0.8125rem; }
+/* padding/heading here used to be a flat --space-6/1.25rem regardless of screen size — same
+   "no responsive treatment at all" gap as the editor's own .v2-modal (see the --v2-* tokens
+   above), just on a different dialog. clamp() instead of a global --space-6 change keeps this
+   scoped to this one component instead of every other place --space-6 is used sitewide. */
+.modal-content { padding: clamp(18px, 6vw, 32px); position: relative; max-height: 82vh; overflow-y: auto; }
+.modal-content h2 { font-size: clamp(1.05rem, 4vw, 1.25rem); margin-bottom: 4px; padding-right: var(--space-6); }
+.modal-content > p.muted { margin-bottom: var(--space-5); font-size: clamp(0.75rem, 3vw, 0.8125rem); }
 .modal-close {
   position: absolute; top: var(--space-5); right: var(--space-5); width: 32px; height: 32px; border-radius: 50%;
   border: 1px solid var(--border-strong); background: var(--surface); color: var(--text-muted);

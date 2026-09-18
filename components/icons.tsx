@@ -143,6 +143,10 @@ export function IconTruck(props: IconProps) {
   return <svg {...base} {...props}><rect x="1.5" y="7" width="13" height="9.5" rx="1" /><path d="M14.5 10h4l3 3.2v3.3h-7Z" /><circle cx="6" cy="19" r="1.6" /><circle cx="17.5" cy="19" r="1.6" /></svg>;
 }
 
+export function IconSmartphone(props: IconProps) {
+  return <svg {...base} {...props}><rect x="7" y="2" width="10" height="20" rx="2.2" /><line x1="11" y1="18" x2="13" y2="18" /></svg>;
+}
+
 export function IconShieldCheck(props: IconProps) {
   return <svg {...base} {...props}><path d="M12 2.5 4.5 5.5v6c0 5 3.2 8.3 7.5 10 4.3-1.7 7.5-5 7.5-10v-6Z" /><polyline points="8.5 12.2 11 14.7 15.5 9.7" /></svg>;
 }

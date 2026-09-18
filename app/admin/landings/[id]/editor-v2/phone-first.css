@@ -15,6 +15,17 @@
   width: 100%;
   height: 100%;
   padding: 22px;
+  /* editor-v2.css's base rule centers both axes (`place-items:center`). Horizontally that's
+     fine (overridden below anyway), but vertically it meant that once the phone stopped
+     shrinking to fit (see .v2-phone above) and started overflowing the stage instead, the
+     overflow split evenly above AND below — scrolling from the top of the scroll range first
+     showed a chunk of empty space before reaching the phone's actual top edge. `safe center`
+     falls back to start-aligned (scrollable from the true top) exactly when content overflows,
+     while keeping the nice vertical centering when it fits. The plain `center` before it is
+     there for browsers that don't understand the `safe` keyword — an unsupported value is
+     ignored outright, so that declaration is what they'll actually use. */
+  align-items: center;
+  align-items: safe center;
   /* The phone used to sit dead-center in the FULL viewport while the panel floated as a
      separate popover further right — on a wide screen that left a huge, disconnected gap of
      empty space to the phone's left, with the panel and phone feeling like two unrelated
@@ -41,15 +52,18 @@
 .is-preview .v2-stage-toolbar { left: 50%; }
 
 .v2-phone {
-  width: 400px;
-  /* 104px assumed only the editor's own 72px topbar above the stage — it never accounted for
-     .v2-stage's own 68px+22px top/bottom padding (added later, for the toolbar). The real
-     subtrahend is nav(46, via the var) + topbar(72) + stage padding(90) = 208, i.e. 162 once the
-     var's 46 is factored out. Without this, on a typical 768px-tall screen the phone's floor
-     (min-height below) forced it past the room actually left in .v2-stage, causing an internal
-     scrollbar there (reported: "me gustaria que sea sin scroll"). */
-  height: min(780px, calc(100dvh - var(--global-nav-h) - 162px));
-  min-height: 520px;
+  /* The phone renders at its TRUE size — the same width/height a real device has — not scaled
+     down to whatever vertical room the browser window happens to leave. Width only ever gives
+     way to the viewport being physically narrower than the phone itself (a real constraint);
+     `aspect-ratio` keeps the shape correct whenever that happens. If the *height* doesn't fit,
+     .v2-stage scrolls instead (it already has `overflow:auto` — see editor-v2.css) — exactly
+     like scrolling a tall page on an actual phone, instead of shrinking the "photo" of the phone
+     itself. That's what makes this an accurate preview of "cómo se ve en el celular" rather than
+     an approximation that changes size depending on how tall your browser window is. */
+  aspect-ratio: 400 / 780;
+  width: min(400px, calc(100vw - 40px));
+  height: auto;
+  min-width: 220px;
   border-radius: 52px;
   border-width: 10px;
   box-shadow: 0 34px 90px rgba(27, 29, 44, 0.3), 0 5px 16px rgba(27, 29, 44, 0.18);
@@ -118,7 +132,7 @@
 @media (max-width: 840px) {
   .v2-workspace { height: calc(100dvh - var(--global-nav-h) - 64px); }
   .v2-stage { justify-items: center; padding: 10px 8px; }
-  .v2-phone { width: min(400px, 96vw); height: calc(100dvh - var(--global-nav-h) - 84px); min-height: 0; border-radius: 43px; border-width: 8px; }
+  .v2-phone { width: min(400px, 96vw); height: auto; min-width: 0; border-radius: 43px; border-width: 8px; }
   .v2-phone-screen { border-radius: 33px; }
   .v2-panel {
     position: fixed;
@@ -169,21 +183,72 @@
 .v2-device-switcher { display: flex; gap: 2px; padding: 2px; border-radius: 10px; background: #f0f1f5; }
 .v2-device-switcher button { border: 0; border-radius: 8px; padding: 6px 8px; background: transparent; color: #6d7180; font-size: 9px; font-weight: 850; cursor: pointer; }
 .v2-device-switcher button.active { background: #fff; color: #5749d5; box-shadow: 0 2px 7px rgba(28,30,42,.11); }
-/* Same 162px subtrahend as the base .v2-phone rule above — these device-size variants sit in
-   the exact same .v2-stage, so they need to give up the same nav+topbar+stage-padding room. */
-.v2-phone.device-small { width: min(360px, calc(100vw - 20px)); height: min(640px, calc(100dvh - var(--global-nav-h) - 162px)); }
-.v2-phone.device-standard { width: min(390px, calc(100vw - 20px)); height: min(780px, calc(100dvh - var(--global-nav-h) - 162px)); }
-.v2-phone.device-large { width: min(430px, calc(100vw - 20px)); height: min(840px, calc(100dvh - var(--global-nav-h) - 162px)); }
-.v2-phone-screen > .public { height: 100%; min-height: 100%; overflow-y: auto; }
+/* Same "true size, width-only constraint" reasoning as the base .v2-phone rule above — each
+   variant is its own real device width/aspect ratio (via --v2-ratio), never shrunk just because
+   the browser window is short. */
+.v2-phone.device-small { --v2-w: 360px; --v2-ratio: 360 / 640; }
+.v2-phone.device-standard { --v2-w: 390px; --v2-ratio: 390 / 780; }
+.v2-phone.device-large { --v2-w: 430px; --v2-ratio: 430 / 840; }
+.v2-phone.device-small,
+.v2-phone.device-standard,
+.v2-phone.device-large {
+  aspect-ratio: var(--v2-ratio);
+  width: min(var(--v2-w), calc(100vw - 20px));
+  height: auto;
+}
+/* The phone's actual content (title, buttons, logo — all sized in lib/landing-catalog.ts
+   against a ~390px-wide design) now lives inside <ScaledPhoneCanvas>, which renders it at that
+   fixed design width and scales the whole thing as one block via CSS transform to fit whatever
+   width .v2-phone-screen actually has. That's what keeps a shrunk phone looking like a smaller
+   PHOTO of the same phone — proportional text/buttons — instead of a differently-shaped box with
+   fixed-px content crammed or floating inside it. Scroll, scrollbar theming and the "more below"
+   fade all live on .scaled-phone-canvas itself now (see globals.css) — it's the element
+   ScaledPhoneCanvas actually renders and hands its `className` to, not a selector reaching into
+   LandingRenderer's own markup like before. */
 
 @media (max-width: 840px) {
   .v2-stage { padding-top: 62px; }
   .v2-stage-toolbar { top: 9px; left: 50%; max-width: calc(100vw - 16px); }
   .v2-stage-toolbar > span { display: none; }
   .v2-device-switcher button { padding-inline: 7px; }
+  /* Width formula for the device variants is unchanged from the base rule above (it was never
+     viewport-HEIGHT-dependent to begin with, post-simplification) — nothing to override here now. */
+}
+
+/* True mobile phones — not just a narrow desktop window, but the width band where the person is
+   actually holding the phone. Showing a shrunk phone-mockup-inside-a-phone here just wastes the
+   one thing a real phone already gives for free: full-size, full-width space, no bezel needed.
+   Below this width the bezel disappears entirely and the landing renders edge-to-edge exactly
+   like the real published page — you're editing the actual thing, not a scaled preview of it.
+   Tapping something still opens the same bottom-sheet panel as the 840px breakpoint above
+   (untouched here); only the canvas itself changes. */
+@media (max-width: 560px) {
+  .v2-stage-toolbar { display: none; }
+  .v2-stage { padding: 0; padding-top: 0; justify-items: stretch; align-items: start; }
+  /* Explicitly re-targets the .device-small/standard/large variants too, not just bare
+     .v2-phone — those carry a second class, so their own width rule (further up this file)
+     outranks a plain `.v2-phone` selector on specificity alone regardless of source order. */
+  .v2-phone,
   .v2-phone.device-small,
   .v2-phone.device-standard,
-  .v2-phone.device-large { height: calc(100dvh - var(--global-nav-h) - 138px); }
+  .v2-phone.device-large {
+    aspect-ratio: auto;
+    width: 100%;
+    height: auto;
+    min-height: 100%;
+    min-width: 0;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .v2-phone-screen { border-radius: 0; height: auto; min-height: 100%; overflow: visible; }
+  /* Here the whole .v2-stage scrolls like a normal page instead of the canvas boxing its own
+     scroll region — so the canvas gives up being a scroll container, and the "more below" fade
+     (which only makes sense once there's a fixed edge for it to sit on) goes with it. */
+  .scaled-phone-canvas { height: auto; min-height: 100%; overflow: visible; }
+  .scaled-phone-canvas::after { display: none; }
 }
 
 /* Editor theme backdrop CSS now lives in globals.css as .theme-scene, shared with /admin —
