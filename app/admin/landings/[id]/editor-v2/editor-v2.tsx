@@ -38,10 +38,10 @@ const SIZES = [
 // a network whose two icon versions look the same wouldn't demonstrate the choice at all.
 const COLOR_RULE_PREVIEW_TYPES = ["whatsapp", "instagram", "spotify"];
 const ICON_APPEARANCE_PREVIEW_TYPES = ["instagram", "spotify", "youtube"];
-const DEVICE_OPTIONS: { id: DeviceMode; label: string; size: string }[] = [
-  { id: "small", label: "Chico", size: "360 px" },
-  { id: "standard", label: "Común", size: "390 px" },
-  { id: "large", label: "Grande", size: "430 px" },
+const DEVICE_OPTIONS: { id: DeviceMode; label: string; size: string; width: number }[] = [
+  { id: "small", label: "Chico", size: "360 px", width: 360 },
+  { id: "standard", label: "Común", size: "390 px", width: 390 },
+  { id: "large", label: "Grande", size: "430 px", width: 430 },
 ];
 const LOGO_SHAPE_OPTIONS: { id: LogoStyle["shape"]; label: string }[] = [
   { id: "round", label: "Circular" },
@@ -473,7 +473,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
           <div className="v2-stage-toolbar"><span>{preview ? "Vista limpia" : "Tamaño de pantalla"}</span><div className="v2-device-switcher">{DEVICE_OPTIONS.map((option) => <button key={option.id} type="button" className={device === option.id ? "active" : ""} title={option.size} onClick={() => setDevice(option.id)}>{option.label}</button>)}</div></div>
           <div className={`v2-phone device-${device}`}>
             <div className="v2-phone-screen" ref={buttonsContainerRef}>
-              <ScaledPhoneCanvas className="scaled-phone-canvas" onScaleChange={(next) => { phoneScaleRef.current = next; }}>
+              <ScaledPhoneCanvas className="scaled-phone-canvas" designWidth={DEVICE_OPTIONS.find((option) => option.id === device)?.width} onScaleChange={(next) => { phoneScaleRef.current = next; }}>
                 <LandingRenderer landing={rendererLanding} actions={buttons} edit={preview ? undefined : editControls} />
               </ScaledPhoneCanvas>
             </div>

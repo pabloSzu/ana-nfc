@@ -1163,7 +1163,7 @@ input[type="color"] { padding: 5px; height: 46px; cursor: pointer; }
 /* Shared by the editor's phone frame (.v2-phone-screen) and the device-frame preview
    (.device-preview-frame) — both mount <ScaledPhoneCanvas className="scaled-phone-canvas">
    directly around LandingRenderer, so this is the element that actually needs to scroll,
-   own a themed scrollbar, and show the "more below" fade — not a selector reaching into
+   own the scroll indicator — not a selector reaching into
    LandingRenderer's own markup (its `.public` root sets its own `background` inline, which
    would silently swallow a gradient or scrollbar rule aimed at it instead of its wrapper). */
 .scaled-phone-canvas {
@@ -1172,13 +1172,28 @@ input[type="color"] { padding: 5px; height: 46px; cursor: pointer; }
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, .22) transparent;
+  /* A phone has no permanent scrollbar. The native one is hidden (it would also take layout width
+     away from the scaled content); ScaledPhoneCanvas draws a thin overlay indicator instead
+     (.scaled-phone-thumb below) that shows only while scrolling. */
+  scrollbar-width: none;
+  overscroll-behavior: contain;
 }
-.scaled-phone-canvas::-webkit-scrollbar { width: 5px; }
-.scaled-phone-canvas::-webkit-scrollbar-track { background: transparent; }
-.scaled-phone-canvas::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, .22); border-radius: 8px; }
-.scaled-phone-canvas::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, .32); }
+.scaled-phone-canvas::-webkit-scrollbar { display: none; }
+/* Zero-height sticky anchor: the indicator stays fixed against the screen edge while the content
+   scrolls beneath it, and takes no layout space (so it can't affect the scroll range). */
+.scaled-phone-thumb-anchor { position: sticky; top: 0; height: 0; z-index: 5; pointer-events: none; }
+.scaled-phone-thumb {
+  position: absolute;
+  top: 0;
+  right: 3px;
+  width: 4px;
+  height: 0;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, .38);
+  box-shadow: 0 0 0 .5px rgba(255, 255, 255, .35);
+  opacity: 0;
+  transition: opacity .25s ease;
+}
 /* .public's own `min-height: 100vh` (further down this file) is correct on the real published
    page — a short landing should still fill a visitor's actual screen. Inside this canvas that
    same 100vh resolves against the admin's OWN browser window (not the mockup's ~390px-wide,
@@ -1197,20 +1212,9 @@ input[type="color"] { padding: 5px; height: 46px; cursor: pointer; }
    and actually paint its background there, while still only using its natural height (and
    scrolling normally) whenever content is taller than the phone. */
 .scaled-phone-canvas .public { flex: 1 1 auto; }
-.scaled-phone-canvas::after {
-  content: "";
-  position: absolute;
-  z-index: 3;
-  left: 0; right: 0; bottom: 0;
-  height: 28px;
-  background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, .07));
-  pointer-events: none;
-}
 /* fit="contain" (components/scaled-phone-canvas.tsx) means everything is always fully visible
-   by construction — no scrollbar ever appears, so a "there's more below" fade would be pointing
-   at nothing. */
+   by construction — nothing ever scrolls. */
 .scaled-phone-canvas[data-fit="contain"] { overflow: visible; }
-.scaled-phone-canvas[data-fit="contain"]::after { display: none; }
 
 /* Distinct template compositions — shared by editor and published landing. */
 .v2-identity-block,

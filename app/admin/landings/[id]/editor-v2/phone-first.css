@@ -60,16 +60,18 @@
      that's the min of "its natural size", "the viewport width" and "whatever width keeps its
      height inside the available vertical room" (the last term) means the bezel itself never
      needs scrolling to see all of it — only its CONTENT does, inside the fixed frame, via
-     .scaled-phone-canvas's own scroll (unaffected by this). The 162px subtrahend: nav (via the
-     var) + topbar (72px) + stage padding (90px). */
+     .scaled-phone-canvas's own scroll (unaffected by this). The 146px subtrahend: topbar (72px) + stage
+     vertical padding (60px top for the size tabs + 14px bottom), on top of the nav (via the
+     var). */
   aspect-ratio: 400 / 780;
   width: min(
     400px,
     calc(100vw - 40px),
-    max(280px, calc((100dvh - var(--global-nav-h) - 162px) * 400 / 780))
+    max(200px, calc((100dvh - var(--global-nav-h) - 146px) * 400 / 780))
   );
   height: auto;
-  min-width: 220px;
+  min-width: 0;
+  min-height: 0;
   border-radius: 52px;
   border-width: 10px;
   box-shadow: 0 34px 90px rgba(27, 29, 44, 0.3), 0 5px 16px rgba(27, 29, 44, 0.18);
@@ -138,7 +140,7 @@
 @media (max-width: 840px) {
   .v2-workspace { height: calc(100dvh - var(--global-nav-h) - 64px); }
   .v2-stage { justify-items: center; padding: 10px 8px; }
-  .v2-phone { width: min(400px, 96vw, max(260px, calc((100dvh - var(--global-nav-h) - 84px) * 400 / 780))); height: auto; min-width: 0; border-radius: 43px; border-width: 8px; }
+  .v2-phone { width: min(400px, 96vw, max(200px, calc((100dvh - var(--global-nav-h) - 84px) * 400 / 780))); height: auto; min-width: 0; border-radius: 43px; border-width: 8px; }
   .v2-phone-screen { border-radius: 33px; }
 
   /* Two things got tried here and rejected before this one: a bottom sheet tall enough to be
@@ -175,7 +177,7 @@
   .v2-panel { animation: none; }
 }
 
-.v2-stage { padding-top: 68px; }
+.v2-stage { padding-top: 60px; padding-bottom: 14px; }
 .v2-stage-toolbar {
   position: absolute;
   z-index: 12;
@@ -215,7 +217,7 @@
 .v2-phone.device-standard,
 .v2-phone.device-large {
   aspect-ratio: var(--v2-ratio);
-  width: min(var(--v2-w), calc(100vw - 20px), max(260px, calc((100dvh - var(--global-nav-h) - 162px) * var(--v2-ratio))));
+  width: min(var(--v2-w), calc(100vw - 20px), max(200px, calc((100dvh - var(--global-nav-h) - 146px) * var(--v2-ratio))));
   height: auto;
   border-radius: var(--v2-radius);
   border-width: var(--v2-border);
@@ -225,11 +227,11 @@
 .v2-phone.device-large .v2-phone-screen { border-radius: calc(var(--v2-radius) - 6px); }
 /* The phone's actual content (title, buttons, logo — all sized in lib/landing-catalog.ts
    against a ~390px-wide design) now lives inside <ScaledPhoneCanvas>, which renders it at that
-   fixed design width and scales the whole thing as one block via CSS transform to fit whatever
-   width .v2-phone-screen actually has. That's what keeps a shrunk phone looking like a smaller
+   the real width of the device being shown and scales the whole thing as one block via CSS
+   transform to fit whatever width .v2-phone-screen actually has. That's what keeps a shrunk phone looking like a smaller
    PHOTO of the same phone — proportional text/buttons — instead of a differently-shaped box with
-   fixed-px content crammed or floating inside it. Scroll, scrollbar theming and the "more below"
-   fade all live on .scaled-phone-canvas itself now (see globals.css) — it's the element
+   fixed-px content crammed or floating inside it. Scroll and its overlay indicator
+   live on .scaled-phone-canvas itself now (see globals.css) — it's the element
    ScaledPhoneCanvas actually renders and hands its `className` to, not a selector reaching into
    LandingRenderer's own markup like before. */
 
@@ -242,7 +244,7 @@
      mobile topbar (62px here vs 72px) and stage padding are both smaller at this breakpoint. */
   .v2-phone.device-small,
   .v2-phone.device-standard,
-  .v2-phone.device-large { width: min(var(--v2-w), calc(100vw - 20px), max(260px, calc((100dvh - var(--global-nav-h) - 138px) * var(--v2-ratio)))); }
+  .v2-phone.device-large { width: min(var(--v2-w), calc(100vw - 20px), max(200px, calc((100dvh - var(--global-nav-h) - 138px) * var(--v2-ratio)))); }
 
   /* Template pickers (the general "Elegí una plantilla" grid and "Plantilla de los botones"
      inside Editar botones) go from a static grid to a horizontal swipe carousel here — a 2-up
@@ -304,10 +306,8 @@
   }
   .v2-phone-screen { border-radius: 0; height: auto; min-height: 100%; overflow: visible; }
   /* Here the whole .v2-stage scrolls like a normal page instead of the canvas boxing its own
-     scroll region — so the canvas gives up being a scroll container, and the "more below" fade
-     (which only makes sense once there's a fixed edge for it to sit on) goes with it. */
+     scroll region — so the canvas gives up being a scroll container. */
   .scaled-phone-canvas { height: auto; min-height: 100%; overflow: visible; }
-  .scaled-phone-canvas::after { display: none; }
 }
 
 /* Editor theme backdrop CSS now lives in globals.css as .theme-scene, shared with /admin —

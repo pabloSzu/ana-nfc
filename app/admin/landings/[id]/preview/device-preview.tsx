@@ -8,10 +8,10 @@ import ScaledPhoneCanvas from "@/components/scaled-phone-canvas";
 type DeviceMode = "small" | "standard" | "large";
 type RendererProps = ComponentProps<typeof LandingRenderer>;
 
-const devices: { id: DeviceMode; label: string; size: string }[] = [
-  { id: "small", label: "Chico", size: "360 px" },
-  { id: "standard", label: "Común", size: "390 px" },
-  { id: "large", label: "Grande", size: "430 px" },
+const devices: { id: DeviceMode; label: string; size: string; width: number }[] = [
+  { id: "small", label: "Chico", size: "360 px", width: 360 },
+  { id: "standard", label: "Común", size: "390 px", width: 390 },
+  { id: "large", label: "Grande", size: "430 px", width: 430 },
 ];
 
 // Same 720px band as .device-preview-frame's own mobile breakpoint in globals.css — below it,
@@ -44,7 +44,7 @@ export default function DevicePreview({ landing, actions, backHref }: RendererPr
       </header>
       <section className="device-preview-stage">
         <div className={`device-preview-frame device-${device}`}>
-          <ScaledPhoneCanvas className="scaled-phone-canvas" fit={isMobile ? "contain" : "width"}>
+          <ScaledPhoneCanvas className="scaled-phone-canvas" designWidth={devices.find((item) => item.id === device)?.width} fit={isMobile ? "contain" : "width"}>
             <LandingRenderer landing={landing} actions={actions} />
           </ScaledPhoneCanvas>
         </div>
