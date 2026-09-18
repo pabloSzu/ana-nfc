@@ -52,16 +52,22 @@
 .is-preview .v2-stage-toolbar { left: 50%; }
 
 .v2-phone {
-  /* The phone renders at its TRUE size — the same width/height a real device has — not scaled
-     down to whatever vertical room the browser window happens to leave. Width only ever gives
-     way to the viewport being physically narrower than the phone itself (a real constraint);
-     `aspect-ratio` keeps the shape correct whenever that happens. If the *height* doesn't fit,
-     .v2-stage scrolls instead (it already has `overflow:auto` — see editor-v2.css) — exactly
-     like scrolling a tall page on an actual phone, instead of shrinking the "photo" of the phone
-     itself. That's what makes this an accurate preview of "cómo se ve en el celular" rather than
-     an approximation that changes size depending on how tall your browser window is. */
+  /* The phone — the bezel, the whole "photo of a phone" — always fits entirely within the
+     available space, on every screen. Making it "true size" and letting .v2-stage scroll past
+     its bottom edge (a version tried earlier) reads as broken: scrolling down revealed the
+     stage's own bare background below the phone instead of more of the phone, and there was no
+     way to ever see the whole device at a glance without scrolling. `aspect-ratio` plus a width
+     that's the min of "its natural size", "the viewport width" and "whatever width keeps its
+     height inside the available vertical room" (the last term) means the bezel itself never
+     needs scrolling to see all of it — only its CONTENT does, inside the fixed frame, via
+     .scaled-phone-canvas's own scroll (unaffected by this). The 162px subtrahend: nav (via the
+     var) + topbar (72px) + stage padding (90px). */
   aspect-ratio: 400 / 780;
-  width: min(400px, calc(100vw - 40px));
+  width: min(
+    400px,
+    calc(100vw - 40px),
+    max(280px, calc((100dvh - var(--global-nav-h) - 162px) * 400 / 780))
+  );
   height: auto;
   min-width: 220px;
   border-radius: 52px;
@@ -132,19 +138,30 @@
 @media (max-width: 840px) {
   .v2-workspace { height: calc(100dvh - var(--global-nav-h) - 64px); }
   .v2-stage { justify-items: center; padding: 10px 8px; }
-  .v2-phone { width: min(400px, 96vw); height: auto; min-width: 0; border-radius: 43px; border-width: 8px; }
+  .v2-phone { width: min(400px, 96vw, max(260px, calc((100dvh - var(--global-nav-h) - 84px) * 400 / 780))); height: auto; min-width: 0; border-radius: 43px; border-width: 8px; }
   .v2-phone-screen { border-radius: 33px; }
+
+  /* Two things got tried here and rejected before this one: a bottom sheet tall enough to be
+     useful ended up covering exactly the field being edited (defeating "cambios en vivo"), and
+     a full-screen takeover fixed that by hiding the phone entirely — which just moved the
+     complaint from "tapa lo que edito" to "no veo la landing mientras edito". This is the
+     version that keeps both true at once: a compact, content-sized dock (capped, never forced
+     to some fraction of the screen) sits BELOW the phone in normal document flow, not on top of
+     it — .v2-workspace becomes a column flexbox and .v2-stage shrinks to whatever room is left
+     above the dock, using the exact same "true size, .v2-stage scrolls if it doesn't fully fit"
+     behavior .v2-phone already has everywhere else (see its own rule above). Nothing is ever
+     covered; the dock is just its own block, the same as any two stacked things on a page. */
+  .v2-workspace.has-panel { display: flex; flex-direction: column; }
+  .v2-workspace.has-panel .v2-stage { flex: 1 1 auto; min-height: 96px; height: auto; }
   .v2-panel {
-    position: fixed;
-    top: auto;
-    left: 8px;
-    right: 8px;
-    bottom: 8px;
+    position: static;
+    flex: 0 0 auto;
     width: auto;
-    max-height: min(68dvh, 640px);
-    border-radius: 24px;
-    padding: 19px;
-    box-shadow: 0 -18px 60px rgba(18, 20, 35, 0.28);
+    height: auto;
+    max-height: 42dvh;
+    border-radius: 24px 24px 0 0;
+    padding: 16px 19px 19px;
+    box-shadow: 0 -14px 34px rgba(18, 20, 35, 0.16);
     animation-name: v2-sheet-in;
   }
 }
@@ -183,19 +200,29 @@
 .v2-device-switcher { display: flex; gap: 2px; padding: 2px; border-radius: 10px; background: #f0f1f5; }
 .v2-device-switcher button { border: 0; border-radius: 8px; padding: 6px 8px; background: transparent; color: #6d7180; font-size: 9px; font-weight: 850; cursor: pointer; }
 .v2-device-switcher button.active { background: #fff; color: #5749d5; box-shadow: 0 2px 7px rgba(28,30,42,.11); }
-/* Same "true size, width-only constraint" reasoning as the base .v2-phone rule above — each
-   variant is its own real device width/aspect ratio (via --v2-ratio), never shrunk just because
-   the browser window is short. */
-.v2-phone.device-small { --v2-w: 360px; --v2-ratio: 360 / 640; }
-.v2-phone.device-standard { --v2-w: 390px; --v2-ratio: 390 / 780; }
-.v2-phone.device-large { --v2-w: 430px; --v2-ratio: 430 / 840; }
+/* Same "the whole phone always fits, content scrolls inside instead" reasoning as the base
+   .v2-phone rule above — each variant keeps its own real device width/aspect ratio (via
+   --v2-ratio) and shrinks it as a WHOLE (bezel included, via the height-driven term in width)
+   to fit the available room, instead of letting .v2-stage scroll past the bezel's edge.
+   Border-radius/width now scale per variant too (via --v2-radius/--v2-border) — they used to
+   stay fixed at the "Común" numbers regardless of which size was picked, so "Chico" rendered
+   with a corner radius proportionally way too big for its width, and "Grande" with one too
+   small — neither looked like an actual phone (reported: "los bordes... no parece un celular"). */
+.v2-phone.device-small { --v2-w: 360px; --v2-ratio: 360 / 640; --v2-radius: 40px; --v2-border: 8px; }
+.v2-phone.device-standard { --v2-w: 390px; --v2-ratio: 390 / 780; --v2-radius: 44px; --v2-border: 9px; }
+.v2-phone.device-large { --v2-w: 430px; --v2-ratio: 430 / 840; --v2-radius: 48px; --v2-border: 10px; }
 .v2-phone.device-small,
 .v2-phone.device-standard,
 .v2-phone.device-large {
   aspect-ratio: var(--v2-ratio);
-  width: min(var(--v2-w), calc(100vw - 20px));
+  width: min(var(--v2-w), calc(100vw - 20px), max(260px, calc((100dvh - var(--global-nav-h) - 162px) * var(--v2-ratio))));
   height: auto;
+  border-radius: var(--v2-radius);
+  border-width: var(--v2-border);
 }
+.v2-phone.device-small .v2-phone-screen { border-radius: calc(var(--v2-radius) - 4px); }
+.v2-phone.device-standard .v2-phone-screen { border-radius: calc(var(--v2-radius) - 5px); }
+.v2-phone.device-large .v2-phone-screen { border-radius: calc(var(--v2-radius) - 6px); }
 /* The phone's actual content (title, buttons, logo — all sized in lib/landing-catalog.ts
    against a ~390px-wide design) now lives inside <ScaledPhoneCanvas>, which renders it at that
    fixed design width and scales the whole thing as one block via CSS transform to fit whatever
@@ -211,8 +238,40 @@
   .v2-stage-toolbar { top: 9px; left: 50%; max-width: calc(100vw - 16px); }
   .v2-stage-toolbar > span { display: none; }
   .v2-device-switcher button { padding-inline: 7px; }
-  /* Width formula for the device variants is unchanged from the base rule above (it was never
-     viewport-HEIGHT-dependent to begin with, post-simplification) — nothing to override here now. */
+  /* Same shrink-the-whole-phone formula as the base rule above, just a shorter subtrahend — the
+     mobile topbar (62px here vs 72px) and stage padding are both smaller at this breakpoint. */
+  .v2-phone.device-small,
+  .v2-phone.device-standard,
+  .v2-phone.device-large { width: min(var(--v2-w), calc(100vw - 20px), max(260px, calc((100dvh - var(--global-nav-h) - 138px) * var(--v2-ratio)))); }
+
+  /* Template pickers (the general "Elegí una plantilla" grid and "Plantilla de los botones"
+     inside Editar botones) go from a static grid to a horizontal swipe carousel here — a 2-up
+     grid squeezes each preview too small to actually read on a phone, and the dock this lives in
+     is capped at 42dvh, so vertical space for a tall grid is scarce anyway. One reasonably large,
+     legible card at a time, natural swipe/scroll-snap (no JS drag needed — the browser's own
+     momentum scrolling already feels better than anything hand-rolled here), next card peeking
+     at the edge as an affordance that there's more. */
+  .v2-template-grid,
+  .v2-look-grid {
+    display: flex;
+    grid-template-columns: none;
+    gap: 12px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 18px;
+    padding: 2px 18px 6px;
+    margin: 0 -19px;
+    scrollbar-width: none;
+  }
+  .v2-template-grid::-webkit-scrollbar,
+  .v2-look-grid::-webkit-scrollbar { display: none; }
+  .v2-template-grid > button,
+  .v2-look-grid > button {
+    flex: 0 0 auto;
+    width: 78vw;
+    max-width: 300px;
+    scroll-snap-align: center;
+  }
 }
 
 /* True mobile phones — not just a narrow desktop window, but the width band where the person is
@@ -220,8 +279,8 @@
    one thing a real phone already gives for free: full-size, full-width space, no bezel needed.
    Below this width the bezel disappears entirely and the landing renders edge-to-edge exactly
    like the real published page — you're editing the actual thing, not a scaled preview of it.
-   Tapping something still opens the same bottom-sheet panel as the 840px breakpoint above
-   (untouched here); only the canvas itself changes. */
+   The compact editing dock (see .v2-panel in the 840px block above) is unaffected by this
+   breakpoint; only the phone canvas itself changes here. */
 @media (max-width: 560px) {
   .v2-stage-toolbar { display: none; }
   .v2-stage { padding: 0; padding-top: 0; justify-items: stretch; align-items: start; }

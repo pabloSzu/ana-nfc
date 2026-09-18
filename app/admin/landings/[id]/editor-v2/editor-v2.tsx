@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ActionTypeIcon } from "@/components/action-icons";
 import { FiLink } from "react-icons/fi";
-import { IconEye, IconQrCode, IconSmartphone } from "@/components/icons";
+import { IconEye, IconQrCode } from "@/components/icons";
 import DeleteLandingButton from "@/app/admin/delete-landing-button";
 import LandingRenderer, { type LandingEditControls } from "@/components/landing-renderer";
 import ScaledPhoneCanvas from "@/components/scaled-phone-canvas";
@@ -101,6 +101,17 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
   useEffect(() => {
     panelRef.current?.scrollTo({ top: 0 });
   }, [panel]);
+
+  // The default `panel` state is "templates" so desktop lands with the template picker already
+  // open next to the phone — a nice invitation there, since it's just a side popover that never
+  // hides anything. On mobile/tablet that same default now means a full-screen takeover (see
+  // .v2-workspace.has-panel in phone-first.css) covering the phone before the person has even
+  // seen it once. Runs only on mount (empty deps) — a later window resize shouldn't yank an
+  // open panel closed out from under someone mid-edit.
+  useEffect(() => {
+    if (window.innerWidth <= 840) setPanel(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Undo/redo history. Everything lives in `draft` + `buttons`, so a snapshot of both is
   // enough to restore any point in time. Continuous edits (typing, dragging a slider or
@@ -435,15 +446,17 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
           <button type="button" title="Deshacer (Ctrl+Z)" aria-label="Deshacer" disabled={pastRef.current.length === 0} onClick={undo}>↶</button>
           <button type="button" title="Rehacer (Ctrl+Y)" aria-label="Rehacer" disabled={futureRef.current.length === 0} onClick={redo}>↷</button>
         </div>
-        <Link className="v2-device-preview-link" href={`/admin/landings/${draft.id}/preview`} title="Ver cómo se ve en un celular real"><IconSmartphone /><span>Ver en celular</span></Link>
         <button className="v2-ghost" type="button" onClick={() => { setPanel(panel === "settings" ? null : "settings"); setPreview(false); }}>Ajustes</button>
-        <button className="v2-ghost" type="button" onClick={() => { setPreview(!preview); setPanel(preview ? "templates" : null); }}>{preview ? "Seguir editando" : "Vista previa"}</button>
+        <button className="v2-ghost" type="button" onClick={() => { setPreview(!preview); setPanel(preview ? (window.innerWidth <= 840 ? null : "templates") : null); }}>{preview ? "Seguir editando" : "Vista previa"}</button>
         <button className="v2-save" form="v2-save" type="submit" name="return_to" value={`/admin/landings/${draft.id}/editor-v2`} disabled={!dirty}>Guardar cambios</button>
       </header>
 
-      <div className={`v2-workspace ${preview ? "is-preview" : ""}`}>
+      <div className={`v2-workspace ${preview ? "is-preview" : ""} ${panel ? "has-panel" : ""}`}>
         {!preview && panel && <aside ref={panelRef} className="v2-panel">
-          <div className="v2-panel-head"><div><span>Paso simple</span><h2>{panelTitle(panel)}</h2></div><button onClick={() => setPanel(null)}>×</button></div>
+          <div className="v2-panel-head">
+            <div><span>Paso simple</span><h2>{panelTitle(panel)}</h2></div>
+            <button className="v2-panel-close" type="button" onClick={() => setPanel(null)}>×</button>
+          </div>
           {panel === "templates" && <Templates selected={draft.buttonZone.templateId} onApply={applyPreset} />}
           {panel === "buttons" && <ButtonDesign draft={draft} buttons={buttons} onZone={changeZone} onFont={(button_font) => change({ button_font })} onApplyButtonLook={applyButtonLook} onResetButtonColors={resetButtonColors} />}
           {panel === "background" && <BackgroundControls draft={draft} onChange={change} onFile={onBackgroundFile} />}

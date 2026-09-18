@@ -1099,26 +1099,34 @@ input[type="color"] { padding: 5px; height: 46px; cursor: pointer; }
 .device-preview-frame {
   position: relative;
   overflow: hidden;
-  border: 9px solid #18191e;
-  border-radius: 42px;
   background: #18191e;
   box-shadow: 0 30px 75px rgba(28,30,43,.28),0 5px 15px rgba(28,30,43,.16);
 }
-/* The frame renders at its TRUE device size — never shrunk just because the browser window is
-   short. Width only ever gives way to the viewport being physically narrower than the phone
-   itself; height follows via `aspect-ratio` so the shape is always correct. If it doesn't fit
-   vertically, .device-preview-stage scrolls (it already has overflow:auto) — same as scrolling
-   a tall page on an actual phone, instead of showing a resized "photo" of one. This is what
-   "Vista previa" is FOR — an accurate 1:1 picture of the real device, so it has to stay 1:1. */
-.device-preview-frame.device-small { --preview-width: 360px; --preview-ratio: 360 / 640; }
-.device-preview-frame.device-standard { --preview-width: 390px; --preview-ratio: 390 / 780; }
-.device-preview-frame.device-large { --preview-width: 430px; --preview-ratio: 430 / 840; }
+/* The whole frame — bezel included — always fits entirely within the available space; it never
+   needs the STAGE to scroll past its edge to see the rest of it. A "true size, let the stage
+   scroll" version was tried first and looked broken: scrolling down revealed bare stage
+   background below the phone instead of more phone, and there was no way to see the whole
+   device at a glance without scrolling first (reported: "el scroll... se ve feo, muestra un
+   fondo raro abajo"). The height-driven term below shrinks the frame as a unit to fit; its
+   <ScaledPhoneCanvas> content scales to match (see device-preview.tsx) and scrolls internally
+   on its own if it's taller than the now-fixed frame — the bezel itself is what never scrolls.
+   Border-width/radius now scale per size too (via --preview-border/--preview-radius) — they
+   used to stay fixed at the "Común" numbers for every variant, so "Chico" got a corner radius
+   proportionally way too big for its width and "Grande" one too small — neither looked like an
+   actual phone (reported: "los bordes... no parece un celular"). */
+.device-preview-frame.device-small { --preview-width: 360px; --preview-ratio: 360 / 640; --preview-radius: 39px; --preview-border: 8px; }
+.device-preview-frame.device-standard { --preview-width: 390px; --preview-ratio: 390 / 780; --preview-radius: 42px; --preview-border: 9px; }
+.device-preview-frame.device-large { --preview-width: 430px; --preview-ratio: 430 / 840; --preview-radius: 46px; --preview-border: 10px; }
 .device-preview-frame.device-small,
 .device-preview-frame.device-standard,
 .device-preview-frame.device-large {
   aspect-ratio: var(--preview-ratio);
-  width: min(var(--preview-width), calc(100vw - 48px));
+  width: min(var(--preview-width), calc(100vw - 48px), max(260px, calc((100dvh - var(--global-nav-h) - 104px) * var(--preview-ratio))));
   height: auto;
+  border-width: var(--preview-border);
+  border-style: solid;
+  border-color: #18191e;
+  border-radius: var(--preview-radius);
 }
 /* The device-frame preview's content is the same <ScaledPhoneCanvas> used by the editor (see
    components/scaled-phone-canvas.tsx and .scaled-phone-canvas below) — it renders the landing at
@@ -1143,8 +1151,11 @@ input[type="color"] { padding: 5px; height: 46px; cursor: pointer; }
   .device-preview-frame.device-standard,
   .device-preview-frame.device-large {
     width: min(var(--preview-width,390px), calc(100vw - 16px), calc((100dvh - var(--global-nav-h) - 128px) * var(--preview-ratio)));
-    border-width: 6px;
-    border-radius: 32px;
+    /* Scaled down from the desktop --preview-border/--preview-radius values (roughly ×0.75),
+       same proportions — a flat 6px/32px here regardless of variant was the same "doesn't scale
+       per size" bug as the desktop rule, just at mobile's smaller scale. */
+    border-width: calc(var(--preview-border) * 0.75);
+    border-radius: calc(var(--preview-radius) * 0.75);
   }
 }
 
@@ -1168,6 +1179,24 @@ input[type="color"] { padding: 5px; height: 46px; cursor: pointer; }
 .scaled-phone-canvas::-webkit-scrollbar-track { background: transparent; }
 .scaled-phone-canvas::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, .22); border-radius: 8px; }
 .scaled-phone-canvas::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, .32); }
+/* .public's own `min-height: 100vh` (further down this file) is correct on the real published
+   page — a short landing should still fill a visitor's actual screen. Inside this canvas that
+   same 100vh resolves against the admin's OWN browser window (not the mockup's ~390px-wide,
+   ~780px-tall design box), so it was flooring every mockup's scrollable content at ~900px
+   regardless of how many buttons the landing actually has — reported as "se puede scrollear
+   demás": you could keep scrolling well past the real content into blank filler space. Two
+   classes so this outranks that single-class rule regardless of source order. */
+.scaled-phone-canvas .public { min-height: 0; }
+/* Without this, a short landing (few buttons) left .public's own box only as tall as its
+   content — anything below that, up to the phone's actual bottom edge, showed .v2-phone-screen's
+   neutral placeholder gray (#eee) instead of the landing's own background color continuing
+   ("dentro del celular... se ve un fondo raro abajo", screenshotted: a visible seam between the
+   landing's cream background and a mismatched gray strip above the bezel). ScaledPhoneCanvas's
+   content wrapper is a column flex box at least as tall as the canvas itself (`fit="width"`
+   only — see scaled-phone-canvas.tsx); `flex: 1 1 auto` here lets .public grow into that space
+   and actually paint its background there, while still only using its natural height (and
+   scrolling normally) whenever content is taller than the phone. */
+.scaled-phone-canvas .public { flex: 1 1 auto; }
 .scaled-phone-canvas::after {
   content: "";
   position: absolute;

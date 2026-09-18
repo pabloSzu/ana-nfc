@@ -33,7 +33,13 @@
 /* The close button used to scroll away with the content — sticking the head keeps "what am I
    editing" and the way out always in view, and the divider under it gives the panel its first,
    clearest section break. */
-.v2-panel-head { position: sticky; top: -2px; z-index: 6; background: #f7f7fb; margin: -2px 0 18px; padding-bottom: 14px; border-bottom: 1px solid #eae7f6; }
+/* Two classes (`.v2-panel .v2-panel-head`), not one — phone-first.css's `.v2-panel > *
+   { position: relative }` (meant for its own popover-arrow stacking) is an equal-specificity,
+   later-loaded rule for the same property, and silently won, turning this sticky head into a
+   plain relatively-positioned one. That's the actual root cause behind "si scrolleo hacia abajo
+   no se pueden cerrar" — the head (title + close button) was never actually sticking; it just
+   scrolled away with the rest of the fields, taking the only way to close the panel with it. */
+.v2-panel .v2-panel-head { position: sticky; top: -2px; z-index: 6; background: #f7f7fb; margin: -2px 0 18px; padding-bottom: 14px; border-bottom: 1px solid #eae7f6; }
 
 /* Each fieldset becomes its own card: a real border and a hint of shadow instead of a bare
    legend floating above some inputs — this is what actually makes "Regla de color" read as a
@@ -71,8 +77,12 @@
 /* Panel header gets a touch more presence now that the panel itself is wider — the eyebrow
    label and title had room to breathe instead of sitting cramped against the close button. */
 .v2-panel-head h2 { font-size: var(--v2-fs-h2); letter-spacing: -.01em; }
-.v2-panel-head button { transition: background .15s ease, transform .15s ease; }
-.v2-panel-head button:hover { background: #eeecff; transform: rotate(90deg); }
+/* Scoped to .v2-panel-close specifically, not every button in the head — a generic "any button
+   in here" selector also caught .v2-panel-back ("‹ Volver", the mobile full-screen takeover's
+   back link), spinning a text link 90° on hover/tap like it was a close icon. That's the
+   "los botones... se giran" bug: it wasn't limited to the actual × in the first place. */
+.v2-panel-close { transition: background .15s ease, transform .15s ease; }
+.v2-panel-close:hover { background: #eeecff; transform: rotate(90deg); }
 .v2-custom-action{display:flex;align-items:center;gap:13px;width:100%;margin-top:18px;border:1.5px dashed #9b8ff0;background:linear-gradient(135deg,#f6f4ff,#eef0ff);border-radius:14px;padding:14px;cursor:pointer;text-align:left;transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease}
 .v2-custom-action:hover{border-color:#6657e8;box-shadow:0 8px 20px #6657e824;transform:translateY(-1px)}
 .v2-custom-action-icon{flex:0 0 auto;width:38px;height:38px;border-radius:50%;background:#6657e8;color:#fff;display:grid;place-items:center;font-size:17px;box-shadow:0 6px 14px #6657e84d}
@@ -93,27 +103,3 @@
 .v2-choice .v2-choice-preview{display:flex;gap:6px;align-items:center;margin-left:auto;flex:0 0 auto}
 .v2-choice-preview-chip{display:inline-grid;place-items:center;flex:0 0 auto}
 
-/* ---------- "Ver en celular" — the accurate device-frame preview ---------- */
-/* The editor's own canvas (.v2-phone) is optimized for editing comfortably at any screen size —
-   on a real phone it goes edge-to-edge with no bezel (see the 560px block in phone-first.css),
-   which is great for tapping buttons but no longer *looks like* a phone mockup you can eyeball.
-   This links out to the separate device-frame preview (/preview, Chico/Común/Grande switcher)
-   for "does this actually look right on a phone" checks — kept as its own link with its own
-   class (not .v2-ghost) so it survives the `.v2-topbar .v2-ghost{display:none}` mobile rule
-   above and stays reachable exactly where it matters most. */
-.v2-device-preview-link {
-  display: inline-flex; align-items: center; gap: 7px;
-  border: 1px solid #dfe1e8; background: #fff; border-radius: 11px;
-  padding: 10px 14px; font-weight: 800; font-size: 12.5px; color: #373b47;
-  text-decoration: none; white-space: nowrap; cursor: pointer;
-  transition: background .15s ease, border-color .15s ease;
-}
-.v2-device-preview-link:hover { background: #f2f3f7; border-color: #c9cad2; }
-.v2-device-preview-link svg { width: 16px; height: 16px; flex: 0 0 auto; }
-@media (max-width: 900px) {
-  /* Room gets tight once .v2-status (the "Todo guardado" indicator) is gone but Ajustes/Vista
-     previa are still around — drop the label first, keep the icon (it still has its `title`
-     tooltip and is still a full tap target, just narrower). */
-  .v2-device-preview-link span { display: none; }
-  .v2-device-preview-link { padding: 10px; }
-}
