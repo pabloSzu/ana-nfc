@@ -1229,6 +1229,15 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
 }
 .modal-close:hover { background: var(--bg-subtle); color: var(--text); }
 
+/* ---------- Rename landing modal ---------- */
+.slug-field { display: flex; align-items: center; gap: 2px; }
+.slug-field span { color: var(--text-subtle); font-size: 0.875rem; }
+.slug-field input { flex: 1; min-width: 0; }
+.rename-diff { display: grid; gap: var(--space-2); padding: var(--space-4); border-radius: var(--radius-md); background: var(--bg-subtle); }
+.rename-diff p { display: flex; flex-direction: column; gap: 2px; font-size: 0.8125rem; }
+.rename-warning { font-size: 0.8125rem; line-height: 1.5; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--danger-subtle); color: var(--danger); }
+.rename-confirm-actions { display: grid; grid-template-columns: 1fr 1.4fr; gap: var(--space-3); }
+
 /* ---------- Data table ---------- */
 .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-sm); }
 .data-table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
