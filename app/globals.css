@@ -129,7 +129,12 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; letter-spacing: -0.01e
 
 /* ---------- Layout ---------- */
 .shell { width: min(100%, 1120px); margin-inline: auto; padding: var(--space-6) var(--space-4) var(--space-8); }
-.admin-shell { width: min(100%, 1180px); }
+/* The dashboard used to stop at a fixed 1180px, which left the big screens mostly empty and (with
+   six labelled buttons per row) still forced the table to scroll sideways. It now grows with the
+   window up to a generous cap, with side margins that scale with it instead of a fixed gutter.
+   Doubled class so the padding outranks .shell's own media-query padding further down. */
+.admin-shell { width: min(100%, 1560px); }
+.shell.admin-shell { padding-inline: clamp(var(--space-4), 3vw, 3rem); }
 .stack { display: grid; gap: var(--space-4); }
 
 .nav { display: flex; align-items: center; justify-content: space-between; padding-block: var(--space-4); }
@@ -1366,7 +1371,7 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
 .rename-confirm-actions { display: grid; grid-template-columns: 1fr 1.4fr; gap: var(--space-3); }
 
 /* ---------- Data table ---------- */
-.table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-sm); }
+.table-wrap { container: table / inline-size; overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-sm); }
 .data-table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
 .data-table th {
   text-align: left; padding: var(--space-3) var(--space-4); font-size: 0.6875rem; font-weight: 800; color: var(--text-subtle);
@@ -1382,7 +1387,38 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
 .table-entity small { color: var(--text-subtle); font-size: 0.75rem; }
 .table-actions { display: flex; align-items: center; gap: 2px; flex-wrap: nowrap; }
 .table-actions form { display: contents; }
-.table-actions .icon-text-button { min-width: 112px; justify-content: flex-start; }
+.table-actions { justify-content: flex-end; }
+/* The table adapts to the room IT has (container queries on .table-wrap), not to the window, so
+   it never needs a horizontal scrollbar: with lots of room every action shows its label; a bit
+   tighter and the secondary ones (Renombrar/Ver/QR/Eliminar) shrink to tooltip'd icons while
+   Editar and Publicar keep their text; on a narrow phone each row becomes a card instead. */
+/* Every action gets its own fixed-width column, so Editar / Renombrar / Ver / QR / Publicar /
+   Eliminar line up down the whole table instead of shifting per row with the width of each
+   label ("Publicar" vs "Despublicar"). Content stays left-aligned inside its slot. */
+.table-actions .icon-text-button { justify-content: flex-start; }
+.table-actions .slot-edit { width: 84px; }
+.table-actions .slot-publish { width: 124px; }
+@container table (min-width: 1101px) {
+  .table-actions .slot-rename { width: 112px; }
+  .table-actions .slot-view { width: 76px; }
+  .table-actions .slot-qr { width: 72px; }
+  .table-actions .slot-delete { width: 100px; }
+}
+@container table (max-width: 1100px) {
+  .secondary-action { width: 32px; padding: 0; justify-content: center; }
+  .secondary-action .btn-label { display: none; }
+}
+@container table (max-width: 760px) {
+  .data-table, .data-table tbody { display: block; }
+  .data-table thead { display: none; }
+  .data-table tr { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); padding: var(--space-4); border-bottom: 1px solid var(--border); }
+  .data-table tr:last-child { border-bottom: 0; }
+  .data-table td, .data-table tr:last-child td { padding: 0; border: 0; }
+  .data-table td:first-child, .data-table td:last-child { flex: 1 1 100%; min-width: 0; }
+  .table-actions { justify-content: flex-start; flex-wrap: wrap; }
+  .table-actions .icon-text-button { width: auto; padding: 0 10px; }
+  .secondary-action .btn-label { display: inline; }
+}
 
 .icon-text-button {
   display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 10px; border: 0;
@@ -1397,6 +1433,9 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
 .icon-text-button.success:hover { background: var(--success-subtle); }
 .icon-text-button.danger { color: var(--danger); }
 .icon-text-button.danger:hover { background: var(--danger-subtle); }
+/* "Ver" on a draft: still clickable (it explains why and offers to publish) but visibly inert. */
+.icon-text-button.is-locked { color: var(--text-subtle); opacity: .6; }
+.icon-text-button.is-locked:hover { background: var(--bg-subtle); color: var(--text-muted); opacity: 1; }
 .icon-text-button svg { display: block; flex: none; width: 16px; height: 16px; }
 .btn svg, .secondary svg { display: block; width: 16px; height: 16px; flex: none; }
 
@@ -1422,7 +1461,6 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
   .stats { grid-template-columns: 1fr; }
   .elevated-section { padding: var(--space-4); }
   .table-actions { flex-wrap: wrap; }
-  .table-actions .icon-text-button { min-width: auto; }
 }
 
 /* ============ Theme scene — shared animated backdrop (components/theme-scene.tsx) ============

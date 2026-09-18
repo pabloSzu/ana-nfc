@@ -6,7 +6,7 @@ export default function DeleteClientButton({ action, clientId, clientName }: { a
   return (
     <form action={action} onSubmit={(event) => { if (!window.confirm(`¿Eliminar el cliente ${clientName}? Sus landings no se eliminarán.`)) event.preventDefault(); }}>
       <input type="hidden" name="id" value={clientId} />
-      <button className="icon-text-button danger" type="submit"><IconTrash /> Eliminar</button>
+      <button className="icon-text-button danger secondary-action" type="submit" title="Eliminar" aria-label="Eliminar"><IconTrash /> <span className="btn-label">Eliminar</span></button>
     </form>
   );
 }

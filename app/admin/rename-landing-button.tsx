@@ -35,7 +35,7 @@ export default function RenameLandingButton({ action, landingId, currentName, cu
 
   return (
     <>
-      <button type="button" className="icon-text-button" onClick={open}><IconEdit /> Renombrar</button>
+      <button type="button" className="icon-text-button secondary-action slot-rename" title="Renombrar" aria-label="Renombrar" onClick={open}><IconEdit /> <span className="btn-label">Renombrar</span></button>
       <dialog ref={dialogRef} className="modal">
         <div className="modal-content">
           <button type="button" className="modal-close" aria-label="Cerrar" onClick={close}>✕</button>

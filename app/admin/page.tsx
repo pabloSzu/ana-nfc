@@ -4,8 +4,9 @@ import LandingCreationForm from "./landing-creation-form";
 import DeleteClientButton from "./delete-client-button";
 import DeleteLandingButton from "./delete-landing-button";
 import RenameLandingButton from "./rename-landing-button";
+import ViewLandingButton from "./view-landing-button";
 import ModalTrigger from "./modal-trigger";
-import { IconPlus, IconEdit, IconEye, IconQrCode, IconPlay, IconPause, IconUsers, IconFileText, IconCheckCircle, IconRocket, IconWifi, IconDroplet } from "@/components/icons";
+import { IconPlus, IconEdit, IconQrCode, IconPlay, IconPause, IconUsers, IconFileText, IconCheckCircle, IconRocket, IconWifi, IconDroplet } from "@/components/icons";
 import Toast from "@/components/toast";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -79,12 +80,12 @@ export default async function Admin() {
                   <td><span className={landing.published ? "status published" : "status"}>{landing.published ? "Publicada" : "Borrador"}</span></td>
                   <td>
                     <div className="table-actions">
-                      <Link className="icon-text-button accent" href={`/admin/landings/${landing.id}/editor-v2`}><IconEdit /> Editar</Link>
+                      <Link className="icon-text-button accent slot-edit" href={`/admin/landings/${landing.id}/editor-v2`}><IconEdit /> Editar</Link>
                       <RenameLandingButton action={renameLanding} landingId={landing.id} currentName={landing.business_name} currentSlug={landing.slug} />
-                      <Link className="icon-text-button accent" href={`/${landing.slug}`} target="_blank"><IconEye /> Ver</Link>
-                      <Link className="icon-text-button accent" href={`/admin/landings/${landing.id}/qr`}><IconQrCode /> QR</Link>
-                      <form action={publish}><input type="hidden" name="id" value={landing.id} /><input type="hidden" name="published" value={String(!landing.published)} /><input type="hidden" name="return_to" value="/admin" /><button className={landing.published ? "icon-text-button" : "icon-text-button success"} type="submit">{landing.published ? <><IconPause /> Despublicar</> : <><IconPlay /> Publicar</>}</button></form>
-                      <DeleteLandingButton action={deleteLanding} landingId={landing.id} label="Eliminar" />
+                      <ViewLandingButton slug={landing.slug} landingId={landing.id} published={Boolean(landing.published)} publishAction={publish} className="secondary-action slot-view" />
+                      <Link className="icon-text-button accent secondary-action slot-qr" href={`/admin/landings/${landing.id}/qr`} title="QR" aria-label="QR"><IconQrCode /> <span className="btn-label">QR</span></Link>
+                      <form action={publish}><input type="hidden" name="id" value={landing.id} /><input type="hidden" name="published" value={String(!landing.published)} /><input type="hidden" name="return_to" value="/admin" /><button className={`${landing.published ? "icon-text-button" : "icon-text-button success"} slot-publish`} type="submit">{landing.published ? <><IconPause /> Despublicar</> : <><IconPlay /> Publicar</>}</button></form>
+                      <DeleteLandingButton action={deleteLanding} landingId={landing.id} label="Eliminar" className="secondary-action slot-delete" />
                     </div>
                   </td>
                 </tr>

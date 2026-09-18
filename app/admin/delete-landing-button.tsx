@@ -2,11 +2,11 @@
 
 import { IconTrash } from "@/components/icons";
 
-export default function DeleteLandingButton({ action, landingId, label = "Eliminar landing" }: { action: (formData: FormData) => void | Promise<void>; landingId: string; label?: string }) {
+export default function DeleteLandingButton({ action, landingId, label = "Eliminar landing", className = "" }: { action: (formData: FormData) => void | Promise<void>; landingId: string; label?: string; className?: string }) {
   return (
     <form action={action} onSubmit={(event) => { if (!window.confirm("¿Eliminar esta landing?\nTambién se eliminarán sus acciones.\nEsta acción no se puede deshacer.")) event.preventDefault(); }}>
       <input type="hidden" name="id" value={landingId} />
-      <button className="icon-text-button danger" type="submit"><IconTrash /> {label}</button>
+      <button className={`icon-text-button danger ${className}`.trim()} type="submit" title={label} aria-label={label}><IconTrash /> <span className="btn-label">{label}</span></button>
     </form>
   );
 }
