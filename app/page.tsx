@@ -2,265 +2,150 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import "./marketing.css";
-import {
-  IconWifi, IconQrCode, IconEdit, IconDroplet, IconMessageCircle, IconRocket, IconCheckCircle,
-  IconZap, IconPaintRoller, IconHeart, IconTrendingUp,
-  IconChefHat, IconUserRound, IconDumbbell, IconShoppingBag, IconBriefcase, IconBedDouble, IconPartyPopper,
-  IconTruck, IconShieldCheck,
-} from "@/components/icons";
+import "./_home/sections.css";
+import { IconMessageCircle, IconZap, IconShieldCheck, IconTruck, IconChefHat, IconShoppingBag, IconBriefcase, IconPartyPopper, IconUserRound } from "@/components/icons";
+import { FiArrowUpRight, FiArrowDown, FiCheck, FiSend } from "react-icons/fi";
+import { FaWhatsapp } from "react-icons/fa6";
+import { body, display } from "./_home/fonts";
+import Logo from "./_home/logo";
+import { StyleShowcase } from "./_home/showcase";
+import { Faq, HomeNav } from "./_home/interactive";
+import HowItWorks from "./_home/how-it-works";
+import Products from "./_home/products";
+import Connections from "./_home/connections";
 
 export const metadata: Metadata = {
-  title: "BioNFC — tu negocio, un toque",
-  description: "Un tag NFC (y un QR de respaldo) que abre la landing de tu negocio al instante. Sin apps, sin escribir nada. Armá la tuya en minutos.",
+  title: "BioNFC — tu negocio, a un toque",
+  description: "BioNFC crea tu página personalizada y la conecta a un producto NFC para que tus clientes accedan a todo lo importante de tu negocio en segundos.",
 };
 
 const WHATSAPP_NUMBER = "5493884208746";
-const WHATSAPP_TEXT = encodeURIComponent("Hola! Quiero mi landing con tag NFC 👋");
-const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_TEXT}`;
+const WHATSAPP_TEXT = encodeURIComponent("Hola BioNFC, quiero armar el mío 👋");
+const WA = `https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_TEXT}`;
 
 const NAV_LINKS = [
-  { href: "#negocios", label: "Para negocios" },
   { href: "#como-funciona", label: "Cómo funciona" },
-  { href: "#plantillas", label: "Plantillas" },
-  { href: "#preguntas", label: "Preguntas" },
+  { href: "#tu-pagina", label: "Tu página" },
+  { href: "#productos", label: "Productos" },
+  { href: "#posibilidades", label: "Qué conectás" },
 ];
 
-const BENEFITS = [
-  { icon: IconZap, title: "Fácil de usar", body: "Solo acercás tu celular" },
-  { icon: IconPaintRoller, title: "100% personalizable", body: "Tu estilo, tu marca" },
-  { icon: IconTrendingUp, title: "Más clientes", body: "Más visibilidad, más ventas" },
-  { icon: IconHeart, title: "Para cualquier negocio", body: "Grande o pequeño" },
+// The three beats of what an NFC tag does — shown as a numbered list under the hero copy AND as
+// matching numbered badges on the product art, so the pictures read as one flow instead of loose
+// objects.
+const HERO_STEPS = [
+  { num: "1", title: "Acercá", body: "tu celular a un tag NFC" },
+  { num: "2", title: "Se abre", body: "tu página al instante" },
+  { num: "3", title: "Te contactan", body: "WhatsApp, reservas, reseñas" },
 ];
 
-const RUBROS = [
-  { icon: IconChefHat, title: "Restaurantes", sub: "y cafeterías" },
-  { icon: IconUserRound, title: "Estética", sub: "y belleza" },
-  { icon: IconDumbbell, title: "Gimnasios", sub: "y salud" },
-  { icon: IconShoppingBag, title: "Tiendas", sub: "y e-commerce" },
-  { icon: IconBriefcase, title: "Profesionales", sub: "y servicios" },
-  { icon: IconBedDouble, title: "Hoteles", sub: "y turismo" },
-  { icon: IconPartyPopper, title: "Eventos", sub: "y mucho más" },
+const HERO_AUDIENCES = [
+  { icon: IconChefHat, label: "Gastronomía" },
+  { icon: IconUserRound, label: "Belleza" },
+  { icon: IconShoppingBag, label: "Tiendas" },
+  { icon: IconBriefcase, label: "Profesionales" },
+  { icon: IconPartyPopper, label: "Eventos" },
 ];
 
-const STEPS = [
-  { title: "Armamos tu landing", body: "Elegís plantilla, colores y qué botones mostrar: WhatsApp, Instagram, tu web, menú, turnos… lo que tu negocio necesite." },
-  { title: "Te llega tu tag NFC", body: "Programado con tu link, listo para pegar en el mostrador, la vidriera o una tarjeta. Incluye QR de respaldo por las dudas." },
-  { title: "La gente solo acerca el celular", body: "Sin instalar nada, sin escanear ni escribir. Se abre tu landing al toque, en cualquier teléfono con NFC." },
-];
-
-const FEATURES = [
-  { icon: IconWifi, title: "Funciona con un toque", body: "Tecnología NFC: acercás el celular al tag y la landing se abre sola, sin apps de por medio." },
-  { icon: IconQrCode, title: "QR de respaldo, siempre", body: "Todo tag incluye también un código QR, por si el teléfono de alguien no tiene NFC activado." },
-  { icon: IconEdit, title: "Lo editás cuando quieras", body: "Cambiás textos, fotos y botones vos mismo desde un panel simple, sin depender de nadie." },
-  { icon: IconDroplet, title: "Colores reales de marca", body: "Los botones de Instagram, WhatsApp y demás usan sus colores oficiales automáticamente." },
-];
-
-const EXAMPLES = [
-  { name: "Estudio Aurora", kind: "Peluquería", avatarBg: "oklch(88% 0.06 40)", avatarColor: "oklch(35% 0.1 40)", cardBg: "oklch(97% 0.02 40)", nameColor: "oklch(32% 0.09 40)", btns: ["oklch(70% 0.15 25)", "oklch(78% 0.12 45)", "oklch(60% 0.02 40)"] },
-  { name: "Café Nimbus", kind: "Cafetería", avatarBg: "oklch(40% 0.05 55)", avatarColor: "oklch(92% 0.03 80)", cardBg: "oklch(95% 0.02 70)", nameColor: "oklch(34% 0.05 55)", btns: ["oklch(45% 0.06 50)", "oklch(65% 0.1 60)", "oklch(55% 0.03 50)"] },
-  { name: "FitZone", kind: "Gimnasio", avatarBg: "oklch(75% 0.19 145)", avatarColor: "oklch(18% 0.03 145)", cardBg: "oklch(16% 0.02 260)", nameColor: "oklch(93% 0.02 145)", btns: ["oklch(75% 0.19 145)", "oklch(65% 0.19 25)", "oklch(70% 0.02 260)"] },
+const TRUST = [
+  { icon: IconShieldCheck, text: "Tu marca, tu página, tu estilo" },
+  { icon: IconTruck, text: "Envíos a todo el país" },
+  { icon: IconZap, text: "Sin apps para vos ni tus clientes" },
 ];
 
 const FAQS = [
-  { q: "¿Necesito instalar algo o saber de tecnología?", a: "No. Vos elegís plantilla, colores y botones desde un panel simple, y nosotros te mandamos el tag ya programado. Tus clientes tampoco instalan nada: acercan el celular y listo." },
-  { q: "¿Y si el celular de mi cliente no tiene NFC?", a: "Cada tag incluye un código QR de respaldo con el mismo link, así que siempre hay una forma de entrar a tu landing." },
-  { q: "¿Puedo cambiar textos, fotos o botones después?", a: "Sí, cuando quieras, desde tu panel. Los cambios se ven al instante sin tener que pedir un tag nuevo." },
-  { q: "¿Cuánto tarda en llegarme el tag?", a: "Coordinamos todo por WhatsApp: armamos tu landing, te mostramos cómo queda y despachamos el tag a todo el país." },
+  { q: "¿Qué es BioNFC?", a: "BioNFC combina una página personalizada con un producto NFC para compartir toda tu información con un solo toque." },
+  { q: "¿Necesitan instalar una app?", a: "No. Tus clientes acercan su celular desbloqueado al NFC y tocan el aviso para abrir tu página en el navegador. También pueden entrar escaneando el QR." },
+  { q: "¿Y si el celular de mi cliente no tiene NFC?", a: "Cada producto incluye un código QR de respaldo con el mismo link, así que siempre hay una forma de entrar a tu página." },
+  { q: "¿Puedo personalizar mi página?", a: "Sí. Colores, imágenes, botones, links y contenido, desde un panel simple." },
+  { q: "¿Puedo cambiar mis links después?", a: "Sí, cuando quieras. Tu NFC sigue sirviendo aunque cambie tu contenido, sin pedir uno nuevo." },
+  { q: "¿Qué puedo poner en mi página?", a: "WhatsApp, Instagram, TikTok, Spotify, Maps, menú, catálogo, portfolio, pagos, turnos y mucho más." },
+  { q: "¿Sirve para cualquier negocio?", a: "Sí. La página y el NFC se adaptan al tipo de uso." },
+  { q: "¿Cuánto tarda en llegarme?", a: "Coordinamos todo por WhatsApp: armamos tu página, te mostramos cómo queda y despachamos a todo el país." },
 ];
 
 export default function Home() {
   return (
-    <div className="bn">
-      <nav className="bn-nav">
-        <div className="bn-nav-inner">
-          <span className="bn-brand"><span className="bn-brand-mark"><IconWifi /></span>BioNFC</span>
-          <div className="bn-nav-links">
-            {NAV_LINKS.map((link) => <a key={link.href} href={link.href}>{link.label}</a>)}
+    <div className={`bx ${display.variable} ${body.variable}`}>
+      <HomeNav links={NAV_LINKS}>
+        <a href="#top" className="bx-brand" aria-label="BIONFC, inicio"><Logo /></a>
+        <ul className="bx-nav-links">
+          {NAV_LINKS.map((link) => <li key={link.href}><a href={link.href}>{link.label}</a></li>)}
+        </ul>
+        <div className="bx-nav-end">
+          <Link className="bx-nav-login" href="/admin/login">Ingresar</Link>
+          <a className="bx-btn bx-btn-nav" href={WA} target="_blank" rel="noreferrer">Quiero el mío</a>
+        </div>
+      </HomeNav>
+
+      <header id="top" className="bx-hero">
+        <div className="bx-hero-main">
+          <div className="bx-hero-copy">
+            <span className="bx-pill">TECNOLOGÍA QUE CONECTA</span>
+            <h1 className="bx-h1">Tu negocio,<br /><span className="bx-grad">a un toque.</span></h1>
+            <p className="bx-hero-lead">NFC personalizado + una página diseñada para tu negocio. Más contactos, más reseñas y una mejor presentación.</p>
+            <div className="bx-hero-cta">
+              <a className="bx-btn bx-btn-hero" href={WA} target="_blank" rel="noreferrer">Quiero mi BIONFC <span aria-hidden="true">→</span></a>
+              <a className="bx-btn bx-btn-outline" href="#como-funciona"><FiArrowDown aria-hidden="true" />Ver cómo funciona</a>
+            </div>
+            <ol className="bx-feats" aria-label="Cómo funciona">
+              {HERO_STEPS.map(({ num, title, body }) => (
+                <li key={num}><span className="bx-feat-ico" aria-hidden="true">{num}</span><span><b>{title}</b><small>{body}</small></span></li>
+              ))}
+            </ol>
           </div>
-          <div className="bn-nav-right">
-            <Link className="bn-nav-login" href="/admin/login">¿Ya tenés cuenta? Ingresá</Link>
-            <a className="bn-btn bn-btn-primary" href={WHATSAPP_URL} target="_blank" rel="noreferrer"><IconMessageCircle /> Quiero mi tag</a>
-            <button className="bn-menu-btn" type="button" aria-label="Menú">☰</button>
+
+          {/* The supplied image leaves a clear area for the desktop copy on the left.
+              On smaller screens its products sit below the copy in their own crop. */}
+          <div className="bx-scene">
+            <div className="bx-scene-art">
+              <Image className="bx-scene-img" src="/marketing/hero/scene-light.webp" alt="Página personalizada en un celular junto a un soporte, una tarjeta y un llavero NFC con la identidad TU MARCA" fill priority sizes="(max-width: 640px) 150vw, 100vw" />
+            </div>
           </div>
         </div>
-      </nav>
 
-      <header className="bn-hero" id="negocios">
-        <div className="bn-wrap bn-hero-grid">
-          <div>
-            <span className="bn-eyebrow"><span className="bn-eyebrow-dot" aria-hidden="true" />NFC + página digital</span>
-            <h1 className="bn-h1">Tu negocio.<br />Un toque.<br /><mark>Todo adentro.</mark></h1>
-            <p className="bn-hero-sub">Un tag NFC (con QR de respaldo) que abre al instante la landing de tu negocio: WhatsApp, Instagram, tu web, menú, turnos y lo que necesites compartir. Nada de apps ni de escribir nada.</p>
-            <div className="bn-hero-actions">
-              <a className="bn-btn bn-btn-primary bn-btn-lg" href={WHATSAPP_URL} target="_blank" rel="noreferrer"><IconMessageCircle /> Quiero mi tag, sin compromiso</a>
-              <a className="bn-play-btn" href="#como-funciona">
-                <span className="bn-play-icon"><IconCheckCircle /></span>
-                <span><b>Ver cómo funciona</b><small>3 pasos, 1 minuto</small></span>
-              </a>
-            </div>
-            <div className="bn-benefits">
-              {BENEFITS.map(({ icon: Icon, title, body }) => (
-                <div key={title} className="bn-benefit">
-                  <Icon aria-hidden="true" />
-                  <b>{title}</b>
-                  <span>{body}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="bn-hero-photo">
-            <Image
-              src="/marketing/hero-nfc.png"
-              alt="Llavero NFC BioNFC junto a un celular mostrando una landing con botones de WhatsApp, Instagram y TikTok"
-              width={1254}
-              height={1254}
-              priority
-              sizes="(max-width: 980px) 100vw, 560px"
-            />
+        <div className="bx-hero-bar">
+          <div className="bx-hero-bar-inner">
+            <span className="bx-bar-kicker">IDEAL PARA</span>
+            <ul>{HERO_AUDIENCES.map(({ icon: Icon, label }) => <li key={label}><Icon />{label}</li>)}</ul>
+            <span className="bx-bar-end">Un toque. Muchas oportunidades.</span>
           </div>
         </div>
       </header>
 
-      <div className="bn-proof">
-        <div className="bn-wrap bn-proof-inner">
-          <span className="bn-proof-item"><IconShieldCheck aria-hidden="true" /> Sin compromiso, hablás primero por WhatsApp</span>
-          <span className="bn-proof-item"><IconTruck aria-hidden="true" /> Envíos a todo el país</span>
-          <span className="bn-proof-item"><IconZap aria-hidden="true" /> Landing lista en minutos</span>
-        </div>
+      <div className="bx-trust">
+        {TRUST.map(({ icon: Icon, text }) => <span key={text}><Icon />{text}</span>)}
       </div>
 
-      <main>
-        <section className="bn-section bn-wrap">
-          <div className="bn-section-head">
-            <span className="bn-kicker">Un NFC, infinitas posibilidades</span>
-            <h2 className="bn-h2">Ideal para <em>cualquier rubro</em></h2>
-            <p className="bn-section-sub">Diseñado para emprendedores, profesionales y empresas de todos los rubros. Mostrá lo mejor de tu negocio en segundos.</p>
-          </div>
-          <div className="bn-rubros">
-            {RUBROS.map(({ icon: Icon, title, sub }) => (
-              <article key={title} className="bn-rubro">
-                <span className="bn-rubro-icon"><Icon aria-hidden="true" /></span>
-                <p><b>{title}</b><span>{sub}</span></p>
-              </article>
-            ))}
-          </div>
-        </section>
+      <HowItWorks />
 
-        <section id="como-funciona" className="bn-section bn-wrap">
-          <div className="bn-section-head">
-            <span className="bn-kicker">Cómo funciona</span>
-            <h2 className="bn-h2">De la idea al tag pegado en tu mostrador</h2>
-            <p className="bn-section-sub">Tres pasos, sin vueltas técnicas de tu lado.</p>
-          </div>
-          <ol className="bn-steps">
-            {STEPS.map((step, i) => (
-              <li key={step.title} className="bn-step">
-                <span className="bn-step-num">{i + 1}</span>
-                <h3>{step.title}</h3>
-                <p>{step.body}</p>
-              </li>
-            ))}
-          </ol>
-        </section>
+      <section id="tu-pagina" className="bx-dark">
+        <div className="bx-dark-glow bx-dark-glow-a" />
+        <div className="bx-section bx-section-dark"><StyleShowcase waUrl={WA} /></div>
+      </section>
 
-        <section id="plantillas" className="bn-section bn-wrap">
-          <div className="bn-feature">
-            <div className="bn-feature-grid">
-              <div>
-                <span className="bn-kicker">La posta</span>
-                <h2 className="bn-h2">Sin escanear. Sin escribir. Solo acercar.</h2>
-                <p className="bn-section-sub" style={{ marginTop: "var(--bn-space-2)" }}>Es la forma más rápida que existe de compartir el contacto de tu negocio con alguien que tenés en frente.</p>
-                <ul className="bn-chip-list">
-                  {FEATURES.map(({ icon: Icon, title, body }) => (
-                    <li key={title} className="bn-chip">
-                      <span className="bn-chip-icon"><Icon /></span>
-                      <span><b>{title}</b><span>{body}</span></span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="bn-nfc-demo">
-                <div className="bn-tap">
-                  <div className="bn-tap-ring" />
-                  <div className="bn-tap-ring bn-r2" />
-                  <div className="bn-tap-ring bn-r3" />
-                  <div className="bn-tap-tag" />
-                  <div className="bn-tap-phone" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+      <Products whatsappNumber={WHATSAPP_NUMBER} />
+      <Connections whatsappNumber={WHATSAPP_NUMBER} />
 
-        <section className="bn-section bn-wrap">
-          <div className="bn-section-head">
-            <span className="bn-kicker">Ejemplos</span>
-            <h2 className="bn-h2">Cada landing, con la cara de cada negocio</h2>
-            <p className="bn-section-sub">Colores, tipografía y botones se adaptan a cada rubro — estos son inventados, solo para mostrar el estilo.</p>
-          </div>
-          <div className="bn-gallery">
-            {EXAMPLES.map((ex) => (
-              <div key={ex.name} className="bn-card">
-                <div className="bn-mock" style={{ background: ex.cardBg }}>
-                  <div className="bn-mock-avatar" style={{ background: ex.avatarBg, color: ex.avatarColor }}>{ex.name.slice(0, 1)}</div>
-                  <span className="bn-mock-name" style={{ color: ex.nameColor }}>{ex.name}</span>
-                  <div className="bn-mock-btns">
-                    {ex.btns.map((color, i) => <span key={i} className="bn-mock-btn" style={{ background: color }} />)}
-                  </div>
-                </div>
-                <h3>{ex.name}</h3>
-                <p>{ex.kind}</p>
-              </div>
-            ))}
-          </div>
-        </section>
+      <section id="preguntas" className="bx-section bx-questions">
+        <div className="bx-questions-intro"><p className="bx-section-kicker">ANTES DEL PRIMER TOQUE</p><h2 className="bx-h2">Todo claro.<br /><span>Desde el inicio.</span></h2><p>Las dudas más comunes, sin letra chica.</p><a href={WA} target="_blank" rel="noreferrer"><IconMessageCircle />¿Tenés otra pregunta? <FiArrowUpRight aria-hidden="true" /></a></div>
+        <Faq items={FAQS} />
+      </section>
 
-        <section id="preguntas" className="bn-section bn-wrap">
-          <div className="bn-section-head bn-section-head--center">
-            <span className="bn-kicker">Preguntas frecuentes</span>
-            <h2 className="bn-h2">Lo que más nos preguntan</h2>
-          </div>
-          <div className="bn-faq">
-            {FAQS.map((faq) => (
-              <details key={faq.q} className="bn-faq-item">
-                <summary>{faq.q}</summary>
-                <p>{faq.a}</p>
-              </details>
-            ))}
-          </div>
-        </section>
+      <section className="bx-start" aria-labelledby="start-title"><div className="bx-section"><div className="bx-start-card">
+        <div className="bx-start-copy"><p className="bx-section-kicker">DE TU IDEA AL PRIMER TOQUE</p><h2 id="start-title">Tu próximo<br />contacto empieza<br /><span>con vos.</span></h2><p>Contanos qué hacés. Diseñamos tu página y te ayudamos a elegir el NFC para compartirla.</p><a className="bx-btn" href={WA} target="_blank" rel="noreferrer"><FaWhatsapp aria-hidden="true" />Armemos mi BioNFC<FiArrowUpRight aria-hidden="true" /></a><span className="bx-start-note">Hablamos por WhatsApp, sin compromiso.</span></div>
+        <div className="bx-start-side"><div className="bx-start-message"><span>TODO EMPIEZA CON UN MENSAJE</span><p>“Hola, tengo un negocio<br />y quiero armar mi BioNFC.”</p><FiSend aria-hidden="true" /></div><ol><li><span>01</span><div><b>Nos contás tu idea</b><p>Tu negocio, tu estilo y qué querés compartir.</p></div></li><li><span>02</span><div><b>Le damos forma</b><p>Diseñamos tu página y te mostramos cómo queda.</p></div></li><li><span>03</span><div><b>Listo para conectar</b><p>Coordinamos tu NFC y el envío.</p></div><FiCheck aria-hidden="true" /></li></ol></div>
+      </div></div></section>
 
-        <section className="bn-section bn-wrap">
-          <div className="bn-cta">
-            <h2>¿Empezamos con la tuya?</h2>
-            <p>Contanos de tu negocio por WhatsApp y coordinamos diseño, tag y todo lo demás.</p>
-            <div className="bn-hero-actions">
-              <a className="bn-btn bn-btn-primary bn-btn-lg" href={WHATSAPP_URL} target="_blank" rel="noreferrer"><IconMessageCircle /> Escribir por WhatsApp</a>
-            </div>
-            <p className="bn-cta-note">Sin compromiso — primero charlamos, después armamos tu landing.</p>
-          </div>
-        </section>
-      </main>
-
-      <footer className="bn-footer">
-        <div className="bn-wrap">
-          <div className="bn-footer-top">
-            <span className="bn-footer-brand"><span className="bn-brand-mark"><IconRocket aria-hidden="true" /></span>BioNFC</span>
-            <a className="bn-btn bn-btn-primary" href={WHATSAPP_URL} target="_blank" rel="noreferrer"><IconMessageCircle /> Quiero mi tag</a>
-          </div>
-          <div className="bn-footer-points">
-            <div className="bn-footer-point"><IconTruck aria-hidden="true" /><span>Envíos<br />a todo el país</span></div>
-            <div className="bn-footer-point"><IconShieldCheck aria-hidden="true" /><span>Sin compromiso,<br />coordinás por WhatsApp</span></div>
-            <div className="bn-footer-point"><IconMessageCircle aria-hidden="true" /><span>¿Dudas?<br />Hablá con nosotros</span></div>
-          </div>
-          <div className="bn-footer-bottom">
-            <p className="bn-footer-muted">© {new Date().getFullYear()} BioNFC. Tags NFC y landings para negocios.</p>
-            <div className="bn-footer-links">
-              <Link href="/admin/login">Ingresar al panel</Link>
-            </div>
-          </div>
-        </div>
+      <footer className="bx-footer bx-footer-redesign">
+        <div className="bx-footer-main"><div><a className="bx-brand" href="#top" aria-label="BioNFC, volver al inicio"><Logo /></a><p>Tu mundo, más cerca.<br />Una conexión a la vez.</p></div><nav aria-label="Explorá BioNFC"><span>EXPLORÁ</span><a href="#como-funciona">Cómo funciona</a><a href="#tu-pagina">Tu página</a><a href="#productos">Formatos NFC</a></nav><nav aria-label="Ayuda y contacto"><span>SEGUIMOS EN CONTACTO</span><a href={WA} target="_blank" rel="noreferrer">Hablemos por WhatsApp ↗</a><a href="#preguntas">Preguntas frecuentes</a><Link href="/admin/login">Ingresar a mi panel ↗</Link></nav></div>
+        <div className="bx-footer-bottom"><span>BioNFC · Hecho para conectar.</span><span>Envíos a todo el país <IconTruck /></span></div>
       </footer>
+
+      <a className="bx-float-wa" href={WA} target="_blank" rel="noreferrer" aria-label="Escribinos por WhatsApp">
+        <span className="bx-float-wa-dot"><IconMessageCircle /></span>
+        <span className="bx-float-wa-text">¿Armamos el tuyo?</span>
+      </a>
     </div>
   );
 }
