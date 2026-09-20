@@ -63,7 +63,7 @@ export function StyleShowcase({ waUrl }: { waUrl: string }) {
         </div>
         <div className="bx-showcase-caption" aria-live="polite" aria-atomic="true"><span>0{active + 1} / 04 · {selected.style}</span><p>{selected.detail}</p></div>
       </div>
-      <div className="bx-showcase-possibilities"><span className="bx-showcase-infinity" aria-hidden="true">∞</span><div><h3>Cuatro ideas. Infinitas posibilidades.</h3><p>Estos son solo algunos ejemplos. Combinamos fondos, logos, colores, tipografías y botones para crear el tuyo.</p></div><span className="bx-showcase-signature">Hecha para vos.<br /><b>Lista para compartir.</b></span></div>
+      <div className="bx-showcase-possibilities"><span className="bx-showcase-infinity" aria-hidden="true">∞</span><div><h3>Estos son solo algunos ejemplos.</h3><p>Tenemos muchísimos estilos más para adaptar tu página a tu gusto y a la identidad de tu negocio.</p></div><span className="bx-showcase-signature">Hecha para vos.<br /><b>Lista para compartir.</b></span></div>
     </div>
   );
 }
