@@ -44,7 +44,7 @@ export function StyleShowcase({ waUrl }: { waUrl: string }) {
     <div className="bx-showcase">
       <div className="bx-showcase-copy">
         <p className="bx-showcase-kicker"><span /> TU IDENTIDAD, EN UNA PÁGINA</p>
-        <h2 className="bx-h2 bx-on-dark">No comprás solo un NFC.<br /><span className="bx-soft">Te llevás tu página lista para compartir.</span></h2>
+        <h2 className="bx-h2 bx-on-dark">¿Querés reunir todo en un lugar?<br /><span className="bx-soft">Creamos tu página.</span></h2>
         <p className="bx-lead bx-on-dark-muted">Tu logo, tus fotos, tu estilo. Diseñamos una página que se sienta tan tuya como tu negocio.</p>
         <div className="bx-showcase-picker" role="group" aria-label="Elegí un ejemplo de diseño">
           {EXAMPLES.map((example, index) => <button type="button" key={example.id} aria-pressed={active === index} aria-controls="showcase-preview" onClick={() => setActive(index)}><span className={`bx-showcase-swatch is-${example.id}`} />{example.category}<FiArrowUpRight aria-hidden="true" /></button>)}

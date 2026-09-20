@@ -7,19 +7,19 @@ import "./how-it-works.css";
 
 const STEPS = [
   { number: "1", title: "Elegís el formato",
-    description: "Tarjeta, llavero o mostrador: elegís el formato NFC que mejor se adapta a tu negocio.",
+    description: "QR, tarjeta, llavero o mostrador: elegís cómo compartir tu negocio.",
     image: "/marketing/how-it-works/01-formatos.webp",
     alt: "Tarjeta, llavero y soporte NFC de mostrador personalizados con TU MARCA" },
-  { number: "2", title: "Acercás el celular",
-    description: "Tu cliente acerca su celular al NFC y recibe el acceso al instante.",
+  { number: "2", title: "Escaneás o acercás",
+    description: "Tu cliente escanea el QR o acerca su celular al NFC y toca el aviso para abrir el enlace.",
     image: "/marketing/how-it-works/02-acercar.webp",
     alt: "Un celular junto a una tarjeta TU MARCA muestra el aviso de etiqueta NFC detectada" },
-  { number: "3", title: "Se abre tu página",
-    description: "Aparece tu landing o botonera con WhatsApp, turnos, servicios, ubicación y redes.",
+  { number: "3", title: "Se abre tu contenido",
+    description: "Tus reseñas, un enlace directo o tu página completa. Vos elegís a dónde llevarlo.",
     image: "/marketing/how-it-works/03-pagina.webp",
     alt: "Página personalizada TU MARCA con accesos a WhatsApp, turnos, servicios, ubicación e Instagram" },
   { number: "4", title: "La conexión sucede",
-    description: "Tus clientes te escriben, reservan, llegan a tu negocio o siguen tus redes.",
+    description: "Tus clientes pueden escribirte, reservar, ver cómo llegar o seguir tus redes.",
     image: "/marketing/how-it-works/04-conexion.webp",
     alt: "Ejemplos de una consulta por WhatsApp, un turno reservado, indicaciones y un nuevo seguidor" },
 ];
@@ -54,7 +54,7 @@ export default function HowItWorks() {
         <header className="bx-process-heading">
           <p className="bx-process-eyebrow">TECNOLOGÍA QUE CONECTA</p>
           <h2 id="how-title">Así funciona <span>BIONFC</span></h2>
-          <p className="bx-process-subtitle">Elegí el formato, acercá el celular y compartí tu negocio en segundos.</p>
+          <p className="bx-process-subtitle">Una vez listo, usarlo es simple: tus clientes escanean el QR o acercan el celular al NFC. Estas imágenes muestran ejemplos de uso.</p>
         </header>
         <ol className="bx-process-steps" ref={listRef}>
           {STEPS.map((step, index) => (

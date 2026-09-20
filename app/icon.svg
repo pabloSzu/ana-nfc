@@ -1,1 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#050505"/><path d="M20 48V16h26v8H30v6h14v8H30v10z" fill="#22c55e"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="g" x1="6" y1="46" x2="52" y2="14" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#22c7e0"/>
+      <stop offset=".55" stop-color="#3b82f6"/>
+      <stop offset="1" stop-color="#a855f7"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="#060a14"/>
+  <!-- Measured the arcs' true painted bounding box (stroke included) and it sat almost flush
+       against the bottom edge (0.1 clearance) with 11.5 of empty space up top — this offset
+       recenters it so top/bottom and left/right margins actually match. -->
+  <g fill="none" stroke="url(#g)" stroke-width="6.2" stroke-linecap="round" transform="translate(0.4 -5.7)">
+    <path d="M13 30.6a11.6 11.6 0 0 1 0 14.2"/>
+    <path d="M26.6 22.6a21.6 21.6 0 0 1 0 30.2"/>
+    <path d="M40.2 14.6a31.6 31.6 0 0 1 0 46.2"/>
+  </g>
+</svg>
