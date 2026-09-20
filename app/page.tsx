@@ -95,11 +95,11 @@ export default function Home() {
             </ol>
           </div>
 
-          {/* The supplied image leaves a clear area for the desktop copy on the left.
-              On smaller screens its products sit below the copy in their own crop. */}
+          {/* Moody, low-lit scene — dark almost everywhere in frame, so white copy stays readable
+              over it without needing a synthetic scrim to fake contrast. */}
           <div className="bx-scene">
             <div className="bx-scene-art">
-              <Image className="bx-scene-img" src="/marketing/hero/scene-light.webp" alt="Página personalizada en un celular junto a un soporte, una tarjeta y un llavero NFC con la identidad TU MARCA" fill priority sizes="(max-width: 640px) 150vw, 100vw" />
+              <Image className="bx-scene-img" src="/marketing/hero/scene-night.webp" alt="Página personalizada en un celular junto a un soporte, una tarjeta y un llavero NFC con la identidad TU MARCA, sobre una mesa oscura" fill priority sizes="(max-width: 640px) 150vw, 100vw" />
             </div>
           </div>
         </div>
