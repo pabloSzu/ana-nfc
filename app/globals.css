@@ -1599,16 +1599,31 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
 
 /* A small editorial credit; the invisible hit area stays comfortable to tap. */
 .landing-branding { display: flex; justify-content: center; margin: 20px 0 0; padding: 0 8px; }
-.landing-branding a { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 10px 12px; border: 0; border-radius: 4px; background: transparent; color: #706b75; text-decoration: none; font-family: Arial, sans-serif; box-shadow: none; transition: color .15s; }
-.landing-branding-label { font-size: 10px; font-weight: 400; }
+/* The credit is a badge, not a footnote: its own translucent pill gives it a deliberate shape
+   AND keeps it legible on its own terms, instead of depending entirely on the page's colour.
+   --branding-ink is still computed per landing (readableInk in lib/landing-catalog.ts) to hold
+   the same perceived weight everywhere; the fallback only matters if it fails to arrive. */
+.landing-branding a { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 5px 10px; border: 0; border-radius: 999px; background: var(--branding-pill, rgba(18, 16, 26, .04)); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); color: var(--branding-ink, rgba(22, 20, 30, .62)); text-decoration: none; font-family: Arial, sans-serif; box-shadow: none; transition: color .15s, background .15s; }
+/* The pill itself stays small on purpose, so the tap target is widened invisibly instead of by
+   padding — that would have grown the visible chip right back. */
+.landing-branding a::after { content: ""; position: absolute; inset: -11px -8px; }
+/* Small, spaced and quieter than the wordmark — the brand is what should stay in your head. */
+.landing-branding-label { font-size: 7.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; opacity: .6; white-space: nowrap; }
+.landing-branding[data-tone="dark"] { --branding-pill: rgba(255, 255, 255, .08); }
+.landing-branding[data-tone="light"] { --branding-pill: rgba(18, 16, 26, .04); }
+.landing-branding a:hover { background: var(--branding-pill-hover, rgba(18, 16, 26, .09)); }
+.landing-branding[data-tone="dark"] a:hover { --branding-pill-hover: rgba(255, 255, 255, .16); }
 .landing-branding .bx-logo { display: inline-flex; align-items: center; gap: 1px; }
-.landing-branding .bx-logo-word { font: 700 11px / 1 Arial, sans-serif; letter-spacing: -.035em; }
+.landing-branding .bx-logo-word { font: 800 13px / 1 Arial, sans-serif; letter-spacing: -.035em; }
 .landing-branding .bx-logo-nfc { background: none; color: inherit; }
 .landing-branding .bx-logo-waves { width: 11px; height: 11px; stroke: currentColor; flex: none; }
 .landing-branding a:hover { color: #36303f; }
 .landing-branding a:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
-.landing-branding[data-tone="dark"] a { color: #b0aab7; }
-.landing-branding[data-tone="dark"] a:hover { color: #eeeaf2; }
+.landing-branding[data-tone="dark"] a:hover { color: #fff; }
+/* Over a photo the credit can land on anything, so it gets a soft dark halo to stay readable
+   without having to shout — flat grey text alone disappeared on bright parts of an image. */
+.public-bg-image .landing-branding a,
+.public-bg-image .landing-socials[data-filled="no"] a { text-shadow: 0 1px 6px rgba(0, 0, 0, .55); }
 
 /* Short pages fill the screen; long pages push the credit below their links. */
 .public.has-branding { display: flex; flex-direction: column; min-height: 100svh; padding-bottom: max(20px, env(safe-area-inset-bottom)); }
@@ -1629,8 +1644,10 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
 .editor-delete-action:disabled { visibility: hidden; }
 .editor-action-row { transition: transform .15s ease; }
 .editor-action-row.is-dragging { z-index: 10; transition: none; }
-.landing-branding.is-editable a { flex-wrap: wrap; position: relative; padding-bottom: 30px; }
-.editor-branding-hint { position: absolute; bottom: 6px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; font-size: 10px; color: inherit; }
+/* The editor hint hangs BELOW the pill rather than stretching it into a tall rounded box. */
+.landing-branding.is-editable { padding-bottom: 22px; }
+.landing-branding.is-editable a { position: relative; overflow: visible; }
+.editor-branding-hint { position: absolute; top: calc(100% + 5px); left: 50%; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; font-size: 10px; color: inherit; }
 .editor-branding-hint svg { width: 11px; height: 11px; }
 .landing-branding.is-editable a:hover .editor-branding-hint { text-decoration: underline; }
 

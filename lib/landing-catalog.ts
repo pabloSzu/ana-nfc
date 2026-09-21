@@ -31,14 +31,57 @@ export function backgroundStyle(landing: BackgroundLike): CSSProperties {
   return { background: landing.background_color || "#f7f5f0" };
 }
 
-function luminance(hex: string): number {
-  const clean = hex.replace("#", "");
-  const parts = clean.match(/.{1,2}/g);
-  const [r, g, b] = (parts || ["f7", "f5", "f0"]).map((part) => {
-    const channel = parseInt(part, 16) / 255;
+function luminanceRgb(r: number, g: number, b: number): number {
+  const [lr, lg, lb] = [r, g, b].map((value) => {
+    const channel = value / 255;
     return channel <= 0.03928 ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4);
   });
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return 0.2126 * lr + 0.7152 * lg + 0.0722 * lb;
+}
+
+function hexToRgb(hex: string): [number, number, number] {
+  const parts = hex.replace("#", "").match(/.{1,2}/g) || ["f7", "f5", "f0"];
+  const [r, g, b] = parts.map((part) => parseInt(part, 16));
+  return [r, g, b];
+}
+
+function luminance(hex: string): number {
+  const [r, g, b] = hexToRgb(hex);
+  return luminanceRgb(r, g, b);
+}
+
+// CIE L* — perceptual lightness, 0 (black) to 100 (white). Relative luminance on its own is a
+// poor stand-in for "how different do these look": the same WCAG contrast ratio is reached by a
+// dim grey on a near-black page but by a punchy dark ink on a bright one, which is exactly why
+// the credit looked faint on Neon Night and heavy on Glassmorfismo. L* differences are even.
+function lightness(y: number): number {
+  return y > 0.008856 ? 116 * Math.cbrt(y) - 16 : 903.3 * y;
+}
+
+// Small print (the "Hecho con BioNFC" credit) that reads the SAME on every template. A fixed
+// opacity can't do that: white at 82% shouts on a black page and near-black at 62% all but
+// vanishes on a bright one like Neobrutalismo's yellow-to-pink. This starts from the maximum
+// contrast ink for the backdrop and blends it toward that backdrop as far as it can while the
+// perceptual lightness gap still clears `targetDelta`, so it stays as discreet as it can be
+// without going faint — and carries the same weight on a black page as on a hot pink one.
+export function readableInk(backdrop: string, targetDelta = 52): string {
+  const bg = hexToRgb(backdrop);
+  const bgL = lightness(luminanceRgb(...bg));
+  const base: [number, number, number] = bgL > 50 ? [0, 0, 0] : [255, 255, 255];
+  const deltaAt = (blend: number) => {
+    const mixed = base.map((channel, i) => channel + (bg[i] - channel) * blend) as [number, number, number];
+    return Math.abs(lightness(luminanceRgb(...mixed)) - bgL);
+  };
+  // A mid-grey backdrop can't reach the target in either direction — full contrast is simply
+  // the best available there, so don't blend at all.
+  if (deltaAt(0) < targetDelta) return `rgb(${base.join(", ")})`;
+  let low = 0, high = 1;
+  for (let i = 0; i < 14; i++) {
+    const mid = (low + high) / 2;
+    if (deltaAt(mid) >= targetDelta) low = mid; else high = mid;
+  }
+  const ink = base.map((channel, i) => Math.round(channel + (bg[i] - channel) * low));
+  return `rgb(${ink.join(", ")})`;
 }
 
 export function autoTextColor(landing: BackgroundLike): string {

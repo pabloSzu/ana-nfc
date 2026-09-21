@@ -3,7 +3,7 @@ import { FiTrash2, FiSliders } from "react-icons/fi";
 import BioNFCLogo from "@/components/bionfc-logo";
 import {
   QUICK_SOCIALS, quickSocialHref, buildActionLink, buttonZoneShadow, resolveBackgroundTint, contrastTextColor,
-  parseDistribution, parseTitleStyle, parseSubtitleStyle, parseLogoStyle, parseBackgroundPosition, parseButtonZone, parseCoverStyle, COVER_SIZE_EXTRA, hexToRgba, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize,
+  parseDistribution, readableInk, parseTitleStyle, parseSubtitleStyle, parseLogoStyle, parseBackgroundPosition, parseButtonZone, parseCoverStyle, COVER_SIZE_EXTRA, hexToRgba, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize,
 } from "@/lib/landing-catalog";
 import { getFontFamily, resolveTextFont, FontLinks, ALL_FONT_IDS } from "@/lib/fonts";
 import { buttonCollectionStyle, buttonCollectionWidth, buttonIconStyle, hasAuthenticLook, resolveButtonColors } from "@/lib/design-presets";
@@ -150,6 +150,20 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
   // the photo visibly resize every time someone dragged the title-size slider, which read as
   // broken — the photo and the type scale need to be fully independent of each other.
   const coverReserve = logo.size + 18 + (title.eyebrow ? 28 : 0) + 54 + (Boolean(landing.description) ? 58 : 14) + COVER_SIZE_EXTRA[cover.size];
+  // The socials row and the credit footer sit at the very BOTTOM, so the color behind them is
+  // the gradient's end color — not background_color, which is where the gradient starts. Keying
+  // their tone off the start color is what left the credit in a washed-out grey on templates
+  // like Glassmorfismo (dark purple at the top, hot pink down where the footer actually is).
+  const bottomBackdrop = landing.background_type === "image"
+    ? "#0a0a0a"
+    : landing.background_type === "gradient" && landing.background_gradient_to
+      ? landing.background_gradient_to
+      : (landing.background_color || "#f7f5f0");
+  const bottomTone = contrastTextColor(bottomBackdrop) === "#ffffff" ? "dark" : "light";
+  // Same perceived weight on every template, instead of a fixed opacity that reads bold on a
+  // black page and disappears on a bright one. Photo backgrounds can be any color at any point,
+  // so those stay on plain white plus the halo the stylesheet adds.
+  const brandingInk = landing.background_type === "image" ? "rgba(255, 255, 255, .92)" : readableInk(bottomBackdrop);
   const heading = (
     <h1
       className={edit ? "editor-hit" : undefined}
@@ -172,7 +186,7 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
   );
 
   return (
-    <main className={`public${zone.showBranding !== false ? " has-branding" : ""}`} style={{ position: "relative", overflow: "clip", background: landing.background_color || "#f7f5f0", paddingTop: distribution.top, "--landing-top": `${distribution.top}px`, "--landing-logo-gap": `${distribution.logoGap}px` } as CSSProperties}>
+    <main className={`public${zone.showBranding !== false ? " has-branding" : ""}${landing.background_type === "image" && landing.background_image_url ? " public-bg-image" : ""}`} style={{ position: "relative", overflow: "clip", background: landing.background_color || "#f7f5f0", paddingTop: distribution.top, "--landing-top": `${distribution.top}px`, "--landing-logo-gap": `${distribution.logoGap}px` } as CSSProperties}>
       <FontLinks ids={fontIds} />
       {landing.background_type === "image" ? <div className="public-bg-layer public-photo-track" aria-hidden="true"><div className="public-photo-viewport"><div className="public-photo-image" style={{ backgroundRepeat: "no-repeat", ...bgLayerStyle }} /></div></div> : <div className="public-bg-layer" style={{ position: "absolute", inset: 0, zIndex: 0, ...bgLayerStyle }} />}
       <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none", backgroundImage: `linear-gradient(180deg, rgba(4,8,10,${(bgTint * 0.55).toFixed(3)}), rgba(5,8,11,${bgTint}))` }} />
@@ -277,12 +291,12 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
           {edit && <button type="button" className="editor-add-link" onClick={edit.onAddButton}><span className="editor-add-icon">＋</span> Agregar botón</button>}
         </div>
         {(socialLinks.length > 0 || edit) && <div className="landing-socials-block" style={{ marginTop: distribution.socialsGap }}>
-          {socialLinks.length > 0 && <nav className="landing-socials" aria-label="Redes sociales" data-tone={contrastTextColor(landing.background_color || "#f7f5f0") === "#ffffff" ? "dark" : "light"} data-filled={zone.quickSocialsFilled === false ? "no" : "yes"}>
+          {socialLinks.length > 0 && <nav className="landing-socials" aria-label="Redes sociales" data-tone={bottomTone} data-filled={zone.quickSocialsFilled === false ? "no" : "yes"}>
             {socialLinks.map(link => <a key={link.type} href={link.href} target="_blank" rel="noopener noreferrer" aria-label={QUICK_SOCIALS.find(option => option.type === link.type)?.label} onClick={edit ? event => { event.preventDefault(); edit.onSelectSocials(); } : undefined}><ActionTypeIcon type={link.type} /></a>)}
           </nav>}
           {edit && <button type="button" className="editor-socials-entry" onClick={edit.onSelectSocials}><IconEdit aria-hidden="true" />{socialLinks.length ? "Editar redes rápidas" : "Agregar redes rápidas"}</button>}
         </div>}
-        {zone.showBranding !== false && <footer className={`landing-branding${edit ? " is-editable" : ""}`} data-tone={contrastTextColor(landing.background_color || "#f7f5f0") === "#ffffff" ? "dark" : "light"}>
+        {zone.showBranding !== false && <footer className={`landing-branding${edit ? " is-editable" : ""}`} data-tone={bottomTone} style={{ "--branding-ink": brandingInk } as CSSProperties}>
           <a href="/?utm_source=bionfc_landing&utm_medium=referral&utm_campaign=footer" target="_blank" rel="noopener noreferrer" aria-label={edit ? "Editar firma de BioNFC" : "Hecho con BioNFC. Conocé BioNFC (abre en otra pestaña)"} onClick={edit ? (event) => { event.preventDefault(); edit.onSelectSettings(); } : undefined}>
             <span className="landing-branding-label">Hecho con</span><BioNFCLogo />
             {edit && <span className="editor-branding-hint"><IconEdit aria-hidden="true" /> Editar firma</span>}
