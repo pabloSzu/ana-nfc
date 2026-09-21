@@ -749,21 +749,37 @@ function BackgroundControls({ draft, tab, onTab, onChange, onFile }: { draft: La
   </div>;
 }
 
+const COVER_SIZES: { id: CoverStyle["size"]; label: string }[] = [
+  { id: "small", label: "Chico" },
+  { id: "medium", label: "Mediano" },
+  { id: "large", label: "Grande" },
+];
+
 function CoverControls({ draft, coverImage, onChange, onCoverFile, onRemoveCover }: { draft: LandingDraft; coverImage: string; onChange: (p: Partial<LandingDraft>) => void; onCoverFile: (f?: File) => void; onRemoveCover: () => void }) {
-  const updateCover = (patch: Partial<CoverStyle>) => onChange({ coverStyle: { ...draft.coverStyle, ...patch } });
+  const style = draft.coverStyle;
+  const updateCover = (patch: Partial<CoverStyle>) => onChange({ coverStyle: { ...style, ...patch } });
+  const canPan = style.zoom > 1;
   return <div className="v2-fields">
     <p className="v2-help">Una imagen detrás de tu logo, nombre y descripción, hasta el comienzo de los botones. Se adapta sola sin mover tu contenido.</p>
     <label className="v2-upload">{coverImage ? "Cambiar portada" : "Subir portada"}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => { onCoverFile(event.target.files?.[0]); event.target.value = ""; }} /></label>
     {coverImage && <>
-      <Choice active={draft.coverStyle.enabled} title="Mostrar portada" note="Podés ocultarla sin borrar la imagen." onClick={() => updateCover({ enabled: !draft.coverStyle.enabled })} />
-      <p className="v2-help">El encuadre se ajusta para cubrir el encabezado. Si necesitás destacar otra parte de la foto, podés moverla.</p>
-      <Range label="Protección del texto" min={0} max={.85} step={.01} value={draft.coverStyle.overlay} onChange={(overlay) => updateCover({ overlay })} />
+      <Choice active={style.enabled} title="Mostrar portada" note="Podés ocultarla sin borrar la imagen." onClick={() => updateCover({ enabled: !style.enabled })} />
+      <fieldset>
+        <legend>Tamaño</legend>
+        <div className="v2-segment">{COVER_SIZES.map((option) => <button type="button" key={option.id} className={style.size === option.id ? "active" : ""} onClick={() => updateCover({ size: option.id })}>{option.label}</button>)}</div>
+        <p className="v2-help" style={{ margin: "8px 0 0" }}>"Mediano" es el ajuste por defecto. "Grande" llega hasta más abajo, cerca del segundo botón.</p>
+      </fieldset>
       <details className="v2-cover-adjustments"><summary>Ajustar encuadre y difuminado</summary><div className="v2-fields">
-        <Range label="Acercar" min={1} max={2.5} step={.01} value={draft.coverStyle.zoom} onChange={(zoom) => updateCover({ zoom })} />
-        <Range label="Mover horizontal" min={0} max={100} value={draft.coverStyle.x} onChange={(x) => updateCover({ x })} />
-        <Range label="Mover vertical" min={0} max={100} value={draft.coverStyle.y} onChange={(y) => updateCover({ y })} />
-        <Range label="Difuminado" min={10} max={90} value={draft.coverStyle.fade} onChange={(fade) => updateCover({ fade })} />
-        <button type="button" className="v2-ghost" onClick={() => onChange({ coverStyle: parseCoverStyle({ enabled: draft.coverStyle.enabled }) })}>Restablecer ajuste automático</button>
+        <Range label="Acercar" min={1} max={2.5} step={.01} value={style.zoom} onChange={(zoom) => updateCover({ zoom })} />
+        {canPan ? <>
+          <Range label="Mover horizontal" min={0} max={100} value={style.x} onChange={(x) => updateCover({ x })} />
+          <Range label="Mover vertical" min={0} max={100} value={style.y} onChange={(y) => updateCover({ y })} />
+        </> : <p className="v2-help" style={{ margin: 0 }}>Subí el acercamiento para poder mover la foto dentro del marco.</p>}
+        <Range label="Difuminado" min={10} max={90} value={style.fade} onChange={(fade) => updateCover({ fade })} />
+        <p className="v2-help" style={{ margin: "-6px 0 0" }}>Dónde empieza a desvanecerse la foto hacia el fondo, cerca de los botones.</p>
+        <Range label="Oscurecer la foto" min={0} max={.85} step={.01} value={style.overlay} onChange={(overlay) => updateCover({ overlay })} />
+        <p className="v2-help" style={{ margin: "-6px 0 0" }}>Un velo parejo sobre toda la foto, para que el logo y el título se lean mejor.</p>
+        <button type="button" className="v2-ghost" onClick={() => onChange({ coverStyle: parseCoverStyle({ enabled: style.enabled, size: style.size }) })}>Restablecer ajuste automático</button>
       </div></details>
       <button type="button" className="v2-delete" onClick={onRemoveCover}>Quitar portada</button>
     </>}

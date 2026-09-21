@@ -1587,9 +1587,13 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
 @media (max-width: 560px) { .global-nav-user { display: none; } }
 
 
-/* The cover follows content height and never participates in its layout. */
+/* Height comes from --cover-h (set inline, computed in JS from which elements EXIST — logo,
+   eyebrow, description — never from their font size). Deliberately not measured off the
+   identity block's own rendered height: that made the photo visibly resize on every keystroke
+   while adjusting the title's font size, which read as broken. The photo and the type scale
+   need to stay fully independent of each other. */
 .landing-header-region { position: relative; display: flow-root; isolation: isolate; }
-.landing-cover-bg { position: absolute; z-index: -1; top: calc(-1 * var(--space-8)); bottom: -14px; left: 50%; width: calc(100cqw + 2 * var(--space-4)); transform: translateX(-50%); overflow: hidden; pointer-events: none; }
+.landing-cover-bg { position: absolute; z-index: -1; top: calc(-1 * var(--space-8)); left: 50%; width: calc(100cqw + 2 * var(--space-4)); height: calc(var(--cover-h, 220px) + var(--space-8)); transform: translateX(-50%); overflow: hidden; pointer-events: none; }
 .landing-cover-photo { position: absolute; inset: 0; background-size: cover; background-repeat: no-repeat; }
 .landing-cover-veil { position: absolute; inset: 0; }
 

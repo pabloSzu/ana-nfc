@@ -2,7 +2,7 @@ import { FiTrash2 } from "react-icons/fi";
 import BioNFCLogo from "@/components/bionfc-logo";
 import {
   QUICK_SOCIALS, quickSocialHref, buildActionLink, buttonZoneShadow, resolveBackgroundTint, contrastTextColor,
-  parseTitleStyle, parseSubtitleStyle, parseLogoStyle, parseBackgroundPosition, parseButtonZone, parseCoverStyle, hexToRgba, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize,
+  parseTitleStyle, parseSubtitleStyle, parseLogoStyle, parseBackgroundPosition, parseButtonZone, parseCoverStyle, COVER_SIZE_EXTRA, hexToRgba, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize,
 } from "@/lib/landing-catalog";
 import { getFontFamily, resolveTextFont, FontLinks, ALL_FONT_IDS } from "@/lib/fonts";
 import { buttonCollectionStyle, buttonCollectionWidth, buttonIconStyle, hasAuthenticLook, resolveButtonColors } from "@/lib/design-presets";
@@ -77,6 +77,12 @@ export type LandingEditControls = {
 
 const noBlank = new Set(["whatsapp", "email", "phone"]);
 
+// `fade` (10–90) is "how much of the cover's own height, counting from the bottom, the fade
+// covers" — 0% = crisp hard edge, 100% = fades starting right from the top.
+function coverFadeGradient(fade: number): string {
+  return `linear-gradient(#000 ${100 - fade}%, transparent 100%)`;
+}
+
 function actionHref(action: LandingAction) {
   if (action.type === "whatsapp") {
     const phone = (action.url || "").replace(/\D/g, "");
@@ -135,6 +141,12 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
         : { backgroundColor: landing.background_color || "#f7f5f0", backgroundImage: "none" };
 
   const showDescription = Boolean(landing.description) || Boolean(edit);
+  // How tall the cover photo needs to be to reach down to the button zone — driven by which
+  // elements EXIST (logo, eyebrow, description), never by their typography (size/weight/font).
+  // A version of this keyed off the identity block's own measured/rendered height used to make
+  // the photo visibly resize every time someone dragged the title-size slider, which read as
+  // broken — the photo and the type scale need to be fully independent of each other.
+  const coverReserve = logo.size + 18 + (title.eyebrow ? 28 : 0) + 54 + (Boolean(landing.description) ? 58 : 14) + COVER_SIZE_EXTRA[cover.size];
   const heading = (
     <h1
       className={edit ? "editor-hit" : undefined}
@@ -172,9 +184,9 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
         </>
       )}
       <div className={`public-inner layout-${zone.layout}`} style={{ position: "relative", zIndex: 2 }}>
-        <div className="landing-header-region">
+        <div className="landing-header-region" style={showCover ? ({ "--cover-h": `${coverReserve}px` } as CSSProperties) : undefined}>
         {showCover && (
-          <div className="landing-cover-bg" aria-hidden="true" style={{ maskImage: `linear-gradient(#000 ${100 - cover.fade}%, transparent 100%)` }}>
+          <div className="landing-cover-bg" aria-hidden="true" style={{ maskImage: coverFadeGradient(cover.fade) }}>
             <div className="landing-cover-photo" style={{ backgroundImage: `url(${JSON.stringify(landing.cover_image_url)})`, backgroundPosition: `${cover.x}% ${cover.y}%`, transform: `scale(${cover.zoom})`, transformOrigin: `${cover.x}% ${cover.y}%` }} />
             <div className="landing-cover-veil" style={{ background: hexToRgba(contrastTextColor(title.color), cover.overlay) }} />
           </div>

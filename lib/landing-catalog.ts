@@ -312,14 +312,20 @@ export function logoBorderRadius(shape: LogoStyle["shape"], size: number): strin
 }
 
 // Decorative header layer: independent of the page background and content layout.
-export type CoverStyle = { enabled: boolean; zoom: number; x: number; y: number; fade: number; overlay: number };
-const DEFAULT_COVER_STYLE: CoverStyle = { enabled: false, zoom: 1, x: 50, y: 50, fade: 55, overlay: .35 };
+export type CoverStyle = { enabled: boolean; size: "small" | "medium" | "large"; zoom: number; x: number; y: number; fade: number; overlay: number };
+const DEFAULT_COVER_STYLE: CoverStyle = { enabled: false, size: "medium", zoom: 1, x: 50, y: 50, fade: 55, overlay: .35 };
+
+// How much extra height (px, on top of the logo+text reserve computed in landing-renderer.tsx)
+// each size adds — "large" is tuned to comfortably reach past a second button.
+export const COVER_SIZE_EXTRA: Record<CoverStyle["size"], number> = { small: -40, medium: 0, large: 110 };
 
 export function parseCoverStyle(raw: unknown): CoverStyle {
   const parsed = hasKeys(raw) ? raw as Partial<CoverStyle> : {};
   const clamp = (value: unknown, min: number, max: number, fallback: number) => typeof value === "number" && Number.isFinite(value) ? Math.min(max, Math.max(min, value)) : fallback;
+  const sizes: CoverStyle["size"][] = ["small", "medium", "large"];
   return {
     enabled: parsed.enabled === true,
+    size: sizes.includes(parsed.size as CoverStyle["size"]) ? (parsed.size as CoverStyle["size"]) : DEFAULT_COVER_STYLE.size,
     zoom: clamp(parsed.zoom, 1, 2.5, DEFAULT_COVER_STYLE.zoom),
     x: clamp(parsed.x, 0, 100, DEFAULT_COVER_STYLE.x),
     y: clamp(parsed.y, 0, 100, DEFAULT_COVER_STYLE.y),
