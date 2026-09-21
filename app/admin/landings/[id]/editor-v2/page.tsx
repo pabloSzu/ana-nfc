@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
-import { parseBackgroundPosition, parseButtonZone, parseLogoStyle, parseSubtitleStyle, parseTitleStyle } from "@/lib/landing-catalog";
+import { parseBackgroundPosition, parseButtonZone, parseCoverStyle, parseLogoStyle, parseSubtitleStyle, parseTitleStyle } from "@/lib/landing-catalog";
 import { saveDesignStyle } from "./actions";
 import { publish, deleteLanding } from "@/app/admin/actions";
 import EditorV2 from "./editor-v2";
@@ -33,6 +33,7 @@ export default async function EditorV2Page({ params }: { params: Promise<{ id: s
         subtitleStyle: parseSubtitleStyle(landing),
         logoStyle: parseLogoStyle(landing.logo_style),
         bgPosition: parseBackgroundPosition(landing.background_style),
+        coverStyle: parseCoverStyle(landing.cover_style),
       }}
       initialButtons={(actions || []).map((action) => ({
         id: action.id, type: action.type, title: action.title || "", subtitle: action.subtitle || "",

@@ -1,6 +1,6 @@
 import {
-  buildActionLink, buttonZoneShadow, resolveBackgroundTint,
-  parseTitleStyle, parseSubtitleStyle, parseLogoStyle, parseBackgroundPosition, parseButtonZone, hexToRgba, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize,
+  buildActionLink, buttonZoneShadow, resolveBackgroundTint, contrastTextColor,
+  parseTitleStyle, parseSubtitleStyle, parseLogoStyle, parseBackgroundPosition, parseButtonZone, parseCoverStyle, hexToRgba, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize,
 } from "@/lib/landing-catalog";
 import { getFontFamily, resolveTextFont, FontLinks, ALL_FONT_IDS } from "@/lib/fonts";
 import { buttonCollectionStyle, buttonCollectionWidth, buttonIconStyle, hasAuthenticLook, resolveButtonColors } from "@/lib/design-presets";
@@ -41,12 +41,14 @@ type Landing = {
   subtitle_style?: unknown;
   logo_style?: unknown;
   background_style?: unknown;
+  cover_image_url?: string | null;
+  cover_style?: unknown;
 };
 
 // What's "selected" right now, for the highlight outline — mirrors editor-v2's own Panel
 // type structurally (kept independent here, not imported, to avoid a circular dependency
 // between the admin editor and this shared public-facing component).
-export type LandingEditSelection = "templates" | "buttons" | "background" | "settings" | "title" | "subtitle" | "logo" | "add" | { buttonId: string } | null;
+export type LandingEditSelection = "templates" | "buttons" | "background" | "cover" | "settings" | "title" | "subtitle" | "logo" | "add" | { buttonId: string } | null;
 
 // Everything the editor needs to turn this same real render into a live, click-to-edit
 // canvas — no separate mock. Every hook here only ever *adds* non-layout-affecting behavior
@@ -60,6 +62,7 @@ export type LandingEditControls = {
   onSelectTitle: () => void;
   onSelectSubtitle: () => void;
   onSelectBackground: () => void;
+  onSelectCover: () => void;
   onSelectZone: () => void;
   onSelectButton: (id: string) => void;
   onAddButton: () => void;
@@ -85,6 +88,8 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
   const subtitle = parseSubtitleStyle(landing);
   const logo = parseLogoStyle(landing.logo_style);
   const bgPos = parseBackgroundPosition(landing.background_style);
+  const cover = parseCoverStyle(landing.cover_style);
+  const showCover = Boolean(cover.enabled && landing.cover_image_url);
   const zone = parseButtonZone(landing.button_style);
   const iconAppearance = zone.iconAppearance;
   const hasSavedButtonStyle = Boolean(landing.button_style && typeof landing.button_style === "object" && Object.keys(landing.button_style).length);
@@ -155,11 +160,19 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
           <button type="button" className="editor-bg-hit" onClick={edit.onSelectBackground} aria-label="Editar fondo" />
           <div className="editor-quick-tools">
             <button type="button" className={edit.selected === "templates" ? "active" : ""} onClick={edit.onSelectTemplates}>✦ Plantillas</button>
+            <button type="button" className={edit.selected === "cover" ? "active" : ""} onClick={edit.onSelectCover}><IconImage /> Portada</button>
             <button type="button" className={edit.selected === "background" ? "active" : ""} onClick={edit.onSelectBackground}><IconImage /> Fondo</button>
           </div>
         </>
       )}
       <div className={`public-inner layout-${zone.layout}`} style={{ position: "relative", zIndex: 2 }}>
+        <div className="landing-header-region">
+        {showCover && (
+          <div className="landing-cover-bg" aria-hidden="true" style={{ maskImage: `linear-gradient(#000 ${100 - cover.fade}%, transparent 100%)` }}>
+            <div className="landing-cover-photo" style={{ backgroundImage: `url(${JSON.stringify(landing.cover_image_url)})`, backgroundPosition: `${cover.x}% ${cover.y}%`, transform: `scale(${cover.zoom})`, transformOrigin: `${cover.x}% ${cover.y}%` }} />
+            <div className="landing-cover-veil" style={{ background: hexToRgba(contrastTextColor(title.color), cover.overlay) }} />
+          </div>
+        )}
         <div className="landing-identity-block">
         <div
           className={edit ? "avatar editor-hit" : "avatar"}
@@ -177,7 +190,8 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
         <br />
         {description}
         </div>
-        <div className={`public-actions${edit?.selected === "buttons" ? " editor-zone-selected" : ""}`} style={{ position: edit ? "relative" : undefined, marginTop: edit ? 44 : 10, display: "flex", flexDirection: "column", gap: zone.gap }}>
+        </div>
+        <div className={`public-actions${edit?.selected === "buttons" ? " editor-zone-selected" : ""}`} style={{ position: "relative", marginTop: edit ? 44 : 10, display: "flex", flexDirection: "column", gap: zone.gap }}>
           {edit && <button type="button" className="editor-zone-tag" onClick={edit.onSelectZone}>✦ Editar todos los botones</button>}
           {actions.map((action, index) => {
             const { background: bg, text, isAuthentic, useNetworkAccent } = resolveButtonColors({

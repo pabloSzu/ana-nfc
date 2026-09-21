@@ -78,6 +78,19 @@ export async function saveDesignStyle(fd: FormData) {
   } else if (fd.get("remove_logo_image") === "true") {
     logoImageUrl = "";
   }
+  const coverFile = fd.get("cover_image");
+  let coverImageUrl: string | undefined;
+  if (coverFile instanceof File && coverFile.size > 0) {
+    if (coverFile.size > 5 * 1024 * 1024) saveFail("La foto de portada no puede superar 5 MB.");
+    if (!["image/jpeg", "image/png", "image/webp"].includes(coverFile.type)) saveFail("La foto de portada debe ser JPG, PNG o WEBP.");
+    const extension = coverFile.type.split("/")[1].replace("jpeg", "jpg");
+    const path = `${user.id}/${landingId}/cover-${Date.now()}.${extension}`;
+    const { error: uploadError } = await supabase.storage.from("landing-assets").upload(path, coverFile, { contentType: coverFile.type, upsert: false });
+    if (uploadError) saveFail(uploadError.message);
+    coverImageUrl = supabase.storage.from("landing-assets").getPublicUrl(path).data.publicUrl;
+  } else if (fd.get("remove_cover_image") === "true") {
+    coverImageUrl = "";
+  }
   const landingUpdate: Record<string, unknown> = {
     business_name: businessName,
     description: String(fd.get("description") || "").trim(),
@@ -95,9 +108,11 @@ export async function saveDesignStyle(fd: FormData) {
     subtitle_style: parseJson(fd.get("subtitle_style")),
     logo_style: parseJson(fd.get("logo_style")),
     background_style: parseJson(fd.get("background_style")),
+    cover_style: parseJson(fd.get("cover_style")),
   };
   if (backgroundImageUrl !== undefined) landingUpdate.background_image_url = backgroundImageUrl;
   if (logoImageUrl !== undefined) landingUpdate.logo_url = logoImageUrl;
+  if (coverImageUrl !== undefined) landingUpdate.cover_image_url = coverImageUrl;
   const { error } = await supabase.from("landings").update(landingUpdate).eq("id", landingId).eq("owner_id", user.id);
   if (error) saveFail(error.message);
 

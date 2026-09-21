@@ -267,6 +267,25 @@ export function logoBorderRadius(shape: LogoStyle["shape"], size: number): strin
   return shape === "round" ? "50%" : Math.max(12, Math.round(size * 0.22));
 }
 
+// Decorative header layer: independent of the page background and content layout.
+export type CoverStyle = { enabled: boolean; zoom: number; x: number; y: number; fade: number; overlay: number };
+const DEFAULT_COVER_STYLE: CoverStyle = { enabled: false, zoom: 1, x: 50, y: 50, fade: 55, overlay: .35 };
+
+export function parseCoverStyle(raw: unknown): CoverStyle {
+  const parsed = hasKeys(raw) ? raw as Partial<CoverStyle> : {};
+  const clamp = (value: unknown, min: number, max: number, fallback: number) => typeof value === "number" && Number.isFinite(value) ? Math.min(max, Math.max(min, value)) : fallback;
+  return {
+    enabled: parsed.enabled === true,
+    zoom: clamp(parsed.zoom, 1, 2.5, DEFAULT_COVER_STYLE.zoom),
+    x: clamp(parsed.x, 0, 100, DEFAULT_COVER_STYLE.x),
+    y: clamp(parsed.y, 0, 100, DEFAULT_COVER_STYLE.y),
+    // How much of the photo's own height (from the bottom) the fade-to-background covers —
+    // 0 = crisp hard edge, 100 = fades starting right from the top.
+    fade: clamp(parsed.fade, 10, 90, DEFAULT_COVER_STYLE.fade),
+    overlay: clamp(parsed.overlay, 0, .85, DEFAULT_COVER_STYLE.overlay),
+  };
+}
+
 export function parseBackgroundPosition(raw: unknown): BackgroundPosition {
   const parsed = hasKeys(raw) ? raw as Partial<BackgroundPosition> : {};
   const clamp = (value: unknown, min: number, max: number, fallback: number) => typeof value === "number" && Number.isFinite(value) ? Math.min(max, Math.max(min, value)) : fallback;

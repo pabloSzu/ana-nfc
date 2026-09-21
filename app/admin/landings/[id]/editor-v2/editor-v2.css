@@ -103,3 +103,7 @@
 .v2-choice .v2-choice-preview{display:flex;gap:6px;align-items:center;margin-left:auto;flex:0 0 auto}
 .v2-choice-preview-chip{display:inline-grid;place-items:center;flex:0 0 auto}
 
+
+.v2-cover-adjustments { border: 1px solid #dedbea; border-radius: 12px; padding: 14px; }
+.v2-cover-adjustments summary { cursor: pointer; font-size: 13px; font-weight: 700; color: #504366; }
+.v2-cover-adjustments[open] summary { margin-bottom: 20px; }

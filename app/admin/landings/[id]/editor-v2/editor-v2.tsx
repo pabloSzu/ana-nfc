@@ -9,7 +9,7 @@ import DeleteLandingButton from "@/app/admin/delete-landing-button";
 import LandingRenderer, { type LandingEditControls } from "@/components/landing-renderer";
 import ScaledPhoneCanvas from "@/components/scaled-phone-canvas";
 import { compressImage } from "@/lib/compress-image";
-import { AUTO_COLORS, contrastTextColor, getAllActions, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize, type BackgroundPosition, type ButtonZoneStyle, type LogoStyle, type SubtitleStyle, type TitleStyle } from "@/lib/landing-catalog";
+import { AUTO_COLORS, contrastTextColor, getAllActions, parseCoverStyle, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize, type BackgroundPosition, type ButtonZoneStyle, type CoverStyle, type LogoStyle, type SubtitleStyle, type TitleStyle } from "@/lib/landing-catalog";
 import FontPicker from "../font-picker";
 import IconPicker from "../icon-picker";
 import { DESIGN_PRESETS_V2, buttonCollectionStyle, buttonIconStyle, hasAuthenticLook, recommendedIconAppearance, resolveButtonColors, type DesignPreset } from "@/lib/design-presets";
@@ -21,8 +21,10 @@ type LandingDraft = {
   background_color?: string | null; background_type?: string | null; background_gradient_to?: string | null; background_image_url?: string | null;
   text_color?: string | null; text_panel?: boolean | null; text_panel_color?: string | null; font_pair?: string | null; button_font?: string | null;
   published?: boolean | null; buttonZone: ButtonZoneStyle; titleStyle: TitleStyle; subtitleStyle: SubtitleStyle; logoStyle: LogoStyle; bgPosition: BackgroundPosition;
+  cover_image_url?: string | null; coverStyle: CoverStyle;
 };
-type Panel = "templates" | "buttons" | "background" | "settings" | "title" | "subtitle" | "logo" | "add" | { buttonId: string } | null;
+type Panel = "templates" | "buttons" | "background" | "cover" | "settings" | "title" | "subtitle" | "logo" | "add" | { buttonId: string } | null;
+type BackgroundTab = "color" | "gradient" | "image";
 type DeviceMode = "small" | "standard" | "large";
 type SaveAction = (formData: FormData) => void | Promise<void>;
 
@@ -64,6 +66,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
   const [draft, setDraft] = useState(landing);
   const [buttons, setButtons] = useState(initialButtons);
   const [panel, setPanel] = useState<Panel>("templates");
+  const [bgTab, setBgTab] = useState<BackgroundTab>("color");
   const [preview, setPreview] = useState(false);
   const [device, setDevice] = useState<DeviceMode>("standard");
   const [dirty, setDirty] = useState(false);
@@ -77,6 +80,8 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
   const [bgPreview, setBgPreview] = useState<string | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoRemoved, setLogoRemoved] = useState(false);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [coverRemoved, setCoverRemoved] = useState(false);
   const activeButton = typeof panel === "object" && panel ? buttons.find((button) => button.id === panel.buttonId) : null;
   const actionDefs = useMemo(() => getAllActions(), []);
   const draggedButton = useRef<string | null>(null);
@@ -391,17 +396,30 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
     setLogoPreview(URL.createObjectURL(compressed)); setLogoRemoved(false); setDirty(true);
   }
 
+  async function onCoverFile(file?: File) {
+    if (!file) return;
+    const compressed = await compressImage(file, 1600);
+    const input = document.getElementById("v2-cover-file") as HTMLInputElement | null;
+    if (input) { const transfer = new DataTransfer(); transfer.items.add(compressed); input.files = transfer.files; }
+    if (coverPreview) URL.revokeObjectURL(coverPreview);
+    setCoverPreview(URL.createObjectURL(compressed)); setCoverRemoved(false);
+    change({ coverStyle: parseCoverStyle({ enabled: true }) });
+  }
+
   const backgroundImage = bgPreview || draft.background_image_url || "";
   const logoImage = logoPreview || (!logoRemoved ? draft.logo_url || "" : "");
+  const coverImage = coverPreview || (!coverRemoved ? draft.cover_image_url || "" : "");
   const rendererLanding = {
     ...draft,
     logo_url: logoImage,
     background_image_url: backgroundImage,
+    cover_image_url: coverImage,
     button_style: draft.buttonZone,
     title_style: draft.titleStyle,
     subtitle_style: draft.subtitleStyle,
     logo_style: draft.logoStyle,
     background_style: draft.bgPosition,
+    cover_style: draft.coverStyle,
   };
   // Wires the editor's own state (selection, drag) into LandingRenderer's `edit` prop — the
   // canvas below is the same component the public page uses, not a parallel re-implementation,
@@ -413,7 +431,8 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
     onSelectLogo: () => setPanel("logo"),
     onSelectTitle: () => setPanel("title"),
     onSelectSubtitle: () => setPanel("subtitle"),
-    onSelectBackground: () => setPanel("background"),
+    onSelectBackground: () => { setBgTab(draft.background_type === "image" ? "image" : draft.background_type === "gradient" ? "gradient" : "color"); setPanel("background"); },
+    onSelectCover: () => setPanel("cover"),
     onSelectZone: () => setPanel("buttons"),
     onSelectButton: (id) => setPanel({ buttonId: id }),
     onAddButton: () => setPanel("add"),
@@ -433,9 +452,12 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
         <input type="hidden" name="button_style" value={JSON.stringify(draft.buttonZone)} /><input type="hidden" name="title_style" value={JSON.stringify(draft.titleStyle)} />
         <input type="hidden" name="subtitle_style" value={JSON.stringify(draft.subtitleStyle)} /><input type="hidden" name="logo_style" value={JSON.stringify(draft.logoStyle)} />
         <input type="hidden" name="background_style" value={JSON.stringify(draft.bgPosition)} /><input type="hidden" name="buttons" value={JSON.stringify(buttons)} />
+        <input type="hidden" name="cover_style" value={JSON.stringify(draft.coverStyle)} />
         <input id="v2-background-file" hidden type="file" name="background_image" accept="image/png,image/jpeg,image/webp" />
         <input id="v2-logo-file" hidden type="file" name="logo_image" accept="image/png,image/jpeg,image/webp" />
+        <input id="v2-cover-file" hidden type="file" name="cover_image" accept="image/png,image/jpeg,image/webp" />
         <input type="hidden" name="remove_logo_image" value={String(logoRemoved)} />
+        <input type="hidden" name="remove_cover_image" value={String(coverRemoved)} />
       </form>
 
       <header className="v2-topbar">
@@ -459,7 +481,14 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
           </div>
           {panel === "templates" && <Templates selected={draft.buttonZone.templateId} onApply={applyPreset} />}
           {panel === "buttons" && <ButtonDesign draft={draft} buttons={buttons} onZone={changeZone} onFont={(button_font) => change({ button_font })} onApplyButtonLook={applyButtonLook} onResetButtonColors={resetButtonColors} />}
-          {panel === "background" && <BackgroundControls draft={draft} onChange={change} onFile={onBackgroundFile} />}
+          {panel === "background" && <BackgroundControls draft={draft} tab={bgTab} onTab={setBgTab} onChange={change} onFile={onBackgroundFile} />}
+          {panel === "cover" && <CoverControls draft={draft} coverImage={coverImage} onChange={change} onCoverFile={onCoverFile} onRemoveCover={() => {
+            const input = document.getElementById("v2-cover-file") as HTMLInputElement | null;
+            if (input) input.value = "";
+            if (coverPreview) URL.revokeObjectURL(coverPreview);
+            setCoverPreview(null); setCoverRemoved(true);
+            change({ coverStyle: { ...draft.coverStyle, enabled: false } });
+          }} />}
           {panel === "settings" && <SettingsControls draft={draft} publishAction={publishAction} deleteLandingAction={deleteLandingAction} />}
           {panel === "title" && <TitleControls draft={draft} onChange={change} />}
           {panel === "subtitle" && <SubtitleControls draft={draft} onChange={change} />}
@@ -486,7 +515,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
   );
 }
 
-function panelTitle(panel: Exclude<Panel, null>) { if (typeof panel === "object") return "Editar botón"; return ({ templates: "Elegí una plantilla", buttons: "Editar todos los botones", background: "Editar fondo", settings: "Ajustes de la landing", title: "Editar título", subtitle: "Editar subtítulo", logo: "Editar logo", add: "Agregar un botón" } as const)[panel]; }
+function panelTitle(panel: Exclude<Panel, null>) { if (typeof panel === "object") return "Editar botón"; return ({ templates: "Elegí una plantilla", buttons: "Editar todos los botones", background: "Fondo de la página", cover: "Portada", settings: "Ajustes de la landing", title: "Editar título", subtitle: "Editar subtítulo", logo: "Editar logo", add: "Agregar un botón" } as const)[panel]; }
 
 function TemplateSwatch({ preset }: { preset: DesignPreset }) {
   const iconAppearance = recommendedIconAppearance(preset.buttonZone.collection);
@@ -660,7 +689,53 @@ function ButtonDesign({ draft, buttons, onZone, onFont, onApplyButtonLook, onRes
   );
 }
 
-function BackgroundControls({ draft, onChange, onFile }: { draft: LandingDraft; onChange: (p: Partial<LandingDraft>) => void; onFile: (f?: File) => void }) { const updatePos=(p:Partial<BackgroundPosition>)=>onChange({bgPosition:{...draft.bgPosition,...p}}); return <div className="v2-fields"><div className="v2-segment"><button className={draft.background_type === "color" ? "active" : ""} onClick={() => onChange({background_type:"color"})}>Color</button><button className={draft.background_type === "gradient" ? "active" : ""} onClick={() => onChange({background_type:"gradient"})}>Degradado</button><button className={draft.background_type === "image" ? "active" : ""} onClick={() => onChange({background_type:"image"})}>Imagen</button></div>{draft.background_type !== "image" && <><ColorField label="Color principal" value={draft.background_color || "#f7f5f0"} onChange={(background_color)=>onChange({background_color})}/>{draft.background_type === "gradient" && <ColorField label="Segundo color" value={draft.background_gradient_to || "#a6c1ee"} onChange={(background_gradient_to)=>onChange({background_gradient_to})}/>}</>}{draft.background_type === "image" && <><label className="v2-upload">Cambiar imagen<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event)=>onFile(event.target.files?.[0])}/></label><p className="v2-help">Ajustala mirando el celular: nunca se guarda el recorte original.</p><Range label="Oscurecer imagen" min={0} max={.85} step={.01} value={draft.bgPosition.tint} onChange={(tint)=>updatePos({tint})}/><Range label="Acercar" min={1} max={2.2} step={.01} value={draft.bgPosition.zoom} onChange={(zoom)=>updatePos({zoom})}/><Range label="Mover horizontal" min={0} max={100} value={draft.bgPosition.x} onChange={(x)=>updatePos({x})}/><Range label="Mover vertical" min={0} max={100} value={draft.bgPosition.y} onChange={(y)=>updatePos({y})}/></>}</div>; }
+function BackgroundControls({ draft, tab, onTab, onChange, onFile }: { draft: LandingDraft; tab: BackgroundTab; onTab: (t: BackgroundTab) => void; onChange: (p: Partial<LandingDraft>) => void; onFile: (f?: File) => void }) {
+  const updatePos = (p: Partial<BackgroundPosition>) => onChange({ bgPosition: { ...draft.bgPosition, ...p } });
+  const selectTab = (next: BackgroundTab) => { onTab(next); onChange({ background_type: next }); };
+  return <div className="v2-fields">
+    <div className="v2-segment">
+      <button className={tab === "color" ? "active" : ""} onClick={() => selectTab("color")}>Color</button>
+      <button className={tab === "gradient" ? "active" : ""} onClick={() => selectTab("gradient")}>Degradado</button>
+      <button className={tab === "image" ? "active" : ""} onClick={() => selectTab("image")}>Imagen</button>
+    </div>
+
+    {tab !== "image" && <>
+      <ColorField label="Color principal" value={draft.background_color || "#f7f5f0"} onChange={(background_color) => onChange({ background_color })} />
+      {tab === "gradient" && <ColorField label="Segundo color" value={draft.background_gradient_to || "#a6c1ee"} onChange={(background_gradient_to) => onChange({ background_gradient_to })} />}
+    </>}
+
+    {tab === "image" && <>
+      <label className="v2-upload">Cambiar imagen<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => onFile(event.target.files?.[0])} /></label>
+      <p className="v2-help">Ajustala mirando el celular: nunca se guarda el recorte original.</p>
+      <Range label="Oscurecer imagen" min={0} max={.85} step={.01} value={draft.bgPosition.tint} onChange={(tint) => updatePos({ tint })} />
+      <Range label="Acercar" min={1} max={2.2} step={.01} value={draft.bgPosition.zoom} onChange={(zoom) => updatePos({ zoom })} />
+      <Range label="Mover horizontal" min={0} max={100} value={draft.bgPosition.x} onChange={(x) => updatePos({ x })} />
+      <Range label="Mover vertical" min={0} max={100} value={draft.bgPosition.y} onChange={(y) => updatePos({ y })} />
+    </>}
+
+  </div>;
+}
+
+function CoverControls({ draft, coverImage, onChange, onCoverFile, onRemoveCover }: { draft: LandingDraft; coverImage: string; onChange: (p: Partial<LandingDraft>) => void; onCoverFile: (f?: File) => void; onRemoveCover: () => void }) {
+  const updateCover = (patch: Partial<CoverStyle>) => onChange({ coverStyle: { ...draft.coverStyle, ...patch } });
+  return <div className="v2-fields">
+    <p className="v2-help">Una imagen detrás de tu logo, nombre y descripción, hasta el comienzo de los botones. Se adapta sola sin mover tu contenido.</p>
+    <label className="v2-upload">{coverImage ? "Cambiar portada" : "Subir portada"}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => { onCoverFile(event.target.files?.[0]); event.target.value = ""; }} /></label>
+    {coverImage && <>
+      <Choice active={draft.coverStyle.enabled} title="Mostrar portada" note="Podés ocultarla sin borrar la imagen." onClick={() => updateCover({ enabled: !draft.coverStyle.enabled })} />
+      <p className="v2-help">El encuadre se ajusta para cubrir el encabezado. Si necesitás destacar otra parte de la foto, podés moverla.</p>
+      <Range label="Protección del texto" min={0} max={.85} step={.01} value={draft.coverStyle.overlay} onChange={(overlay) => updateCover({ overlay })} />
+      <details className="v2-cover-adjustments"><summary>Ajustar encuadre y difuminado</summary><div className="v2-fields">
+        <Range label="Acercar" min={1} max={2.5} step={.01} value={draft.coverStyle.zoom} onChange={(zoom) => updateCover({ zoom })} />
+        <Range label="Mover horizontal" min={0} max={100} value={draft.coverStyle.x} onChange={(x) => updateCover({ x })} />
+        <Range label="Mover vertical" min={0} max={100} value={draft.coverStyle.y} onChange={(y) => updateCover({ y })} />
+        <Range label="Difuminado" min={10} max={90} value={draft.coverStyle.fade} onChange={(fade) => updateCover({ fade })} />
+        <button type="button" className="v2-ghost" onClick={() => onChange({ coverStyle: parseCoverStyle({ enabled: draft.coverStyle.enabled }) })}>Restablecer ajuste automático</button>
+      </div></details>
+      <button type="button" className="v2-delete" onClick={onRemoveCover}>Quitar portada</button>
+    </>}
+  </div>;
+}
 
 // The one panel that isn't a design control: publishing, sharing and deleting the landing
 // itself. Everything here posts straight to the same server actions the admin list uses

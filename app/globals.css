@@ -876,7 +876,8 @@ input[type="color"] { padding: 5px; height: 46px; cursor: pointer; }
 }
 
 /* ---------- Public landing ---------- */
-.public { min-height: 100vh; padding: var(--space-8) var(--space-4); background: var(--bg); }
+/* Container width keeps the full-bleed header identical in public and scaled previews. */
+.public { min-height: 100vh; padding: var(--space-8) var(--space-4); background: var(--bg); container-type: inline-size; }
 .public-inner { width: min(100%, 430px); margin: auto; text-align: center; }
 .public .landing-desc { max-width: 340px; margin: 0 auto var(--space-5); color: var(--text-muted); }
 .public .action { box-shadow: var(--shadow-sm); }
@@ -1585,3 +1586,9 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
 .global-nav-logout svg { width: 14px; height: 14px; }
 @media (max-width: 560px) { .global-nav-user { display: none; } }
 
+
+/* The cover follows content height and never participates in its layout. */
+.landing-header-region { position: relative; display: flow-root; isolation: isolate; }
+.landing-cover-bg { position: absolute; z-index: -1; top: calc(-1 * var(--space-8)); bottom: -14px; left: 50%; width: calc(100cqw + 2 * var(--space-4)); transform: translateX(-50%); overflow: hidden; pointer-events: none; }
+.landing-cover-photo { position: absolute; inset: 0; background-size: cover; background-repeat: no-repeat; }
+.landing-cover-veil { position: absolute; inset: 0; }
