@@ -123,3 +123,26 @@
   font-weight: 900;
 }
 .v2-logo-style-preview > i { width: 100%; height: 100%; display: block; background-repeat: no-repeat; }
+
+.v2-logo-edge-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+.v2-logo-edge-column { display: grid; gap: 8px; }
+/* Same footprint as .v2-mini-color (padding + label line + 42px swatch) so the "Suave" column's
+   note sits at the same height as the other column's color picker, keeping the ranges below
+   both columns aligned instead of the note-only column starting higher. */
+.v2-logo-edge-note { display: flex; align-items: center; min-height: 74px; margin: 0 !important; padding: 8px 12px; border: 1px solid #e2e3e9; border-radius: 11px; background: #fff; box-sizing: border-box; }
+@media (max-width: 380px) { .v2-logo-edge-columns { grid-template-columns: 1fr; } }
+
+/* Each step of the logo panel gets its own soft tint so it reads as a distinct card at a
+   glance, instead of one long scroll of identical white boxes — purely a visual grouping aid,
+   the numbered legends ("1 · Color de fondo", "2 · Forma del logo"...) carry the actual order. */
+.v2-fields fieldset.v2-logo-section-bg { background: #fdf6ec; border-color: #f0dfc0; }
+.v2-fields fieldset.v2-logo-section-shape { background: #eef5ff; border-color: #cfe0f7; }
+.v2-fields fieldset.v2-logo-section-edge { background: #f4eefc; border-color: #ddd0f2; }
+.v2-fields fieldset.v2-logo-section-initials { background: #eefcf3; border-color: #c9edd8; }
+.v2-fields fieldset.v2-logo-section-size { background: #fdeef2; border-color: #f3d3dd; }
+.v2-logo-section legend { padding: 2px 8px; border-radius: 999px; background: rgba(255, 255, 255, .65); }
+/* Options/inputs inside stay plain white so they still read clearly against the tinted card. */
+.v2-logo-section .v2-logo-shape-grid > button,
+.v2-logo-section .v2-choice,
+.v2-logo-section .v2-mini-color,
+.v2-logo-section .v2-color { background: #fff; }

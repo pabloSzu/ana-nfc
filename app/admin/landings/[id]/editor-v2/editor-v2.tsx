@@ -58,11 +58,11 @@ const LOGO_SHAPE_OPTIONS: { id: LogoStyle["shape"]; label: string }[] = [
 const LOGO_EDGE_OPTIONS: { id: LogoStyle["shadow"]; label: string; patch: Partial<LogoStyle> }[] = [
   { id: "none", label: "Ninguno", patch: { borderWidth: 0, shadow: "none" } },
   { id: "soft", label: "Suave", patch: { borderWidth: 3, shadow: "soft" } },
-  { id: "glow", label: "Glow", patch: { borderWidth: 5, shadow: "glow" } },
+  { id: "glow", label: "Glow", patch: { borderWidth: 5, borderColor: "#ffffff", shadowColor: "#ffffff", shadow: "glow" } },
   // Brutalista: solid border + a hard, unblurred offset shadow — same recipe the button zone
   // uses for collection: "brutal"/"retro" (lib/design-presets.ts), only down-and-right, never
   // a shadow all around.
-  { id: "hard", label: "Brutalista", patch: { borderWidth: 3, shadow: "hard" } },
+  { id: "hard", label: "Brutalista", patch: { borderWidth: 3, borderColor: "#0a0a0a", shadowColor: "#0a0a0a", shadow: "hard" } },
 ];
 type LogoTreatment = "template" | "clean" | "badge" | "card" | "highlight" | "brutal";
 
@@ -73,18 +73,23 @@ type LogoTreatment = "template" | "clean" | "badge" | "card" | "highlight" | "br
 // place sitting right above buttons with crisp black sticker-shadows.
 function logoTreatmentPatch(treatment: LogoTreatment, templateId = "minimal"): Partial<LogoStyle> {
   if (treatment === "template") {
-    const recommended: Record<string, Exclude<LogoTreatment, "template">> = { minimal: "clean", brutalism: "brutal", neobrutal: "brutal", glass: "badge", elegant: "badge", corporate: "card", vibrant: "highlight", natural: "badge", pastel: "badge", neon: "highlight", creator: "card" };
+    // "brutal" (solid offset shadow) moved off Brutalismo/Neobrutalismo — at the user's request,
+    // those two now get the plain "clean" look instead — onto Minimalismo and Firma de Marca,
+    // which didn't have a distinctive logo treatment of their own before.
+    const recommended: Record<string, Exclude<LogoTreatment, "template">> = { minimal: "brutal", brutalism: "clean", neobrutal: "clean", glass: "badge", elegant: "badge", corporate: "card", vibrant: "highlight", natural: "badge", pastel: "badge", neon: "highlight", creator: "card", "brand-signature": "brutal" };
     return { ...logoTreatmentPatch(recommended[templateId] || "badge", templateId), treatment: "template" };
   }
-  if (treatment === "clean") return { treatment, borderWidth: 0, shadow: "none", backgroundMode: "auto" };
+  // Neobrutalismo's own description promises "bordes marcados" — going fully borderless (like
+  // Brutalismo now does) undercuts that, so it keeps a plain border here with no shadow.
+  if (treatment === "clean") return { treatment, borderWidth: templateId === "neobrutal" ? 3 : 0, borderColor: "#191724", shadow: "none", backgroundMode: "auto" };
   if (treatment === "card") return { treatment, shape: "square", borderWidth: 2, borderColor: "#ffffff", shadow: "soft", backgroundMode: "auto" };
-  if (treatment === "highlight") return { treatment, shape: "round", borderWidth: 5, borderColor: "#ffffff", shadow: "glow", backgroundMode: "auto" };
+  if (treatment === "highlight") return { treatment, shape: "round", borderWidth: 5, borderColor: "#ffffff", shadowColor: "#ffffff", shadow: "glow", backgroundMode: "auto" };
   // backgroundMode stays "custom" + white here on purpose: both brutalism and neobrutal's
   // accent color is near-black (#0a0a0a / #1a1a1a), same as their border/shadow color — with
   // "auto" background (= primary color) the border and shadow silently blend into the fill,
   // and the only visible cue was the shadow's own offset. A fixed white plate is what the
   // border/shadow are meant to sit on, matching how a "brutal" sticker actually reads.
-  if (treatment === "brutal") return { treatment, shape: templateId === "neobrutal" ? "square" : "sharp", borderWidth: templateId === "neobrutal" ? 2 : 3, borderColor: templateId === "neobrutal" ? "#191724" : "#0a0a0a", shadow: "hard", backgroundMode: "custom", fallback: "#ffffff" };
+  if (treatment === "brutal") { const edge = templateId === "neobrutal" ? "#191724" : "#0a0a0a"; return { treatment, shape: templateId === "neobrutal" ? "square" : "sharp", borderWidth: templateId === "neobrutal" ? 2 : 3, borderColor: edge, shadowColor: edge, shadow: "hard", backgroundMode: "custom", fallback: "#ffffff" }; }
   // "badge" is the default look (glass/elegant/natural/pastel). Glassmorfismo's accent is pure
   // white — its buttons/page rely on a frosted-glass effect over a vivid background, not a
   // solid fill — so a white border on an auto (= white) background is the same "border blends
@@ -886,14 +891,20 @@ function LogoControls({ draft, logoImage, onChange, onLogo, onRemoveLogo }: { dr
   return <div className="v2-fields">
     <div className="v2-logo-editor"><div style={{ ...logoFrameStyle(style, primary), borderRadius: logoBorderRadius(style.shape, 76), fontSize: logoLetterSize(76, style.initials), fontFamily: resolveTextFont(draft.titleStyle.font) }}>{logoImage ? <span style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${style.zoom * 100}%`, backgroundPosition: `${style.x}% ${style.y}%` }} /> : logoInitials(draft.business_name, style.initials)}</div><span><label className="v2-upload">{logoImage ? "Cambiar imagen" : "Elegir imagen"}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => onLogo(event.target.files?.[0])} /></label>{logoImage && <button type="button" className="v2-delete" onClick={onRemoveLogo}>Quitar</button>}</span></div>
     <button type="button" className="v2-suggested v2-logo-recommended-button" onClick={() => onChange({ logoStyle: { ...style, ...logoTreatmentPatch("template", draft.buttonZone.templateId), ...preset.logo, zoom: 1, x: 50, y: 50 } })}>✦ Usar estilos recomendados ({preset.name})</button>
-    <fieldset>
-      <legend>Forma del logo</legend>
+    <fieldset className="v2-logo-section v2-logo-section-bg">
+      <legend>1 · Color de fondo</legend>
+      <p className="v2-help" style={{ margin: "0 0 4px" }}>Se ve detrás del círculo del logo (si no subiste foto, es el color de fondo de la inicial). Elegilo primero: la forma y el borde se juzgan mejor contra tu color real.</p>
+      <Choice active={style.backgroundMode === "auto"} swatch={primary} title="Automático" note="El color sugerido por tu plantilla." onClick={() => update({ backgroundMode: "auto" })} />
+      <Choice active={style.backgroundMode === "custom"} swatch={style.fallback} title="Personalizado" note="Elegí cualquier color para el fondo del logo." onClick={() => update({ backgroundMode: "custom" })} />
+      {style.backgroundMode === "custom" && <ColorField label="Color de fondo" value={style.fallback} onChange={(fallback) => update({ fallback })} />}
+    </fieldset>
+    <fieldset className="v2-logo-section v2-logo-section-shape">
+      <legend>2 · Forma del logo</legend>
       <div className="v2-logo-shape-grid">
         {LOGO_SHAPE_OPTIONS.map((option) => (
           <button type="button" key={option.id} className={style.shape === option.id ? "active" : ""} aria-pressed={style.shape === option.id} onClick={() => update({ shape: option.id, treatment: "custom" })}>
-            {/* Fixed thin border, not tied to the real Borde/Sombra settings — just enough to
-                read the shape's outline clearly (a plain fill with no edge can be hard to tell
-                apart from the page background). Doesn't move when those settings change. */}
+            {/* Fixed thin border, not tied to the real Borde/Sombra settings below — just enough
+                to read the shape's outline clearly. Doesn't move when those settings change. */}
             <span className="v2-logo-shape-preview" style={{ ...logoFrameStyle({ ...style, shape: option.id, borderWidth: 2, borderColor: "#00000026", shadow: "none" }, primary), borderRadius: logoBorderRadius(option.id, 48), fontSize: logoLetterSize(48, style.initials), fontFamily: resolveTextFont(draft.titleStyle.font) }}>
               {logoImage ? <i style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${style.zoom * 100}%`, backgroundPosition: `${style.x}% ${style.y}%` }} /> : logoInitials(draft.business_name, style.initials)}
             </span>
@@ -902,9 +913,50 @@ function LogoControls({ draft, logoImage, onChange, onLogo, onRemoveLogo }: { dr
         ))}
       </div>
     </fieldset>
+    <fieldset className="v2-logo-section v2-logo-section-edge">
+      <legend>3 · Borde y sombra</legend>
+      <p className="v2-help" style={{ margin: "0 0 8px" }}>Cada opción trae un borde y una sombra ya combinados. "Suave" es una sombra gris de profundidad, como cualquier sombra real. "Glow" es un halo de color alrededor, tipo neón.</p>
+      <div className="v2-logo-shape-grid">
+        {LOGO_EDGE_OPTIONS.map((option) => {
+          return (
+            <button type="button" key={option.id} className={style.shadow === option.id ? "active" : ""} aria-pressed={style.shadow === option.id} onClick={() => update({ ...option.patch, treatment: "custom" })}>
+              {/* Fixed white-plate/black-edge demo instead of the real live colors — on your
+                  actual background/border color, a soft or subtle option can wash out to the
+                  point the difference between options disappears. Always showing the same clean
+                  example keeps every option legible no matter what you've already got set. */}
+              <span className="v2-logo-shape-preview" style={{ ...logoFrameStyle({ ...style, ...option.patch, backgroundMode: "custom", fallback: "#ffffff", borderColor: "#0a0a0a", shadowColor: "#0a0a0a" }, primary), borderRadius: logoBorderRadius(style.shape, 48), fontSize: logoLetterSize(48, style.initials), fontFamily: resolveTextFont(draft.titleStyle.font) }}>
+                {logoImage ? <i style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${style.zoom * 100}%`, backgroundPosition: `${style.x}% ${style.y}%` }} /> : logoInitials(draft.business_name, style.initials)}
+              </span>
+              <b>{option.label}</b>
+            </button>
+          );
+        })}
+      </div>
+      {style.shadow !== "none" && (
+        <div className="v2-logo-edge-columns" style={{ marginTop: 10 }}>
+          <div className="v2-logo-edge-column">
+            <label className="v2-mini-color" title="Color del borde"><span>Color de borde</span><input type="color" value={style.borderColor} onChange={(event) => update({ borderColor: event.target.value, treatment: "custom" })} /></label>
+            {/* Step 2 instead of 1: a 1px border reads as a broken hairline at logo scale rather
+                than an intentional thin border. */}
+            <Range label="Borde" min={2} max={10} step={2} value={style.borderWidth} onChange={(borderWidth) => update({ borderWidth, treatment: "custom" })} />
+          </div>
+          <div className="v2-logo-edge-column">
+            {style.shadow === "soft" ? (
+              // Matches .v2-mini-color's own height (padding + label + 42px swatch) so "Tamaño
+              // de sombra" below still lines up with "Borde" in the other column, instead of
+              // starting higher just because this slot has no color swatch to fill it out.
+              <p className="v2-help v2-logo-edge-note" style={{ margin: 0 }}>"Suave" mantiene su sombra siempre neutra a propósito, para que se vea bien sobre cualquier fondo.</p>
+            ) : (
+              <label className="v2-mini-color" title="Color de la sombra"><span>Color de sombra</span><input type="color" value={style.shadowColor} onChange={(event) => update({ shadowColor: event.target.value, treatment: "custom" })} /></label>
+            )}
+            <Range label="Tamaño de sombra" min={.5} max={2} step={.05} value={style.shadowSize} onChange={(shadowSize) => update({ shadowSize, treatment: "custom" })} />
+          </div>
+        </div>
+      )}
+    </fieldset>
     {!logoImage && (
-      <fieldset>
-        <legend>Iniciales</legend>
+      <fieldset className="v2-logo-section v2-logo-section-initials">
+        <legend>4 · Iniciales</legend>
         <p className="v2-help" style={{ margin: "0 0 4px" }}>Mientras no subas una imagen, se muestra esto en el círculo.</p>
         <div className="v2-segment">
           <button type="button" className={style.initials === "one" ? "active" : ""} onClick={() => update({ initials: "one" })}>{logoInitials(draft.business_name, "one")}</button>
@@ -912,42 +964,16 @@ function LogoControls({ draft, logoImage, onChange, onLogo, onRemoveLogo }: { dr
         </div>
       </fieldset>
     )}
-    <Range label="Tamaño" min={72} max={190} value={style.size} onChange={(size) => update({ size })} />
-    <fieldset>
-      <legend>Borde y sombra</legend>
-      <p className="v2-help" style={{ margin: "0 0 8px" }}>Un solo estilo: cada opción trae su borde y su sombra ya combinados.</p>
-      <div className="v2-logo-shape-grid">
-        {LOGO_EDGE_OPTIONS.map((option) => (
-          <button type="button" key={option.id} className={style.shadow === option.id ? "active" : ""} aria-pressed={style.shadow === option.id} onClick={() => update({ ...option.patch, treatment: "custom" })}>
-            <span className="v2-logo-shape-preview" style={{ ...logoFrameStyle({ ...style, ...option.patch }, primary), borderRadius: logoBorderRadius(style.shape, 48), fontSize: logoLetterSize(48, style.initials), fontFamily: resolveTextFont(draft.titleStyle.font) }}>
-              {logoImage ? <i style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${style.zoom * 100}%`, backgroundPosition: `${style.x}% ${style.y}%` }} /> : logoInitials(draft.business_name, style.initials)}
-            </span>
-            <b>{option.label}</b>
-          </button>
-        ))}
-      </div>
-      {style.shadow !== "none" && <>
-        <label className="v2-mini-color" title="Color del borde" style={{ marginTop: 10 }}><span>Color del borde{style.shadow !== "soft" ? " y la sombra" : ""}</span><input type="color" value={style.borderColor} onChange={(event) => update({ borderColor: event.target.value, treatment: "custom" })} /></label>
-        {style.shadow === "soft" && <p className="v2-help" style={{ margin: "-4px 0 0" }}>"Suave" mantiene su sombra siempre neutra a propósito, para que se vea bien sobre cualquier fondo.</p>}
-        {/* Step 2 instead of 1: a 1px border reads as a broken hairline at logo scale rather
-            than an intentional thin border (same reasoning as the old standalone "Borde" range). */}
-        <Range label="Borde" min={2} max={10} step={2} value={style.borderWidth} onChange={(borderWidth) => update({ borderWidth, treatment: "custom" })} />
-        <Range label="Tamaño de sombra" min={.5} max={2} step={.05} value={style.shadowSize} onChange={(shadowSize) => update({ shadowSize, treatment: "custom" })} />
+    <fieldset className="v2-logo-section v2-logo-section-size">
+      <legend>{logoImage ? "5" : "4"} · Tamaño{logoImage ? " y encuadre" : ""}</legend>
+      <Range label="Tamaño" min={72} max={190} value={style.size} onChange={(size) => update({ size })} />
+      {logoImage && <>
+        <Range label="Zoom" min={1} max={2.5} step={.01} value={style.zoom} onChange={(zoom) => update({ zoom })} />
+        {style.zoom > 1
+          ? <><Range label="Horizontal" min={0} max={100} value={style.x} onChange={(x) => update({ x })} /><Range label="Vertical" min={0} max={100} value={style.y} onChange={(y) => update({ y })} /></>
+          : <p className="v2-help" style={{ margin: 0 }}>Subí el zoom para poder mover la imagen dentro del marco.</p>}
       </>}
     </fieldset>
-    <fieldset>
-      <legend>Color de fondo</legend>
-      <p className="v2-help" style={{ margin: "0 0 4px" }}>Se ve detrás del círculo del logo (si no subiste foto, es el color de fondo de la inicial).</p>
-      <Choice active={style.backgroundMode === "auto"} swatch={primary} title="Automático" note="El color sugerido por tu plantilla." onClick={() => update({ backgroundMode: "auto" })} />
-      <Choice active={style.backgroundMode === "custom"} swatch={style.fallback} title="Personalizado" note="Elegí cualquier color para el fondo del logo." onClick={() => update({ backgroundMode: "custom" })} />
-      {style.backgroundMode === "custom" && <ColorField label="Color de fondo" value={style.fallback} onChange={(fallback) => update({ fallback })} />}
-    </fieldset>
-    {logoImage && <>
-      <Range label="Zoom" min={1} max={2.5} step={.01} value={style.zoom} onChange={(zoom) => update({ zoom })} />
-      {style.zoom > 1
-        ? <><Range label="Horizontal" min={0} max={100} value={style.x} onChange={(x) => update({ x })} /><Range label="Vertical" min={0} max={100} value={style.y} onChange={(y) => update({ y })} /></>
-        : <p className="v2-help" style={{ margin: 0 }}>Subí el zoom para poder mover la imagen dentro del marco.</p>}
-    </>}
   </div>;
 }
 

@@ -29,14 +29,14 @@ export const DESIGN_PRESETS_V2: DesignPreset[] = [
     background: "linear-gradient(160deg,#fbfbfd,#eef0f5)", bg1: "#fbfbfd", bg2: "#eef0f5", accent: "#16181d", oneColor: "#16181d", foreground: "#16181d",
     buttonFont: "minimal",
     buttonZone: { preset: "minimal", layout: "center", gap: 10, height: 52, radius: 12, width: 100, shadow: "none", finish: "solid", collection: "minimal", colorMode: "one", textSize: 14, iconSize: 27, contentAlign: "center" },
-    title: { font: "minimal", weight: 800, size: 27, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "round", size: 116 },
+    title: { font: "minimal", weight: 800, size: 27, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "sharp", size: 116 },
   },
   {
     id: "brutalism", name: "Brutalismo", description: "Blanco y negro puro, bordes duros, cero adornos. Estudios, moda y marcas con carácter.",
     background: "#f4f3ee", bg1: "#f4f3ee", bg2: "#e6e4db", accent: "#0a0a0a", oneColor: "#ffffff", foreground: "#0a0a0a",
     buttonFont: "bold",
     buttonZone: { preset: "brutalism", layout: "center", gap: 13, height: 56, radius: 0, width: 100, shadow: "none", finish: "solid", collection: "brutal", colorMode: "one", textSize: 15, iconSize: 28, contentAlign: "left" },
-    title: { font: "bold", weight: 900, size: 32, align: "center" }, subtitle: { font: "mono", weight: 700, size: 13 }, logo: { shape: "sharp", size: 120 },
+    title: { font: "minimal", weight: 900, size: 32, align: "center" }, subtitle: { font: "mono", weight: 700, size: 13 }, logo: { shape: "round", size: 120 },
   },
   {
     id: "neobrutal", name: "Neobrutalismo", description: "Colores fuertes, bordes marcados y sombra dura. Marcas jóvenes, apps y creadores.",
@@ -110,7 +110,7 @@ export const DESIGN_PRESETS_V2: DesignPreset[] = [
     background: "linear-gradient(155deg,#fffdf7,#ebeef5)", bg1: "#fffdf7", bg2: "#ebeef5", accent: "#17191f", oneColor: "#ffffff", foreground: "#17191f",
     buttonFont: "minimal",
     buttonZone: { preset: "brand-signature", layout: "profile-card", gap: 11, height: 61, radius: 19, width: 100, shadow: "soft", finish: "solid", collection: "brandmark", colorMode: "one", textSize: 14, iconSize: 36, contentAlign: "left" },
-    title: { font: "minimal", weight: 850, size: 29, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "round", size: 120 },
+    title: { font: "minimal", weight: 850, size: 29, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "sharp", size: 120 },
   },
   {
     id: "brand-stage", name: "Brand Stage", description: "Botones oscuros de alto impacto con cada marca iluminada en su color real.",

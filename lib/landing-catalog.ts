@@ -227,6 +227,10 @@ export type LogoStyle = {
   fallback: string;
   borderWidth: number;
   borderColor: string;
+  // Independent from borderColor — real "sticker" designs often pair a light/accent border with
+  // a plain dark cast shadow (or vice versa), not always the same color for both. Only read for
+  // "glow"/"hard" (see logoFrameStyle); "soft" stays neutral on purpose regardless of this.
+  shadowColor: string;
   // "hard" is the brutalist/neobrutalist treatment: a solid unblurred offset shadow, matching
   // the same collection="brutal"/"retro" look the button zone already uses for those templates
   // (lib/design-presets.ts) — previously the logo used a soft, blurred shadow on those templates
@@ -242,7 +246,7 @@ export type BackgroundPosition = { zoom: number; x: number; y: number; tint: num
 
 const DEFAULT_TITLE_STYLE: TitleStyle = { font: FONT_OPTIONS[0].id, weight: 900, size: 28, color: "#ffffff", bgMode: "none", bg: "#111111", align: "center" };
 const DEFAULT_SUBTITLE_STYLE: SubtitleStyle = { font: FONT_OPTIONS[0].id, weight: 500, size: 14, color: "#ffffff", bgMode: "none", bg: "#111111" };
-const DEFAULT_LOGO_STYLE: LogoStyle = { treatment: "template", shape: "round", size: 124, zoom: 1, x: 50, y: 50, backgroundMode: "auto", fallback: "#f5eddf", borderWidth: 0, borderColor: "#ffffff", shadow: "soft", shadowSize: 1, initials: "one" };
+const DEFAULT_LOGO_STYLE: LogoStyle = { treatment: "template", shape: "round", size: 124, zoom: 1, x: 50, y: 50, backgroundMode: "auto", fallback: "#f5eddf", borderWidth: 0, borderColor: "#ffffff", shadowColor: "#0a0a0a", shadow: "soft", shadowSize: 1, initials: "one" };
 const DEFAULT_BG_POSITION: BackgroundPosition = { zoom: 1, x: 50, y: 50, tint: 0.18 };
 
 function hasKeys(raw: unknown): raw is Record<string, unknown> {
@@ -268,7 +272,7 @@ export function parseLogoStyle(raw: unknown): LogoStyle {
   const shadows: LogoStyle["shadow"][] = ["none","soft","glow","hard"];
   const shapes: LogoStyle["shape"][] = ["round","square","sharp"];
   const initialsModes: LogoStyle["initials"][] = ["one","two"];
-  return { ...value, treatment: treatments.includes(value.treatment) ? value.treatment : "template", shape: shapes.includes(value.shape) ? value.shape : "round", backgroundMode: value.backgroundMode === "custom" ? "custom" : "auto", fallback: /^#[0-9a-f]{6}$/i.test(value.fallback) ? value.fallback : DEFAULT_LOGO_STYLE.fallback, borderWidth: (() => { const w = Math.min(10, Math.max(0, finite(value.borderWidth, 0))); return w === 1 ? 2 : w; })(), borderColor: /^#[0-9a-f]{6}$/i.test(value.borderColor) ? value.borderColor : "#ffffff", shadow: shadows.includes(value.shadow) ? value.shadow : "soft", shadowSize: Math.min(2, Math.max(.5, finite(value.shadowSize, 1))), initials: initialsModes.includes(value.initials) ? value.initials : "one", size: Math.min(190, Math.max(72, finite(value.size, 124))), zoom: Math.min(2.5, Math.max(1, finite(value.zoom, 1))), x: Math.min(100, Math.max(0, finite(value.x, 50))), y: Math.min(100, Math.max(0, finite(value.y, 50))) };
+  return { ...value, treatment: treatments.includes(value.treatment) ? value.treatment : "template", shape: shapes.includes(value.shape) ? value.shape : "round", backgroundMode: value.backgroundMode === "custom" ? "custom" : "auto", fallback: /^#[0-9a-f]{6}$/i.test(value.fallback) ? value.fallback : DEFAULT_LOGO_STYLE.fallback, borderWidth: (() => { const w = Math.min(10, Math.max(0, finite(value.borderWidth, 0))); return w === 1 ? 2 : w; })(), borderColor: /^#[0-9a-f]{6}$/i.test(value.borderColor) ? value.borderColor : "#ffffff", shadowColor: /^#[0-9a-f]{6}$/i.test(value.shadowColor) ? value.shadowColor : DEFAULT_LOGO_STYLE.shadowColor, shadow: shadows.includes(value.shadow) ? value.shadow : "soft", shadowSize: Math.min(2, Math.max(.5, finite(value.shadowSize, 1))), initials: initialsModes.includes(value.initials) ? value.initials : "one", size: Math.min(190, Math.max(72, finite(value.size, 124))), zoom: Math.min(2.5, Math.max(1, finite(value.zoom, 1))), x: Math.min(100, Math.max(0, finite(value.x, 50))), y: Math.min(100, Math.max(0, finite(value.y, 50))) };
 }
 
 // Derives the fallback initial(s) shown when there's no logo image yet. "two" tries one
@@ -299,15 +303,17 @@ export function logoBackgroundColor(style: LogoStyle, primary: string): string {
 export function logoFrameStyle(style: LogoStyle, primary: string): CSSProperties {
   const background = logoBackgroundColor(style, primary);
   const s = style.shadowSize ?? 1;
+  // Stronger ring + wider, more opaque blur than before — at typical logo sizes (72–190px) the
+  // original numbers read as barely different from "Suave" instead of an actual neon-style halo.
   const shadow = style.shadow === "glow"
-    ? `0 0 0 ${(3 * s).toFixed(1)}px ${hexToRgba(style.borderColor, .2)}, 0 0 ${(28 * s).toFixed(1)}px ${hexToRgba(style.borderColor, .58)}`
-    // Deliberately NOT tied to borderColor, unlike glow/hard below — a soft shadow reads as
+    ? `0 0 0 ${(4 * s).toFixed(1)}px ${hexToRgba(style.shadowColor, .35)}, 0 0 ${(40 * s).toFixed(1)}px ${hexToRgba(style.shadowColor, .8)}`
+    // Deliberately NOT tied to a color, unlike glow/hard below — a soft shadow reads as
     // realistic depth precisely because it stays neutral; a shadow tinted to match a light
     // border color (e.g. white) would nearly vanish on the light backgrounds most templates use.
     : style.shadow === "soft" ? `0 ${(10 * s).toFixed(1)}px ${(28 * s).toFixed(1)}px rgba(18,20,30,.18)`
     // Solid, unblurred, offset — the brutalist/neobrutalist "sticker" shadow, same recipe the
     // button zone uses for those templates (collection: "brutal"/"retro" in design-presets.ts).
-    : style.shadow === "hard" ? `${(6 * s).toFixed(1)}px ${(6 * s).toFixed(1)}px 0 ${style.borderColor}` : "none";
+    : style.shadow === "hard" ? `${(6 * s).toFixed(1)}px ${(6 * s).toFixed(1)}px 0 ${style.shadowColor}` : "none";
   return {
     background,
     color: contrastTextColor(background),
