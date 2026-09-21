@@ -139,26 +139,36 @@ export function buttonShapeRadius(shape?: string | null): string {
   return "var(--radius-md)";
 }
 
+// Only the order and which networks are offered live here. What each one ASKS FOR (username vs
+// phone vs full link), its placeholder and its URL prefix all come from ACTION_DEFS below — the
+// same source the regular buttons use, so Instagram doesn't take a bare username in one panel
+// and demand a full URL in the other.
 export const QUICK_SOCIALS = [
-  { type: "instagram", label: "Instagram", placeholder: "https://instagram.com/tumarca" },
-  { type: "whatsapp", label: "WhatsApp", placeholder: "549… (código de país y número)" },
-  { type: "facebook", label: "Facebook", placeholder: "https://facebook.com/tumarca" },
-  { type: "tiktok", label: "TikTok", placeholder: "https://tiktok.com/@tumarca" },
-  { type: "linkedin", label: "LinkedIn", placeholder: "https://linkedin.com/in/tuperfil" },
-  { type: "youtube", label: "YouTube", placeholder: "https://youtube.com/@tucanal" },
-  { type: "spotify", label: "Spotify", placeholder: "https://open.spotify.com/…" },
-  { type: "telegram", label: "Telegram", placeholder: "https://t.me/tuusuario" },
+  { type: "instagram", label: "Instagram" },
+  { type: "whatsapp", label: "WhatsApp" },
+  { type: "facebook", label: "Facebook" },
+  { type: "tiktok", label: "TikTok" },
+  { type: "linkedin", label: "LinkedIn" },
+  { type: "youtube", label: "YouTube" },
+  { type: "spotify", label: "Spotify" },
+  { type: "telegram", label: "Telegram" },
 ] as const;
 export type QuickSocial = { type: typeof QUICK_SOCIALS[number]["type"]; url: string };
 export function quickSocialHref(link: QuickSocial): string | null {
   const value = link.url.trim();
+  // Anything with a scheme of its own that isn't http(s) — javascript:, data: — is refused
+  // outright; these end up as hrefs on a public page.
   if (!value || /^(?!https?:)[a-z][a-z0-9+.-]*:/i.test(value)) return null;
   if (link.type === "whatsapp" && /^[+\d\s()-]+$/.test(value)) {
     const digits = value.replace(/\D/g, "");
     return digits.length >= 8 && digits.length <= 15 ? `https://wa.me/${digits}` : null;
   }
+  // Turns "tumarca" into https://instagram.com/tumarca using the same prefixes the buttons use,
+  // and leaves a full URL (what these fields used to require) untouched.
+  const built = buildActionLink(link.type, value);
+  if (!built) return null;
   try {
-    const url = new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`);
+    const url = new URL(/^https?:\/\//i.test(built) ? built : `https://${built}`);
     if (!['http:', 'https:'].includes(url.protocol) || !url.hostname.includes('.') || url.username || url.password || /\s/.test(value)) return null;
     return url.href;
   } catch { return null; }
@@ -270,7 +280,11 @@ export function parseButtonZone(raw: unknown): ButtonZoneStyle {
 // ---------- Per-element text/logo/background styling — matches the "linkme" ----------
 // reference design exactly: each element has its own font/weight/size/color/background,
 // not just the app's older shared font_pair + text_color + one text_panel toggle.
-export type TitleStyle = { eyebrow?: string; font: string; weight: number; size: number; color: string; bgMode: "none" | "solid"; bg: string; align: "left" | "center" | "right" };
+// The eyebrow keeps sharing the title's FONT on purpose — they read as one identity block, and
+// a second font picker there is the kind of choice that mostly produces mismatches. Size, weight
+// and colour are its own, which is what actually makes an eyebrow work (an accent-coloured line
+// above the name is a standard treatment).
+export type TitleStyle = { eyebrow?: string; eyebrowSize: number; eyebrowWeight: number; eyebrowColor?: string; font: string; weight: number; size: number; color: string; bgMode: "none" | "solid"; bg: string; align: "left" | "center" | "right" };
 export type SubtitleStyle = { font: string; weight: number; size: number; color: string; bgMode: "none" | "solid"; bg: string };
 export type LogoStyle = {
   treatment: "template" | "clean" | "badge" | "card" | "highlight" | "brutal" | "custom";
@@ -303,7 +317,9 @@ export type LogoStyle = {
 };
 export type BackgroundPosition = { zoom: number; x: number; y: number; tint: number };
 
-const DEFAULT_TITLE_STYLE: TitleStyle = { font: FONT_OPTIONS[0].id, weight: 900, size: 28, color: "#ffffff", bgMode: "none", bg: "#111111", align: "center" };
+// eyebrowSize/eyebrowWeight repeat what the stylesheet used to hardcode (10px / 600), so a
+// landing saved before these existed renders exactly as it did.
+const DEFAULT_TITLE_STYLE: TitleStyle = { eyebrowSize: 10, eyebrowWeight: 600, font: FONT_OPTIONS[0].id, weight: 900, size: 28, color: "#ffffff", bgMode: "none", bg: "#111111", align: "center" };
 const DEFAULT_SUBTITLE_STYLE: SubtitleStyle = { font: FONT_OPTIONS[0].id, weight: 500, size: 14, color: "#ffffff", bgMode: "none", bg: "#111111" };
 const DEFAULT_LOGO_STYLE: LogoStyle = { treatment: "template", shape: "round", size: 124, zoom: 1, x: 50, y: 50, backgroundMode: "auto", fallback: "#f5eddf", borderWidth: 0, borderColor: "#ffffff", shadowColor: "#0a0a0a", shadow: "soft", shadowSize: 1, initials: "one" };
 const DEFAULT_BG_POSITION: BackgroundPosition = { zoom: 1, x: 50, y: 50, tint: 0.18 };
@@ -316,7 +332,7 @@ export function parseTitleStyle(landing: BackgroundLike & { text_color?: string 
   const value = hasKeys(landing.title_style)
     ? { ...DEFAULT_TITLE_STYLE, ...(landing.title_style as Partial<TitleStyle>) }
     : { ...DEFAULT_TITLE_STYLE, color: landing.text_color || autoTextColor(landing), font: landing.font_pair || "modern" };
-  return { ...value, eyebrow: typeof value.eyebrow === "string" ? value.eyebrow.trim().slice(0, 60) : "", size: Math.min(48, Math.max(18, Number(value.size) || 28)), weight: [400,500,600,700,800,900].includes(Number(value.weight)) ? Number(value.weight) : 900, align: ["left","center","right"].includes(value.align) ? value.align : "center", bgMode: value.bgMode === "solid" ? "solid" : "none" };
+  return { ...value, eyebrow: typeof value.eyebrow === "string" ? value.eyebrow.trim().slice(0, 60) : "", eyebrowSize: Math.min(20, Math.max(8, Number(value.eyebrowSize) || 10)), eyebrowWeight: [400,500,600,700,800,900].includes(Number(value.eyebrowWeight)) ? Number(value.eyebrowWeight) : 600, eyebrowColor: /^#[0-9a-f]{6}$/i.test(String(value.eyebrowColor)) ? value.eyebrowColor : undefined, size: Math.min(48, Math.max(18, Number(value.size) || 28)), weight: [400,500,600,700,800,900].includes(Number(value.weight)) ? Number(value.weight) : 900, align: ["left","center","right"].includes(value.align) ? value.align : "center", bgMode: value.bgMode === "solid" ? "solid" : "none" };
 }
 export function parseSubtitleStyle(landing: BackgroundLike & { text_color?: string | null; font_pair?: string | null; subtitle_style?: unknown }): SubtitleStyle {
   const value = hasKeys(landing.subtitle_style)

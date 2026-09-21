@@ -979,6 +979,11 @@ input[type="color"] { padding: 5px; height: 46px; cursor: pointer; }
    outline, not a border, so it floats around the real buttons without adding any padding that
    would shift their real size or spacing. */
 .editor-zone-selected { outline: 1.5px dashed rgba(102, 87, 232, .75); outline-offset: 10px; border-radius: 18px; }
+/* Hovering the zone's own "Editar todos los botones" tag outlines the WHOLE button area, so it's
+   obvious what "todos" covers. Scoped to the tag rather than put on .public-actions directly:
+   as a plain .editor-hit it would light the whole zone up every time the pointer crossed any
+   single button, since :hover applies to ancestors too. */
+.public-actions:has(.editor-zone-tag:hover) { outline: 2px dashed rgba(255, 255, 255, .85); outline-offset: 10px; border-radius: 18px; }
 
 .editor-own-badge {
   position: absolute;
@@ -1655,7 +1660,9 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
 .layout-compact .landing-identity-block:has(.landing-eyebrow) { grid-template-rows: auto auto auto; }
 .layout-compact .landing-identity-block:has(.landing-eyebrow) .avatar { grid-row: 1 / 4; }
 .layout-compact .landing-eyebrow { grid-column: 2; margin: 0 0 5px; text-align: left; }
-.landing-socials-block { flex-shrink: 0; margin: 12px 0 20px; text-align: center; }
+/* position: relative so the editor's floating "Redes rápidas" tag (.editor-hit::after) anchors
+   to this block instead of to .public-inner further up. */
+.landing-socials-block { position: relative; flex-shrink: 0; margin: 12px 0 20px; text-align: center; }
 .landing-socials { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 .landing-socials a { display: inline-flex; justify-content: center; align-items: center; width: 44px; height: 44px; border: 1px solid #d7d1cb; border-radius: 50%; background: #ffffffe8; color: #49424c; transition: background .15s; }
 .landing-socials a:hover { background: #fff; }

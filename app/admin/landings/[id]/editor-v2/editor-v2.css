@@ -39,7 +39,17 @@
    plain relatively-positioned one. That's the actual root cause behind "si scrolleo hacia abajo
    no se pueden cerrar" — the head (title + close button) was never actually sticking; it just
    scrolled away with the rest of the fields, taking the only way to close the panel with it. */
-.v2-panel .v2-panel-head { position: sticky; top: -2px; z-index: 6; background: #f7f7fb; margin: -2px 0 18px; padding-bottom: 14px; border-bottom: 1px solid #eae7f6; }
+/* Runs edge to edge and flush with the panel's top instead of floating inside its padding with
+   a strip of empty background above it — the negative margins cancel exactly the padding the
+   panel declares (--v2-panel-pad-* in phone-first.css) and the padding here puts the content
+   back where it was. The panel's own overflow clips it to the rounded corners. */
+.v2-panel .v2-panel-head {
+  position: sticky; top: 0; z-index: 6;
+  margin: 0 calc(var(--v2-panel-pad-x, 21px) * -1) 18px;
+  padding: 15px var(--v2-panel-pad-x, 21px);
+  background: linear-gradient(180deg, #f4f1ff, #ece7fd);
+  border-bottom: 1px solid #ddd5f7;
+}
 
 /* Each fieldset becomes its own card: a real border and a hint of shadow instead of a bare
    legend floating above some inputs — this is what actually makes "Regla de color" read as a

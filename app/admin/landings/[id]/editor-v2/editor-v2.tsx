@@ -145,6 +145,18 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
     panelRef.current?.scrollTo({ top: 0 });
   }, [panel]);
 
+  // Clicking the element whose panel is ALREADY open used to do nothing at all: setPanel with
+  // the same value bails out of a re-render, so the effect above never re-ran and a panel you'd
+  // scrolled down stayed exactly where you left it — it read as a dead click. Scrolling here
+  // covers that case for every selector, smoothly so the panel visibly answers the click.
+  function selectPanel(next: Panel) {
+    const same = typeof next === "object" && next && typeof panel === "object" && panel
+      ? next.buttonId === panel.buttonId
+      : next === panel;
+    if (same) panelRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    setPanel(next);
+  }
+
   // The default `panel` state is "templates" so desktop lands with the template picker already
   // open next to the phone — a nice invitation there, since it's just a side popover that never
   // hides anything. On mobile/tablet that same default now means a full-screen takeover (see
@@ -493,19 +505,19 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
   const editControls: LandingEditControls = {
     selected: panel,
     draggingId,
-    onSelectTemplates: () => setPanel("templates"),
-    onSelectSettings: () => setPanel("settings"),
-    onSelectSocials: () => setPanel("socials"),
-    onSelectDistribution: () => setPanel("distribution"),
-    onSelectLogo: () => setPanel("logo"),
-    onSelectTitle: () => setPanel("title"),
-    onSelectSubtitle: () => setPanel("subtitle"),
-    onSelectBackground: () => { setBgTab(draft.background_type === "image" ? "image" : draft.background_type === "gradient" ? "gradient" : "color"); setPanel("background"); },
-    onSelectCover: () => setPanel("cover"),
-    onSelectZone: () => setPanel("buttons"),
-    onSelectButton: (id) => setPanel({ buttonId: id }),
+    onSelectTemplates: () => selectPanel("templates"),
+    onSelectSettings: () => selectPanel("settings"),
+    onSelectSocials: () => selectPanel("socials"),
+    onSelectDistribution: () => selectPanel("distribution"),
+    onSelectLogo: () => selectPanel("logo"),
+    onSelectTitle: () => selectPanel("title"),
+    onSelectSubtitle: () => selectPanel("subtitle"),
+    onSelectBackground: () => { setBgTab(draft.background_type === "image" ? "image" : draft.background_type === "gradient" ? "gradient" : "color"); selectPanel("background"); },
+    onSelectCover: () => selectPanel("cover"),
+    onSelectZone: () => selectPanel("buttons"),
+    onSelectButton: (id) => selectPanel({ buttonId: id }),
     onDeleteButton: deleteButton,
-    onAddButton: () => setPanel("add"),
+    onAddButton: () => selectPanel("add"),
     onButtonRef: (id, element) => { if (element) buttonElements.current.set(id, element); else buttonElements.current.delete(id); },
     onDragStart: (clientY, id) => startDrag(clientY, id),
   };
@@ -901,14 +913,20 @@ function SocialControls({ links, onChange, filled, onFilled }: { links: QuickSoc
     {QUICK_SOCIALS.map(option => {
       const current = links.find(link => link.type === option.type);
       const invalid = Boolean(current?.url.trim() && !quickSocialHref(current));
+      // Same definition the buttons panel uses, so each network asks for what it actually needs:
+      // a username for Instagram/TikTok/Telegram, a phone for WhatsApp, a link for the rest.
+      const def = getAllActions().find(action => action.type === option.type);
+      const isUser = def?.input === "username";
+      const isPhone = def?.input === "phone";
       return <div className="v2-social-field" key={option.type}>
-        <label><span><ActionTypeIcon type={option.type} brandMark />{option.label}</span>
-          <input type="text" inputMode={option.type === "whatsapp" ? "tel" : "url"} aria-invalid={invalid} aria-describedby={invalid ? `social-error-${option.type}` : undefined} value={current?.url || ""} placeholder={option.placeholder} maxLength={2048} onChange={event => {
+        <label><span><ActionTypeIcon type={option.type} brandMark />{option.label}{isUser ? " · usuario" : isPhone ? " · número" : " · enlace"}</span>
+          <input type="text" inputMode={isPhone ? "tel" : isUser ? "text" : "url"} aria-invalid={invalid} aria-describedby={invalid ? `social-error-${option.type}` : undefined} value={current?.url || ""} placeholder={def?.placeholder} maxLength={2048} onChange={event => {
             const url = event.target.value;
             onChange(current ? links.map(link => link.type === option.type ? { ...link, url } : link) : [...links, { type: option.type, url }]);
           }} />
         </label>
-        {invalid && <p id={`social-error-${option.type}`} className="v2-social-error">{option.type === "whatsapp" ? "Ingresá un número con código de país o un enlace completo." : "Ingresá un enlace completo, por ejemplo https://instagram.com/tumarca."} Este acceso no se mostrará hasta corregirlo.</p>}
+        {isUser && <p className="v2-help" style={{ margin: "-4px 0 0", fontSize: 11 }}>Solo el usuario — armamos el enlace solos ({def?.prefix}tuusuario). Si preferís, también podés pegar el link completo.</p>}
+        {invalid && <p id={`social-error-${option.type}`} className="v2-social-error">{isPhone ? "Ingresá un número con código de país o un enlace completo." : isUser ? `Ingresá tu usuario (sin espacios) o el enlace completo.` : "Ingresá un enlace completo, por ejemplo https://facebook.com/tumarca."} Este acceso no se mostrará hasta corregirlo.</p>}
         {current && <button type="button" className="v2-ghost" onClick={() => onChange(links.filter(link => link.type !== option.type))}>Quitar {option.label}</button>}
       </div>;
     })}
@@ -954,7 +972,7 @@ function RecommendedStyles({ templateName, onClick }: { templateName: string; on
   </button>;
 }
 
-function TitleControls({ draft, onChange }: { draft: LandingDraft; onChange: (p: Partial<LandingDraft>) => void }) { const style=draft.titleStyle; const update=(patch:Partial<TitleStyle>)=>onChange({titleStyle:{...style,...patch}}); const preset=suggestedPreset(draft.buttonZone.templateId); return <div className="v2-fields"><EditorSection title="Contenido" tone="blue"><label>Rubro o frase breve (opcional)<input maxLength={60} value={style.eyebrow || ""} placeholder="Ej: ARQUITECTURA & INTERIORES" onChange={(e)=>update({eyebrow:e.target.value})}/></label><p className="v2-help">Una línea pequeña encima del nombre. Dejalo vacío para ocultarla.</p><label>Texto del título<input value={draft.business_name} onChange={(e)=>onChange({business_name:e.target.value})}/></label></EditorSection><RecommendedStyles templateName={preset.name} onClick={()=>update({...preset.title,color:preset.foreground})} /><EditorSection title="Tipografía y tamaño" tone="purple"><FontPicker label="Tipografía" value={style.font} onChange={(font)=>update({font})}/><Range label="Tamaño" min={20} max={48} value={style.size} onChange={(size)=>update({size})}/><fieldset><legend>Grosor</legend><div className="v2-segment">{[500,700,900].map((weight)=><button key={weight} className={style.weight===weight?"active":""} onClick={()=>update({weight})}>{weight===500?"Normal":weight===700?"Fuerte":"Extra"}</button>)}</div></fieldset></EditorSection><EditorSection title="Colores y fondo" tone="peach"><ColorField label="Color del texto" value={style.color} onChange={(color)=>update({color})}/><Choice active={style.bgMode==="solid"} title="Fondo detrás del título" note="Ayuda a leerlo sobre fotografías." onClick={()=>update({bgMode:style.bgMode==="solid"?"none":"solid"})}/>{style.bgMode==="solid"&&<ColorField label="Color del fondo" value={style.bg} onChange={(bg)=>update({bg})}/>}</EditorSection></div>; }
+function TitleControls({ draft, onChange }: { draft: LandingDraft; onChange: (p: Partial<LandingDraft>) => void }) { const style=draft.titleStyle; const update=(patch:Partial<TitleStyle>)=>onChange({titleStyle:{...style,...patch}}); const preset=suggestedPreset(draft.buttonZone.templateId); return <div className="v2-fields"><EditorSection title="Contenido" tone="blue"><label>Rubro o frase breve (opcional)<input maxLength={60} value={style.eyebrow || ""} placeholder="Ej: ARQUITECTURA & INTERIORES" onChange={(e)=>update({eyebrow:e.target.value})}/></label><p className="v2-help">Una línea pequeña encima del nombre. Dejalo vacío para ocultarla.</p><label>Texto del título<input value={draft.business_name} onChange={(e)=>onChange({business_name:e.target.value})}/></label></EditorSection><RecommendedStyles templateName={preset.name} onClick={()=>update({...preset.title,color:preset.foreground})} /><EditorSection title="Tipografía y tamaño" tone="purple"><FontPicker label="Tipografía" value={style.font} onChange={(font)=>update({font})}/><Range label="Tamaño" min={20} max={48} value={style.size} onChange={(size)=>update({size})}/><fieldset><legend>Grosor</legend><div className="v2-segment">{[500,700,900].map((weight)=><button key={weight} className={style.weight===weight?"active":""} onClick={()=>update({weight})}>{weight===500?"Normal":weight===700?"Fuerte":"Extra"}</button>)}</div></fieldset></EditorSection>{Boolean(style.eyebrow) && <EditorSection title="Rubro o frase breve" tone="green"><p className="v2-help" style={{margin:"0 0 4px"}}>Usa la misma tipografía del título para que se lean como un conjunto; acá ajustás su tamaño, grosor y color.</p><Range label="Tamaño" min={8} max={20} value={style.eyebrowSize} onChange={(eyebrowSize)=>update({eyebrowSize})}/><fieldset><legend>Grosor</legend><div className="v2-segment">{[500,600,800].map((eyebrowWeight)=><button key={eyebrowWeight} className={style.eyebrowWeight===eyebrowWeight?"active":""} onClick={()=>update({eyebrowWeight})}>{eyebrowWeight===500?"Normal":eyebrowWeight===600?"Medio":"Fuerte"}</button>)}</div></fieldset><Choice active={!style.eyebrowColor} title="Mismo color del título" note="Se mantiene en conjunto si después cambiás el color del título." onClick={()=>update({eyebrowColor:undefined})}/><Choice active={Boolean(style.eyebrowColor)} swatch={style.eyebrowColor||style.color} title="Color propio" note="Por ejemplo, el color de tu marca para destacarlo." onClick={()=>update({eyebrowColor:style.eyebrowColor||style.color})}/>{style.eyebrowColor&&<ColorField label="Color del rubro" value={style.eyebrowColor} onChange={(eyebrowColor)=>update({eyebrowColor})}/>}</EditorSection>}<EditorSection title="Colores y fondo" tone="peach"><ColorField label="Color del texto" value={style.color} onChange={(color)=>update({color})}/><Choice active={style.bgMode==="solid"} title="Fondo detrás del título" note="Ayuda a leerlo sobre fotografías." onClick={()=>update({bgMode:style.bgMode==="solid"?"none":"solid"})}/>{style.bgMode==="solid"&&<ColorField label="Color del fondo" value={style.bg} onChange={(bg)=>update({bg})}/>}</EditorSection></div>; }
 
 function SubtitleControls({ draft, onChange }: { draft: LandingDraft; onChange: (p: Partial<LandingDraft>) => void }) { const style=draft.subtitleStyle; const update=(patch:Partial<SubtitleStyle>)=>onChange({subtitleStyle:{...style,...patch}}); const preset=suggestedPreset(draft.buttonZone.templateId); return <div className="v2-fields"><EditorSection title="Contenido" tone="blue"><label>Texto del subtítulo<textarea rows={3} value={draft.description || ""} onKeyDown={(e)=>{ if (e.key==="Enter" && (draft.description||"").includes("\n")) e.preventDefault(); }} onChange={(e)=>onChange({description:e.target.value})}/></label><p className="v2-help" style={{margin:"-4px 0 0"}}>Podés usar Enter para un salto de línea (máximo dos líneas).</p></EditorSection><RecommendedStyles templateName={preset.name} onClick={()=>update({...preset.subtitle,color:preset.foreground})} /><EditorSection title="Tipografía y tamaño" tone="purple"><FontPicker label="Tipografía" value={style.font} onChange={(font)=>update({font})}/><Range label="Tamaño" min={11} max={26} value={style.size} onChange={(size)=>update({size})}/><fieldset><legend>Grosor</legend><div className="v2-segment">{[400,600,800].map((weight)=><button key={weight} className={style.weight===weight?"active":""} onClick={()=>update({weight})}>{weight===400?"Normal":weight===600?"Medio":"Fuerte"}</button>)}</div></fieldset></EditorSection><EditorSection title="Colores y fondo" tone="peach"><ColorField label="Color del texto" value={style.color} onChange={(color)=>update({color})}/><Choice active={style.bgMode==="solid"} title="Fondo detrás del texto" note="Mejora la lectura cuando hay una imagen." onClick={()=>update({bgMode:style.bgMode==="solid"?"none":"solid"})}/>{style.bgMode==="solid"&&<ColorField label="Color del fondo" value={style.bg} onChange={(bg)=>update({bg})}/>}</EditorSection></div>; }
 

@@ -97,7 +97,13 @@
   max-height: calc(100dvh - var(--global-nav-h) - 108px);
   border: 1px solid rgba(224, 226, 236, 0.95);
   border-radius: 24px;
-  padding: 21px;
+  /* No padding on top: the sticky header supplies its own and runs edge to edge (see
+     .v2-panel-head in editor-v2.css). Leaving it here instead put a strip of empty panel above
+     the header — and it couldn't be cancelled with a negative margin either, because sticky
+     clamps the header back down to the content box. The side padding is a variable so the
+     header can cancel exactly it without the number living in two files. */
+  --v2-panel-pad-x: 21px;
+  padding: 0 var(--v2-panel-pad-x) var(--v2-panel-pad-x);
   overflow: auto;
   box-shadow: 0 28px 75px rgba(28, 31, 54, 0.24);
   animation: v2-popover-in 180ms ease-out;
@@ -162,7 +168,8 @@
     height: auto;
     max-height: 42dvh;
     border-radius: 24px 24px 0 0;
-    padding: 16px 19px 19px;
+    --v2-panel-pad-x: 19px;
+    padding: 0 var(--v2-panel-pad-x) var(--v2-panel-pad-x);
     box-shadow: 0 -14px 34px rgba(18, 20, 35, 0.16);
     animation-name: v2-sheet-in;
   }

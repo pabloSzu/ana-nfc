@@ -222,13 +222,13 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
             <div style={{ width: "100%", height: "100%", borderRadius: "inherit", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: resolveTextFont(title.font) }}>{logoInitials(landing.business_name, logo.initials)}</div>
           )}
         </div>
-        {title.eyebrow && <p className={`landing-eyebrow${edit ? " editor-hit" : ""}`} data-tag="Rubro o frase breve" onClick={edit?.onSelectTitle} style={{ color: title.color, fontFamily: resolveTextFont(title.font) }}>{title.eyebrow}</p>}
+        {title.eyebrow && <p className={`landing-eyebrow${edit ? " editor-hit" : ""}`} data-tag="Rubro o frase breve" onClick={edit?.onSelectTitle} style={{ color: title.eyebrowColor || title.color, fontFamily: resolveTextFont(title.font), fontSize: title.eyebrowSize, fontWeight: title.eyebrowWeight }}>{title.eyebrow}</p>}
         {heading}
         <br />
         {description}
         </div>
         </div>
-        {distribution.separator && <div className="landing-separator" style={{ paddingBlock: distribution.separatorSpace }}>
+        {distribution.separator && <div className={`landing-separator${edit ? " editor-hit" : ""}${edit?.selected === "distribution" ? " is-selected" : ""}`} data-tag={edit ? "Separador" : undefined} onClick={edit?.onSelectDistribution} style={{ paddingBlock: distribution.separatorSpace }}>
           <div style={{ width: `${distribution.separatorWidth}%` }}><LandingSeparator variant={distribution.separatorStyle} color={distribution.separatorColor} weight={distribution.separatorWeight} /></div>
           {edit && <button type="button" aria-label="Editar separador" onClick={edit.onSelectDistribution}><IconEdit aria-hidden="true" /></button>}
         </div>}
@@ -290,7 +290,7 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
           })}
           {edit && <button type="button" className="editor-add-link" onClick={edit.onAddButton}><span className="editor-add-icon">＋</span> Agregar botón</button>}
         </div>
-        {(socialLinks.length > 0 || edit) && <div className="landing-socials-block" style={{ marginTop: distribution.socialsGap }}>
+        {(socialLinks.length > 0 || edit) && <div className={`landing-socials-block${edit ? " editor-hit" : ""}${edit?.selected === "socials" ? " is-selected" : ""}`} data-tag={edit ? "Redes rápidas" : undefined} onClick={edit ? () => edit.onSelectSocials() : undefined} style={{ marginTop: distribution.socialsGap }}>
           {socialLinks.length > 0 && <nav className="landing-socials" aria-label="Redes sociales" data-tone={bottomTone} data-filled={zone.quickSocialsFilled === false ? "no" : "yes"}>
             {socialLinks.map(link => <a key={link.type} href={link.href} target="_blank" rel="noopener noreferrer" aria-label={QUICK_SOCIALS.find(option => option.type === link.type)?.label} onClick={edit ? event => { event.preventDefault(); edit.onSelectSocials(); } : undefined}><ActionTypeIcon type={link.type} /></a>)}
           </nav>}
