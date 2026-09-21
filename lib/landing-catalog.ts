@@ -214,8 +214,11 @@ export function parseButtonZone(raw: unknown): ButtonZoneStyle {
 export type TitleStyle = { eyebrow?: string; font: string; weight: number; size: number; color: string; bgMode: "none" | "solid"; bg: string; align: "left" | "center" | "right" };
 export type SubtitleStyle = { font: string; weight: number; size: number; color: string; bgMode: "none" | "solid"; bg: string };
 export type LogoStyle = {
-  treatment: "template" | "clean" | "badge" | "card" | "highlight" | "custom";
-  shape: "round" | "square";
+  treatment: "template" | "clean" | "badge" | "card" | "highlight" | "brutal" | "custom";
+  shape: "round" | "square" | "sharp";
+  // Multiplies the shadow's own offset/blur (soft, glow, hard all scale off this) — 1 = the
+  // original fixed size every shadow used to render at.
+  shadowSize: number;
   size: number;
   zoom: number;
   x: number;
@@ -224,7 +227,11 @@ export type LogoStyle = {
   fallback: string;
   borderWidth: number;
   borderColor: string;
-  shadow: "none" | "soft" | "glow";
+  // "hard" is the brutalist/neobrutalist treatment: a solid unblurred offset shadow, matching
+  // the same collection="brutal"/"retro" look the button zone already uses for those templates
+  // (lib/design-presets.ts) — previously the logo used a soft, blurred shadow on those templates
+  // even though the buttons right below it had crisp offset shadows, a visible mismatch.
+  shadow: "none" | "soft" | "glow" | "hard";
   // Only matters while there's no logo image — how many letters of the business name to show,
   // and at what size. The size is never a manual control: it's always computed from the
   // avatar's own size (see logoLetterSize), so a big avatar doesn't end up with a tiny,
@@ -235,7 +242,7 @@ export type BackgroundPosition = { zoom: number; x: number; y: number; tint: num
 
 const DEFAULT_TITLE_STYLE: TitleStyle = { font: FONT_OPTIONS[0].id, weight: 900, size: 28, color: "#ffffff", bgMode: "none", bg: "#111111", align: "center" };
 const DEFAULT_SUBTITLE_STYLE: SubtitleStyle = { font: FONT_OPTIONS[0].id, weight: 500, size: 14, color: "#ffffff", bgMode: "none", bg: "#111111" };
-const DEFAULT_LOGO_STYLE: LogoStyle = { treatment: "template", shape: "round", size: 124, zoom: 1, x: 50, y: 50, backgroundMode: "auto", fallback: "#f5eddf", borderWidth: 0, borderColor: "#ffffff", shadow: "soft", initials: "one" };
+const DEFAULT_LOGO_STYLE: LogoStyle = { treatment: "template", shape: "round", size: 124, zoom: 1, x: 50, y: 50, backgroundMode: "auto", fallback: "#f5eddf", borderWidth: 0, borderColor: "#ffffff", shadow: "soft", shadowSize: 1, initials: "one" };
 const DEFAULT_BG_POSITION: BackgroundPosition = { zoom: 1, x: 50, y: 50, tint: 0.18 };
 
 function hasKeys(raw: unknown): raw is Record<string, unknown> {
@@ -257,10 +264,11 @@ export function parseSubtitleStyle(landing: BackgroundLike & { text_color?: stri
 export function parseLogoStyle(raw: unknown): LogoStyle {
   const value = hasKeys(raw) ? { ...DEFAULT_LOGO_STYLE, ...(raw as Partial<LogoStyle>) } : { ...DEFAULT_LOGO_STYLE };
   const finite = (candidate: unknown, fallback: number) => Number.isFinite(Number(candidate)) ? Number(candidate) : fallback;
-  const treatments: LogoStyle["treatment"][] = ["template","clean","badge","card","highlight","custom"];
-  const shadows: LogoStyle["shadow"][] = ["none","soft","glow"];
+  const treatments: LogoStyle["treatment"][] = ["template","clean","badge","card","highlight","brutal","custom"];
+  const shadows: LogoStyle["shadow"][] = ["none","soft","glow","hard"];
+  const shapes: LogoStyle["shape"][] = ["round","square","sharp"];
   const initialsModes: LogoStyle["initials"][] = ["one","two"];
-  return { ...value, treatment: treatments.includes(value.treatment) ? value.treatment : "template", shape: value.shape === "square" ? "square" : "round", backgroundMode: value.backgroundMode === "custom" ? "custom" : "auto", fallback: /^#[0-9a-f]{6}$/i.test(value.fallback) ? value.fallback : DEFAULT_LOGO_STYLE.fallback, borderWidth: (() => { const w = Math.min(10, Math.max(0, finite(value.borderWidth, 0))); return w === 1 ? 2 : w; })(), borderColor: /^#[0-9a-f]{6}$/i.test(value.borderColor) ? value.borderColor : "#ffffff", shadow: shadows.includes(value.shadow) ? value.shadow : "soft", initials: initialsModes.includes(value.initials) ? value.initials : "one", size: Math.min(190, Math.max(72, finite(value.size, 124))), zoom: Math.min(2.5, Math.max(1, finite(value.zoom, 1))), x: Math.min(100, Math.max(0, finite(value.x, 50))), y: Math.min(100, Math.max(0, finite(value.y, 50))) };
+  return { ...value, treatment: treatments.includes(value.treatment) ? value.treatment : "template", shape: shapes.includes(value.shape) ? value.shape : "round", backgroundMode: value.backgroundMode === "custom" ? "custom" : "auto", fallback: /^#[0-9a-f]{6}$/i.test(value.fallback) ? value.fallback : DEFAULT_LOGO_STYLE.fallback, borderWidth: (() => { const w = Math.min(10, Math.max(0, finite(value.borderWidth, 0))); return w === 1 ? 2 : w; })(), borderColor: /^#[0-9a-f]{6}$/i.test(value.borderColor) ? value.borderColor : "#ffffff", shadow: shadows.includes(value.shadow) ? value.shadow : "soft", shadowSize: Math.min(2, Math.max(.5, finite(value.shadowSize, 1))), initials: initialsModes.includes(value.initials) ? value.initials : "one", size: Math.min(190, Math.max(72, finite(value.size, 124))), zoom: Math.min(2.5, Math.max(1, finite(value.zoom, 1))), x: Math.min(100, Math.max(0, finite(value.x, 50))), y: Math.min(100, Math.max(0, finite(value.y, 50))) };
 }
 
 // Derives the fallback initial(s) shown when there's no logo image yet. "two" tries one
@@ -290,9 +298,16 @@ export function logoBackgroundColor(style: LogoStyle, primary: string): string {
 // for one specific treatment, which was surprising and impossible to predict from the UI.
 export function logoFrameStyle(style: LogoStyle, primary: string): CSSProperties {
   const background = logoBackgroundColor(style, primary);
+  const s = style.shadowSize ?? 1;
   const shadow = style.shadow === "glow"
-    ? `0 0 0 3px ${hexToRgba(style.borderColor, .2)}, 0 0 28px ${hexToRgba(style.borderColor, .58)}`
-    : style.shadow === "soft" ? "0 10px 28px rgba(18,20,30,.18)" : "none";
+    ? `0 0 0 ${(3 * s).toFixed(1)}px ${hexToRgba(style.borderColor, .2)}, 0 0 ${(28 * s).toFixed(1)}px ${hexToRgba(style.borderColor, .58)}`
+    // Deliberately NOT tied to borderColor, unlike glow/hard below — a soft shadow reads as
+    // realistic depth precisely because it stays neutral; a shadow tinted to match a light
+    // border color (e.g. white) would nearly vanish on the light backgrounds most templates use.
+    : style.shadow === "soft" ? `0 ${(10 * s).toFixed(1)}px ${(28 * s).toFixed(1)}px rgba(18,20,30,.18)`
+    // Solid, unblurred, offset — the brutalist/neobrutalist "sticker" shadow, same recipe the
+    // button zone uses for those templates (collection: "brutal"/"retro" in design-presets.ts).
+    : style.shadow === "hard" ? `${(6 * s).toFixed(1)}px ${(6 * s).toFixed(1)}px 0 ${style.borderColor}` : "none";
   return {
     background,
     color: contrastTextColor(background),
@@ -308,7 +323,9 @@ export function logoFrameStyle(style: LogoStyle, primary: string): CSSProperties
 }
 
 export function logoBorderRadius(shape: LogoStyle["shape"], size: number): string | number {
-  return shape === "round" ? "50%" : Math.max(12, Math.round(size * 0.22));
+  if (shape === "round") return "50%";
+  if (shape === "sharp") return 0;
+  return Math.max(12, Math.round(size * 0.22));
 }
 
 // Decorative header layer: independent of the page background and content layout.

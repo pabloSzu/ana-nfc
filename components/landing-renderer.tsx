@@ -201,7 +201,7 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
           {landing.logo_url ? (
             <div style={{ width: "100%", height: "100%", borderRadius: "inherit", overflow: "hidden", backgroundImage: `url(${landing.logo_url})`, backgroundSize: `${logo.zoom * 100}%`, backgroundPosition: `${logo.x}% ${logo.y}%` }} />
           ) : (
-            <div style={{ width: "100%", height: "100%", borderRadius: "inherit", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>{logoInitials(landing.business_name, logo.initials)}</div>
+            <div style={{ width: "100%", height: "100%", borderRadius: "inherit", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: resolveTextFont(title.font) }}>{logoInitials(landing.business_name, logo.initials)}</div>
           )}
         </div>
         {title.eyebrow && <p className={`landing-eyebrow${edit ? " editor-hit" : ""}`} data-tag="Rubro o frase breve" onClick={edit?.onSelectTitle} style={{ color: title.color, fontFamily: resolveTextFont(title.font) }}>{title.eyebrow}</p>}

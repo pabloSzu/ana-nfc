@@ -36,7 +36,7 @@ export const DESIGN_PRESETS_V2: DesignPreset[] = [
     background: "#f4f3ee", bg1: "#f4f3ee", bg2: "#e6e4db", accent: "#0a0a0a", oneColor: "#ffffff", foreground: "#0a0a0a",
     buttonFont: "bold",
     buttonZone: { preset: "brutalism", layout: "center", gap: 13, height: 56, radius: 0, width: 100, shadow: "none", finish: "solid", collection: "brutal", colorMode: "one", textSize: 15, iconSize: 28, contentAlign: "left" },
-    title: { font: "bold", weight: 900, size: 32, align: "center" }, subtitle: { font: "mono", weight: 700, size: 13 }, logo: { shape: "square", size: 120 },
+    title: { font: "bold", weight: 900, size: 32, align: "center" }, subtitle: { font: "mono", weight: 700, size: 13 }, logo: { shape: "sharp", size: 120 },
   },
   {
     id: "neobrutal", name: "Neobrutalismo", description: "Colores fuertes, bordes marcados y sombra dura. Marcas jóvenes, apps y creadores.",
