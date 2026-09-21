@@ -70,6 +70,8 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
   const [preview, setPreview] = useState(false);
   const [device, setDevice] = useState<DeviceMode>("standard");
   const [dirty, setDirty] = useState(false);
+  const [deletedButton, setDeletedButton] = useState<{ button: ButtonItem; index: number } | null>(null);
+  const restoreButtonRef = useRef<HTMLButtonElement>(null);
   const [leaveOpen, setLeaveOpen] = useState(false);
   // Purely a personal viewing preference for the app's OWN chrome — nothing to do with the
   // landing being edited — shared with /admin via the same localStorage key (theme-scene.tsx),
@@ -86,7 +88,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
   const actionDefs = useMemo(() => getAllActions(), []);
   const draggedButton = useRef<string | null>(null);
   const lastDragTargetIndex = useRef<number | null>(null);
-  const buttonElements = useRef(new Map<string, HTMLAnchorElement>());
+  const buttonElements = useRef(new Map<string, HTMLDivElement>());
   const buttonsContainerRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLElement>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -162,6 +164,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
   }
 
   function undo() {
+    setDeletedButton(null);
     if (burstTimerRef.current) { clearTimeout(burstTimerRef.current); burstTimerRef.current = null; }
     flushBurst();
     const previous = pastRef.current.pop();
@@ -174,6 +177,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
   }
 
   function redo() {
+    setDeletedButton(null);
     const next = futureRef.current.pop();
     if (!next) return;
     pushPast({ draft, buttons });
@@ -207,6 +211,30 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
   const changeZone = (patch: Partial<ButtonZoneStyle>) => change({ buttonZone: { ...draft.buttonZone, ...patch } });
   const patchButtons = (updater: (current: ButtonItem[]) => ButtonItem[]) => { setButtons(updater); setDirty(true); };
   const changeButton = (id: string, patch: Partial<ButtonItem>) => { commitContinuous(); patchButtons((current) => current.map((button) => button.id === id ? { ...button, ...patch } : button)); };
+
+  function deleteButton(id: string) {
+    const index = buttons.findIndex((button) => button.id === id);
+    if (index < 0) return;
+    commitDiscrete();
+    setDeletedButton({ button: buttons[index], index });
+    patchButtons((current) => current.filter((button) => button.id !== id));
+    if (typeof panel === "object" && panel?.buttonId === id) setPanel(null);
+    requestAnimationFrame(() => restoreButtonRef.current?.focus());
+  }
+
+  function restoreDeletedButton() {
+    if (!deletedButton) return;
+    commitDiscrete();
+    patchButtons((current) => {
+      if (current.some((button) => button.id === deletedButton.button.id)) return current;
+      const restored = [...current];
+      restored.splice(Math.min(deletedButton.index, restored.length), 0, deletedButton.button);
+      return restored;
+    });
+    const restoredId = deletedButton.button.id;
+    setDeletedButton(null);
+    requestAnimationFrame(() => buttonElements.current.get(restoredId)?.querySelector("a")?.focus());
+  }
 
   function applyPreset(id: string) {
     const preset = DESIGN_PRESETS_V2.find((item) => item.id === id);
@@ -428,6 +456,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
     selected: panel,
     draggingId,
     onSelectTemplates: () => setPanel("templates"),
+    onSelectSettings: () => setPanel("settings"),
     onSelectLogo: () => setPanel("logo"),
     onSelectTitle: () => setPanel("title"),
     onSelectSubtitle: () => setPanel("subtitle"),
@@ -435,6 +464,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
     onSelectCover: () => setPanel("cover"),
     onSelectZone: () => setPanel("buttons"),
     onSelectButton: (id) => setPanel({ buttonId: id }),
+    onDeleteButton: deleteButton,
     onAddButton: () => setPanel("add"),
     onButtonRef: (id, element) => { if (element) buttonElements.current.set(id, element); else buttonElements.current.delete(id); },
     onDragStart: (clientY, id) => startDrag(clientY, id),
@@ -442,7 +472,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
 
   return (
     <main className="v2-shell">
-      <form id="v2-save" action={saveAction} onSubmit={() => setDirty(false)}>
+      <form id="v2-save" action={saveAction} onSubmit={() => { setDirty(false); setDeletedButton(null); }}>
         <input type="hidden" name="landing_id" value={draft.id} />
         <input type="hidden" name="business_name" value={draft.business_name} /><input type="hidden" name="description" value={draft.description || ""} />
         <input type="hidden" name="primary_color" value={draft.primary_color || "#1f2937"} /><input type="hidden" name="background_type" value={draft.background_type || "color"} />
@@ -489,12 +519,12 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
             setCoverPreview(null); setCoverRemoved(true);
             change({ coverStyle: { ...draft.coverStyle, enabled: false } });
           }} />}
-          {panel === "settings" && <SettingsControls draft={draft} publishAction={publishAction} deleteLandingAction={deleteLandingAction} />}
+          {panel === "settings" && <SettingsControls draft={draft} onBrandingChange={(showBranding) => changeZone({ showBranding })} publishAction={publishAction} deleteLandingAction={deleteLandingAction} />}
           {panel === "title" && <TitleControls draft={draft} onChange={change} />}
           {panel === "subtitle" && <SubtitleControls draft={draft} onChange={change} />}
           {panel === "logo" && <LogoControls draft={draft} logoImage={logoImage} onChange={change} onLogo={onLogoFile} onRemoveLogo={() => { setLogoPreview(null); setLogoRemoved(true); setDirty(true); }} />}
           {panel === "add" && <ActionCatalog onAdd={addButton} />}
-          {activeButton && <ButtonControls button={activeButton} draft={draft} onChange={(patch) => changeButton(activeButton.id, patch)} onDelete={() => { commitDiscrete(); patchButtons((current) => current.filter((item) => item.id !== activeButton.id)); setPanel(null); }} />}
+          {activeButton && <ButtonControls button={activeButton} draft={draft} onChange={(patch) => changeButton(activeButton.id, patch)} onDelete={() => deleteButton(activeButton.id)} />}
         </aside>}
 
         <section className={`v2-stage device-${device}`}>
@@ -510,6 +540,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
         </section>
       </div>
 
+      {deletedButton && <div className="v2-delete-notice"><span role="status">Botón eliminado: <b>{deletedButton.button.title}</b></span><button ref={restoreButtonRef} type="button" onClick={restoreDeletedButton}>Deshacer</button><button type="button" aria-label="Cerrar aviso" onClick={() => setDeletedButton(null)}>×</button></div>}
       {leaveOpen && <div className="v2-modal-backdrop"><div className="v2-modal"><div className="v2-modal-icon">!</div><h2>Tenés cambios sin guardar</h2><p>Si salís ahora, vas a perder los últimos cambios de diseño.</p><button className="v2-save" form="v2-save" name="return_to" value="/admin">Guardar y salir</button><Link href="/admin" className="v2-danger">Salir sin guardar</Link><button className="v2-ghost" onClick={() => { setLeaveOpen(false); setPreview(false); }}>Seguir editando</button></div></div>}
     </main>
   );
@@ -741,12 +772,13 @@ function CoverControls({ draft, coverImage, onChange, onCoverFile, onRemoveCover
 // itself. Everything here posts straight to the same server actions the admin list uses
 // (`publishAction`/`deleteLandingAction`, both passed down from the page), so there's exactly
 // one place in the whole app that actually flips `published` or deletes a landing row.
-function SettingsControls({ draft, publishAction, deleteLandingAction }: { draft: LandingDraft; publishAction: SaveAction; deleteLandingAction: SaveAction }) {
+function SettingsControls({ draft, onBrandingChange, publishAction, deleteLandingAction }: { draft: LandingDraft; onBrandingChange: (show: boolean) => void; publishAction: SaveAction; deleteLandingAction: SaveAction }) {
   const isPublished = Boolean(draft.published);
   return <div className="v2-fields">
     <div className="v2-brand">
       <span><b>{isPublished ? "Tu landing está online" : "Tu landing está en borrador"}</b><small>{isPublished ? "Cualquiera con el link o el tag NFC puede verla." : "Todavía no es visible para el público."}</small></span>
     </div>
+    <Choice active={draft.buttonZone.showBranding !== false} title="Mostrar firma de BioNFC" note="Agrega el logo y un enlace a BioNFC al final de tu página. Guardá los cambios para aplicar esta opción." onClick={() => onBrandingChange(draft.buttonZone.showBranding === false)} />
     <form action={publishAction}>
       <input type="hidden" name="id" value={draft.id} />
       <input type="hidden" name="published" value={String(!isPublished)} />

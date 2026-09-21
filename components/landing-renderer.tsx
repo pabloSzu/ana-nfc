@@ -1,3 +1,5 @@
+import { FiTrash2 } from "react-icons/fi";
+import BioNFCLogo from "@/components/bionfc-logo";
 import {
   buildActionLink, buttonZoneShadow, resolveBackgroundTint, contrastTextColor,
   parseTitleStyle, parseSubtitleStyle, parseLogoStyle, parseBackgroundPosition, parseButtonZone, parseCoverStyle, hexToRgba, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize,
@@ -58,6 +60,7 @@ export type LandingEditControls = {
   selected: LandingEditSelection;
   draggingId: string | null;
   onSelectTemplates: () => void;
+  onSelectSettings: () => void;
   onSelectLogo: () => void;
   onSelectTitle: () => void;
   onSelectSubtitle: () => void;
@@ -65,8 +68,9 @@ export type LandingEditControls = {
   onSelectCover: () => void;
   onSelectZone: () => void;
   onSelectButton: (id: string) => void;
+  onDeleteButton: (id: string) => void;
   onAddButton: () => void;
-  onButtonRef: (id: string, el: HTMLAnchorElement | null) => void;
+  onButtonRef: (id: string, el: HTMLDivElement | null) => void;
   onDragStart: (clientY: number, id: string) => void;
 };
 
@@ -151,7 +155,7 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
   );
 
   return (
-    <main className="public" style={{ position: "relative", overflow: "hidden", background: landing.background_color || "#f7f5f0" }}>
+    <main className={`public${zone.showBranding !== false ? " has-branding" : ""}`} style={{ position: "relative", overflow: "hidden", background: landing.background_color || "#f7f5f0" }}>
       <FontLinks ids={fontIds} />
       <div className="public-bg-layer" style={{ position: "absolute", inset: 0, zIndex: 0, backgroundRepeat: "no-repeat", ...bgLayerStyle }} />
       <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none", backgroundImage: `linear-gradient(180deg, rgba(4,8,10,${(bgTint * 0.55).toFixed(3)}), rgba(5,8,11,${bgTint}))` }} />
@@ -201,9 +205,8 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
             const isSelected = Boolean(edit && typeof edit.selected === "object" && edit.selected?.buttonId === action.id);
             const isDragging = edit?.draggingId === action.id;
             return (
+              <div key={action.id} ref={edit ? (el) => edit.onButtonRef(action.id, el) : undefined} className={`landing-action-row${edit ? " editor-action-row" : ""}${isDragging ? " is-dragging" : ""}`} style={{ position: "relative", width: buttonCollectionWidth(zone, index), margin: "0 auto" }}>
               <a
-                key={action.id}
-                ref={edit ? (el) => edit.onButtonRef(action.id, el) : undefined}
                 data-button-id={edit ? action.id : undefined}
                 className={`action button-collection-${zone.collection} icon-appearance-${iconAppearance}${edit ? " editor-hit" : ""}${isSelected ? " is-selected" : ""}${isDragging ? " is-dragging" : ""}`}
                 href={actionHref(action)}
@@ -212,7 +215,7 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
                 onClick={edit ? (event) => { event.preventDefault(); edit.onSelectButton(action.id); } : undefined}
                 style={{
                   ...buttonCollectionStyle(zone.collection, bg, text, index, action.type, isAuthentic, useNetworkAccent),
-                  width: buttonCollectionWidth(zone, index),
+                  width: "100%",
                   minHeight: zone.height,
                   margin: "0 auto",
                   borderRadius: zone.radius,
@@ -234,7 +237,6 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
                   {zone.contentAlign === "center" && <span className="action-icon-balance" aria-hidden="true" />}
                 </span>
                 {edit && !action.use_auto_color && <span className="editor-own-badge">Propio</span>}
-                {edit && <span className="editor-pencil" title="Editar botón"><IconEdit /></span>}
                 {edit && (
                   <span
                     className="editor-drag"
@@ -245,10 +247,18 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
                   >⠿</span>
                 )}
               </a>
+              {edit && <button type="button" className="editor-delete-action" aria-label={`Eliminar botón: ${action.title}`} title={`Eliminar ${action.title}`} disabled={Boolean(edit.draggingId)} onClick={() => edit.onDeleteButton(action.id)}><FiTrash2 aria-hidden="true" /></button>}
+              </div>
             );
           })}
           {edit && <button type="button" className="editor-add-link" onClick={edit.onAddButton}><span className="editor-add-icon">＋</span> Agregar botón</button>}
         </div>
+        {zone.showBranding !== false && <footer className={`landing-branding${edit ? " is-editable" : ""}`} data-tone={contrastTextColor(landing.background_color || "#f7f5f0") === "#ffffff" ? "dark" : "light"}>
+          <a href="/?utm_source=bionfc_landing&utm_medium=referral&utm_campaign=footer" target="_blank" rel="noopener noreferrer" aria-label={edit ? "Editar firma de BioNFC" : "Hecho con BioNFC. Conocé BioNFC (abre en otra pestaña)"} onClick={edit ? (event) => { event.preventDefault(); edit.onSelectSettings(); } : undefined}>
+            <span className="landing-branding-label">Hecho con</span><BioNFCLogo />
+            {edit && <span className="editor-branding-hint"><IconEdit aria-hidden="true" /> Editar firma</span>}
+          </a>
+        </footer>}
       </div>
     </main>
   );

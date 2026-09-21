@@ -97,6 +97,8 @@ export function buttonShapeRadius(shape?: string | null): string {
 }
 
 export type ButtonZoneStyle = {
+  // Stored with presentation settings; absent on older pages means visible.
+  showBranding?: boolean;
   preset: string;
   layout: "center" | "editorial" | "profile-card" | "compact" | "poster";
   // Which general template (if any) the whole design was last built from — separate from
@@ -118,6 +120,7 @@ export type ButtonZoneStyle = {
 };
 
 export const DEFAULT_BUTTON_ZONE: ButtonZoneStyle = {
+  showBranding: true,
   preset: "essential",
   layout: "center",
   templateId: "custom",
@@ -140,6 +143,7 @@ export function parseButtonZone(raw: unknown): ButtonZoneStyle {
   const contentAligns: ButtonZoneStyle["contentAlign"][] = ["center","left"];
   return {
     ...merged,
+    showBranding: parsed.showBranding !== false,
     preset: typeof parsed.preset === "string" ? parsed.preset : "custom",
     layout: layouts.includes(merged.layout) ? merged.layout : "center",
     templateId: typeof parsed.templateId === "string" ? parsed.templateId : "custom",
