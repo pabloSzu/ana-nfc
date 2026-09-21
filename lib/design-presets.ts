@@ -16,7 +16,12 @@ export type DesignPreset = {
   buttonZone: Omit<ButtonZoneStyle, "oneColor" | "templateId" | "contentAlignMode" | "iconAppearance" | "colorModeManual">;
   title: Pick<TitleStyle, "font" | "weight" | "size" | "align">;
   subtitle: Pick<SubtitleStyle, "font" | "weight" | "size">;
-  logo: Pick<LogoStyle, "shape" | "size">;
+  // Every field here is required on purpose: applying a template spreads this object over the
+  // current logo style, so any field a preset leaves out silently keeps whatever the PREVIOUS
+  // template set. That's how picking Minimalismo once left every template after it stuck on
+  // two-letter initials until a reload. Required fields make TypeScript catch an incomplete
+  // preset instead of it turning into leftover state at runtime.
+  logo: Pick<LogoStyle, "shape" | "size" | "initials" | "shadowSize">;
 };
 
 // Every template bundles a background, a typography pairing AND a button look that were
@@ -29,35 +34,35 @@ export const DESIGN_PRESETS_V2: DesignPreset[] = [
     background: "linear-gradient(160deg,#fbfbfd,#eef0f5)", bg1: "#fbfbfd", bg2: "#eef0f5", accent: "#16181d", oneColor: "#16181d", foreground: "#16181d",
     buttonFont: "minimal",
     buttonZone: { preset: "minimal", layout: "center", gap: 10, height: 52, radius: 12, width: 100, shadow: "none", finish: "solid", collection: "minimal", colorMode: "one", textSize: 14, iconSize: 27, contentAlign: "center" },
-    title: { font: "minimal", weight: 800, size: 27, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "sharp", size: 116 },
+    title: { font: "minimal", weight: 800, size: 27, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "sharp", size: 116, initials: "two", shadowSize: 2 },
   },
   {
     id: "brutalism", name: "Brutalismo", description: "Blanco y negro puro, bordes duros, cero adornos. Estudios, moda y marcas con carácter.",
     background: "#f4f3ee", bg1: "#f4f3ee", bg2: "#e6e4db", accent: "#0a0a0a", oneColor: "#ffffff", foreground: "#0a0a0a",
     buttonFont: "bold",
     buttonZone: { preset: "brutalism", layout: "center", gap: 13, height: 56, radius: 0, width: 100, shadow: "none", finish: "solid", collection: "brutal", colorMode: "one", textSize: 15, iconSize: 28, contentAlign: "left" },
-    title: { font: "minimal", weight: 900, size: 32, align: "center" }, subtitle: { font: "mono", weight: 700, size: 13 }, logo: { shape: "round", size: 120 },
+    title: { font: "minimal", weight: 900, size: 32, align: "center" }, subtitle: { font: "mono", weight: 700, size: 13 }, logo: { shape: "round", size: 120, initials: "one", shadowSize: 1 },
   },
   {
     id: "neobrutal", name: "Neobrutalismo", description: "Colores fuertes, bordes marcados y sombra dura. Marcas jóvenes, apps y creadores.",
     background: "linear-gradient(150deg,#fff267,#ff8bd0)", bg1: "#fff267", bg2: "#ff8bd0", accent: "#1a1a1a", oneColor: "#7c5cff", foreground: "#171923",
     buttonFont: "friendly",
     buttonZone: { preset: "neobrutal", layout: "center", gap: 13, height: 56, radius: 14, width: 100, shadow: "none", finish: "solid", collection: "retro", colorMode: "auto", textSize: 14, iconSize: 27, contentAlign: "left" },
-    title: { font: "bold", weight: 900, size: 30, align: "center" }, subtitle: { font: "friendly", weight: 700, size: 14 }, logo: { shape: "square", size: 122 },
+    title: { font: "bold", weight: 900, size: 30, align: "center" }, subtitle: { font: "friendly", weight: 700, size: 14 }, logo: { shape: "square", size: 122, initials: "one", shadowSize: 1 },
   },
   {
     id: "glass", name: "Glassmorfismo", description: "Vidrio esmerilado sobre un fondo vivo. Fotografía, eventos y vida nocturna.",
     background: "linear-gradient(150deg,#1c0f3d,#ff4fa3)", bg1: "#1c0f3d", bg2: "#ff4fa3", accent: "#ffffff", oneColor: "#ffffff", foreground: "#ffffff",
     buttonFont: "modern",
     buttonZone: { preset: "glass", layout: "profile-card", gap: 11, height: 56, radius: 18, width: 100, shadow: "soft", finish: "glass", collection: "glass", colorMode: "one", textSize: 14, iconSize: 29, contentAlign: "center" },
-    title: { font: "modern", weight: 800, size: 29, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "round", size: 124 },
+    title: { font: "modern", weight: 800, size: 29, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "round", size: 124, initials: "one", shadowSize: 1 },
   },
   {
     id: "elegant", name: "Elegante", description: "Marfil, serif refinada y detalles dorados. Hoteles boutique, joyerías y alta gama.",
     background: "linear-gradient(150deg,#fbf7ef,#e7d7c2)", bg1: "#fbf7ef", bg2: "#e7d7c2", accent: "#8c6b3f", oneColor: "#8c6b3f", foreground: "#2c241c",
     buttonFont: "minimal",
     buttonZone: { preset: "elegant", layout: "poster", gap: 12, height: 54, radius: 10, width: 100, shadow: "soft", finish: "solid", collection: "luxury", colorMode: "one", textSize: 14, iconSize: 26, contentAlign: "center" },
-    title: { font: "elegant", weight: 700, size: 31, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "round", size: 114 },
+    title: { font: "elegant", weight: 700, size: 31, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "round", size: 114, initials: "two", shadowSize: 1 },
   },
   {
     id: "corporate", name: "Corporativo", description: "Confiado y preciso, con un toque técnico. Consultoras, software y servicios profesionales.",
@@ -68,70 +73,70 @@ export const DESIGN_PRESETS_V2: DesignPreset[] = [
     // and buttons than the previous Inter — both are geometric/technical faces (the pairing
     // startup and dev-tool product pages already reach for), where Inter read as generically
     // safe rather than actually "técnico" the way the description promises.
-    title: { font: "modern", weight: 800, size: 27, align: "center" }, subtitle: { font: "mono", weight: 500, size: 13 }, logo: { shape: "square", size: 112 },
+    title: { font: "modern", weight: 800, size: 27, align: "center" }, subtitle: { font: "mono", weight: 500, size: 13 }, logo: { shape: "square", size: 112, initials: "one", shadowSize: 1 },
   },
   {
     id: "vibrant", name: "Vibrante", description: "Cada red conserva su color oficial. Perfil personal o multi-marca.",
     background: "linear-gradient(150deg,#302061,#c74878)", bg1: "#302061", bg2: "#c74878", accent: "#ff6b8d", oneColor: "#ff6b8d", foreground: "#ffffff",
     buttonFont: "modern",
     buttonZone: { preset: "vibrant", layout: "center", gap: 11, height: 57, radius: 18, width: 100, shadow: "strong", finish: "solid", collection: "brand", colorMode: "auto", textSize: 14, iconSize: 30, contentAlign: "left" },
-    title: { font: "modern", weight: 900, size: 29, align: "center" }, subtitle: { font: "minimal", weight: 600, size: 14 }, logo: { shape: "square", size: 122 },
+    title: { font: "modern", weight: 900, size: 29, align: "center" }, subtitle: { font: "minimal", weight: 600, size: 14 }, logo: { shape: "square", size: 122, initials: "one", shadowSize: 1 },
   },
   {
     id: "natural", name: "Natural", description: "Cálida y orgánica. Wellness, gastronomía consciente y turismo rural.",
     background: "linear-gradient(150deg,#f7f3e8,#d7e4cf)", bg1: "#f7f3e8", bg2: "#d7e4cf", accent: "#355b3e", oneColor: "#355b3e", foreground: "#26382a",
     buttonFont: "friendly",
     buttonZone: { preset: "natural", layout: "center", gap: 11, height: 55, radius: 18, width: 100, shadow: "soft", finish: "solid", collection: "soft", colorMode: "one", textSize: 14, iconSize: 27, contentAlign: "left" },
-    title: { font: "handwritten", weight: 700, size: 38, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "round", size: 122 },
+    title: { font: "handwritten", weight: 700, size: 38, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "round", size: 122, initials: "one", shadowSize: 1 },
   },
   {
     id: "pastel", name: "Pastel", description: "Suave, luminosa y delicada. Belleza, salud y cuidado personal.",
     background: "linear-gradient(150deg,#ffe6ef,#e3e6ff)", bg1: "#ffe6ef", bg2: "#e3e6ff", accent: "#cf7fb9", oneColor: "#cf7fb9", foreground: "#3d2a3c",
     buttonFont: "friendly",
     buttonZone: { preset: "pastel", layout: "center", gap: 11, height: 54, radius: 22, width: 100, shadow: "soft", finish: "solid", collection: "pastel", colorMode: "one", textSize: 14, iconSize: 27, contentAlign: "center" },
-    title: { font: "friendly", weight: 700, size: 27, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "round", size: 118 },
+    title: { font: "friendly", weight: 700, size: 27, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "round", size: 118, initials: "two", shadowSize: 1 },
   },
   {
     id: "neon", name: "Neon Night", description: "Oscura y magnética con brillo ambiental. Bares, boliches y eventos nocturnos.",
     background: "linear-gradient(150deg,#060817,#17113f)", bg1: "#060817", bg2: "#17113f", accent: "#8b72ff", oneColor: "#755cff", foreground: "#f7f5ff",
     buttonFont: "modern",
     buttonZone: { preset: "neon", layout: "center", gap: 12, height: 56, radius: 16, width: 100, shadow: "strong", finish: "solid", collection: "glow", colorMode: "one", textSize: 14, iconSize: 29, contentAlign: "center" },
-    title: { font: "modern", weight: 900, size: 29, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "square", size: 118 },
+    title: { font: "modern", weight: 900, size: 29, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "square", size: 118, initials: "one", shadowSize: 1 },
   },
   {
     id: "creator", name: "Pop Studio", description: "Audaz y expresiva, pero siempre ordenada. Creadores y marcas digitales.",
     background: "linear-gradient(150deg,#ff3e88,#ff9a3d)", bg1: "#ff3e88", bg2: "#ff9a3d", accent: "#5b2be0", oneColor: "#5b2be0", foreground: "#ffffff",
     buttonFont: "bold",
     buttonZone: { preset: "creator", layout: "center", gap: 12, height: 58, radius: 22, width: 100, shadow: "strong", finish: "solid", collection: "candy", colorMode: "one", textSize: 14, iconSize: 29, contentAlign: "left" },
-    title: { font: "bold", weight: 900, size: 30, align: "center" }, subtitle: { font: "handwritten", weight: 600, size: 18 }, logo: { shape: "square", size: 118 },
+    title: { font: "bold", weight: 900, size: 30, align: "center" }, subtitle: { font: "handwritten", weight: 600, size: 18 }, logo: { shape: "square", size: 118, initials: "one", shadowSize: 1 },
   },
   {
     id: "brand-signature", name: "Firma de Marca", description: "Tarjetas claras con insignias oficiales protagonistas. Limpia, reconocible y premium.",
     background: "linear-gradient(155deg,#fffdf7,#ebeef5)", bg1: "#fffdf7", bg2: "#ebeef5", accent: "#17191f", oneColor: "#ffffff", foreground: "#17191f",
     buttonFont: "minimal",
     buttonZone: { preset: "brand-signature", layout: "profile-card", gap: 11, height: 61, radius: 19, width: 100, shadow: "soft", finish: "solid", collection: "brandmark", colorMode: "one", textSize: 14, iconSize: 36, contentAlign: "left" },
-    title: { font: "minimal", weight: 850, size: 29, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "sharp", size: 120 },
+    title: { font: "minimal", weight: 850, size: 29, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "sharp", size: 120, initials: "one", shadowSize: 1 },
   },
   {
     id: "brand-stage", name: "Brand Stage", description: "Botones oscuros de alto impacto con cada marca iluminada en su color real.",
     background: "linear-gradient(145deg,#26304a,#07090e)", bg1: "#26304a", bg2: "#07090e", accent: "#ffffff", oneColor: "#151922", foreground: "#ffffff",
     buttonFont: "minimal",
     buttonZone: { preset: "brand-stage", layout: "poster", gap: 12, height: 63, radius: 20, width: 100, shadow: "strong", finish: "solid", collection: "brandpanel", colorMode: "one", textSize: 14, iconSize: 38, contentAlign: "left" },
-    title: { font: "minimal", weight: 900, size: 30, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "square", size: 122 },
+    title: { font: "minimal", weight: 900, size: 30, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "square", size: 122, initials: "one", shadowSize: 1 },
   },
   {
     id: "arcade", name: "Arcade", description: "Controles digitales premium con profundidad precisa. Apps, gaming, gimnasios y marcas jóvenes.",
     background: "linear-gradient(155deg,#20162c,#09070d)", bg1: "#20162c", bg2: "#09070d", accent: "#ff4f72", oneColor: "#ff4f72", foreground: "#fff8fc",
     buttonFont: "modern",
     buttonZone: { preset: "arcade", layout: "center", gap: 14, height: 58, radius: 14, width: 100, shadow: "strong", finish: "solid", collection: "gummy", colorMode: "auto", textSize: 14, iconSize: 30, contentAlign: "center" },
-    title: { font: "bold", weight: 900, size: 31, align: "center" }, subtitle: { font: "minimal", weight: 600, size: 14 }, logo: { shape: "square", size: 120 },
+    title: { font: "bold", weight: 900, size: 31, align: "center" }, subtitle: { font: "minimal", weight: 600, size: 14 }, logo: { shape: "square", size: 120, initials: "one", shadowSize: 1 },
   },
   {
     id: "halo", name: "Halo", description: "Anillos de luz por marca sobre una superficie nocturna. Tecnología, música y eventos.",
     background: "linear-gradient(155deg,#111827,#020407)", bg1: "#111827", bg2: "#020407", accent: "#55eaff", oneColor: "#55eaff", foreground: "#f7fcff",
     buttonFont: "modern",
     buttonZone: { preset: "halo", layout: "center", gap: 16, height: 60, radius: 30, width: 100, shadow: "none", finish: "outline", collection: "aura", colorMode: "auto", textSize: 15, iconSize: 31, contentAlign: "center" },
-    title: { font: "modern", weight: 900, size: 31, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "round", size: 122 },
+    title: { font: "modern", weight: 900, size: 31, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "round", size: 122, initials: "one", shadowSize: 1 },
   },
 ];
 
