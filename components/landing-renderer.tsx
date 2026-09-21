@@ -1,7 +1,7 @@
 import { FiTrash2 } from "react-icons/fi";
 import BioNFCLogo from "@/components/bionfc-logo";
 import {
-  buildActionLink, buttonZoneShadow, resolveBackgroundTint, contrastTextColor,
+  QUICK_SOCIALS, quickSocialHref, buildActionLink, buttonZoneShadow, resolveBackgroundTint, contrastTextColor,
   parseTitleStyle, parseSubtitleStyle, parseLogoStyle, parseBackgroundPosition, parseButtonZone, parseCoverStyle, hexToRgba, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize,
 } from "@/lib/landing-catalog";
 import { getFontFamily, resolveTextFont, FontLinks, ALL_FONT_IDS } from "@/lib/fonts";
@@ -50,7 +50,7 @@ type Landing = {
 // What's "selected" right now, for the highlight outline — mirrors editor-v2's own Panel
 // type structurally (kept independent here, not imported, to avoid a circular dependency
 // between the admin editor and this shared public-facing component).
-export type LandingEditSelection = "templates" | "buttons" | "background" | "cover" | "settings" | "title" | "subtitle" | "logo" | "add" | { buttonId: string } | null;
+export type LandingEditSelection = "templates" | "buttons" | "background" | "cover" | "settings" | "socials" | "title" | "subtitle" | "logo" | "add" | { buttonId: string } | null;
 
 // Everything the editor needs to turn this same real render into a live, click-to-edit
 // canvas — no separate mock. Every hook here only ever *adds* non-layout-affecting behavior
@@ -61,6 +61,7 @@ export type LandingEditControls = {
   draggingId: string | null;
   onSelectTemplates: () => void;
   onSelectSettings: () => void;
+  onSelectSocials: () => void;
   onSelectLogo: () => void;
   onSelectTitle: () => void;
   onSelectSubtitle: () => void;
@@ -96,6 +97,7 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
   const showCover = Boolean(cover.enabled && landing.cover_image_url);
   const zone = parseButtonZone(landing.button_style);
   const iconAppearance = zone.iconAppearance;
+  const socialLinks = (zone.quickSocials || []).flatMap(link => { const href = quickSocialHref(link); return href ? [{ ...link, href }] : []; });
   const hasSavedButtonStyle = Boolean(landing.button_style && typeof landing.button_style === "object" && Object.keys(landing.button_style).length);
   if (!hasSavedButtonStyle) zone.oneColor = primary;
   const buttonFont = getFontFamily(landing.button_font || "modern");
@@ -190,6 +192,7 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
             <div style={{ width: "100%", height: "100%", borderRadius: "inherit", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>{logoInitials(landing.business_name, logo.initials)}</div>
           )}
         </div>
+        {title.eyebrow && <p className={`landing-eyebrow${edit ? " editor-hit" : ""}`} data-tag="Rubro o frase breve" onClick={edit?.onSelectTitle} style={{ color: title.color, fontFamily: resolveTextFont(title.font) }}>{title.eyebrow}</p>}
         {heading}
         <br />
         {description}
@@ -253,6 +256,12 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
           })}
           {edit && <button type="button" className="editor-add-link" onClick={edit.onAddButton}><span className="editor-add-icon">＋</span> Agregar botón</button>}
         </div>
+        {(socialLinks.length > 0 || edit) && <div className="landing-socials-block">
+          {socialLinks.length > 0 && <nav className="landing-socials" aria-label="Redes sociales" data-tone={contrastTextColor(landing.background_color || "#f7f5f0") === "#ffffff" ? "dark" : "light"} data-filled={zone.quickSocialsFilled === false ? "no" : "yes"}>
+            {socialLinks.map(link => <a key={link.type} href={link.href} target="_blank" rel="noopener noreferrer" aria-label={QUICK_SOCIALS.find(option => option.type === link.type)?.label} onClick={edit ? event => { event.preventDefault(); edit.onSelectSocials(); } : undefined}><ActionTypeIcon type={link.type} /></a>)}
+          </nav>}
+          {edit && <button type="button" className="editor-socials-entry" onClick={edit.onSelectSocials}><IconEdit aria-hidden="true" />{socialLinks.length ? "Editar redes rápidas" : "Agregar redes rápidas"}</button>}
+        </div>}
         {zone.showBranding !== false && <footer className={`landing-branding${edit ? " is-editable" : ""}`} data-tone={contrastTextColor(landing.background_color || "#f7f5f0") === "#ffffff" ? "dark" : "light"}>
           <a href="/?utm_source=bionfc_landing&utm_medium=referral&utm_campaign=footer" target="_blank" rel="noopener noreferrer" aria-label={edit ? "Editar firma de BioNFC" : "Hecho con BioNFC. Conocé BioNFC (abre en otra pestaña)"} onClick={edit ? (event) => { event.preventDefault(); edit.onSelectSettings(); } : undefined}>
             <span className="landing-branding-label">Hecho con</span><BioNFCLogo />

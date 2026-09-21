@@ -9,7 +9,7 @@ import DeleteLandingButton from "@/app/admin/delete-landing-button";
 import LandingRenderer, { type LandingEditControls } from "@/components/landing-renderer";
 import ScaledPhoneCanvas from "@/components/scaled-phone-canvas";
 import { compressImage } from "@/lib/compress-image";
-import { AUTO_COLORS, contrastTextColor, getAllActions, parseCoverStyle, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize, type BackgroundPosition, type ButtonZoneStyle, type CoverStyle, type LogoStyle, type SubtitleStyle, type TitleStyle } from "@/lib/landing-catalog";
+import { QUICK_SOCIALS, quickSocialHref, type QuickSocial, AUTO_COLORS, contrastTextColor, getAllActions, parseCoverStyle, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize, type BackgroundPosition, type ButtonZoneStyle, type CoverStyle, type LogoStyle, type SubtitleStyle, type TitleStyle } from "@/lib/landing-catalog";
 import FontPicker from "../font-picker";
 import IconPicker from "../icon-picker";
 import { DESIGN_PRESETS_V2, buttonCollectionStyle, buttonIconStyle, hasAuthenticLook, recommendedIconAppearance, resolveButtonColors, type DesignPreset } from "@/lib/design-presets";
@@ -23,7 +23,7 @@ type LandingDraft = {
   published?: boolean | null; buttonZone: ButtonZoneStyle; titleStyle: TitleStyle; subtitleStyle: SubtitleStyle; logoStyle: LogoStyle; bgPosition: BackgroundPosition;
   cover_image_url?: string | null; coverStyle: CoverStyle;
 };
-type Panel = "templates" | "buttons" | "background" | "cover" | "settings" | "title" | "subtitle" | "logo" | "add" | { buttonId: string } | null;
+type Panel = "templates" | "buttons" | "background" | "cover" | "settings" | "socials" | "title" | "subtitle" | "logo" | "add" | { buttonId: string } | null;
 type BackgroundTab = "color" | "gradient" | "image";
 type DeviceMode = "small" | "standard" | "large";
 type SaveAction = (formData: FormData) => void | Promise<void>;
@@ -457,6 +457,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
     draggingId,
     onSelectTemplates: () => setPanel("templates"),
     onSelectSettings: () => setPanel("settings"),
+    onSelectSocials: () => setPanel("socials"),
     onSelectLogo: () => setPanel("logo"),
     onSelectTitle: () => setPanel("title"),
     onSelectSubtitle: () => setPanel("subtitle"),
@@ -519,6 +520,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
             setCoverPreview(null); setCoverRemoved(true);
             change({ coverStyle: { ...draft.coverStyle, enabled: false } });
           }} />}
+          {panel === "socials" && <SocialControls links={draft.buttonZone.quickSocials || []} onChange={(quickSocials) => changeZone({ quickSocials })} filled={draft.buttonZone.quickSocialsFilled !== false} onFilled={(quickSocialsFilled) => changeZone({ quickSocialsFilled })} />}
           {panel === "settings" && <SettingsControls draft={draft} onBrandingChange={(showBranding) => changeZone({ showBranding })} publishAction={publishAction} deleteLandingAction={deleteLandingAction} />}
           {panel === "title" && <TitleControls draft={draft} onChange={change} />}
           {panel === "subtitle" && <SubtitleControls draft={draft} onChange={change} />}
@@ -546,7 +548,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
   );
 }
 
-function panelTitle(panel: Exclude<Panel, null>) { if (typeof panel === "object") return "Editar botón"; return ({ templates: "Elegí una plantilla", buttons: "Editar todos los botones", background: "Fondo de la página", cover: "Portada", settings: "Ajustes de la landing", title: "Editar título", subtitle: "Editar subtítulo", logo: "Editar logo", add: "Agregar un botón" } as const)[panel]; }
+function panelTitle(panel: Exclude<Panel, null>) { if (typeof panel === "object") return "Editar botón"; return ({ templates: "Elegí una plantilla", buttons: "Editar todos los botones", background: "Fondo de la página", cover: "Portada", settings: "Ajustes de la landing", socials: "Redes rápidas", title: "Editar título", subtitle: "Editar subtítulo", logo: "Editar logo", add: "Agregar un botón" } as const)[panel]; }
 
 function TemplateSwatch({ preset }: { preset: DesignPreset }) {
   const iconAppearance = recommendedIconAppearance(preset.buttonZone.collection);
@@ -768,6 +770,34 @@ function CoverControls({ draft, coverImage, onChange, onCoverFile, onRemoveCover
   </div>;
 }
 
+function SocialControls({ links, onChange, filled, onFilled }: { links: QuickSocial[]; onChange: (links: QuickSocial[]) => void; filled: boolean; onFilled: (filled: boolean) => void }) {
+  return <div className="v2-fields">
+    <p className="v2-help">Accesos secundarios debajo de tus botones. Agregá solo las redes que quieras mostrar; no copiamos tus botones automáticamente.</p>
+    <fieldset>
+      <legend>Estilo de los íconos</legend>
+      <div className="v2-segment">
+        <button type="button" className={filled ? "active" : ""} onClick={() => onFilled(true)}>Con fondo</button>
+        <button type="button" className={!filled ? "active" : ""} onClick={() => onFilled(false)}>Sin fondo</button>
+      </div>
+    </fieldset>
+    {QUICK_SOCIALS.map(option => {
+      const current = links.find(link => link.type === option.type);
+      const invalid = Boolean(current?.url.trim() && !quickSocialHref(current));
+      return <div className="v2-social-field" key={option.type}>
+        <label><span><ActionTypeIcon type={option.type} brandMark />{option.label}</span>
+          <input type="text" inputMode={option.type === "whatsapp" ? "tel" : "url"} aria-invalid={invalid} aria-describedby={invalid ? `social-error-${option.type}` : undefined} value={current?.url || ""} placeholder={option.placeholder} maxLength={2048} onChange={event => {
+            const url = event.target.value;
+            onChange(current ? links.map(link => link.type === option.type ? { ...link, url } : link) : [...links, { type: option.type, url }]);
+          }} />
+        </label>
+        {invalid && <p id={`social-error-${option.type}`} className="v2-social-error">{option.type === "whatsapp" ? "Ingresá un número con código de país o un enlace completo." : "Ingresá un enlace completo, por ejemplo https://instagram.com/tumarca."} Este acceso no se mostrará hasta corregirlo.</p>}
+        {current && <button type="button" className="v2-ghost" onClick={() => onChange(links.filter(link => link.type !== option.type))}>Quitar {option.label}</button>}
+      </div>;
+    })}
+    <p className="v2-help">Las redes aparecen en el orden en que las agregás. Guardá los cambios para aplicarlas a tu página.</p>
+  </div>;
+}
+
 // The one panel that isn't a design control: publishing, sharing and deleting the landing
 // itself. Everything here posts straight to the same server actions the admin list uses
 // (`publishAction`/`deleteLandingAction`, both passed down from the page), so there's exactly
@@ -798,9 +828,9 @@ function suggestedPreset(templateId: string): DesignPreset {
   return DESIGN_PRESETS_V2.find((item) => item.id === templateId) || DESIGN_PRESETS_V2[0];
 }
 
-function TitleControls({ draft, onChange }: { draft: LandingDraft; onChange: (p: Partial<LandingDraft>) => void }) { const style=draft.titleStyle; const update=(patch:Partial<TitleStyle>)=>onChange({titleStyle:{...style,...patch}}); const preset=suggestedPreset(draft.buttonZone.templateId); return <div className="v2-fields"><label>Texto del título<input value={draft.business_name} onChange={(e)=>onChange({business_name:e.target.value})}/></label><button type="button" className="v2-suggested" onClick={()=>update({...preset.title,color:preset.foreground})}>✦ Usar estilos recomendados ({preset.name})</button><FontPicker label="Tipografía" value={style.font} onChange={(font)=>update({font})}/><Range label="Tamaño" min={20} max={48} value={style.size} onChange={(size)=>update({size})}/><fieldset><legend>Grosor</legend><div className="v2-segment">{[500,700,900].map((weight)=><button key={weight} className={style.weight===weight?"active":""} onClick={()=>update({weight})}>{weight===500?"Normal":weight===700?"Fuerte":"Extra"}</button>)}</div></fieldset><ColorField label="Color del texto" value={style.color} onChange={(color)=>update({color})}/><Choice active={style.bgMode==="solid"} title="Fondo detrás del título" note="Ayuda a leerlo sobre fotografías." onClick={()=>update({bgMode:style.bgMode==="solid"?"none":"solid"})}/>{style.bgMode==="solid"&&<ColorField label="Color del fondo" value={style.bg} onChange={(bg)=>update({bg})}/>}</div>; }
+function TitleControls({ draft, onChange }: { draft: LandingDraft; onChange: (p: Partial<LandingDraft>) => void }) { const style=draft.titleStyle; const update=(patch:Partial<TitleStyle>)=>onChange({titleStyle:{...style,...patch}}); const preset=suggestedPreset(draft.buttonZone.templateId); return <div className="v2-fields"><label>Rubro o frase breve (opcional)<input maxLength={60} value={style.eyebrow || ""} placeholder="Ej: ARQUITECTURA & INTERIORES" onChange={(e)=>update({eyebrow:e.target.value})}/></label><p className="v2-help">Una línea pequeña encima del nombre. Dejalo vacío para ocultarla.</p><label>Texto del título<input value={draft.business_name} onChange={(e)=>onChange({business_name:e.target.value})}/></label><button type="button" className="v2-suggested" onClick={()=>update({...preset.title,color:preset.foreground})}>✦ Usar estilos recomendados ({preset.name})</button><FontPicker label="Tipografía" value={style.font} onChange={(font)=>update({font})}/><Range label="Tamaño" min={20} max={48} value={style.size} onChange={(size)=>update({size})}/><fieldset><legend>Grosor</legend><div className="v2-segment">{[500,700,900].map((weight)=><button key={weight} className={style.weight===weight?"active":""} onClick={()=>update({weight})}>{weight===500?"Normal":weight===700?"Fuerte":"Extra"}</button>)}</div></fieldset><ColorField label="Color del texto" value={style.color} onChange={(color)=>update({color})}/><Choice active={style.bgMode==="solid"} title="Fondo detrás del título" note="Ayuda a leerlo sobre fotografías." onClick={()=>update({bgMode:style.bgMode==="solid"?"none":"solid"})}/>{style.bgMode==="solid"&&<ColorField label="Color del fondo" value={style.bg} onChange={(bg)=>update({bg})}/>}</div>; }
 
-function SubtitleControls({ draft, onChange }: { draft: LandingDraft; onChange: (p: Partial<LandingDraft>) => void }) { const style=draft.subtitleStyle; const update=(patch:Partial<SubtitleStyle>)=>onChange({subtitleStyle:{...style,...patch}}); const preset=suggestedPreset(draft.buttonZone.templateId); return <div className="v2-fields"><label>Texto del subtítulo<textarea rows={3} value={draft.description || ""} onChange={(e)=>onChange({description:e.target.value})}/></label><button type="button" className="v2-suggested" onClick={()=>update({...preset.subtitle,color:preset.foreground})}>✦ Usar estilos recomendados ({preset.name})</button><FontPicker label="Tipografía" value={style.font} onChange={(font)=>update({font})}/><Range label="Tamaño" min={11} max={26} value={style.size} onChange={(size)=>update({size})}/><fieldset><legend>Grosor</legend><div className="v2-segment">{[400,600,800].map((weight)=><button key={weight} className={style.weight===weight?"active":""} onClick={()=>update({weight})}>{weight===400?"Normal":weight===600?"Medio":"Fuerte"}</button>)}</div></fieldset><ColorField label="Color del texto" value={style.color} onChange={(color)=>update({color})}/><Choice active={style.bgMode==="solid"} title="Fondo detrás del texto" note="Mejora la lectura cuando hay una imagen." onClick={()=>update({bgMode:style.bgMode==="solid"?"none":"solid"})}/>{style.bgMode==="solid"&&<ColorField label="Color del fondo" value={style.bg} onChange={(bg)=>update({bg})}/>}</div>; }
+function SubtitleControls({ draft, onChange }: { draft: LandingDraft; onChange: (p: Partial<LandingDraft>) => void }) { const style=draft.subtitleStyle; const update=(patch:Partial<SubtitleStyle>)=>onChange({subtitleStyle:{...style,...patch}}); const preset=suggestedPreset(draft.buttonZone.templateId); return <div className="v2-fields"><label>Texto del subtítulo<textarea rows={3} value={draft.description || ""} onKeyDown={(e)=>{ if (e.key==="Enter" && (draft.description||"").includes("\n")) e.preventDefault(); }} onChange={(e)=>onChange({description:e.target.value})}/></label><p className="v2-help" style={{margin:"-4px 0 0"}}>Podés usar Enter para un salto de línea (máximo dos líneas).</p><button type="button" className="v2-suggested" onClick={()=>update({...preset.subtitle,color:preset.foreground})}>✦ Usar estilos recomendados ({preset.name})</button><FontPicker label="Tipografía" value={style.font} onChange={(font)=>update({font})}/><Range label="Tamaño" min={11} max={26} value={style.size} onChange={(size)=>update({size})}/><fieldset><legend>Grosor</legend><div className="v2-segment">{[400,600,800].map((weight)=><button key={weight} className={style.weight===weight?"active":""} onClick={()=>update({weight})}>{weight===400?"Normal":weight===600?"Medio":"Fuerte"}</button>)}</div></fieldset><ColorField label="Color del texto" value={style.color} onChange={(color)=>update({color})}/><Choice active={style.bgMode==="solid"} title="Fondo detrás del texto" note="Mejora la lectura cuando hay una imagen." onClick={()=>update({bgMode:style.bgMode==="solid"?"none":"solid"})}/>{style.bgMode==="solid"&&<ColorField label="Color del fondo" value={style.bg} onChange={(bg)=>update({bg})}/>}</div>; }
 
 function LogoControls({ draft, logoImage, onChange, onLogo, onRemoveLogo }: { draft: LandingDraft; logoImage: string; onChange: (p: Partial<LandingDraft>) => void; onLogo: (file?: File) => void; onRemoveLogo: () => void }) {
   const preset = suggestedPreset(draft.buttonZone.templateId);

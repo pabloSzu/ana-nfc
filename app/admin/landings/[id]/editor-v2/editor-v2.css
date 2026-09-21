@@ -112,3 +112,9 @@
 .v2-delete-notice > span { min-width: 0; overflow-wrap: anywhere; }
 .v2-delete-notice button { flex-shrink: 0; min-height: 40px; border: 0; border-radius: 8px; padding: 8px 10px; background: #eee8ff; color: #5839b0; font-weight: 700; cursor: pointer; }
 .v2-delete-notice button:focus-visible { outline: 2px solid #7154d0; outline-offset: 2px; }
+
+.v2-social-field { display: grid; gap: 8px; padding-bottom: 16px; border-bottom: 1px solid #e4dfed; }
+.v2-social-field label > span { display: inline-flex; align-items: center; gap: 8px; }
+.v2-social-field label > span svg { width: 17px; height: 17px; }
+.v2-social-field > button { justify-self: start; }
+.v2-social-error { color: #9d293c; font-size: 12px; line-height: 1.5; }

@@ -96,9 +96,47 @@ export function buttonShapeRadius(shape?: string | null): string {
   return "var(--radius-md)";
 }
 
+export const QUICK_SOCIALS = [
+  { type: "instagram", label: "Instagram", placeholder: "https://instagram.com/tumarca" },
+  { type: "whatsapp", label: "WhatsApp", placeholder: "549… (código de país y número)" },
+  { type: "facebook", label: "Facebook", placeholder: "https://facebook.com/tumarca" },
+  { type: "tiktok", label: "TikTok", placeholder: "https://tiktok.com/@tumarca" },
+  { type: "linkedin", label: "LinkedIn", placeholder: "https://linkedin.com/in/tuperfil" },
+  { type: "youtube", label: "YouTube", placeholder: "https://youtube.com/@tucanal" },
+  { type: "spotify", label: "Spotify", placeholder: "https://open.spotify.com/…" },
+  { type: "telegram", label: "Telegram", placeholder: "https://t.me/tuusuario" },
+] as const;
+export type QuickSocial = { type: typeof QUICK_SOCIALS[number]["type"]; url: string };
+export function quickSocialHref(link: QuickSocial): string | null {
+  const value = link.url.trim();
+  if (!value || /^(?!https?:)[a-z][a-z0-9+.-]*:/i.test(value)) return null;
+  if (link.type === "whatsapp" && /^[+\d\s()-]+$/.test(value)) {
+    const digits = value.replace(/\D/g, "");
+    return digits.length >= 8 && digits.length <= 15 ? `https://wa.me/${digits}` : null;
+  }
+  try {
+    const url = new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`);
+    if (!['http:', 'https:'].includes(url.protocol) || !url.hostname.includes('.') || url.username || url.password || /\s/.test(value)) return null;
+    return url.href;
+  } catch { return null; }
+}
+export function parseQuickSocials(raw: unknown): QuickSocial[] {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  return raw.filter((item): item is QuickSocial => {
+    if (!item || typeof item !== 'object' || typeof item.url !== 'string' || !QUICK_SOCIALS.some(option => option.type === item.type) || seen.has(item.type)) return false;
+    seen.add(item.type); return true;
+  }).slice(0, QUICK_SOCIALS.length).map(item => ({type: item.type, url: item.url.slice(0, 2048)}));
+}
+
 export type ButtonZoneStyle = {
   // Stored with presentation settings; absent on older pages means visible.
   showBranding?: boolean;
+  quickSocials?: QuickSocial[];
+  // Whether the quick-socials row shows each icon inside a filled circle (the default) or as a
+  // plain icon with no background — absent on older pages means filled, matching how it always
+  // looked before this became a toggle.
+  quickSocialsFilled?: boolean;
   preset: string;
   layout: "center" | "editorial" | "profile-card" | "compact" | "poster";
   // Which general template (if any) the whole design was last built from — separate from
@@ -144,6 +182,8 @@ export function parseButtonZone(raw: unknown): ButtonZoneStyle {
   return {
     ...merged,
     showBranding: parsed.showBranding !== false,
+    quickSocials: parseQuickSocials(parsed.quickSocials),
+    quickSocialsFilled: parsed.quickSocialsFilled !== false,
     preset: typeof parsed.preset === "string" ? parsed.preset : "custom",
     layout: layouts.includes(merged.layout) ? merged.layout : "center",
     templateId: typeof parsed.templateId === "string" ? parsed.templateId : "custom",
@@ -171,7 +211,7 @@ export function parseButtonZone(raw: unknown): ButtonZoneStyle {
 // ---------- Per-element text/logo/background styling — matches the "linkme" ----------
 // reference design exactly: each element has its own font/weight/size/color/background,
 // not just the app's older shared font_pair + text_color + one text_panel toggle.
-export type TitleStyle = { font: string; weight: number; size: number; color: string; bgMode: "none" | "solid"; bg: string; align: "left" | "center" | "right" };
+export type TitleStyle = { eyebrow?: string; font: string; weight: number; size: number; color: string; bgMode: "none" | "solid"; bg: string; align: "left" | "center" | "right" };
 export type SubtitleStyle = { font: string; weight: number; size: number; color: string; bgMode: "none" | "solid"; bg: string };
 export type LogoStyle = {
   treatment: "template" | "clean" | "badge" | "card" | "highlight" | "custom";
@@ -206,7 +246,7 @@ export function parseTitleStyle(landing: BackgroundLike & { text_color?: string 
   const value = hasKeys(landing.title_style)
     ? { ...DEFAULT_TITLE_STYLE, ...(landing.title_style as Partial<TitleStyle>) }
     : { ...DEFAULT_TITLE_STYLE, color: landing.text_color || autoTextColor(landing), font: landing.font_pair || "modern" };
-  return { ...value, size: Math.min(48, Math.max(18, Number(value.size) || 28)), weight: [400,500,600,700,800,900].includes(Number(value.weight)) ? Number(value.weight) : 900, align: ["left","center","right"].includes(value.align) ? value.align : "center", bgMode: value.bgMode === "solid" ? "solid" : "none" };
+  return { ...value, eyebrow: typeof value.eyebrow === "string" ? value.eyebrow.trim().slice(0, 60) : "", size: Math.min(48, Math.max(18, Number(value.size) || 28)), weight: [400,500,600,700,800,900].includes(Number(value.weight)) ? Number(value.weight) : 900, align: ["left","center","right"].includes(value.align) ? value.align : "center", bgMode: value.bgMode === "solid" ? "solid" : "none" };
 }
 export function parseSubtitleStyle(landing: BackgroundLike & { text_color?: string | null; font_pair?: string | null; subtitle_style?: unknown }): SubtitleStyle {
   const value = hasKeys(landing.subtitle_style)

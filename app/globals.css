@@ -879,7 +879,7 @@ input[type="color"] { padding: 5px; height: 46px; cursor: pointer; }
 /* Container width keeps the full-bleed header identical in public and scaled previews. */
 .public { min-height: 100vh; padding: var(--space-8) var(--space-4); background: var(--bg); container-type: inline-size; }
 .public-inner { width: min(100%, 430px); margin: auto; text-align: center; }
-.public .landing-desc { max-width: 340px; margin: 0 auto var(--space-5); color: var(--text-muted); }
+.public .landing-desc { max-width: 340px; margin: 0 auto var(--space-5); color: var(--text-muted); white-space: pre-line; }
 .public .action { box-shadow: var(--shadow-sm); }
 .public .avatar { width: 96px; height: 96px; border-radius: 50%; margin-bottom: 22px; }
 .public-actions { padding: 4px 14px 18px; }
@@ -1613,10 +1613,14 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
 .public.has-branding .landing-branding { flex-shrink: 0; margin-top: auto; padding-top: 20px; }
 .scaled-phone-canvas .public.has-branding { min-height: 0; }
 
-/* Editor-only controls remain outside the customer's button content. */
-.editor-delete-action { position: absolute; right: -40px; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 38px; height: 40px; padding: 0; border: 0; border-radius: 10px; background: #fff0f0; color: #a82d3a; cursor: pointer; z-index: 5; }
-.editor-delete-action svg { width: 17px; height: 17px; }
-.editor-delete-action:hover { background: #ffdddd; }
+/* Editor-only control: a small badge peeking out of the button's own top-right corner (half
+   overlapping, half outside) instead of eating into the button's own width — it never reserves
+   layout space, so the button's text/icon content (and the centered-vs-left alignment choice)
+   never has to make room for it. A real sibling button, not nested inside the action's own <a>
+   (nesting a <button> inside an <a> is invalid HTML). */
+.editor-delete-action { position: absolute; top: -9px; right: -9px; display: grid; place-items: center; width: 25px; height: 25px; padding: 0; border: 2.5px solid #fff; border-radius: 50%; background: #e11d48; color: #fff; cursor: pointer; z-index: 6; box-shadow: 0 3px 8px rgba(0, 0, 0, .35); }
+.editor-delete-action svg { width: 12px; height: 12px; }
+.editor-delete-action:hover { background: #be123c; transform: scale(1.08); }
 .editor-delete-action:focus-visible { outline: 2px solid #a82d3a; outline-offset: 2px; }
 .editor-delete-action:disabled { visibility: hidden; }
 .editor-action-row { transition: transform .15s ease; }
@@ -1625,3 +1629,29 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
 .editor-branding-hint { position: absolute; bottom: 6px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; font-size: 10px; color: inherit; }
 .editor-branding-hint svg { width: 11px; height: 11px; }
 .landing-branding.is-editable a:hover .editor-branding-hint { text-decoration: underline; }
+
+.landing-eyebrow { position: relative; margin: 0 0 10px; font-size: 10px; font-weight: 600; line-height: 1.6; letter-spacing: .16em; text-transform: uppercase; overflow-wrap: anywhere; }
+.layout-compact .landing-identity-block:has(.landing-eyebrow) { grid-template-rows: auto auto auto; }
+.layout-compact .landing-identity-block:has(.landing-eyebrow) .avatar { grid-row: 1 / 4; }
+.layout-compact .landing-eyebrow { grid-column: 2; margin: 0 0 5px; text-align: left; }
+.landing-socials-block { flex-shrink: 0; margin: 12px 0 20px; text-align: center; }
+.landing-socials { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.landing-socials a { display: inline-flex; justify-content: center; align-items: center; width: 44px; height: 44px; border: 1px solid #d7d1cb; border-radius: 50%; background: #ffffffe8; color: #49424c; transition: background .15s; }
+.landing-socials a:hover { background: #fff; }
+.landing-socials a:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+.landing-socials svg { width: 19px; height: 19px; }
+.landing-socials[data-tone="dark"] a { background: #22212be8; border-color: #514b5c; color: #f1edf7; }
+/* "Sin fondo": plain icon, no chip/border — the icon itself just inherits the page's auto
+   light/dark tone so it stays readable without a background of its own. */
+.landing-socials[data-filled="no"] { gap: 16px; }
+.landing-socials[data-filled="no"] a { width: auto; height: auto; border: 0; background: transparent; color: #49424c; }
+.landing-socials[data-filled="no"][data-tone="dark"] a { color: #f1edf7; }
+.landing-socials[data-filled="no"] a:hover { opacity: .75; }
+.landing-socials[data-filled="no"] svg { width: 21px; height: 21px; }
+/* Facebook/TikTok's own glyphs are drawn with less internal padding than the rest of this set,
+   so at the same font-size they read visibly heavier/bigger once there's no chip background
+   evening things out — nudged down individually rather than shrinking every icon further. */
+.landing-socials[data-filled="no"] .action-type-icon-facebook,
+.landing-socials[data-filled="no"] .action-type-icon-tiktok { width: 18px; height: 18px; }
+.editor-socials-entry { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 40px; margin-top: 6px; padding: 7px 12px; border: 1px dashed #a999d0; border-radius: 10px; background: #f5f0ff; color: #60458d; font-size: 11px; cursor: pointer; }
+.editor-socials-entry svg { width: 12px; height: 12px; }
