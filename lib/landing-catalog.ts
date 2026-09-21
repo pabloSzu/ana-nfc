@@ -129,7 +129,23 @@ export function parseQuickSocials(raw: unknown): QuickSocial[] {
   }).slice(0, QUICK_SOCIALS.length).map(item => ({type: item.type, url: item.url.slice(0, 2048)}));
 }
 
+export type DistributionStyle = {
+  top: number; logoGap: number; buttonsGap: number; socialsGap: number;
+  separator: boolean; separatorStyle: "solid" | "dotted" | "double" | "fade" | "diamond" | "sparkle" | "circle" | "heart" | "leaf" | "star" | "flower" | "trio" | "bolt" | "sun";
+  separatorColor: string; separatorWidth: number; separatorWeight: number; separatorSpace: number;
+};
+export function parseDistribution(raw: unknown, layout = "center"): DistributionStyle {
+  const p = raw && typeof raw === "object" ? raw as Partial<DistributionStyle> : {};
+  const n = (v: unknown, low: number, high: number, fallback: number) => typeof v === "number" && Number.isFinite(v) ? Math.min(high, Math.max(low, v)) : fallback;
+  return { top: n(p.top, 48, 160, 64), logoGap: n(p.logoGap, 0, 64, layout === "compact" ? 14 : 18), buttonsGap: n(p.buttonsGap, 0, 100, 10), socialsGap: n(p.socialsGap, 0, 64, 12),
+    separator: typeof p.separator === "boolean" ? p.separator : layout === "poster",
+    separatorStyle: p.separatorStyle && ["solid", "dotted", "double", "fade", "diamond", "sparkle", "circle", "heart", "leaf", "star", "flower", "trio", "bolt", "sun"].includes(p.separatorStyle) ? p.separatorStyle : "solid",
+    separatorColor: typeof p.separatorColor === "string" && /^#[0-9a-f]{6}$/i.test(p.separatorColor) ? p.separatorColor : "#b2a18a",
+    separatorWidth: n(p.separatorWidth, 15, 100, 100), separatorWeight: n(p.separatorWeight, 1, 5, 1), separatorSpace: n(p.separatorSpace, 0, 48, 12) };
+}
+
 export type ButtonZoneStyle = {
+  distribution?: DistributionStyle;
   // Stored with presentation settings; absent on older pages means visible.
   showBranding?: boolean;
   quickSocials?: QuickSocial[];

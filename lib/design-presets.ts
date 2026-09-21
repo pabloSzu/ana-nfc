@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import type { ButtonZoneStyle, LogoStyle, SubtitleStyle, TitleStyle } from "@/lib/landing-catalog";
-import { AUTO_COLORS, contrastTextColor } from "@/lib/landing-catalog";
+import { AUTO_COLORS, contrastTextColor, parseDistribution } from "@/lib/landing-catalog";
 
 export type DesignPreset = {
   id: string;
@@ -61,14 +61,14 @@ export const DESIGN_PRESETS_V2: DesignPreset[] = [
     id: "elegant", name: "Elegante", description: "Marfil, serif refinada y detalles dorados. Hoteles boutique, joyerías y alta gama.",
     background: "linear-gradient(150deg,#fbf7ef,#e7d7c2)", bg1: "#fbf7ef", bg2: "#e7d7c2", accent: "#8c6b3f", oneColor: "#8c6b3f", foreground: "#2c241c",
     buttonFont: "minimal",
-    buttonZone: { preset: "elegant", layout: "poster", gap: 12, height: 54, radius: 10, width: 100, shadow: "soft", finish: "solid", collection: "luxury", colorMode: "one", textSize: 14, iconSize: 26, contentAlign: "center" },
+    buttonZone: { distribution: parseDistribution({ separator: true, separatorStyle: "diamond", separatorColor: "#9c794a", separatorWidth: 76, separatorSpace: 10 }, "poster"), preset: "elegant", layout: "poster", gap: 12, height: 54, radius: 10, width: 100, shadow: "soft", finish: "solid", collection: "luxury", colorMode: "one", textSize: 14, iconSize: 26, contentAlign: "center" },
     title: { font: "elegant", weight: 700, size: 31, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "round", size: 114, initials: "two", shadowSize: 1 },
   },
   {
     id: "corporate", name: "Corporativo", description: "Confiado y preciso, con un toque técnico. Consultoras, software y servicios profesionales.",
     background: "linear-gradient(165deg,#0f172a,#1e2a44)", bg1: "#0f172a", bg2: "#1e2a44", accent: "#2563eb", oneColor: "#2563eb", foreground: "#f1f5f9",
     buttonFont: "mono",
-    buttonZone: { preset: "corporate", layout: "center", gap: 10, height: 54, radius: 10, width: 100, shadow: "soft", finish: "solid", collection: "corporate", colorMode: "one", textSize: 13, iconSize: 26, contentAlign: "left" },
+    buttonZone: { distribution: parseDistribution({ separator: true, separatorStyle: "fade", separatorColor: "#779fe0", separatorWidth: 78, separatorSpace: 10 }), preset: "corporate", layout: "center", gap: 10, height: 54, radius: 10, width: 100, shadow: "soft", finish: "solid", collection: "corporate", colorMode: "one", textSize: 13, iconSize: 26, contentAlign: "left" },
     // Space Grotesk for the title pairs more deliberately with JetBrains Mono on the subtitle
     // and buttons than the previous Inter — both are geometric/technical faces (the pairing
     // startup and dev-tool product pages already reach for), where Inter read as generically
@@ -93,7 +93,7 @@ export const DESIGN_PRESETS_V2: DesignPreset[] = [
     id: "pastel", name: "Pastel", description: "Suave, luminosa y delicada. Belleza, salud y cuidado personal.",
     background: "linear-gradient(150deg,#ffe6ef,#e3e6ff)", bg1: "#ffe6ef", bg2: "#e3e6ff", accent: "#cf7fb9", oneColor: "#cf7fb9", foreground: "#3d2a3c",
     buttonFont: "friendly",
-    buttonZone: { preset: "pastel", layout: "center", gap: 11, height: 54, radius: 22, width: 100, shadow: "soft", finish: "solid", collection: "pastel", colorMode: "one", textSize: 14, iconSize: 27, contentAlign: "center" },
+    buttonZone: { distribution: parseDistribution({ separator: true, separatorStyle: "flower", separatorColor: "#ad719f", separatorWidth: 64, separatorSpace: 10 }), preset: "pastel", layout: "center", gap: 11, height: 54, radius: 22, width: 100, shadow: "soft", finish: "solid", collection: "pastel", colorMode: "one", textSize: 14, iconSize: 27, contentAlign: "center" },
     title: { font: "friendly", weight: 700, size: 27, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "round", size: 118, initials: "two", shadowSize: 1 },
   },
   {
@@ -107,7 +107,7 @@ export const DESIGN_PRESETS_V2: DesignPreset[] = [
     id: "creator", name: "Pop Studio", description: "Audaz y expresiva, pero siempre ordenada. Creadores y marcas digitales.",
     background: "linear-gradient(150deg,#ff3e88,#ff9a3d)", bg1: "#ff3e88", bg2: "#ff9a3d", accent: "#5b2be0", oneColor: "#5b2be0", foreground: "#ffffff",
     buttonFont: "bold",
-    buttonZone: { preset: "creator", layout: "center", gap: 12, height: 58, radius: 22, width: 100, shadow: "strong", finish: "solid", collection: "candy", colorMode: "one", textSize: 14, iconSize: 29, contentAlign: "left" },
+    buttonZone: { distribution: parseDistribution({ separator: true, separatorStyle: "bolt", separatorColor: "#ffffff", separatorWidth: 64, separatorWeight: 2, separatorSpace: 10 }), preset: "creator", layout: "center", gap: 12, height: 58, radius: 22, width: 100, shadow: "strong", finish: "solid", collection: "candy", colorMode: "one", textSize: 14, iconSize: 29, contentAlign: "left" },
     title: { font: "bold", weight: 900, size: 30, align: "center" }, subtitle: { font: "handwritten", weight: 600, size: 18 }, logo: { shape: "square", size: 118, initials: "one", shadowSize: 1 },
   },
   {
@@ -121,7 +121,7 @@ export const DESIGN_PRESETS_V2: DesignPreset[] = [
     id: "brand-stage", name: "Brand Stage", description: "Botones oscuros de alto impacto con cada marca iluminada en su color real.",
     background: "linear-gradient(145deg,#26304a,#07090e)", bg1: "#26304a", bg2: "#07090e", accent: "#ffffff", oneColor: "#151922", foreground: "#ffffff",
     buttonFont: "minimal",
-    buttonZone: { preset: "brand-stage", layout: "poster", gap: 12, height: 63, radius: 20, width: 100, shadow: "strong", finish: "solid", collection: "brandpanel", colorMode: "one", textSize: 14, iconSize: 38, contentAlign: "left" },
+    buttonZone: { distribution: parseDistribution(undefined, "poster"), preset: "brand-stage", layout: "poster", gap: 12, height: 63, radius: 20, width: 100, shadow: "strong", finish: "solid", collection: "brandpanel", colorMode: "one", textSize: 14, iconSize: 38, contentAlign: "left" },
     title: { font: "minimal", weight: 900, size: 30, align: "center" }, subtitle: { font: "minimal", weight: 500, size: 14 }, logo: { shape: "square", size: 122, initials: "one", shadowSize: 1 },
   },
   {

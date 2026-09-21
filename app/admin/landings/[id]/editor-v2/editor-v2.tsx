@@ -1,15 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import LandingSeparator from "@/components/landing-separator";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ActionTypeIcon } from "@/components/action-icons";
-import { FiLink } from "react-icons/fi";
+import { FiLink, FiZap, FiArrowUpRight } from "react-icons/fi";
 import { IconEye, IconQrCode } from "@/components/icons";
 import DeleteLandingButton from "@/app/admin/delete-landing-button";
 import LandingRenderer, { type LandingEditControls } from "@/components/landing-renderer";
 import ScaledPhoneCanvas from "@/components/scaled-phone-canvas";
 import { compressImage } from "@/lib/compress-image";
-import { QUICK_SOCIALS, quickSocialHref, type QuickSocial, AUTO_COLORS, contrastTextColor, getAllActions, parseCoverStyle, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize, resolveTextFont, type BackgroundPosition, type ButtonZoneStyle, type CoverStyle, type LogoStyle, type SubtitleStyle, type TitleStyle } from "@/lib/landing-catalog";
+import { parseDistribution, type DistributionStyle, QUICK_SOCIALS, quickSocialHref, type QuickSocial, AUTO_COLORS, contrastTextColor, getAllActions, parseCoverStyle, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize, resolveTextFont, type BackgroundPosition, type ButtonZoneStyle, type CoverStyle, type LogoStyle, type SubtitleStyle, type TitleStyle } from "@/lib/landing-catalog";
 import FontPicker from "../font-picker";
 import IconPicker from "../icon-picker";
 import { DESIGN_PRESETS_V2, buttonCollectionStyle, buttonIconStyle, hasAuthenticLook, recommendedIconAppearance, resolveButtonColors, type DesignPreset } from "@/lib/design-presets";
@@ -23,7 +24,7 @@ type LandingDraft = {
   published?: boolean | null; buttonZone: ButtonZoneStyle; titleStyle: TitleStyle; subtitleStyle: SubtitleStyle; logoStyle: LogoStyle; bgPosition: BackgroundPosition;
   cover_image_url?: string | null; coverStyle: CoverStyle;
 };
-type Panel = "templates" | "buttons" | "background" | "cover" | "settings" | "socials" | "title" | "subtitle" | "logo" | "add" | { buttonId: string } | null;
+type Panel = "templates" | "buttons" | "background" | "cover" | "settings" | "socials" | "distribution" | "title" | "subtitle" | "logo" | "add" | { buttonId: string } | null;
 type BackgroundTab = "color" | "gradient" | "image";
 type DeviceMode = "small" | "standard" | "large";
 type SaveAction = (formData: FormData) => void | Promise<void>;
@@ -296,6 +297,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
         colorModeManual: false,
         iconAppearance: recommendedIconAppearance(preset.buttonZone.collection),
         templateId: id,
+        distribution: preset.buttonZone.distribution,
       },
       titleStyle: { ...draft.titleStyle, ...preset.title, color: preset.foreground }, subtitleStyle: { ...draft.subtitleStyle, ...preset.subtitle, color: preset.foreground }, logoStyle: { ...draft.logoStyle, ...logoTreatmentPatch("template", id), ...preset.logo },
     });
@@ -313,6 +315,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
         contentAlign: draft.buttonZone.contentAlignMode === "manual" ? draft.buttonZone.contentAlign : preset.buttonZone.contentAlign,
         contentAlignMode: draft.buttonZone.contentAlignMode,
         templateId: draft.buttonZone.templateId,
+        distribution: draft.buttonZone.distribution,
         colorMode: preset.buttonZone.colorMode,
         oneColor: preset.oneColor,
         colorModeManual: false,
@@ -493,6 +496,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
     onSelectTemplates: () => setPanel("templates"),
     onSelectSettings: () => setPanel("settings"),
     onSelectSocials: () => setPanel("socials"),
+    onSelectDistribution: () => setPanel("distribution"),
     onSelectLogo: () => setPanel("logo"),
     onSelectTitle: () => setPanel("title"),
     onSelectSubtitle: () => setPanel("subtitle"),
@@ -555,6 +559,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
             setCoverPreview(null); setCoverRemoved(true);
             change({ coverStyle: { ...draft.coverStyle, enabled: false } });
           }} />}
+          {panel === "distribution" && <DistributionControls draft={draft} onZone={changeZone} />}
           {panel === "socials" && <SocialControls links={draft.buttonZone.quickSocials || []} onChange={(quickSocials) => changeZone({ quickSocials })} filled={draft.buttonZone.quickSocialsFilled !== false} onFilled={(quickSocialsFilled) => changeZone({ quickSocialsFilled })} />}
           {panel === "settings" && <SettingsControls draft={draft} onBrandingChange={(showBranding) => changeZone({ showBranding })} publishAction={publishAction} deleteLandingAction={deleteLandingAction} />}
           {panel === "title" && <TitleControls draft={draft} onChange={change} />}
@@ -583,7 +588,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
   );
 }
 
-function panelTitle(panel: Exclude<Panel, null>) { if (typeof panel === "object") return "Editar botón"; return ({ templates: "Elegí una plantilla", buttons: "Editar todos los botones", background: "Fondo de la página", cover: "Portada", settings: "Ajustes de la landing", socials: "Redes rápidas", title: "Editar título", subtitle: "Editar subtítulo", logo: "Editar logo", add: "Agregar un botón" } as const)[panel]; }
+function panelTitle(panel: Exclude<Panel, null>) { if (typeof panel === "object") return "Editar botón"; return ({ templates: "Elegí una plantilla", buttons: "Editar todos los botones", background: "Fondo de la página", cover: "Portada", settings: "Ajustes de la landing", socials: "Redes rápidas", distribution: "Distribución", title: "Editar título", subtitle: "Editar subtítulo", logo: "Editar logo", add: "Agregar un botón" } as const)[panel]; }
 
 function TemplateSwatch({ preset }: { preset: DesignPreset }) {
   const iconAppearance = recommendedIconAppearance(preset.buttonZone.collection);
@@ -666,6 +671,7 @@ function ButtonDesign({ draft, buttons, onZone, onFont, onApplyButtonLook, onRes
   const inheritedCount = buttons.length - customCount;
   return (
     <div className="v2-fields">
+      <RecommendedStyles templateName={suggestedPreset(zone.templateId).name} onClick={() => onApplyButtonLook(suggestedPreset(zone.templateId).id)} />
       <fieldset>
         <legend>Plantilla de los botones</legend>
         <p className="v2-help">Son las mismas plantillas del diseño general. Aplican forma, color, tipografía y efectos a la botonera. Los botones con color propio conservan su elección.</p>
@@ -745,7 +751,7 @@ function ButtonDesign({ draft, buttons, onZone, onFont, onApplyButtonLook, onRes
           <FontPicker label="Tipografía" value={draft.button_font || "modern"} onChange={onFont} />
           <div className="v2-fields-row">
             <Range label="Alto del botón" min={40} max={72} value={zone.height} onChange={(height) => onZone({ height })} />
-            <Range label="Espaciado" min={4} max={20} value={zone.gap} onChange={(gap) => onZone({ gap })} />
+            <Range label="Espaciado entre botones" min={4} max={20} value={zone.gap} onChange={(gap) => onZone({ gap })} />
           </div>
           <div className="v2-fields-row">
             <Range label="Tamaño del ícono" min={22} max={38} value={zone.iconSize} onChange={(iconSize) => onZone({ iconSize })} />
@@ -761,25 +767,25 @@ function BackgroundControls({ draft, tab, onTab, onChange, onFile }: { draft: La
   const updatePos = (p: Partial<BackgroundPosition>) => onChange({ bgPosition: { ...draft.bgPosition, ...p } });
   const selectTab = (next: BackgroundTab) => { onTab(next); onChange({ background_type: next }); };
   return <div className="v2-fields">
-    <div className="v2-segment">
+<EditorSection title="Tipo de fondo" tone="blue">    <div className="v2-segment">
       <button className={tab === "color" ? "active" : ""} onClick={() => selectTab("color")}>Color</button>
       <button className={tab === "gradient" ? "active" : ""} onClick={() => selectTab("gradient")}>Degradado</button>
       <button className={tab === "image" ? "active" : ""} onClick={() => selectTab("image")}>Imagen</button>
     </div>
 
-    {tab !== "image" && <>
+</EditorSection>    {tab !== "image" && <EditorSection title="Paleta de colores" tone="peach">
       <ColorField label="Color principal" value={draft.background_color || "#f7f5f0"} onChange={(background_color) => onChange({ background_color })} />
       {tab === "gradient" && <ColorField label="Segundo color" value={draft.background_gradient_to || "#a6c1ee"} onChange={(background_gradient_to) => onChange({ background_gradient_to })} />}
-    </>}
+    </EditorSection>}
 
-    {tab === "image" && <>
+    {tab === "image" && <EditorSection title="Imagen y encuadre" tone="purple">
       <label className="v2-upload">Cambiar imagen<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => onFile(event.target.files?.[0])} /></label>
       <p className="v2-help">Ajustala mirando el celular: nunca se guarda el recorte original.</p>
       <Range label="Oscurecer imagen" min={0} max={.85} step={.01} value={draft.bgPosition.tint} onChange={(tint) => updatePos({ tint })} />
       <Range label="Acercar" min={1} max={2.2} step={.01} value={draft.bgPosition.zoom} onChange={(zoom) => updatePos({ zoom })} />
       <Range label="Mover horizontal" min={0} max={100} value={draft.bgPosition.x} onChange={(x) => updatePos({ x })} />
       <Range label="Mover vertical" min={0} max={100} value={draft.bgPosition.y} onChange={(y) => updatePos({ y })} />
-    </>}
+    </EditorSection>}
 
   </div>;
 }
@@ -799,12 +805,12 @@ function CoverControls({ draft, coverImage, onChange, onCoverFile, onRemoveCover
     <label className="v2-upload">{coverImage ? "Cambiar portada" : "Subir portada"}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => { onCoverFile(event.target.files?.[0]); event.target.value = ""; }} /></label>
     {coverImage && <>
       <Choice active={style.enabled} title="Mostrar portada" note="Podés ocultarla sin borrar la imagen." onClick={() => updateCover({ enabled: !style.enabled })} />
-      <fieldset>
-        <legend>Tamaño</legend>
+      <fieldset className="v2-editor-section" data-tone="blue">
+        <legend>Tamaño de portada</legend>
         <div className="v2-segment">{COVER_SIZES.map((option) => <button type="button" key={option.id} className={style.size === option.id ? "active" : ""} onClick={() => updateCover({ size: option.id })}>{option.label}</button>)}</div>
         <p className="v2-help" style={{ margin: "8px 0 0" }}>"Mediano" es el ajuste por defecto. "Grande" llega hasta más abajo, cerca del segundo botón.</p>
       </fieldset>
-      <details className="v2-cover-adjustments"><summary>Ajustar encuadre y difuminado</summary><div className="v2-fields">
+      <details className="v2-cover-adjustments v2-editor-section" data-tone="purple"><summary>Ajustar encuadre y difuminado</summary><div className="v2-fields">
         <Range label="Acercar" min={1} max={2.5} step={.01} value={style.zoom} onChange={(zoom) => updateCover({ zoom })} />
         {canPan ? <>
           <Range label="Mover horizontal" min={0} max={100} value={style.x} onChange={(x) => updateCover({ x })} />
@@ -818,6 +824,67 @@ function CoverControls({ draft, coverImage, onChange, onCoverFile, onRemoveCover
       </div></details>
       <button type="button" className="v2-delete" onClick={onRemoveCover}>Quitar portada</button>
     </>}
+  </div>;
+}
+
+const SEPARATOR_DESIGNS = [
+  ['diamond','Diamante','Un acento elegante'], ['sparkle','Destello','Un detalle luminoso'],
+  ['bolt','Rayito','Un toque de energía'], ['leaf','Hoja','Inspirado en lo natural'],
+  ['heart','Corazón','Un toque cercano'], ['fade','Difuminado','Extremos que se desvanecen'],
+  ['sun','Sol','Cálido y luminoso'], ['solid','Sutil','Una línea limpia'],
+  ['dotted','Puntos','Liviano y delicado'], ['double','Doble línea','Un toque editorial'],
+  ['circle','Círculo','Simple y equilibrado'], ['star','Estrella','Un pequeño acento'],
+  ['flower','Flor','Suave y orgánico'], ['trio','Tres puntos','Una pausa minimalista'],
+] as const;
+
+function EditorSection({title,tone,children}: {title:string;tone:"blue"|"purple"|"peach"|"green"|"rose";children:ReactNode}) {
+  return <fieldset className="v2-editor-section" data-tone={tone}><legend>{title}</legend><div className="v2-section-content">{children}</div></fieldset>;
+}
+
+function SeparatorPicker({style,onChange}: {style:DistributionStyle;onChange:(value:DistributionStyle['separatorStyle'])=>void}) {
+  const [expanded,setExpanded] = useState(false);
+  const selected = SEPARATOR_DESIGNS.find(([value])=>value===style.separatorStyle);
+  const featured = SEPARATOR_DESIGNS.slice(0,6);
+  // Exactly six collapsed choices, always including the resolved saved/template value.
+  const collapsed = selected && !featured.some(([value])=>value===selected[0])
+    ? [selected,...featured.slice(0,5)] : featured;
+  const visible = expanded ? SEPARATOR_DESIGNS : collapsed;
+  return <fieldset><legend>Diseño del separador</legend>
+    <p className="v2-help">Un detalle para darle carácter a tu página. Elegí cómo se ve.</p>
+    <p className="v2-separator-current">En uso: <strong>{selected?.[1]}</strong></p>
+    <div className="v2-separator-picker">{visible.map(([value,label,note])=><button type="button" key={value} className={style.separatorStyle===value?'active':''} aria-pressed={style.separatorStyle===value} onClick={()=>onChange(value)}>
+      <span className="v2-separator-sample"><LandingSeparator variant={value} color={style.separatorColor} weight={style.separatorWeight}/></span><strong>{label}{style.separatorStyle===value && <span className="v2-separator-check" aria-hidden="true">✓</span>}</strong><small>{note}</small>
+    </button>)}</div>
+    <button type="button" className="v2-separator-more" aria-expanded={expanded} onClick={()=>setExpanded(current=>!current)}>
+      <span>{expanded?'Ver menos diseños':'Ver más diseños'}</span><span className="v2-separator-count">{expanded?'−':`${SEPARATOR_DESIGNS.length} estilos · +`}</span>
+    </button>
+  </fieldset>;
+}
+
+function DistributionControls({ draft, onZone }: { draft: LandingDraft; onZone: (patch: Partial<ButtonZoneStyle>) => void }) {
+  const style = parseDistribution(draft.buttonZone.distribution, draft.buttonZone.layout);
+  const update = (patch: Partial<DistributionStyle>) => onZone({ distribution: { ...style, ...patch } });
+  return <div className="v2-fields">
+    <p className="v2-help">Ajustá el aire entre los elementos. El contenido conserva su orden y se adapta al celular.</p>
+    <RecommendedStyles templateName={suggestedPreset(draft.buttonZone.templateId).name} onClick={()=>onZone({distribution:suggestedPreset(draft.buttonZone.templateId).buttonZone.distribution})} />
+<EditorSection title="Posición y espacios" tone="blue">    <div className="v2-segment">{[
+      {name:"Compacto",top:48,logoGap:10,buttonsGap:4,socialsGap:6},
+      {name:"Equilibrado",top:64,logoGap:18,buttonsGap:10,socialsGap:12},
+      {name:"Amplio",top:88,logoGap:30,buttonsGap:30,socialsGap:24},
+    ].map(({name,...spaces})=><button type="button" key={name} onClick={()=>onZone({distribution:{...style,...spaces}})}>{name}</button>)}</div>
+    <Range label="Espacio superior" min={48} max={160} value={style.top} onChange={top=>update({top})}/>
+    <Range label={draft.buttonZone.layout === "compact" ? "Separación del logo (horizontal)" : "Separación del logo"} min={0} max={64} value={style.logoGap} onChange={logoGap=>update({logoGap})}/>
+    <Range label="Separación de la botonera" min={0} max={100} value={style.buttonsGap} onChange={buttonsGap=>update({buttonsGap})}/>
+    <Range label="Separación de redes rápidas" min={0} max={64} value={style.socialsGap} onChange={socialsGap=>update({socialsGap})}/>
+</EditorSection><EditorSection title="Separador" tone="purple">    <Choice active={style.separator} title="Mostrar separador" note="Una línea entre el encabezado y los botones." onClick={()=>update({separator:!style.separator})}/>
+    {style.separator && <>
+      <SeparatorPicker style={style} onChange={separatorStyle=>update({separatorStyle})}/>
+      <ColorField label="Color del separador" value={style.separatorColor} onChange={separatorColor=>update({separatorColor})}/>
+      <Range label="Ancho del separador (%)" min={15} max={100} value={style.separatorWidth} onChange={separatorWidth=>update({separatorWidth})}/>
+      <Range label="Grosor del separador" min={1} max={5} value={style.separatorWeight} onChange={separatorWeight=>update({separatorWeight})}/>
+      <Range label="Espacio alrededor del separador" min={0} max={48} value={style.separatorSpace} onChange={separatorSpace=>update({separatorSpace})}/>
+    </>}
+</EditorSection>    <p className="v2-help">Guardá los cambios para aplicar esta distribución a tu página.</p>
   </div>;
 }
 
@@ -859,8 +926,8 @@ function SettingsControls({ draft, onBrandingChange, publishAction, deleteLandin
     <div className="v2-brand">
       <span><b>{isPublished ? "Tu landing está online" : "Tu landing está en borrador"}</b><small>{isPublished ? "Cualquiera con el link o el tag NFC puede verla." : "Todavía no es visible para el público."}</small></span>
     </div>
-    <Choice active={draft.buttonZone.showBranding !== false} title="Mostrar firma de BioNFC" note="Agrega el logo y un enlace a BioNFC al final de tu página. Guardá los cambios para aplicar esta opción." onClick={() => onBrandingChange(draft.buttonZone.showBranding === false)} />
-    <form action={publishAction}>
+<EditorSection title="Firma de BioNFC" tone="purple">    <Choice active={draft.buttonZone.showBranding !== false} title="Mostrar firma de BioNFC" note="Agrega el logo y un enlace a BioNFC al final de tu página. Guardá los cambios para aplicar esta opción." onClick={() => onBrandingChange(draft.buttonZone.showBranding === false)} />
+</EditorSection><EditorSection title="Publicación y acceso" tone="green">    <form action={publishAction}>
       <input type="hidden" name="id" value={draft.id} />
       <input type="hidden" name="published" value={String(!isPublished)} />
       <input type="hidden" name="return_to" value={`/admin/landings/${draft.id}/editor-v2`} />
@@ -868,7 +935,7 @@ function SettingsControls({ draft, onBrandingChange, publishAction, deleteLandin
     </form>
     <a className="v2-suggested" href={`/${draft.slug}`} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", gap: 8 }}><IconEye /> Ver landing publicada</a>
     <Link className="v2-suggested" href={`/admin/landings/${draft.id}/qr`} style={{ display: "flex", alignItems: "center", gap: 8 }}><IconQrCode /> Código QR para el tag NFC</Link>
-    <DeleteLandingButton action={deleteLandingAction} landingId={draft.id} label="Eliminar landing" />
+</EditorSection>    <DeleteLandingButton action={deleteLandingAction} landingId={draft.id} label="Eliminar landing" />
   </div>;
 }
 
@@ -879,9 +946,17 @@ function suggestedPreset(templateId: string): DesignPreset {
   return DESIGN_PRESETS_V2.find((item) => item.id === templateId) || DESIGN_PRESETS_V2[0];
 }
 
-function TitleControls({ draft, onChange }: { draft: LandingDraft; onChange: (p: Partial<LandingDraft>) => void }) { const style=draft.titleStyle; const update=(patch:Partial<TitleStyle>)=>onChange({titleStyle:{...style,...patch}}); const preset=suggestedPreset(draft.buttonZone.templateId); return <div className="v2-fields"><label>Rubro o frase breve (opcional)<input maxLength={60} value={style.eyebrow || ""} placeholder="Ej: ARQUITECTURA & INTERIORES" onChange={(e)=>update({eyebrow:e.target.value})}/></label><p className="v2-help">Una línea pequeña encima del nombre. Dejalo vacío para ocultarla.</p><label>Texto del título<input value={draft.business_name} onChange={(e)=>onChange({business_name:e.target.value})}/></label><button type="button" className="v2-suggested" onClick={()=>update({...preset.title,color:preset.foreground})}>✦ Usar estilos recomendados ({preset.name})</button><FontPicker label="Tipografía" value={style.font} onChange={(font)=>update({font})}/><Range label="Tamaño" min={20} max={48} value={style.size} onChange={(size)=>update({size})}/><fieldset><legend>Grosor</legend><div className="v2-segment">{[500,700,900].map((weight)=><button key={weight} className={style.weight===weight?"active":""} onClick={()=>update({weight})}>{weight===500?"Normal":weight===700?"Fuerte":"Extra"}</button>)}</div></fieldset><ColorField label="Color del texto" value={style.color} onChange={(color)=>update({color})}/><Choice active={style.bgMode==="solid"} title="Fondo detrás del título" note="Ayuda a leerlo sobre fotografías." onClick={()=>update({bgMode:style.bgMode==="solid"?"none":"solid"})}/>{style.bgMode==="solid"&&<ColorField label="Color del fondo" value={style.bg} onChange={(bg)=>update({bg})}/>}</div>; }
+function RecommendedStyles({ templateName, onClick }: { templateName: string; onClick: () => void }) {
+  return <button type="button" className="v2-recommended-styles" onClick={onClick}>
+    <span className="v2-recommended-icon" aria-hidden="true"><FiZap /></span>
+    <span className="v2-recommended-copy"><strong>Usar estilos recomendados</strong><small>Plantilla: {templateName}</small></span>
+    <FiArrowUpRight className="v2-recommended-arrow" aria-hidden="true" />
+  </button>;
+}
 
-function SubtitleControls({ draft, onChange }: { draft: LandingDraft; onChange: (p: Partial<LandingDraft>) => void }) { const style=draft.subtitleStyle; const update=(patch:Partial<SubtitleStyle>)=>onChange({subtitleStyle:{...style,...patch}}); const preset=suggestedPreset(draft.buttonZone.templateId); return <div className="v2-fields"><label>Texto del subtítulo<textarea rows={3} value={draft.description || ""} onKeyDown={(e)=>{ if (e.key==="Enter" && (draft.description||"").includes("\n")) e.preventDefault(); }} onChange={(e)=>onChange({description:e.target.value})}/></label><p className="v2-help" style={{margin:"-4px 0 0"}}>Podés usar Enter para un salto de línea (máximo dos líneas).</p><button type="button" className="v2-suggested" onClick={()=>update({...preset.subtitle,color:preset.foreground})}>✦ Usar estilos recomendados ({preset.name})</button><FontPicker label="Tipografía" value={style.font} onChange={(font)=>update({font})}/><Range label="Tamaño" min={11} max={26} value={style.size} onChange={(size)=>update({size})}/><fieldset><legend>Grosor</legend><div className="v2-segment">{[400,600,800].map((weight)=><button key={weight} className={style.weight===weight?"active":""} onClick={()=>update({weight})}>{weight===400?"Normal":weight===600?"Medio":"Fuerte"}</button>)}</div></fieldset><ColorField label="Color del texto" value={style.color} onChange={(color)=>update({color})}/><Choice active={style.bgMode==="solid"} title="Fondo detrás del texto" note="Mejora la lectura cuando hay una imagen." onClick={()=>update({bgMode:style.bgMode==="solid"?"none":"solid"})}/>{style.bgMode==="solid"&&<ColorField label="Color del fondo" value={style.bg} onChange={(bg)=>update({bg})}/>}</div>; }
+function TitleControls({ draft, onChange }: { draft: LandingDraft; onChange: (p: Partial<LandingDraft>) => void }) { const style=draft.titleStyle; const update=(patch:Partial<TitleStyle>)=>onChange({titleStyle:{...style,...patch}}); const preset=suggestedPreset(draft.buttonZone.templateId); return <div className="v2-fields"><EditorSection title="Contenido" tone="blue"><label>Rubro o frase breve (opcional)<input maxLength={60} value={style.eyebrow || ""} placeholder="Ej: ARQUITECTURA & INTERIORES" onChange={(e)=>update({eyebrow:e.target.value})}/></label><p className="v2-help">Una línea pequeña encima del nombre. Dejalo vacío para ocultarla.</p><label>Texto del título<input value={draft.business_name} onChange={(e)=>onChange({business_name:e.target.value})}/></label></EditorSection><RecommendedStyles templateName={preset.name} onClick={()=>update({...preset.title,color:preset.foreground})} /><EditorSection title="Tipografía y tamaño" tone="purple"><FontPicker label="Tipografía" value={style.font} onChange={(font)=>update({font})}/><Range label="Tamaño" min={20} max={48} value={style.size} onChange={(size)=>update({size})}/><fieldset><legend>Grosor</legend><div className="v2-segment">{[500,700,900].map((weight)=><button key={weight} className={style.weight===weight?"active":""} onClick={()=>update({weight})}>{weight===500?"Normal":weight===700?"Fuerte":"Extra"}</button>)}</div></fieldset></EditorSection><EditorSection title="Colores y fondo" tone="peach"><ColorField label="Color del texto" value={style.color} onChange={(color)=>update({color})}/><Choice active={style.bgMode==="solid"} title="Fondo detrás del título" note="Ayuda a leerlo sobre fotografías." onClick={()=>update({bgMode:style.bgMode==="solid"?"none":"solid"})}/>{style.bgMode==="solid"&&<ColorField label="Color del fondo" value={style.bg} onChange={(bg)=>update({bg})}/>}</EditorSection></div>; }
+
+function SubtitleControls({ draft, onChange }: { draft: LandingDraft; onChange: (p: Partial<LandingDraft>) => void }) { const style=draft.subtitleStyle; const update=(patch:Partial<SubtitleStyle>)=>onChange({subtitleStyle:{...style,...patch}}); const preset=suggestedPreset(draft.buttonZone.templateId); return <div className="v2-fields"><EditorSection title="Contenido" tone="blue"><label>Texto del subtítulo<textarea rows={3} value={draft.description || ""} onKeyDown={(e)=>{ if (e.key==="Enter" && (draft.description||"").includes("\n")) e.preventDefault(); }} onChange={(e)=>onChange({description:e.target.value})}/></label><p className="v2-help" style={{margin:"-4px 0 0"}}>Podés usar Enter para un salto de línea (máximo dos líneas).</p></EditorSection><RecommendedStyles templateName={preset.name} onClick={()=>update({...preset.subtitle,color:preset.foreground})} /><EditorSection title="Tipografía y tamaño" tone="purple"><FontPicker label="Tipografía" value={style.font} onChange={(font)=>update({font})}/><Range label="Tamaño" min={11} max={26} value={style.size} onChange={(size)=>update({size})}/><fieldset><legend>Grosor</legend><div className="v2-segment">{[400,600,800].map((weight)=><button key={weight} className={style.weight===weight?"active":""} onClick={()=>update({weight})}>{weight===400?"Normal":weight===600?"Medio":"Fuerte"}</button>)}</div></fieldset></EditorSection><EditorSection title="Colores y fondo" tone="peach"><ColorField label="Color del texto" value={style.color} onChange={(color)=>update({color})}/><Choice active={style.bgMode==="solid"} title="Fondo detrás del texto" note="Mejora la lectura cuando hay una imagen." onClick={()=>update({bgMode:style.bgMode==="solid"?"none":"solid"})}/>{style.bgMode==="solid"&&<ColorField label="Color del fondo" value={style.bg} onChange={(bg)=>update({bg})}/>}</EditorSection></div>; }
 
 function LogoControls({ draft, logoImage, onChange, onLogo, onRemoveLogo }: { draft: LandingDraft; logoImage: string; onChange: (p: Partial<LandingDraft>) => void; onLogo: (file?: File) => void; onRemoveLogo: () => void }) {
   const preset = suggestedPreset(draft.buttonZone.templateId);
@@ -890,7 +965,7 @@ function LogoControls({ draft, logoImage, onChange, onLogo, onRemoveLogo }: { dr
   const update = (patch: Partial<LogoStyle>) => onChange({ logoStyle: { ...style, ...patch } });
   return <div className="v2-fields">
     <div className="v2-logo-editor"><div style={{ ...logoFrameStyle(style, primary), borderRadius: logoBorderRadius(style.shape, 76), fontSize: logoLetterSize(76, style.initials), fontFamily: resolveTextFont(draft.titleStyle.font) }}>{logoImage ? <span style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${style.zoom * 100}%`, backgroundPosition: `${style.x}% ${style.y}%` }} /> : logoInitials(draft.business_name, style.initials)}</div><span><label className="v2-upload">{logoImage ? "Cambiar imagen" : "Elegir imagen"}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => onLogo(event.target.files?.[0])} /></label>{logoImage && <button type="button" className="v2-delete" onClick={onRemoveLogo}>Quitar</button>}</span></div>
-    <button type="button" className="v2-suggested v2-logo-recommended-button" onClick={() => onChange({ logoStyle: { ...style, ...logoTreatmentPatch("template", draft.buttonZone.templateId), ...preset.logo, zoom: 1, x: 50, y: 50 } })}>✦ Usar estilos recomendados ({preset.name})</button>
+    <RecommendedStyles templateName={preset.name} onClick={() => onChange({ logoStyle: { ...style, ...logoTreatmentPatch("template", draft.buttonZone.templateId), ...preset.logo, zoom: 1, x: 50, y: 50 } })} />
     <fieldset className="v2-logo-section v2-logo-section-bg">
       <legend>1 · Color de fondo</legend>
       <p className="v2-help" style={{ margin: "0 0 4px" }}>Se ve detrás del círculo del logo (si no subiste foto, es el color de fondo de la inicial). Elegilo primero: la forma y el borde se juzgan mejor contra tu color real.</p>
@@ -1000,12 +1075,12 @@ function ButtonControls({ button,draft,onChange,onDelete }: { button: ButtonItem
   const ownColor = button.background_color || brandColor;
   return <div className="v2-fields">
     <div className="v2-brand"><ActionTypeIcon type={button.type} icon={button.icon}/><span><b>{def?.label || "Enlace"}</b><small>{button.icon ? "Ícono personalizado" : "Ícono incluido automáticamente"}</small></span></div>
-    <label>Texto del botón<input value={button.title} onChange={(e)=>onChange({title:e.target.value})}/></label>
+<EditorSection title="Contenido y destino" tone="blue">    <label>Texto del botón<input value={button.title} onChange={(e)=>onChange({title:e.target.value})}/></label>
     <label>Texto secundario <small>Opcional</small><input value={button.subtitle} onChange={(e)=>onChange({subtitle:e.target.value})}/></label>
     <label>{def?.input === "phone" ? "Número" : def?.input === "email" ? "Email" : def?.input === "username" ? "Usuario" : "Enlace"}<input value={button.url} placeholder={def?.placeholder} onChange={(e)=>onChange({url:e.target.value})}/></label>
     {def?.message && <label>Mensaje de WhatsApp<textarea rows={3} value={button.message} onChange={(e)=>onChange({message:e.target.value})}/></label>}
-    <IconPicker type={button.type} value={button.icon} onChange={(icon)=>onChange({icon})}/>
-    <fieldset>
+</EditorSection><EditorSection title="Ícono" tone="purple">    <IconPicker type={button.type} value={button.icon} onChange={(icon)=>onChange({icon})}/>
+</EditorSection>    <fieldset>
       <legend>Apariencia de este botón</legend>
       <Choice active={button.use_auto_color} swatch={globalColor} title="Usar el diseño general" note={globalDescription} onClick={()=>onChange({use_auto_color:true})}/>
       <Choice active={!button.use_auto_color} swatch={ownColor} title="Usar un color propio" note="Solo este botón queda separado de la regla general." onClick={()=>onChange({use_auto_color:false,background_color:ownColor})}/>

@@ -1,8 +1,9 @@
-import { FiTrash2 } from "react-icons/fi";
+import LandingSeparator from "@/components/landing-separator";
+import { FiTrash2, FiSliders } from "react-icons/fi";
 import BioNFCLogo from "@/components/bionfc-logo";
 import {
   QUICK_SOCIALS, quickSocialHref, buildActionLink, buttonZoneShadow, resolveBackgroundTint, contrastTextColor,
-  parseTitleStyle, parseSubtitleStyle, parseLogoStyle, parseBackgroundPosition, parseButtonZone, parseCoverStyle, COVER_SIZE_EXTRA, hexToRgba, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize,
+  parseDistribution, parseTitleStyle, parseSubtitleStyle, parseLogoStyle, parseBackgroundPosition, parseButtonZone, parseCoverStyle, COVER_SIZE_EXTRA, hexToRgba, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize,
 } from "@/lib/landing-catalog";
 import { getFontFamily, resolveTextFont, FontLinks, ALL_FONT_IDS } from "@/lib/fonts";
 import { buttonCollectionStyle, buttonCollectionWidth, buttonIconStyle, hasAuthenticLook, resolveButtonColors } from "@/lib/design-presets";
@@ -50,7 +51,7 @@ type Landing = {
 // What's "selected" right now, for the highlight outline — mirrors editor-v2's own Panel
 // type structurally (kept independent here, not imported, to avoid a circular dependency
 // between the admin editor and this shared public-facing component).
-export type LandingEditSelection = "templates" | "buttons" | "background" | "cover" | "settings" | "socials" | "title" | "subtitle" | "logo" | "add" | { buttonId: string } | null;
+export type LandingEditSelection = "templates" | "buttons" | "background" | "cover" | "settings" | "socials" | "distribution" | "title" | "subtitle" | "logo" | "add" | { buttonId: string } | null;
 
 // Everything the editor needs to turn this same real render into a live, click-to-edit
 // canvas — no separate mock. Every hook here only ever *adds* non-layout-affecting behavior
@@ -62,6 +63,7 @@ export type LandingEditControls = {
   onSelectTemplates: () => void;
   onSelectSettings: () => void;
   onSelectSocials: () => void;
+  onSelectDistribution: () => void;
   onSelectLogo: () => void;
   onSelectTitle: () => void;
   onSelectSubtitle: () => void;
@@ -102,6 +104,7 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
   const cover = parseCoverStyle(landing.cover_style);
   const showCover = Boolean(cover.enabled && landing.cover_image_url);
   const zone = parseButtonZone(landing.button_style);
+  const distribution = parseDistribution(zone.distribution, zone.layout);
   const iconAppearance = zone.iconAppearance;
   const socialLinks = (zone.quickSocials || []).flatMap(link => { const href = quickSocialHref(link); return href ? [{ ...link, href }] : []; });
   const hasSavedButtonStyle = Boolean(landing.button_style && typeof landing.button_style === "object" && Object.keys(landing.button_style).length);
@@ -142,7 +145,7 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
 
   const showDescription = Boolean(landing.description) || Boolean(edit);
   // How tall the cover photo needs to be to reach down to the button zone — driven by which
-  // elements EXIST (logo, eyebrow, description), never by their typography (size/weight/font).
+  // elements EXIST (logo, eyebrow, description), never by distribution or typography.
   // A version of this keyed off the identity block's own measured/rendered height used to make
   // the photo visibly resize every time someone dragged the title-size slider, which read as
   // broken — the photo and the type scale need to be fully independent of each other.
@@ -169,9 +172,9 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
   );
 
   return (
-    <main className={`public${zone.showBranding !== false ? " has-branding" : ""}`} style={{ position: "relative", overflow: "hidden", background: landing.background_color || "#f7f5f0" }}>
+    <main className={`public${zone.showBranding !== false ? " has-branding" : ""}`} style={{ position: "relative", overflow: "clip", background: landing.background_color || "#f7f5f0", paddingTop: distribution.top, "--landing-top": `${distribution.top}px`, "--landing-logo-gap": `${distribution.logoGap}px` } as CSSProperties}>
       <FontLinks ids={fontIds} />
-      <div className="public-bg-layer" style={{ position: "absolute", inset: 0, zIndex: 0, backgroundRepeat: "no-repeat", ...bgLayerStyle }} />
+      {landing.background_type === "image" ? <div className="public-bg-layer public-photo-track" aria-hidden="true"><div className="public-photo-viewport"><div className="public-photo-image" style={{ backgroundRepeat: "no-repeat", ...bgLayerStyle }} /></div></div> : <div className="public-bg-layer" style={{ position: "absolute", inset: 0, zIndex: 0, ...bgLayerStyle }} />}
       <div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none", backgroundImage: `linear-gradient(180deg, rgba(4,8,10,${(bgTint * 0.55).toFixed(3)}), rgba(5,8,11,${bgTint}))` }} />
       {edit && (
         <>
@@ -179,6 +182,7 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
           <div className="editor-quick-tools">
             <button type="button" className={edit.selected === "templates" ? "active" : ""} onClick={edit.onSelectTemplates}>✦ Plantillas</button>
             <button type="button" className={edit.selected === "cover" ? "active" : ""} onClick={edit.onSelectCover}><IconImage /> Portada</button>
+            <button type="button" className={edit.selected === "distribution" ? "active" : ""} onClick={edit.onSelectDistribution}><FiSliders aria-hidden="true" /> Distribución</button>
             <button type="button" className={edit.selected === "background" ? "active" : ""} onClick={edit.onSelectBackground}><IconImage /> Fondo</button>
           </div>
         </>
@@ -196,7 +200,7 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
           className={edit ? "avatar editor-hit" : "avatar"}
           data-tag="Logo"
           onClick={edit?.onSelectLogo}
-          style={{ ...logoFrameStyle(logo, primary), width: logo.size, height: logo.size, borderRadius: logoBorderRadius(logo.shape, logo.size), margin: "0 auto 18px", fontSize: logoLetterSize(logo.size, logo.initials), position: edit ? "relative" : undefined }}
+          style={{ ...logoFrameStyle(logo, primary), width: logo.size, height: logo.size, borderRadius: logoBorderRadius(logo.shape, logo.size), margin: `0 auto ${distribution.logoGap}px`, fontSize: logoLetterSize(logo.size, logo.initials), position: edit ? "relative" : undefined }}
         >
           {landing.logo_url ? (
             <div style={{ width: "100%", height: "100%", borderRadius: "inherit", overflow: "hidden", backgroundImage: `url(${landing.logo_url})`, backgroundSize: `${logo.zoom * 100}%`, backgroundPosition: `${logo.x}% ${logo.y}%` }} />
@@ -210,7 +214,11 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
         {description}
         </div>
         </div>
-        <div className={`public-actions${edit?.selected === "buttons" ? " editor-zone-selected" : ""}`} style={{ position: "relative", marginTop: edit ? 44 : 10, display: "flex", flexDirection: "column", gap: zone.gap }}>
+        {distribution.separator && <div className="landing-separator" style={{ paddingBlock: distribution.separatorSpace }}>
+          <div style={{ width: `${distribution.separatorWidth}%` }}><LandingSeparator variant={distribution.separatorStyle} color={distribution.separatorColor} weight={distribution.separatorWeight} /></div>
+          {edit && <button type="button" aria-label="Editar separador" onClick={edit.onSelectDistribution}><IconEdit aria-hidden="true" /></button>}
+        </div>}
+        <div className={`public-actions${edit?.selected === "buttons" ? " editor-zone-selected" : ""}`} style={{ position: "relative", marginTop: distribution.buttonsGap + (edit ? 34 : 0), display: "flex", flexDirection: "column", gap: zone.gap }}>
           {edit && <button type="button" className="editor-zone-tag" onClick={edit.onSelectZone}>✦ Editar todos los botones</button>}
           {actions.map((action, index) => {
             const { background: bg, text, isAuthentic, useNetworkAccent } = resolveButtonColors({
@@ -268,7 +276,7 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
           })}
           {edit && <button type="button" className="editor-add-link" onClick={edit.onAddButton}><span className="editor-add-icon">＋</span> Agregar botón</button>}
         </div>
-        {(socialLinks.length > 0 || edit) && <div className="landing-socials-block">
+        {(socialLinks.length > 0 || edit) && <div className="landing-socials-block" style={{ marginTop: distribution.socialsGap }}>
           {socialLinks.length > 0 && <nav className="landing-socials" aria-label="Redes sociales" data-tone={contrastTextColor(landing.background_color || "#f7f5f0") === "#ffffff" ? "dark" : "light"} data-filled={zone.quickSocialsFilled === false ? "no" : "yes"}>
             {socialLinks.map(link => <a key={link.type} href={link.href} target="_blank" rel="noopener noreferrer" aria-label={QUICK_SOCIALS.find(option => option.type === link.type)?.label} onClick={edit ? event => { event.preventDefault(); edit.onSelectSocials(); } : undefined}><ActionTypeIcon type={link.type} /></a>)}
           </nav>}

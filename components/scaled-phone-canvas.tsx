@@ -86,6 +86,9 @@ export default function ScaledPhoneCanvas({
       if (outerRect.width <= 0) return;
       const byWidth = outerRect.width / designWidth;
       let scale = byWidth;
+      const flow = getComputedStyle(outer).overflowY === "visible";
+      const screenHeight = flow ? (outer.closest(".v2-stage")?.clientHeight ?? window.innerHeight) : outerRect.height;
+      content.style.setProperty("--landing-viewport-height", `${screenHeight / byWidth}px`);
 
       if (fit === "contain") {
         // offsetHeight is the layout-box height: CSS transform never affects it, so it's always
