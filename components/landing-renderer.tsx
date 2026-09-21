@@ -5,7 +5,7 @@ import {
   QUICK_SOCIALS, quickSocialHref, buildActionLink, buttonZoneShadow, resolveBackgroundTint, contrastTextColor,
   parseDistribution, readableInk, parseTitleStyle, parseSubtitleStyle, parseLogoStyle, parseBackgroundPosition, parseButtonZone, parseCoverStyle, COVER_SIZE_EXTRA, hexToRgba, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize,
 } from "@/lib/landing-catalog";
-import { getFontFamily, resolveTextFont, FontLinks, ALL_FONT_IDS } from "@/lib/fonts";
+import { getFontFamily, resolveFontWeight, resolveTextFont, FontLinks } from "@/lib/fonts";
 import { buttonCollectionStyle, buttonCollectionWidth, buttonIconStyle, hasAuthenticLook, resolveButtonColors } from "@/lib/design-presets";
 import { ActionTypeIcon } from "@/components/action-icons";
 import { IconEdit, IconImage } from "@/components/icons";
@@ -113,7 +113,7 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
   // In the editor, preload every font in the catalog so every option in every font picker
   // previews correctly and instantly. On the real page (and admin previews), load only the
   // 2-3 fonts this specific landing actually uses — visitors never download the other five.
-  const fontIds = edit ? ALL_FONT_IDS : [title.font, subtitle.font, landing.button_font];
+  const fontIds = [title.font, subtitle.font, landing.button_font];
 
   // Always set the same longhand background properties (never the `background` shorthand)
   // so React never has to reconcile a shorthand against the sibling `backgroundRepeat` set
@@ -169,7 +169,7 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
       className={edit ? "editor-hit" : undefined}
       data-tag="Título"
       onClick={edit?.onSelectTitle}
-      style={{ fontFamily: resolveTextFont(title.font), fontWeight: title.weight, fontSize: title.size, color: title.color, background: title.bgMode === "solid" ? hexToRgba(title.bg, 0.55) : "transparent", textAlign: title.align, borderRadius: 12, padding: title.bgMode === "solid" ? "4px 10px" : 0, margin: "0 0 7px", display: "inline-block", position: edit ? "relative" : undefined }}
+      style={{ fontFamily: resolveTextFont(title.font), letterSpacing: title.letterSpacing === undefined ? undefined : `${title.letterSpacing}em`, fontWeight: resolveFontWeight(title.font, title.weight), fontSynthesis: "none", fontSize: title.size, color: title.color, background: title.bgMode === "solid" ? hexToRgba(title.bg, 0.55) : "transparent", textAlign: title.align, borderRadius: 12, padding: title.bgMode === "solid" ? "4px 10px" : 0, margin: "0 0 7px", display: "inline-block", position: edit ? "relative" : undefined }}
     >
       {landing.business_name}
     </h1>
@@ -179,7 +179,7 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
       className={`landing-desc${edit ? " editor-hit" : ""}${edit?.selected === "subtitle" ? " is-selected" : ""}`}
       data-tag="Subtítulo"
       onClick={edit?.onSelectSubtitle}
-      style={{ fontFamily: resolveTextFont(subtitle.font), fontWeight: subtitle.weight, fontSize: subtitle.size, color: subtitle.color, background: subtitle.bgMode === "solid" ? hexToRgba(subtitle.bg, 0.55) : "transparent", borderRadius: 10, padding: subtitle.bgMode === "solid" ? "4px 9px" : 0, display: "inline-block", position: edit ? "relative" : undefined }}
+      style={{ fontFamily: resolveTextFont(subtitle.font), letterSpacing: subtitle.letterSpacing === undefined ? undefined : `${subtitle.letterSpacing}em`, fontWeight: resolveFontWeight(subtitle.font, subtitle.weight), fontSynthesis: "none", fontSize: subtitle.size, color: subtitle.color, background: subtitle.bgMode === "solid" ? hexToRgba(subtitle.bg, 0.55) : "transparent", borderRadius: 10, padding: subtitle.bgMode === "solid" ? "4px 9px" : 0, display: "inline-block", position: edit ? "relative" : undefined }}
     >
       {landing.description || (edit ? "Tocá para agregar una descripción" : "")}
     </p>
@@ -222,7 +222,7 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
             <div style={{ width: "100%", height: "100%", borderRadius: "inherit", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: resolveTextFont(title.font) }}>{logoInitials(landing.business_name, logo.initials)}</div>
           )}
         </div>
-        {title.eyebrow && <p className={`landing-eyebrow${edit ? " editor-hit" : ""}`} data-tag="Rubro o frase breve" onClick={edit?.onSelectTitle} style={{ color: title.eyebrowColor || title.color, fontFamily: resolveTextFont(title.font), fontSize: title.eyebrowSize, fontWeight: title.eyebrowWeight }}>{title.eyebrow}</p>}
+        {title.eyebrow && <p className={`landing-eyebrow${edit ? " editor-hit" : ""}`} data-tag="Rubro o frase breve" onClick={edit?.onSelectTitle} style={{ color: title.eyebrowColor || title.color, fontFamily: resolveTextFont(title.font), fontSize: title.eyebrowSize, fontWeight: resolveFontWeight(title.font, title.eyebrowWeight), fontSynthesis: "none" }}>{title.eyebrow}</p>}
         {heading}
         <br />
         {description}

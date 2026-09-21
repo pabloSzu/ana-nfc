@@ -175,3 +175,12 @@
 .v2-section-content :is(.v2-color,.v2-choice) { background:#fff; }
 .v2-social-field { padding:16px; border:1px solid #cfe0f7; border-radius:14px; background:#eef5ff; }
 .v2-social-field:nth-of-type(even) { border-color:#ddd0f2; background:#f4eefc; }
+
+.v2-font-weights { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+.v2-font-weights button { padding:10px 6px; border:1px solid #ddd6e9; border-radius:9px; background:#fff; color:#62576f; font-size:11px; cursor:pointer; }
+.v2-font-weights button.active { border-color:#7958cd; background:#eee7ff; color:#5632a1; font-weight:750; }
+.v2-font-weights button:focus-visible { outline:2px solid #9575eb; outline-offset:2px; }
+
+.v2-letter-spacing { display:grid; gap:6px; }
+.v2-spacing-reset { justify-self:end; border:0; border-radius:5px; padding:5px 2px; background:transparent; color:#6a47aa; font-size:11px; cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
+.v2-spacing-reset:focus-visible { outline:2px solid #9575eb; outline-offset:2px; }

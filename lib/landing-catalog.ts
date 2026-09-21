@@ -284,8 +284,8 @@ export function parseButtonZone(raw: unknown): ButtonZoneStyle {
 // a second font picker there is the kind of choice that mostly produces mismatches. Size, weight
 // and colour are its own, which is what actually makes an eyebrow work (an accent-coloured line
 // above the name is a standard treatment).
-export type TitleStyle = { eyebrow?: string; eyebrowSize: number; eyebrowWeight: number; eyebrowColor?: string; font: string; weight: number; size: number; color: string; bgMode: "none" | "solid"; bg: string; align: "left" | "center" | "right" };
-export type SubtitleStyle = { font: string; weight: number; size: number; color: string; bgMode: "none" | "solid"; bg: string };
+export type TitleStyle = { letterSpacing?: number; eyebrow?: string; eyebrowSize: number; eyebrowWeight: number; eyebrowColor?: string; font: string; weight: number; size: number; color: string; bgMode: "none" | "solid"; bg: string; align: "left" | "center" | "right" };
+export type SubtitleStyle = { letterSpacing?: number; font: string; weight: number; size: number; color: string; bgMode: "none" | "solid"; bg: string };
 export type LogoStyle = {
   treatment: "template" | "clean" | "badge" | "card" | "highlight" | "brutal" | "custom";
   shape: "round" | "square" | "sharp";
@@ -328,17 +328,20 @@ function hasKeys(raw: unknown): raw is Record<string, unknown> {
   return Boolean(raw && typeof raw === "object" && Object.keys(raw as object).length > 0);
 }
 
+function parseLetterSpacing(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) ? Math.min(.3, Math.max(-.05, value)) : undefined;
+}
 export function parseTitleStyle(landing: BackgroundLike & { text_color?: string | null; font_pair?: string | null; title_style?: unknown }): TitleStyle {
   const value = hasKeys(landing.title_style)
     ? { ...DEFAULT_TITLE_STYLE, ...(landing.title_style as Partial<TitleStyle>) }
     : { ...DEFAULT_TITLE_STYLE, color: landing.text_color || autoTextColor(landing), font: landing.font_pair || "modern" };
-  return { ...value, eyebrow: typeof value.eyebrow === "string" ? value.eyebrow.trim().slice(0, 60) : "", eyebrowSize: Math.min(20, Math.max(8, Number(value.eyebrowSize) || 10)), eyebrowWeight: [400,500,600,700,800,900].includes(Number(value.eyebrowWeight)) ? Number(value.eyebrowWeight) : 600, eyebrowColor: /^#[0-9a-f]{6}$/i.test(String(value.eyebrowColor)) ? value.eyebrowColor : undefined, size: Math.min(48, Math.max(18, Number(value.size) || 28)), weight: [400,500,600,700,800,900].includes(Number(value.weight)) ? Number(value.weight) : 900, align: ["left","center","right"].includes(value.align) ? value.align : "center", bgMode: value.bgMode === "solid" ? "solid" : "none" };
+  return { ...value, letterSpacing: parseLetterSpacing(value.letterSpacing), eyebrow: typeof value.eyebrow === "string" ? value.eyebrow.trim().slice(0, 60) : "", eyebrowSize: Math.min(20, Math.max(8, Number(value.eyebrowSize) || 10)), eyebrowWeight: [400,500,600,700,800,900].includes(Number(value.eyebrowWeight)) ? Number(value.eyebrowWeight) : 600, eyebrowColor: /^#[0-9a-f]{6}$/i.test(String(value.eyebrowColor)) ? value.eyebrowColor : undefined, size: Math.min(48, Math.max(18, Number(value.size) || 28)), weight: [400,500,600,700,800,900].includes(Number(value.weight)) ? Number(value.weight) : 900, align: ["left","center","right"].includes(value.align) ? value.align : "center", bgMode: value.bgMode === "solid" ? "solid" : "none" };
 }
 export function parseSubtitleStyle(landing: BackgroundLike & { text_color?: string | null; font_pair?: string | null; subtitle_style?: unknown }): SubtitleStyle {
   const value = hasKeys(landing.subtitle_style)
     ? { ...DEFAULT_SUBTITLE_STYLE, ...(landing.subtitle_style as Partial<SubtitleStyle>) }
     : { ...DEFAULT_SUBTITLE_STYLE, color: landing.text_color || autoTextColor(landing), font: landing.font_pair || "modern" };
-  return { ...value, size: Math.min(26, Math.max(10, Number(value.size) || 14)), weight: [400,500,600,700,800,900].includes(Number(value.weight)) ? Number(value.weight) : 500, bgMode: value.bgMode === "solid" ? "solid" : "none" };
+  return { ...value, letterSpacing: parseLetterSpacing(value.letterSpacing), size: Math.min(26, Math.max(10, Number(value.size) || 14)), weight: [400,500,600,700,800,900].includes(Number(value.weight)) ? Number(value.weight) : 500, bgMode: value.bgMode === "solid" ? "solid" : "none" };
 }
 export function parseLogoStyle(raw: unknown): LogoStyle {
   const value = hasKeys(raw) ? { ...DEFAULT_LOGO_STYLE, ...(raw as Partial<LogoStyle>) } : { ...DEFAULT_LOGO_STYLE };
