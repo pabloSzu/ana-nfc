@@ -12,7 +12,7 @@ import ScaledPhoneCanvas from "@/components/scaled-phone-canvas";
 import { compressImage } from "@/lib/compress-image";
 import { headerCardOn, parseDistribution, type DistributionStyle, QUICK_SOCIALS, quickSocialHref, type QuickSocial, AUTO_COLORS, contrastTextColor, getAllActions, parseCoverStyle, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize, resolveTextFont, type BackgroundPosition, type ButtonZoneStyle, type CoverStyle, type LogoStyle, type SubtitleStyle, type TitleStyle } from "@/lib/landing-catalog";
 import FontPicker from "../font-picker";
-import { getFontWeights, resolveFontWeight } from "@/lib/fonts";
+import { getFontWeights, LogoInitials, resolveFontWeight } from "@/lib/fonts";
 import IconPicker from "../icon-picker";
 import { DESIGN_PRESETS_V2, buttonCollectionStyle, buttonIconStyle, hasAuthenticLook, recommendedIconAppearance, resolveButtonColors, type DesignPreset } from "@/lib/design-presets";
 import { ThemeSceneLayer, useSharedTheme } from "@/components/theme-scene";
@@ -1028,7 +1028,7 @@ function LogoControls({ draft, logoImage, onChange, onLogo, onRemoveLogo }: { dr
   const primary = draft.primary_color || "#1f2937";
   const update = (patch: Partial<LogoStyle>) => onChange({ logoStyle: { ...style, ...patch } });
   return <div className="v2-fields">
-    <div className="v2-logo-editor"><div style={{ ...logoFrameStyle(style, primary), borderRadius: logoBorderRadius(style.shape, 76), fontSize: logoLetterSize(76, style.initials), fontFamily: resolveTextFont(draft.titleStyle.font) }}>{logoImage ? <span style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${style.zoom * 100}%`, backgroundPosition: `${style.x}% ${style.y}%` }} /> : logoInitials(draft.business_name, style.initials)}</div><span><label className="v2-upload">{logoImage ? "Cambiar imagen" : "Elegir imagen"}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => onLogo(event.target.files?.[0])} /></label>{logoImage && <button type="button" className="v2-delete" onClick={onRemoveLogo}>Quitar</button>}</span></div>
+    <div className="v2-logo-editor"><div style={{ ...logoFrameStyle(style, primary), borderRadius: logoBorderRadius(style.shape, 76), fontSize: logoLetterSize(76, style.initials), fontFamily: resolveTextFont(draft.titleStyle.font) }}>{logoImage ? <span style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${style.zoom * 100}%`, backgroundPosition: `${style.x}% ${style.y}%` }} /> : <LogoInitials font={draft.titleStyle.font}>{logoInitials(draft.business_name, style.initials)}</LogoInitials>}</div><span><label className="v2-upload">{logoImage ? "Cambiar imagen" : "Elegir imagen"}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => onLogo(event.target.files?.[0])} /></label>{logoImage && <button type="button" className="v2-delete" onClick={onRemoveLogo}>Quitar</button>}</span></div>
     <RecommendedStyles templateName={preset.name} onClick={() => onChange({ logoStyle: { ...style, ...logoTreatmentPatch("template", draft.buttonZone.templateId), ...preset.logo, zoom: 1, x: 50, y: 50 } })} />
     <fieldset className="v2-logo-section v2-logo-section-bg">
       <legend>1 · Color de fondo</legend>
@@ -1045,7 +1045,7 @@ function LogoControls({ draft, logoImage, onChange, onLogo, onRemoveLogo }: { dr
             {/* Fixed thin border, not tied to the real Borde/Sombra settings below — just enough
                 to read the shape's outline clearly. Doesn't move when those settings change. */}
             <span className="v2-logo-shape-preview" style={{ ...logoFrameStyle({ ...style, shape: option.id, borderWidth: 2, borderColor: "#00000026", shadow: "none" }, primary), borderRadius: logoBorderRadius(option.id, 48), fontSize: logoLetterSize(48, style.initials), fontFamily: resolveTextFont(draft.titleStyle.font) }}>
-              {logoImage ? <i style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${style.zoom * 100}%`, backgroundPosition: `${style.x}% ${style.y}%` }} /> : logoInitials(draft.business_name, style.initials)}
+              {logoImage ? <i style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${style.zoom * 100}%`, backgroundPosition: `${style.x}% ${style.y}%` }} /> : <LogoInitials font={draft.titleStyle.font}>{logoInitials(draft.business_name, style.initials)}</LogoInitials>}
             </span>
             <b>{option.label}</b>
           </button>
@@ -1064,7 +1064,7 @@ function LogoControls({ draft, logoImage, onChange, onLogo, onRemoveLogo }: { dr
                   point the difference between options disappears. Always showing the same clean
                   example keeps every option legible no matter what you've already got set. */}
               <span className="v2-logo-shape-preview" style={{ ...logoFrameStyle({ ...style, ...option.patch, backgroundMode: "custom", fallback: "#ffffff", borderColor: "#0a0a0a", shadowColor: "#0a0a0a" }, primary), borderRadius: logoBorderRadius(style.shape, 48), fontSize: logoLetterSize(48, style.initials), fontFamily: resolveTextFont(draft.titleStyle.font) }}>
-                {logoImage ? <i style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${style.zoom * 100}%`, backgroundPosition: `${style.x}% ${style.y}%` }} /> : logoInitials(draft.business_name, style.initials)}
+                {logoImage ? <i style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${style.zoom * 100}%`, backgroundPosition: `${style.x}% ${style.y}%` }} /> : <LogoInitials font={draft.titleStyle.font}>{logoInitials(draft.business_name, style.initials)}</LogoInitials>}
               </span>
               <b>{option.label}</b>
             </button>

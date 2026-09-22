@@ -1685,11 +1685,14 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
 .landing-socials[data-filled="no"] .action-type-icon-facebook,
 .landing-socials[data-filled="no"] .action-type-icon-tiktok { width: 18px; height: 18px; }
 /* Editor-only stand-ins on an empty page (see SAMPLE_* in landing-renderer.tsx): faded so they
-   read as "this is a preview", never as real content. */
-.action.is-sample { opacity: .55; }
-.landing-eyebrow.is-placeholder { opacity: .45; }
-.landing-cover-bg.is-sample { opacity: .8; }
-.editor-sample-badge { position: absolute; top: 0; right: 0; z-index: 3; padding: 4px 9px; border: 1px solid rgba(255, 255, 255, .7); border-radius: 999px; background: #fff; color: #5145c8; font-size: 10px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(0, 0, 0, .18); }
+   read as "this is a preview", never as real content. Only the content fades — the dashed
+   outline and the tags around it stay at full strength, so they still read as editor controls. */
+.action.is-sample, .editor-placeholder-text { opacity: .5; }
+.editor-sample-row { cursor: pointer; border-radius: 12px; outline-offset: 4px; }
+.editor-sample-row:hover { outline: 2px dashed rgba(255, 255, 255, .85); }
+.editor-sample-badge { position: absolute; top: 0; right: 0; z-index: 3; display: grid; justify-items: center; gap: 1px; padding: 5px 10px; border: 1px solid rgba(255, 255, 255, .7); border-radius: 10px; background: #fff; color: #5145c8; font-size: 10px; line-height: 1.25; white-space: nowrap; cursor: pointer; box-shadow: 0 4px 12px rgba(0, 0, 0, .18); }
+.editor-sample-badge strong { font-weight: 800; }
+.editor-sample-badge span { font-weight: 600; opacity: .8; }
 .editor-sample-badge:hover { background: #f4efff; }
 .editor-socials-entry { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 40px; margin-top: 6px; padding: 7px 12px; border: 1px dashed #a999d0; border-radius: 10px; background: #f5f0ff; color: #60458d; font-size: 11px; cursor: pointer; }
 .editor-socials-entry svg { width: 12px; height: 12px; }
@@ -1755,3 +1758,7 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
  .font-picker-live .font-picker-options { max-height:190px; }
  .font-live-filters { grid-template-columns:minmax(0,1fr) 100px; }
 }
+
+/* LogoInitials (lib/fonts.tsx) centers on the letters' own size — keep it auto-sized even inside
+   editor previews that stretch plain spans/icons to fill the logo frame. */
+.logo-initials { width: auto !important; height: auto !important; }
