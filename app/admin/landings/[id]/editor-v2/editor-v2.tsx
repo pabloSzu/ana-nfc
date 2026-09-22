@@ -470,7 +470,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
     const input = document.getElementById("v2-background-file") as HTMLInputElement | null;
     if (input) { const transfer = new DataTransfer(); transfer.items.add(compressed); input.files = transfer.files; }
     if (bgPreview) URL.revokeObjectURL(bgPreview);
-    setBgPreview(URL.createObjectURL(compressed)); change({ background_type: "image", bgPosition: { zoom: 1, x: 50, y: 50, tint: .18 } });
+    setBgPreview(URL.createObjectURL(compressed)); change({ background_type: "image", bgPosition: { zoom: 1, x: 50, y: 50, tint: .08 } });
   }
 
   async function onLogoFile(file?: File) {

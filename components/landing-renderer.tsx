@@ -79,6 +79,17 @@ export type LandingEditControls = {
 
 const noBlank = new Set(["whatsapp", "email", "phone"]);
 
+// Editor-only stand-ins for things a brand-new page doesn't have yet, so picking a template, a
+// button look or a cover style shows its effect right away instead of changing nothing. They are
+// never saved or published: they only render while `edit` is set, and only while the real thing
+// is missing — same idea as the "Tocá para agregar una descripción" placeholder.
+const SAMPLE_COVER = "/marketing/showcase/interior.jpg";
+const SAMPLE_ACTIONS: LandingAction[] = [
+  { id: "sample-instagram", type: "instagram", title: "Instagram" },
+  { id: "sample-whatsapp", type: "whatsapp", title: "WhatsApp" },
+  { id: "sample-tiktok", type: "tiktok", title: "TikTok" },
+];
+
 // `fade` (10–90) is "how much of the cover's own height, counting from the bottom, the fade
 // covers" — 0% = crisp hard edge, 100% = fades starting right from the top.
 function coverFadeGradient(fade: number): string {
@@ -102,7 +113,12 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
   const logo = parseLogoStyle(landing.logo_style);
   const bgPos = parseBackgroundPosition(landing.background_style);
   const cover = parseCoverStyle(landing.cover_style);
-  const showCover = Boolean(cover.enabled && landing.cover_image_url);
+  const isSampleCover = Boolean(edit && cover.enabled && !landing.cover_image_url);
+  const coverImageUrl = landing.cover_image_url || (isSampleCover ? SAMPLE_COVER : "");
+  const showCover = Boolean(cover.enabled && coverImageUrl);
+  const showEyebrow = Boolean(title.eyebrow) || Boolean(edit);
+  const isSampleButtons = Boolean(edit) && actions.length === 0;
+  const shownActions = isSampleButtons ? SAMPLE_ACTIONS : actions;
   const zone = parseButtonZone(landing.button_style);
   const isBanner = showCover && cover.mode === "banner";
   // Card and photo are exclusive choices in the editor; a photo wins if an older page has both.
@@ -161,7 +177,7 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
   // covered, so short descriptions keep exactly the height they had.
   const descriptionLines = (landing.description || "").split("\n").reduce((total, line) => total + Math.max(1, Math.ceil(line.length / 48)), 0);
   const descriptionReserve = landing.description ? 58 + Math.max(0, descriptionLines - 2) * 21 : 14;
-  const coverReserve = logo.size + distribution.logoGap + (title.eyebrow ? 28 : 0) + 54 + descriptionReserve + COVER_SIZE_EXTRA[cover.size];
+  const coverReserve = logo.size + distribution.logoGap + (showEyebrow ? 28 : 0) + 54 + descriptionReserve + COVER_SIZE_EXTRA[cover.size];
   // The socials row and the credit footer sit at the very BOTTOM, so the color behind them is
   // the gradient's end color — not background_color, which is where the gradient starts. Keying
   // their tone off the start color is what left the credit in a washed-out grey on templates
@@ -218,11 +234,12 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
         {showCover && (
           // The banner runs from the very top of the page down to the middle of the logo, with a
           // hard edge, so the logo sits half on the photo and half on the page.
-          <div className={`landing-cover-bg${isBanner ? " is-banner" : ""}`} aria-hidden="true" style={isBanner ? { height: `calc(var(--landing-top) + ${logo.size / 2}px)` } : { maskImage: coverFadeGradient(cover.fade) }}>
-            <div className="landing-cover-photo" style={{ backgroundImage: `url(${JSON.stringify(landing.cover_image_url)})`, backgroundPosition: `${cover.x}% ${cover.y}%`, transform: `scale(${cover.zoom})`, transformOrigin: `${cover.x}% ${cover.y}%` }} />
+          <div className={`landing-cover-bg${isBanner ? " is-banner" : ""}${isSampleCover ? " is-sample" : ""}`} aria-hidden="true" style={isBanner ? { height: `calc(var(--landing-top) + ${logo.size / 2}px)` } : { maskImage: coverFadeGradient(cover.fade) }}>
+            <div className="landing-cover-photo" style={{ backgroundImage: `url(${JSON.stringify(coverImageUrl)})`, backgroundPosition: `${cover.x}% ${cover.y}%`, transform: `scale(${cover.zoom})`, transformOrigin: `${cover.x}% ${cover.y}%` }} />
             <div className="landing-cover-veil" style={{ background: isBanner ? `rgba(0, 0, 0, ${cover.overlay})` : hexToRgba(contrastTextColor(title.color), cover.overlay) }} />
           </div>
         )}
+        {isSampleCover && <button type="button" className="editor-sample-badge" onClick={edit?.onSelectCover}>Foto de ejemplo · Subí la tuya</button>}
         <div className="landing-identity-block">
         <div
           className={edit ? "avatar editor-hit" : "avatar"}
@@ -236,7 +253,7 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
             <div style={{ width: "100%", height: "100%", borderRadius: "inherit", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: resolveTextFont(title.font) }}>{logoInitials(landing.business_name, logo.initials)}</div>
           )}
         </div>
-        {title.eyebrow && <p className={`landing-eyebrow${edit ? " editor-hit" : ""}`} data-tag="Rubro o frase breve" onClick={edit?.onSelectTitle} style={{ color: title.eyebrowColor || title.color, fontFamily: resolveTextFont(title.font), fontSize: title.eyebrowSize, fontWeight: resolveFontWeight(title.font, title.eyebrowWeight), fontSynthesis: "none" }}>{title.eyebrow}</p>}
+        {showEyebrow && <p className={`landing-eyebrow${edit ? " editor-hit" : ""}${title.eyebrow ? "" : " is-placeholder"}`} data-tag="Rubro o frase breve" onClick={edit?.onSelectTitle} style={{ color: title.eyebrowColor || title.color, fontFamily: resolveTextFont(title.font), fontSize: title.eyebrowSize, fontWeight: resolveFontWeight(title.font, title.eyebrowWeight), fontSynthesis: "none" }}>{title.eyebrow || "Tocá para agregar tu rubro"}</p>}
         {heading}
         <br />
         {description}
@@ -248,7 +265,7 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
         </div>}
         <div className={`public-actions${edit?.selected === "buttons" ? " editor-zone-selected" : ""}`} style={{ position: "relative", marginTop: distribution.buttonsGap + (edit ? 34 : 0), display: "flex", flexDirection: "column", gap: zone.gap }}>
           {edit && <button type="button" className="editor-zone-tag" onClick={edit.onSelectZone}>✦ Editar todos los botones</button>}
-          {actions.map((action, index) => {
+          {shownActions.map((action, index) => {
             const { background: bg, text, isAuthentic, useNetworkAccent } = resolveButtonColors({
               zone, type: action.type, position: index, primary,
               customColor: action.background_color, useAutoColor: action.use_auto_color,
@@ -256,14 +273,14 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
             const isSelected = Boolean(edit && typeof edit.selected === "object" && edit.selected?.buttonId === action.id);
             const isDragging = edit?.draggingId === action.id;
             return (
-              <div key={action.id} ref={edit ? (el) => edit.onButtonRef(action.id, el) : undefined} className={`landing-action-row${edit ? " editor-action-row" : ""}${isDragging ? " is-dragging" : ""}`} style={{ position: "relative", width: buttonCollectionWidth(zone, index), margin: "0 auto" }}>
+              <div key={action.id} ref={edit && !isSampleButtons ? (el) => edit.onButtonRef(action.id, el) : undefined} className={`landing-action-row${edit ? " editor-action-row" : ""}${isDragging ? " is-dragging" : ""}`} style={{ position: "relative", width: buttonCollectionWidth(zone, index), margin: "0 auto" }}>
               <a
                 data-button-id={edit ? action.id : undefined}
-                className={`action button-collection-${zone.collection} icon-appearance-${iconAppearance}${edit ? " editor-hit" : ""}${isSelected ? " is-selected" : ""}${isDragging ? " is-dragging" : ""}`}
+                className={`action button-collection-${zone.collection} icon-appearance-${iconAppearance}${edit ? " editor-hit" : ""}${isSelected ? " is-selected" : ""}${isDragging ? " is-dragging" : ""}${isSampleButtons ? " is-sample" : ""}`}
                 href={actionHref(action)}
                 target={edit ? undefined : (noBlank.has(action.type) ? undefined : "_blank")}
                 rel="noreferrer"
-                onClick={edit ? (event) => { event.preventDefault(); edit.onSelectButton(action.id); } : undefined}
+                onClick={edit ? (event) => { event.preventDefault(); if (isSampleButtons) edit.onAddButton(); else edit.onSelectButton(action.id); } : undefined}
                 style={{
                   ...buttonCollectionStyle(zone.collection, bg, text, index, action.type, isAuthentic, useNetworkAccent),
                   width: "100%",
@@ -287,8 +304,9 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
                   </span>
                   {zone.contentAlign === "center" && <span className="action-icon-balance" aria-hidden="true" />}
                 </span>
-                {edit && !action.use_auto_color && <span className="editor-own-badge">Propio</span>}
-                {edit && (
+                {isSampleButtons && <span className="editor-own-badge">Ejemplo</span>}
+                {edit && !isSampleButtons && !action.use_auto_color && <span className="editor-own-badge">Propio</span>}
+                {edit && !isSampleButtons && (
                   <span
                     className="editor-drag"
                     title="Arrastrar para cambiar el orden"
@@ -298,7 +316,7 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
                   >⠿</span>
                 )}
               </a>
-              {edit && <button type="button" className="editor-delete-action" aria-label={`Eliminar botón: ${action.title}`} title={`Eliminar ${action.title}`} disabled={Boolean(edit.draggingId)} onClick={() => edit.onDeleteButton(action.id)}><FiTrash2 aria-hidden="true" /></button>}
+              {edit && !isSampleButtons && <button type="button" className="editor-delete-action" aria-label={`Eliminar botón: ${action.title}`} title={`Eliminar ${action.title}`} disabled={Boolean(edit.draggingId)} onClick={() => edit.onDeleteButton(action.id)}><FiTrash2 aria-hidden="true" /></button>}
               </div>
             );
           })}

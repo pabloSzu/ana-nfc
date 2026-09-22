@@ -95,7 +95,7 @@ export function autoTextColor(landing: BackgroundLike): string {
 
 export function resolveBackgroundTint(backgroundType?: string | null, tint?: number | null): number {
   if (backgroundType !== "image") return 0;
-  const value = typeof tint === "number" && Number.isFinite(tint) ? tint : 0.18;
+  const value = typeof tint === "number" && Number.isFinite(tint) ? tint : 0.08;
   return Math.min(0.85, Math.max(0, value));
 }
 
@@ -332,7 +332,7 @@ export type BackgroundPosition = { zoom: number; x: number; y: number; tint: num
 const DEFAULT_TITLE_STYLE: TitleStyle = { eyebrowSize: 10, eyebrowWeight: 600, font: FONT_OPTIONS[0].id, weight: 900, size: 28, color: "#ffffff", bgMode: "none", bg: "#111111", align: "center" };
 const DEFAULT_SUBTITLE_STYLE: SubtitleStyle = { font: FONT_OPTIONS[0].id, weight: 500, size: 14, color: "#ffffff", bgMode: "none", bg: "#111111" };
 const DEFAULT_LOGO_STYLE: LogoStyle = { treatment: "template", shape: "round", size: 124, zoom: 1, x: 50, y: 50, backgroundMode: "auto", fallback: "#f5eddf", borderWidth: 0, borderColor: "#ffffff", shadowColor: "#0a0a0a", shadow: "soft", shadowSize: 1, initials: "one" };
-const DEFAULT_BG_POSITION: BackgroundPosition = { zoom: 1, x: 50, y: 50, tint: 0.18 };
+const DEFAULT_BG_POSITION: BackgroundPosition = { zoom: 1, x: 50, y: 50, tint: 0.08 };
 
 function hasKeys(raw: unknown): raw is Record<string, unknown> {
   return Boolean(raw && typeof raw === "object" && Object.keys(raw as object).length > 0);
@@ -429,7 +429,7 @@ export function logoBorderRadius(shape: LogoStyle["shape"], size: number): strin
 // mode: "fade" is the photo behind the whole header, dissolving toward the buttons; "banner" is a
 // hard-edged photo across the top that ends halfway down the logo.
 export type CoverStyle = { enabled: boolean; mode: "fade" | "banner"; size: "small" | "medium" | "large"; zoom: number; x: number; y: number; fade: number; overlay: number };
-const DEFAULT_COVER_STYLE: CoverStyle = { enabled: false, mode: "fade", size: "medium", zoom: 1, x: 50, y: 50, fade: 55, overlay: .35 };
+const DEFAULT_COVER_STYLE: CoverStyle = { enabled: false, mode: "fade", size: "medium", zoom: 1, x: 50, y: 50, fade: 55, overlay: .15 };
 
 // How much extra height (px, on top of the logo+text reserve computed in landing-renderer.tsx)
 // each size adds — "large" is tuned to comfortably reach past a second button.
@@ -456,7 +456,7 @@ export function parseCoverStyle(raw: unknown): CoverStyle {
 export function parseBackgroundPosition(raw: unknown): BackgroundPosition {
   const parsed = hasKeys(raw) ? raw as Partial<BackgroundPosition> : {};
   const clamp = (value: unknown, min: number, max: number, fallback: number) => typeof value === "number" && Number.isFinite(value) ? Math.min(max, Math.max(min, value)) : fallback;
-  return { zoom: clamp(parsed.zoom, 1, 2.5, 1), x: clamp(parsed.x, 0, 100, 50), y: clamp(parsed.y, 0, 100, 50), tint: clamp(parsed.tint, 0, .85, .18) };
+  return { zoom: clamp(parsed.zoom, 1, 2.5, 1), x: clamp(parsed.x, 0, 100, 50), y: clamp(parsed.y, 0, 100, 50), tint: clamp(parsed.tint, 0, .85, .08) };
 }
 
 export function buttonZoneShadow(shadow: ButtonZoneStyle["shadow"]): string {

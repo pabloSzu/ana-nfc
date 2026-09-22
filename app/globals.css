@@ -1684,6 +1684,13 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
    evening things out — nudged down individually rather than shrinking every icon further. */
 .landing-socials[data-filled="no"] .action-type-icon-facebook,
 .landing-socials[data-filled="no"] .action-type-icon-tiktok { width: 18px; height: 18px; }
+/* Editor-only stand-ins on an empty page (see SAMPLE_* in landing-renderer.tsx): faded so they
+   read as "this is a preview", never as real content. */
+.action.is-sample { opacity: .55; }
+.landing-eyebrow.is-placeholder { opacity: .45; }
+.landing-cover-bg.is-sample { opacity: .8; }
+.editor-sample-badge { position: absolute; top: 0; right: 0; z-index: 3; padding: 4px 9px; border: 1px solid rgba(255, 255, 255, .7); border-radius: 999px; background: #fff; color: #5145c8; font-size: 10px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(0, 0, 0, .18); }
+.editor-sample-badge:hover { background: #f4efff; }
 .editor-socials-entry { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 40px; margin-top: 6px; padding: 7px 12px; border: 1px dashed #a999d0; border-radius: 10px; background: #f5f0ff; color: #60458d; font-size: 11px; cursor: pointer; }
 .editor-socials-entry svg { width: 12px; height: 12px; }
 
