@@ -1282,8 +1282,6 @@ input[type="color"] { padding: 5px; height: 46px; cursor: pointer; }
   padding-bottom: 19px;
   border-bottom: 2px solid rgba(255,255,255,.46);
 }
-.layout-poster .v2-avatar,
-.layout-poster .avatar { border: 3px solid rgba(255,255,255,.72); box-shadow: 0 12px 32px rgba(0,0,0,.24); }
 .layout-poster .v2-title-hit h1,
 .layout-poster .landing-identity-block h1 { text-transform: uppercase; letter-spacing: -.045em; }
 .preview-toolbar {

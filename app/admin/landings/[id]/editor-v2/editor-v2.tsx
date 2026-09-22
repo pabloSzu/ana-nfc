@@ -96,6 +96,9 @@ function logoTreatmentPatch(treatment: LogoTreatment, templateId = "minimal"): P
   // white — its buttons/page rely on a frosted-glass effect over a vivid background, not a
   // solid fill — so a white border on an auto (= white) background is the same "border blends
   // into its own fill" bug as brutalism. A soft dark ring instead, only for that template.
+  // Brand Stage has the same white accent, but its page is near-black, so a dark ring would vanish
+  // into the background instead — a silver ring reads against both the white plate and the page.
+  if (templateId === "brand-stage") return { treatment, shape: "round", borderWidth: 4, borderColor: "#a3acbe", shadow: "soft", backgroundMode: "auto" };
   return { treatment, shape: "round", borderWidth: 3, borderColor: templateId === "glass" ? "#2c2c33" : "#ffffff", shadow: "soft", backgroundMode: "auto" };
 }
 
