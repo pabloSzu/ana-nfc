@@ -1251,6 +1251,10 @@ input[type="color"] { padding: 5px; height: 46px; cursor: pointer; }
   box-shadow: inset 0 1px 0 rgba(255,255,255,.3), 0 14px 32px rgba(18,22,30,.14);
   backdrop-filter: blur(15px) saturate(1.15);
 }
+/* The description's usual 24px bottom margin is spacing toward the buttons — inside the card it
+   got trapped, leaving ~38px under the text against 20px above the logo. 7px matches the title's
+   own bottom margin, so the card closes the same ~21px with or without a description. */
+.has-header-card .landing-desc { margin-bottom: 7px; }
 
 .layout-compact .v2-identity-block,
 .layout-compact .landing-identity-block {
