@@ -957,20 +957,29 @@ input[type="color"] { padding: 5px; height: 46px; cursor: pointer; }
   .editor-zone-tag::before, .editor-add-link::before { animation: none; }
 }
 
+/* Both editor controls in the button zone stay crisp on every template: solid fill (a translucent
+   one washed out over light pages), no backdrop blur (Chromium softens the control's own text
+   with it), and centered with auto margins instead of translateX(-50%), which lands on a half
+   pixel whenever the label's width is odd and blurs the text. */
 .editor-zone-tag {
   top: -34px;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
+  width: max-content;
+  margin-inline: auto;
   position: absolute;
-  padding: 5px 9px;
+  padding: 4px 11px;
   border: 1px solid rgba(255, 255, 255, .6);
   border-radius: 20px;
   color: #fff;
-  background: rgba(102, 87, 232, .85);
-  backdrop-filter: blur(8px);
+  background: #6657e8;
   box-shadow: 0 4px 14px rgba(102, 87, 232, .35);
-  font-size: 9px;
-  font-weight: 850;
+  /* 9px at weight 850 filled in the counters of e/a/o, and the phone canvas scales it down
+     further — a larger size at a normal bold reads clearly without growing the tag much. */
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .01em;
+  line-height: 1.3;
   cursor: pointer;
   white-space: nowrap;
 }
@@ -1058,8 +1067,7 @@ input[type="color"] { padding: 5px; height: 46px; cursor: pointer; }
   gap: 9px;
   min-height: 46px;
   border: 1.5px dashed rgba(255, 255, 255, .7);
-  background: rgba(102, 87, 232, .75);
-  backdrop-filter: blur(10px);
+  background: #6657e8;
   color: #fff;
   font-weight: 800;
   font-size: 13px;
@@ -1068,7 +1076,7 @@ input[type="color"] { padding: 5px; height: 46px; cursor: pointer; }
   border-radius: 16px;
   transition: transform .15s ease, background .15s ease, border-color .15s ease;
 }
-.editor-add-link:hover { background: rgba(102, 87, 232, .9); border-color: #fff; transform: translateY(-1px); }
+.editor-add-link:hover { background: #5847dc; border-color: #fff; }
 .editor-add-icon { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: rgba(255, 255, 255, .25); font-size: 13px; line-height: 1; }
 
 /* Device-aware preview: the public renderer itself is mounted inside each viewport. */
