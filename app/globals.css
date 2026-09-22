@@ -1598,7 +1598,7 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
    while adjusting the title's font size, which read as broken. The photo and the type scale
    need to stay fully independent of each other. */
 .landing-header-region { position: relative; display: flow-root; isolation: isolate; }
-.landing-cover-bg { position: absolute; z-index: -1; top: calc(-1 * var(--landing-top, var(--space-8))); left: 50%; width: calc(100cqw + 2 * var(--space-4)); height: calc(var(--cover-h, 220px) + 64px); transform: translateX(-50%); overflow: hidden; pointer-events: none; }
+.landing-cover-bg { position: absolute; z-index: -1; top: calc(-1 * var(--landing-top, var(--space-8))); left: 50%; width: calc(100cqw + 2 * var(--space-4)); height: calc(var(--cover-h, 220px) + var(--landing-top, 64px)); transform: translateX(-50%); overflow: hidden; pointer-events: none; }
 .landing-cover-photo { position: absolute; inset: 0; background-size: cover; background-repeat: no-repeat; }
 .landing-cover-veil { position: absolute; inset: 0; }
 

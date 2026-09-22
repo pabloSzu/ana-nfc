@@ -154,7 +154,14 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
   // A version of this keyed off the identity block's own measured/rendered height used to make
   // the photo visibly resize every time someone dragged the title-size slider, which read as
   // broken — the photo and the type scale need to be fully independent of each other.
-  const coverReserve = logo.size + 18 + (title.eyebrow ? 28 : 0) + 54 + (Boolean(landing.description) ? 58 : 14) + COVER_SIZE_EXTRA[cover.size];
+  // Spacing from Distribución (logo gap here, top spacing in the stylesheet) and how long the
+  // description is do count — they change where the buttons actually start — but font sizes
+  // still don't. Description lines are estimated at a nominal 14px (~48 chars per line in its
+  // 340px column) for that same reason; the first two lines are what the fixed 58px always
+  // covered, so short descriptions keep exactly the height they had.
+  const descriptionLines = (landing.description || "").split("\n").reduce((total, line) => total + Math.max(1, Math.ceil(line.length / 48)), 0);
+  const descriptionReserve = landing.description ? 58 + Math.max(0, descriptionLines - 2) * 21 : 14;
+  const coverReserve = logo.size + distribution.logoGap + (title.eyebrow ? 28 : 0) + 54 + descriptionReserve + COVER_SIZE_EXTRA[cover.size];
   // The socials row and the credit footer sit at the very BOTTOM, so the color behind them is
   // the gradient's end color — not background_color, which is where the gradient starts. Keying
   // their tone off the start color is what left the credit in a washed-out grey on templates
