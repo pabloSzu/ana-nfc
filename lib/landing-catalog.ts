@@ -206,6 +206,9 @@ export type ButtonZoneStyle = {
   // plain icon with no background — absent on older pages means filled, matching how it always
   // looked before this became a toggle.
   quickSocialsFilled?: boolean;
+  // Frosted card around logo/title/description. Absent on older pages means "whatever the
+  // layout implies" — the card used to exist only as the "profile-card" layout — see headerCardOn.
+  headerCard?: boolean;
   preset: string;
   layout: "center" | "editorial" | "profile-card" | "compact" | "poster";
   // Which general template (if any) the whole design was last built from — separate from
@@ -274,7 +277,14 @@ export function parseButtonZone(raw: unknown): ButtonZoneStyle {
       ? parsed.contentAlignMode
       : contentAligns.includes(parsed.contentAlign as ButtonZoneStyle["contentAlign"]) ? "manual" : "auto",
     colorModeManual: parsed.colorModeManual === true,
+    headerCard: typeof parsed.headerCard === "boolean" ? parsed.headerCard : undefined,
   };
+}
+
+// The header card is its own setting now, independent of the layout, so picking "Tarjeta" on a
+// poster template (Elegante, Brand Stage) keeps its uppercase title and framed logo.
+export function headerCardOn(zone: ButtonZoneStyle): boolean {
+  return zone.headerCard ?? zone.layout === "profile-card";
 }
 
 // ---------- Per-element text/logo/background styling — matches the "linkme" ----------
@@ -416,8 +426,10 @@ export function logoBorderRadius(shape: LogoStyle["shape"], size: number): strin
 }
 
 // Decorative header layer: independent of the page background and content layout.
-export type CoverStyle = { enabled: boolean; size: "small" | "medium" | "large"; zoom: number; x: number; y: number; fade: number; overlay: number };
-const DEFAULT_COVER_STYLE: CoverStyle = { enabled: false, size: "medium", zoom: 1, x: 50, y: 50, fade: 55, overlay: .35 };
+// mode: "fade" is the photo behind the whole header, dissolving toward the buttons; "banner" is a
+// hard-edged photo across the top that ends halfway down the logo.
+export type CoverStyle = { enabled: boolean; mode: "fade" | "banner"; size: "small" | "medium" | "large"; zoom: number; x: number; y: number; fade: number; overlay: number };
+const DEFAULT_COVER_STYLE: CoverStyle = { enabled: false, mode: "fade", size: "medium", zoom: 1, x: 50, y: 50, fade: 55, overlay: .35 };
 
 // How much extra height (px, on top of the logo+text reserve computed in landing-renderer.tsx)
 // each size adds — "large" is tuned to comfortably reach past a second button.
@@ -429,6 +441,7 @@ export function parseCoverStyle(raw: unknown): CoverStyle {
   const sizes: CoverStyle["size"][] = ["small", "medium", "large"];
   return {
     enabled: parsed.enabled === true,
+    mode: parsed.mode === "banner" ? "banner" : "fade",
     size: sizes.includes(parsed.size as CoverStyle["size"]) ? (parsed.size as CoverStyle["size"]) : DEFAULT_COVER_STYLE.size,
     zoom: clamp(parsed.zoom, 1, 2.5, DEFAULT_COVER_STYLE.zoom),
     x: clamp(parsed.x, 0, 100, DEFAULT_COVER_STYLE.x),

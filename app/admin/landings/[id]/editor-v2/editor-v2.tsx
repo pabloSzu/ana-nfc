@@ -10,7 +10,7 @@ import DeleteLandingButton from "@/app/admin/delete-landing-button";
 import LandingRenderer, { type LandingEditControls } from "@/components/landing-renderer";
 import ScaledPhoneCanvas from "@/components/scaled-phone-canvas";
 import { compressImage } from "@/lib/compress-image";
-import { parseDistribution, type DistributionStyle, QUICK_SOCIALS, quickSocialHref, type QuickSocial, AUTO_COLORS, contrastTextColor, getAllActions, parseCoverStyle, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize, resolveTextFont, type BackgroundPosition, type ButtonZoneStyle, type CoverStyle, type LogoStyle, type SubtitleStyle, type TitleStyle } from "@/lib/landing-catalog";
+import { headerCardOn, parseDistribution, type DistributionStyle, QUICK_SOCIALS, quickSocialHref, type QuickSocial, AUTO_COLORS, contrastTextColor, getAllActions, parseCoverStyle, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize, resolveTextFont, type BackgroundPosition, type ButtonZoneStyle, type CoverStyle, type LogoStyle, type SubtitleStyle, type TitleStyle } from "@/lib/landing-catalog";
 import FontPicker from "../font-picker";
 import { getFontWeights, resolveFontWeight } from "@/lib/fonts";
 import IconPicker from "../icon-picker";
@@ -311,6 +311,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
         iconAppearance: recommendedIconAppearance(preset.buttonZone.collection),
         templateId: id,
         distribution: preset.buttonZone.distribution,
+        headerCard: preset.buttonZone.layout === "profile-card",
       },
       titleStyle: { ...draft.titleStyle, ...preset.title, color: preset.foreground }, subtitleStyle: { ...draft.subtitleStyle, ...preset.subtitle, color: preset.foreground }, logoStyle: { ...draft.logoStyle, ...logoTreatmentPatch("template", id), ...preset.logo },
     });
@@ -329,6 +330,9 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
         contentAlignMode: draft.buttonZone.contentAlignMode,
         templateId: draft.buttonZone.templateId,
         distribution: draft.buttonZone.distribution,
+        // A button look carries its template's layout along, but the header card is a header
+        // choice — switching just the buttons shouldn't add or remove it.
+        headerCard: headerCardOn(draft.buttonZone),
         colorMode: preset.buttonZone.colorMode,
         oneColor: preset.oneColor,
         colorModeManual: false,
@@ -482,7 +486,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
     if (input) { const transfer = new DataTransfer(); transfer.items.add(compressed); input.files = transfer.files; }
     if (coverPreview) URL.revokeObjectURL(coverPreview);
     setCoverPreview(URL.createObjectURL(compressed)); setCoverRemoved(false);
-    change({ coverStyle: parseCoverStyle({ enabled: true }) });
+    change({ coverStyle: parseCoverStyle({ enabled: true, mode: draft.coverStyle.mode, ...(draft.coverStyle.mode === "banner" ? { overlay: 0 } : {}) }) });
   }
 
   const backgroundImage = bgPreview || draft.background_image_url || "";
@@ -601,7 +605,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
   );
 }
 
-function panelTitle(panel: Exclude<Panel, null>) { if (typeof panel === "object") return "Editar botón"; return ({ templates: "Elegí una plantilla", buttons: "Editar todos los botones", background: "Fondo de la página", cover: "Portada", settings: "Ajustes de la landing", socials: "Redes rápidas", distribution: "Distribución", title: "Editar título", subtitle: "Editar subtítulo", logo: "Editar logo", add: "Agregar un botón" } as const)[panel]; }
+function panelTitle(panel: Exclude<Panel, null>) { if (typeof panel === "object") return "Editar botón"; return ({ templates: "Elegí una plantilla", buttons: "Editar todos los botones", background: "Fondo de la página", cover: "Encabezado",settings: "Ajustes de la landing", socials: "Redes rápidas", distribution: "Distribución", title: "Editar título", subtitle: "Editar subtítulo", logo: "Editar logo", add: "Agregar un botón" } as const)[panel]; }
 
 function TemplateSwatch({ preset }: { preset: DesignPreset }) {
   const iconAppearance = recommendedIconAppearance(preset.buttonZone.collection);
@@ -809,33 +813,59 @@ const COVER_SIZES: { id: CoverStyle["size"]; label: string }[] = [
   { id: "large", label: "Grande" },
 ];
 
+type HeaderStyle = "none" | "card" | CoverStyle["mode"];
+const HEADER_STYLES: { id: HeaderStyle; title: string; note: string }[] = [
+  { id: "none", title: "Sin portada", note: "Logo, nombre y descripción directo sobre el fondo." },
+  { id: "card", title: "Tarjeta", note: "Un recuadro esmerilado que agrupa logo, nombre y descripción." },
+  { id: "fade", title: "Portada difuminada", note: "Una foto detrás del encabezado que se desvanece hacia los botones." },
+  { id: "banner", title: "Portada banner", note: "Una foto arriba de todo, con el logo montado sobre su borde." },
+];
+
 function CoverControls({ draft, coverImage, onChange, onCoverFile, onRemoveCover }: { draft: LandingDraft; coverImage: string; onChange: (p: Partial<LandingDraft>) => void; onCoverFile: (f?: File) => void; onRemoveCover: () => void }) {
   const style = draft.coverStyle;
   const updateCover = (patch: Partial<CoverStyle>) => onChange({ coverStyle: { ...style, ...patch } });
   const canPan = style.zoom > 1;
+  const hasCard = headerCardOn(draft.buttonZone);
+  // The four options are mutually exclusive in the picker even though card and photo are stored
+  // separately — a photo wins if both happen to be on (older pages could have that).
+  const current: HeaderStyle = style.enabled ? style.mode : hasCard ? "card" : "none";
+  const templateStyle: HeaderStyle = suggestedPreset(draft.buttonZone.templateId).buttonZone.layout === "profile-card" ? "card" : "none";
+  // One change for card + photo together, so a single Ctrl+Z undoes the whole switch.
+  const pick = (id: HeaderStyle) => onChange({
+    buttonZone: { ...draft.buttonZone, headerCard: id === "card" },
+    // The banner's veil is plain black (the title doesn't sit on the photo), so it starts clear
+    // instead of inheriting the fade style's default wash.
+    coverStyle: id === "fade" || id === "banner" ? { ...style, enabled: true, mode: id, ...(id === "banner" && style.mode !== "banner" ? { overlay: 0 } : {}) } : { ...style, enabled: false },
+  });
+  const isPhoto = current === "fade" || current === "banner";
   return <div className="v2-fields">
-    <p className="v2-help">Una imagen detrás de tu logo, nombre y descripción, hasta el comienzo de los botones. Se adapta sola sin mover tu contenido.</p>
-    <label className="v2-upload">{coverImage ? "Cambiar portada" : "Subir portada"}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => { onCoverFile(event.target.files?.[0]); event.target.value = ""; }} /></label>
-    {coverImage && <>
-      <Choice active={style.enabled} title="Mostrar portada" note="Podés ocultarla sin borrar la imagen." onClick={() => updateCover({ enabled: !style.enabled })} />
-      <fieldset className="v2-editor-section" data-tone="blue">
-        <legend>Tamaño de portada</legend>
-        <div className="v2-segment">{COVER_SIZES.map((option) => <button type="button" key={option.id} className={style.size === option.id ? "active" : ""} onClick={() => updateCover({ size: option.id })}>{option.label}</button>)}</div>
-        <p className="v2-help" style={{ margin: "8px 0 0" }}>"Mediano" es el ajuste por defecto. "Grande" llega hasta más abajo, cerca del segundo botón.</p>
-      </fieldset>
-      <details className="v2-cover-adjustments v2-editor-section" data-tone="purple"><summary>Ajustar encuadre y difuminado</summary><div className="v2-fields">
-        <Range label="Acercar" min={1} max={2.5} step={.01} value={style.zoom} onChange={(zoom) => updateCover({ zoom })} />
-        {canPan ? <>
-          <Range label="Mover horizontal" min={0} max={100} value={style.x} onChange={(x) => updateCover({ x })} />
-          <Range label="Mover vertical" min={0} max={100} value={style.y} onChange={(y) => updateCover({ y })} />
-        </> : <p className="v2-help" style={{ margin: 0 }}>Subí el acercamiento para poder mover la foto dentro del marco.</p>}
-        <Range label="Difuminado" min={10} max={90} value={style.fade} onChange={(fade) => updateCover({ fade })} />
-        <p className="v2-help" style={{ margin: "-6px 0 0" }}>Dónde empieza a desvanecerse la foto hacia el fondo, cerca de los botones.</p>
-        <Range label="Oscurecer la foto" min={0} max={.85} step={.01} value={style.overlay} onChange={(overlay) => updateCover({ overlay })} />
-        <p className="v2-help" style={{ margin: "-6px 0 0" }}>Un velo parejo sobre toda la foto, para que el logo y el título se lean mejor.</p>
-        <button type="button" className="v2-ghost" onClick={() => onChange({ coverStyle: parseCoverStyle({ enabled: style.enabled, size: style.size }) })}>Restablecer ajuste automático</button>
-      </div></details>
-      <button type="button" className="v2-delete" onClick={onRemoveCover}>Quitar portada</button>
+    <EditorSection title="Estilo del encabezado" tone="peach">
+      {HEADER_STYLES.map(option => <Choice key={option.id} active={current === option.id} title={option.title} note={option.note} suggested={templateStyle === option.id} onClick={() => pick(option.id)} />)}
+    </EditorSection>
+    {isPhoto && <>
+      <label className="v2-upload">{coverImage ? "Cambiar foto" : "Subir foto de portada"}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => { onCoverFile(event.target.files?.[0]); event.target.value = ""; }} /></label>
+      {coverImage && <>
+        {current === "fade" && <fieldset className="v2-editor-section" data-tone="blue">
+          <legend>Tamaño de portada</legend>
+          <div className="v2-segment">{COVER_SIZES.map((option) => <button type="button" key={option.id} className={style.size === option.id ? "active" : ""} onClick={() => updateCover({ size: option.id })}>{option.label}</button>)}</div>
+          <p className="v2-help" style={{ margin: "8px 0 0" }}>"Mediano" es el ajuste por defecto. "Grande" llega hasta más abajo, cerca del segundo botón.</p>
+        </fieldset>}
+        <details className="v2-cover-adjustments v2-editor-section" data-tone="purple"><summary>{current === "fade" ? "Ajustar encuadre y difuminado" : "Ajustar encuadre"}</summary><div className="v2-fields">
+          <Range label="Acercar" min={1} max={2.5} step={.01} value={style.zoom} onChange={(zoom) => updateCover({ zoom })} />
+          {canPan ? <>
+            <Range label="Mover horizontal" min={0} max={100} value={style.x} onChange={(x) => updateCover({ x })} />
+            <Range label="Mover vertical" min={0} max={100} value={style.y} onChange={(y) => updateCover({ y })} />
+          </> : <p className="v2-help" style={{ margin: 0 }}>Subí el acercamiento para poder mover la foto dentro del marco.</p>}
+          {current === "fade" && <>
+            <Range label="Difuminado" min={10} max={90} value={style.fade} onChange={(fade) => updateCover({ fade })} />
+            <p className="v2-help" style={{ margin: "-6px 0 0" }}>Dónde empieza a desvanecerse la foto hacia el fondo, cerca de los botones.</p>
+          </>}
+          <Range label="Oscurecer la foto" min={0} max={.85} step={.01} value={style.overlay} onChange={(overlay) => updateCover({ overlay })} />
+          <p className="v2-help" style={{ margin: "-6px 0 0" }}>{current === "fade" ? "Un velo parejo sobre toda la foto, para que el logo y el título se lean mejor." : "Un velo oscuro parejo sobre toda la foto."}</p>
+          <button type="button" className="v2-ghost" onClick={() => onChange({ coverStyle: parseCoverStyle({ enabled: style.enabled, mode: style.mode, size: style.size, ...(style.mode === "banner" ? { overlay: 0 } : {}) }) })}>Restablecer ajuste automático</button>
+        </div></details>
+        <button type="button" className="v2-delete" onClick={onRemoveCover}>Quitar foto</button>
+      </>}
     </>}
   </div>;
 }

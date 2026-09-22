@@ -3,7 +3,7 @@ import { FiTrash2, FiSliders } from "react-icons/fi";
 import BioNFCLogo from "@/components/bionfc-logo";
 import {
   QUICK_SOCIALS, quickSocialHref, buildActionLink, buttonZoneShadow, resolveBackgroundTint, contrastTextColor,
-  parseDistribution, readableInk, parseTitleStyle, parseSubtitleStyle, parseLogoStyle, parseBackgroundPosition, parseButtonZone, parseCoverStyle, COVER_SIZE_EXTRA, hexToRgba, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize,
+  parseDistribution, readableInk, parseTitleStyle, parseSubtitleStyle, parseLogoStyle, parseBackgroundPosition, parseButtonZone, parseCoverStyle, headerCardOn, COVER_SIZE_EXTRA, hexToRgba, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize,
 } from "@/lib/landing-catalog";
 import { getFontFamily, resolveFontWeight, resolveTextFont, FontLinks } from "@/lib/fonts";
 import { buttonCollectionStyle, buttonCollectionWidth, buttonIconStyle, hasAuthenticLook, resolveButtonColors } from "@/lib/design-presets";
@@ -104,6 +104,11 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
   const cover = parseCoverStyle(landing.cover_style);
   const showCover = Boolean(cover.enabled && landing.cover_image_url);
   const zone = parseButtonZone(landing.button_style);
+  const isBanner = showCover && cover.mode === "banner";
+  // Card and photo are exclusive choices in the editor; a photo wins if an older page has both.
+  const hasHeaderCard = headerCardOn(zone) && !showCover;
+  // "profile-card" is the old way the card was stored — it's otherwise the plain centered layout.
+  const layoutClass = zone.layout === "profile-card" ? "center" : zone.layout;
   const distribution = parseDistribution(zone.distribution, zone.layout);
   const iconAppearance = zone.iconAppearance;
   const socialLinks = (zone.quickSocials || []).flatMap(link => { const href = quickSocialHref(link); return href ? [{ ...link, href }] : []; });
@@ -195,18 +200,20 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
           <button type="button" className="editor-bg-hit" onClick={edit.onSelectBackground} aria-label="Editar fondo" />
           <div className="editor-quick-tools">
             <button type="button" className={edit.selected === "templates" ? "active" : ""} onClick={edit.onSelectTemplates}>✦ Plantillas</button>
-            <button type="button" className={edit.selected === "cover" ? "active" : ""} onClick={edit.onSelectCover}><IconImage /> Portada</button>
+            <button type="button" className={edit.selected === "cover" ? "active" : ""} onClick={edit.onSelectCover}><IconImage /> Encabezado</button>
             <button type="button" className={edit.selected === "distribution" ? "active" : ""} onClick={edit.onSelectDistribution}><FiSliders aria-hidden="true" /> Distribución</button>
             <button type="button" className={edit.selected === "background" ? "active" : ""} onClick={edit.onSelectBackground}><IconImage /> Fondo</button>
           </div>
         </>
       )}
-      <div className={`public-inner layout-${zone.layout}`} style={{ position: "relative", zIndex: 2 }}>
+      <div className={`public-inner layout-${layoutClass}${hasHeaderCard ? " has-header-card" : ""}`} style={{ position: "relative", zIndex: 2 }}>
         <div className="landing-header-region" style={showCover ? ({ "--cover-h": `${coverReserve}px` } as CSSProperties) : undefined}>
         {showCover && (
-          <div className="landing-cover-bg" aria-hidden="true" style={{ maskImage: coverFadeGradient(cover.fade) }}>
+          // The banner runs from the very top of the page down to the middle of the logo, with a
+          // hard edge, so the logo sits half on the photo and half on the page.
+          <div className={`landing-cover-bg${isBanner ? " is-banner" : ""}`} aria-hidden="true" style={isBanner ? { height: `calc(var(--landing-top) + ${logo.size / 2}px)` } : { maskImage: coverFadeGradient(cover.fade) }}>
             <div className="landing-cover-photo" style={{ backgroundImage: `url(${JSON.stringify(landing.cover_image_url)})`, backgroundPosition: `${cover.x}% ${cover.y}%`, transform: `scale(${cover.zoom})`, transformOrigin: `${cover.x}% ${cover.y}%` }} />
-            <div className="landing-cover-veil" style={{ background: hexToRgba(contrastTextColor(title.color), cover.overlay) }} />
+            <div className="landing-cover-veil" style={{ background: isBanner ? `rgba(0, 0, 0, ${cover.overlay})` : hexToRgba(contrastTextColor(title.color), cover.overlay) }} />
           </div>
         )}
         <div className="landing-identity-block">

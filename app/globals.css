@@ -1242,7 +1242,7 @@ input[type="color"] { padding: 5px; height: 46px; cursor: pointer; }
 .layout-editorial .landing-desc { margin-left: 0 !important; text-align: left; }
 
 .layout-profile-card .v2-identity-block,
-.layout-profile-card .landing-identity-block {
+.has-header-card .landing-identity-block {
   margin: 0 0 22px;
   padding: 20px 17px 14px;
   border: 1px solid rgba(255,255,255,.34);
