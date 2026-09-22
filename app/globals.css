@@ -1685,8 +1685,10 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
 .editor-socials-entry { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 40px; margin-top: 6px; padding: 7px 12px; border: 1px dashed #a999d0; border-radius: 10px; background: #f5f0ff; color: #60458d; font-size: 11px; cursor: pointer; }
 .editor-socials-entry svg { width: 12px; height: 12px; }
 
-/* Template dividers now share the same editable separator control. */
-.public .layout-poster .landing-identity-block { border-bottom: 0; }
+/* Template dividers now share the same editable separator control. The poster's padding and
+   margin were the room its old built-in underline needed — left behind once that line moved to
+   the separator, they stacked ~43px of dead air above it that no slider could reach. */
+.public .layout-poster .landing-identity-block { margin-bottom: 0; padding-bottom: 0; border-bottom: 0; }
 .public .layout-compact .landing-identity-block { column-gap: var(--landing-logo-gap, 14px); }
 .landing-separator { position: relative; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
 .landing-separator > div { margin-inline: auto; }
