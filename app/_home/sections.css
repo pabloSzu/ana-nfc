@@ -171,24 +171,3 @@
   .bx-footer-bottom { flex-wrap: wrap; padding-bottom: 85px; }
 }
 @media (prefers-reduced-motion: reduce) { html:has(.bx) { scroll-behavior: auto; } }
-
-/* Partner invitation: a distinct offer, with room for both sides of the collaboration. */
-.bx-partners { margin-top: 56px; padding: clamp(26px, 4.5vw, 60px); display: grid; grid-template-columns: 1.3fr 1fr; gap: clamp(28px, 4vw, 58px); align-items: center; border: 1px solid #d9cbed; border-radius: 28px; background: radial-gradient(ellipse at 100% 0%, #dbcaf5 0%, transparent 65%), #f0e9fa; color: #281b39; }
-.bx-partners-copy, .bx-partners-collab { min-width: 0; }
-.bx-partners .bx-partners-eyebrow { font-size: 12px; font-weight: 800; letter-spacing: .12em; line-height: 1.6; color: #684495; margin: 0 0 20px; }
-.bx-partners h3 { font: 800 clamp(30px, 3.3vw, 46px) / 1.12 var(--bx-display), sans-serif; letter-spacing: -.045em; margin: 0; text-wrap: balance; }
-.bx-partners h3 span { color: #7547a4; }
-.bx-partners-lead { font-size: 16px; line-height: 1.75; color: #5d4c6d; max-width: 540px; margin: 23px 0 27px; }
-.bx-partners-cta { display: inline-flex; align-items: center; justify-content: center; gap: 16px; padding: 17px 23px; min-height: 54px; border-radius: 12px; background: #352047; color: #fff; font-size: 14px; font-weight: 700; transition: background .2s; }
-.bx-partners-cta:hover { background: #573176; }
-.bx-partners-cta svg { flex-shrink: 0; width: 20px; height: 20px; }
-.bx-partners-note { margin: 14px 0 0; font-size: 12px; line-height: 1.6; color: #695775; }
-.bx-partners-collab { display: grid; gap: 12px; }
-.bx-partners-role { display: flex; align-items: flex-start; gap: 16px; padding: 25px; background: #ffffffd9; border: 1px solid #fff; border-radius: 19px; box-shadow: 0 12px 30px #4b286408; }
-.bx-partners-icon { display: grid; place-items: center; flex-shrink: 0; width: 44px; height: 44px; border-radius: 13px; background: #eee5f7; color: #784aa2; font-size: 21px; }
-.bx-partners-role div > span { font-size: 10px; font-weight: 800; letter-spacing: .12em; color: #72548b; }
-.bx-partners-role h4 { margin: 8px 0; font: 700 20px / 1.25 var(--bx-display), sans-serif; letter-spacing: -.02em; }
-.bx-partners-role p { font-size: 13px; line-height: 1.65; color: #6a5c74; margin: 0; }
-.bx-partners-plus { justify-self: center; font-size: 25px; line-height: 1; color: #86629f; }
-@media (max-width: 900px) { .bx-partners { grid-template-columns: 1fr; } }
-@media (max-width: 480px) { .bx-partners { border-radius: 22px; padding: 26px 20px; } .bx-partners-role { padding: 20px 16px; gap: 12px; } .bx-partners-cta { width: 100%; padding-inline: 14px; } }

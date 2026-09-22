@@ -6,12 +6,14 @@ import "./_home/sections.css";
 import { IconMessageCircle, IconZap, IconShieldCheck, IconTruck, IconChefHat, IconShoppingBag, IconBriefcase, IconPartyPopper, IconUserRound } from "@/components/icons";
 import { FiArrowUpRight, FiArrowDown, FiCheck, FiSend } from "react-icons/fi";
 import { FaWhatsapp } from "react-icons/fa6";
-import { body, display } from "./_home/fonts";
+import { body, display, hand } from "./_home/fonts";
 import Logo from "./_home/logo";
 import { StyleShowcase } from "./_home/showcase";
 import { Faq, HomeNav } from "./_home/interactive";
 import HowItWorks from "./_home/how-it-works";
 import Products from "./_home/products";
+import Makers from "./_home/makers";
+import "./_home/makers.css";
 import Destinations from "./_home/destinations";
 
 const title = "BioNFC — tu negocio, a un toque";
@@ -77,7 +79,7 @@ const FAQS = [
 
 export default function Home() {
   return (
-    <div className={`bx ${display.variable} ${body.variable}`}>
+    <div className={`bx ${display.variable} ${body.variable} ${hand.variable}`}>
       <HomeNav links={NAV_LINKS}>
         <a href="#top" className="bx-brand" aria-label="BIONFC, inicio"><Logo /></a>
         <ul className="bx-nav-links">
@@ -137,6 +139,8 @@ export default function Home() {
       </section>
 
       <Products whatsappNumber={WHATSAPP_NUMBER} />
+
+      <Makers whatsappNumber={WHATSAPP_NUMBER} />
 
       <section id="preguntas" className="bx-section bx-questions">
         <div className="bx-questions-intro"><p className="bx-section-kicker">ANTES DEL PRIMER TOQUE</p><h2 className="bx-h2">Todo claro.<br /><span>Desde el inicio.</span></h2><p>Las dudas más comunes, sin letra chica.</p><a href={WA} target="_blank" rel="noreferrer"><IconMessageCircle />¿Tenés otra pregunta? <FiArrowUpRight aria-hidden="true" /></a></div>

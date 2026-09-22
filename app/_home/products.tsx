@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { FiArrowUpRight, FiCheck, FiLayers, FiTool } from "react-icons/fi";
+import { FiArrowUpRight, FiCheck, FiLayers } from "react-icons/fi";
 
 const PRODUCTS = [
   { id: "keychain", name: "Llavero NFC", context: "PARA LLEVAR CON VOS", line: "Tu negocio sale con vos.", description: "En tus llaves, siempre a mano. Compartí tu link o tu página donde aparezca una oportunidad.", use: "Emprendedores · eventos · contactos", image: "/marketing/hero/keychain.webp", width: 475, height: 760 },
@@ -20,20 +20,6 @@ export default function Products({ whatsappNumber }: { whatsappNumber: string })
       </div>
       <p className="bx-shop-note">Las imágenes ilustran posibles diseños. Confirmamos formato, terminación, precio y entrega antes de avanzar con tu pedido.</p>
       <div className="bx-shop-included"><span><FiLayers aria-hidden="true" /> Lo armamos con vos</span><ul><li><FiCheck aria-hidden="true" /> Tu identidad de marca</li><li><FiCheck aria-hidden="true" /> QR, NFC o ambos</li><li><FiCheck aria-hidden="true" /> El destino que vos elijas</li></ul></div>
-      <aside id="para-talleres" className="bx-partners" aria-labelledby="partners-title">
-        <div className="bx-partners-copy">
-          <p className="bx-partners-eyebrow">PARA TALLERES Y FABRICANTES</p>
-          <h3 id="partners-title">Vos creás el producto.<br /><span>Sumémosle conexión.</span></h3>
-          <p className="bx-partners-lead">¿Hacés llaveros, cartelería o productos personalizados? Podemos ayudarte a sumar QR, NFC y páginas con la identidad de cada cliente.</p>
-          <a className="bx-partners-cta" href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Hola BioNFC, tengo un taller y fabrico productos personalizados. Me interesa sumar QR, NFC o páginas a mis productos. ¿Podemos conversar?")}`} target="_blank" rel="noreferrer">Hablemos de tus productos <FiArrowUpRight aria-hidden="true" /></a>
-          <p className="bx-partners-note">Contanos qué fabricás y vemos cómo trabajar juntos.</p>
-        </div>
-        <div className="bx-partners-collab" aria-label="Una propuesta para trabajar juntos">
-          <div className="bx-partners-role"><span className="bx-partners-icon" aria-hidden="true"><FiTool /></span><div><span>TU TALLER</span><h4>El producto y tu creatividad</h4><p>Llaveros, carteles y piezas con tu sello.</p></div></div>
-          <span className="bx-partners-plus" aria-hidden="true">+</span>
-          <div className="bx-partners-role"><span className="bx-partners-icon" aria-hidden="true"><FiLayers /></span><div><span>BIONFC</span><h4>La experiencia digital</h4><p>QR, NFC y páginas para lo que tu cliente quiera compartir.</p></div></div>
-        </div>
-      </aside>
     </div>
   </section>;
 }
