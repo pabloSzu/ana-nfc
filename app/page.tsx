@@ -26,8 +26,9 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image", title, description },
 };
 
-const WHATSAPP_NUMBER = "5493884208746";
-const WHATSAPP_TEXT = encodeURIComponent("Hola BioNFC, quiero armar el mío 👋");
+const WHATSAPP_NUMBER = "5493517873628";
+// No emoji: wa.me's redirect mangles them into "�" on WhatsApp Web/Desktop (and some phones).
+const WHATSAPP_TEXT = encodeURIComponent("Hola BioNFC, me interesa un QR o NFC para mi negocio. ¿Me contás las opciones?");
 const WA = `https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_TEXT}`;
 
 const NAV_LINKS = [
