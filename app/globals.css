@@ -1670,9 +1670,10 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
 .landing-socials svg { width: 19px; height: 19px; }
 .landing-socials[data-tone="dark"] a { background: #22212be8; border-color: #514b5c; color: #f1edf7; }
 /* "Sin fondo": plain icon, no chip/border — the icon itself just inherits the page's auto
-   light/dark tone so it stays readable without a background of its own. */
-.landing-socials[data-filled="no"] { gap: 16px; }
-.landing-socials[data-filled="no"] a { width: auto; height: auto; border: 0; background: transparent; color: #49424c; }
+   light/dark tone so it stays readable without a background of its own. The link keeps the
+   same 44px box as the filled chip (just invisible), so icons sit on the same rhythm as "Con
+   fondo" and keep a finger-sized tap target instead of shrinking to the bare 21px glyph. */
+.landing-socials[data-filled="no"] a { border-color: transparent; background: transparent; color: #49424c; }
 .landing-socials[data-filled="no"][data-tone="dark"] a { color: #f1edf7; }
 .landing-socials[data-filled="no"] a:hover { opacity: .75; }
 .landing-socials[data-filled="no"] svg { width: 21px; height: 21px; }
