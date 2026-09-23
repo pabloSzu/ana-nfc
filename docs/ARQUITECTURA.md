@@ -48,16 +48,24 @@ Cuatro tablas, todas en `public`:
   de auth**: los clientes no tienen login. El `owner_id` de todo sos vos.
 - **`landing_views`** — una fila por visita. Ver abajo.
 
-### El modelo de permisos, y su punto débil
+### El modelo de permisos
 
-Las Server Actions filtran a mano por `.eq("owner_id", user.id)` en cada consulta. Eso
-funciona hoy **porque el único usuario logueado sos vos**.
+Hay dos capas, y las dos están puestas.
 
-El día que le des login a un cliente, eso deja de alcanzar: la `PUBLISHABLE_KEY` es
-pública por diseño, así que cualquiera con una sesión válida puede pegarle a Supabase
-directo desde el navegador y saltearse las Server Actions por completo. **Antes de dar
-acceso a un tercero hay que auditar las políticas RLS de `landings`, `actions` y
-`clients`.** `landing_views` ya nació con RLS correcta; las otras tres son anteriores.
+Las Server Actions filtran por `.eq("owner_id", user.id)` en cada consulta, pero eso es
+conveniencia, no la defensa: **la defensa está en la base**. Las cuatro tablas tienen RLS
+habilitada y 18 políticas, acotadas por `owner_id = auth.uid()` para el usuario logueado,
+más lectura pública restringida a landings publicadas y a sus botones habilitados.
+
+Eso importa porque la `PUBLISHABLE_KEY` es pública por diseño: cualquiera puede pegarle a
+Supabase directo desde el navegador salteándose las Server Actions. Cuando lo hace, la RLS
+lo frena igual.
+
+El día que un cliente tenga su propio login **no hay un agujero que tapar, hay políticas
+que agregar**: hoy su `auth.uid()` no coincide con ningún `owner_id`, así que no vería
+nada. Es lo contrario de un problema de seguridad — es una funcionalidad que falta.
+
+El esquema completo, con sus políticas, está en `supabase/baseline/`.
 
 ## Contador de escaneos
 
@@ -95,6 +103,25 @@ el formato). Dos trampas que cuestan tiempo si no se saben:
 
 El historial de migraciones vive en `supabase_migrations.schema_migrations` dentro de cada
 base, así que cada proyecto sabe cuáles ya aplicó.
+
+### Crear un proyecto desde cero
+
+Las migraciones asumen que las tablas ya existen: se crearon a mano en el dashboard, antes
+de que hubiera migraciones. Para levantar un proyecto nuevo (otra región, otro entorno,
+recuperar uno perdido) hay que correr primero el esquema base, una sola vez:
+
+```
+psql "<Session pooler del proyecto nuevo>" -v ON_ERROR_STOP=1 -f supabase/baseline/01-schema.sql
+psql "<Session pooler del proyecto nuevo>" -v ON_ERROR_STOP=1 -f supabase/baseline/02-storage.sql
+```
+
+y recién después las migraciones (`npm run db:dev:apply`). El archivo de storage va aparte
+porque el bucket es una fila en `storage.buckets` y sus permisos viven sobre
+`storage.objects`: un `pg_dump` del esquema `public` no los trae, y sin ellos el proyecto
+levanta pero no se puede subir ni un logo.
+
+Lo que NO se lleva ninguno de los dos: los datos, los archivos ya subidos y los usuarios de
+auth. El usuario del admin se crea de nuevo en el dashboard del proyecto nuevo.
 
 ## Cosas que rompen en silencio
 
