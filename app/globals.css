@@ -1785,3 +1785,22 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
 /* LogoInitials (lib/fonts.tsx) centers on the letters' own size — keep it auto-sized even inside
    editor previews that stretch plain spans/icons to fill the logo frame. */
 .logo-initials { width: auto !important; height: auto !important; }
+
+/* Columna "Escaneos" del panel: el total manda y el dato de los 30 días va abajo, más chico —
+   el primero dice si la tarjeta sirvió alguna vez, el segundo si sigue en uso, que es el que
+   importa cuando toca renovar. */
+.scan-count { display: flex; flex-direction: column; line-height: 1.25; }
+.scan-count strong { font-size: 0.9375rem; font-variant-numeric: tabular-nums; }
+.scan-count small { font-size: 0.6875rem; }
+
+/* Aviso de QR no imprimible. Deliberadamente fuerte: el error que previene no se ve en pantalla
+   (el código sale perfecto), solo aparece cuando ya está impreso y pegado en la pared. */
+.qr-local-warning {
+  text-align: left; border-radius: var(--radius-md); padding: 12px 14px;
+  margin-bottom: var(--space-4); background: rgba(220, 38, 38, .1);
+  border: 1px solid rgba(220, 38, 38, .45);
+}
+.qr-local-warning strong { display: block; font-size: 0.875rem; margin-bottom: 4px; }
+.qr-local-warning p { margin: 0 0 4px; font-size: 0.75rem; line-height: 1.45; opacity: .85; }
+.qr-local-warning p:last-child { margin-bottom: 0; }
+.qr-local-warning code { font-size: 0.7188rem; padding: 1px 4px; border-radius: 4px; background: rgba(0,0,0,.18); }
