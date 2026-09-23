@@ -24,7 +24,7 @@ export function normalizeSource(raw: string | string[] | undefined): ViewSource 
  * alguien que acaba de apoyar el celular en una tarjeta. Por el mismo motivo nunca lanza: si
  * la base falla, la landing igual se ve. Un contador roto no puede romper el producto.
  */
-export async function trackLandingView(landingId: string, source: ViewSource) {
+export async function trackLandingView(landingId: string, source: ViewSource, ownerId?: string | null) {
   const userAgent = (await headers()).get("user-agent") || "";
   // Sin user-agent es casi siempre un script; un navegador real siempre manda uno.
   if (!userAgent || BOT_PATTERN.test(userAgent)) return;
@@ -32,6 +32,17 @@ export async function trackLandingView(landingId: string, source: ViewSource) {
   // El cliente se arma acá y no adentro de after(): necesita cookies(), que pertenece a la
   // request y ya no está disponible una vez que la respuesta se fue.
   const supabase = await createClient();
+
+  // El dueño mirando su propia landing no es un escaneo. El botón "Ver" del panel abre la
+  // página pública igual que cualquier visitante, así que sin esto cada vez que se revisa
+  // el trabajo de un cliente se le infla el contador — y revisar es lo que más se hace.
+  //
+  // No cuesta una consulta: getClaims() verifica el JWT de la cookie localmente, y cuando no
+  // hay sesión —el caso de cualquier visitante real— devuelve vacío al instante.
+  if (ownerId) {
+    const { data: claims } = await supabase.auth.getClaims();
+    if ((claims?.claims as { sub?: string } | undefined)?.sub === ownerId) return;
+  }
 
   after(async () => {
     try {
