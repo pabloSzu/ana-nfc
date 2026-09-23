@@ -4,6 +4,7 @@ import {
   FaTiktok, FaUtensils, FaWhatsapp, FaYoutube,
 } from "react-icons/fa6";
 import { SiGoogle, SiGooglemaps } from "react-icons/si";
+import { FcGoogle } from "react-icons/fc";
 import {
   FiAward, FiBell, FiBookOpen, FiBriefcase, FiCamera, FiClock, FiCoffee, FiDownload,
   FiFlag, FiGift, FiGlobe, FiHeart, FiHelpCircle, FiHome, FiInfo, FiLink, FiLock,
@@ -183,6 +184,11 @@ export function ActionTypeIcon({ type, icon, className, brandMark = false }: { t
   if (brandMark && !icon && type === "youtube") return <YoutubePlayIcon className={sharedClassName} />;
   // The lockup gets its own class on top: it fills the whole box (it IS the badge), while the
   // bare handshake above sits inset like every other glyph.
+  // Google's own flat four-color G, from Flat Color Icons — the mark Google itself uses at this
+  // size. Unlike the Maps pin and the Mercado Pago lockup, which are inlined from the brands'
+  // own files, this one needs no inlining: it is a handful of plain paths with no gradients,
+  // filters or ids, so it costs nothing and cannot collide with another SVG's defs.
+  if (brandMark && !icon && type === "review") return <FcGoogle className={sharedClassName} />;
   if (brandMark && !icon && type === "maps") return <GoogleMapsIcon className={`${sharedClassName} action-type-icon-maps-pin`} />;
   if (brandMark && !icon && type === "mercadopago") return <MercadoPagoIcon className={`${sharedClassName} action-type-icon-mp-lockup`} />;
   const Icon = (icon && customIcons[icon]) || actionIcons[type] || FiLink;
