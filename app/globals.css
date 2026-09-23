@@ -1804,3 +1804,46 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
 .qr-local-warning p { margin: 0 0 4px; font-size: 0.75rem; line-height: 1.45; opacity: .85; }
 .qr-local-warning p:last-child { margin-bottom: 0; }
 .qr-local-warning code { font-size: 0.7188rem; padding: 1px 4px; border-radius: 4px; background: rgba(0,0,0,.18); }
+
+/* ---------- Diseñador de QR ---------- */
+.qr-designer { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--space-5); align-items: start; }
+@media (max-width: 860px) { .qr-designer { grid-template-columns: 1fr; } }
+
+.qr-stage {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  padding: var(--space-5); text-align: center;
+}
+/* El QR se muestra sobre su propio fondo y no sobre el de la tarjeta: el fondo es parte del
+   diseño y hay que poder juzgarlo, sobre todo cuando no es blanco. */
+.qr-preview { display: block; width: min(360px, 100%); margin: 0 auto var(--space-4); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+.qr-url { word-break: break-all; font-size: 0.8125rem; margin: 0; }
+
+.qr-warnings {
+  list-style: none; margin: var(--space-4) 0 0; padding: 10px 12px; text-align: left;
+  background: rgba(217, 119, 6, .12); border: 1px solid rgba(217, 119, 6, .4); border-radius: var(--radius-md);
+}
+.qr-warnings li { font-size: 0.75rem; line-height: 1.45; }
+.qr-warnings li + li { margin-top: 5px; }
+
+.qr-controls {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-4);
+}
+.qr-field { display: flex; flex-direction: column; gap: 8px; }
+.qr-colors { display: flex; gap: 8px; align-items: center; }
+.qr-colors input[type="color"] { width: 44px; height: 34px; padding: 2px; flex: none; }
+.qr-colors .btn { flex: 1; font-size: 0.75rem; padding: 7px 10px; }
+.qr-options { display: flex; gap: 6px; }
+.qr-option {
+  flex: 1; font-size: 0.75rem; padding: 7px 4px; cursor: pointer;
+  border-radius: var(--radius-sm); border: 1px solid var(--border);
+  background: transparent; color: var(--text-muted);
+}
+.qr-option.on { border-color: var(--accent); color: var(--text); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.qr-check { display: flex; align-items: center; gap: 8px; font-size: 0.8125rem; }
+.qr-range { display: flex; flex-direction: column; gap: 5px; font-size: 0.75rem; color: var(--text-muted); }
+.qr-actions { display: flex; gap: 8px; }
+.qr-actions .btn { flex: 1; }
+.qr-footnote { margin-top: var(--space-5); display: flex; gap: var(--space-4); align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.qr-footnote p { margin: 0; font-size: 0.75rem; }
+.qr-footnote code { font-size: 0.7188rem; padding: 1px 5px; border-radius: 4px; background: rgba(125,125,125,.18); }
