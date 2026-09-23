@@ -131,6 +131,11 @@ export async function saveDesignStyle(fd: FormData) {
   if (existingError) saveFail(existingError.message);
   const existingIds = new Set((existing || []).map((item) => item.id));
   const retainedIds = new Set<string>();
+  // Las filas se arman y se validan TODAS antes de escribir nada. Antes cada botón se escribía
+  // dentro del bucle, así que un error de validación en el botón 5 dejaba los 4 primeros ya
+  // guardados y el resto no.
+  const toUpdate: Record<string, unknown>[] = [];
+  const toInsert: Record<string, unknown>[] = [];
 
   for (let position = 0; position < requestedButtons.length; position++) {
     const button = requestedButtons[position];
@@ -158,21 +163,31 @@ export async function saveDesignStyle(fd: FormData) {
     const id = String(button.id || "");
     if (existingIds.has(id)) {
       retainedIds.add(id);
-      const { error: updateError } = await supabase.from("actions").update(row).eq("id", id).eq("landing_id", landingId);
-      if (updateError) saveFail(updateError.message);
+      toUpdate.push({ ...row, id });
     } else {
-      const { error: insertError } = await supabase.from("actions").insert({ ...row, is_generated: false, source_field: null });
-      if (insertError) saveFail(insertError.message);
+      toInsert.push({ ...row, is_generated: false, source_field: null });
     }
   }
 
   const removableIds = (existing || [])
     .filter((item) => item.enabled !== false && !retainedIds.has(item.id))
     .map((item) => item.id);
-  if (removableIds.length) {
-    const { error: deleteError } = await supabase.from("actions").delete().eq("landing_id", landingId).in("id", removableIds);
-    if (deleteError) saveFail(deleteError.message);
-  }
+
+  // Una escritura por grupo, y las tres en paralelo, en vez de una ida y vuelta por botón.
+  // Guardar una landing de 7 botones hacía 7 viajes en serie (~230ms cada uno contra la base
+  // de dev, que está en Canadá): más de un segundo y medio solo en esto, y creciendo con cada
+  // botón que el cliente agregue. Los tres grupos tocan filas distintas, así que no compiten.
+  //
+  // El upsert no afloja el control de pertenencia que daba el .eq("landing_id") de antes:
+  // toUpdate solo admite ids que están en existingIds, y esa lista se leyó filtrando por esta
+  // landing. Un id de otra landing no llega hasta acá.
+  const [updated, inserted, deleted] = await Promise.all([
+    toUpdate.length ? supabase.from("actions").upsert(toUpdate, { onConflict: "id" }) : null,
+    toInsert.length ? supabase.from("actions").insert(toInsert) : null,
+    removableIds.length ? supabase.from("actions").delete().eq("landing_id", landingId).in("id", removableIds) : null,
+  ]);
+  const failed = [updated, inserted, deleted].find((result) => result?.error);
+  if (failed?.error) saveFail(failed.error.message);
   revalidatePath(`/admin/landings/${landingId}/editor-v2`);
   revalidatePath("/admin");
   redirect(`${returnTo}?saved=Cambios guardados`);
