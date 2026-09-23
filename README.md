@@ -42,26 +42,28 @@ terminado.
 
 ```
 app/
-  [slug]/page.tsx          → landing pública (lo que ve el cliente final)
+  [slug]/page.tsx           → landing pública (lo que ve el cliente final)
+  page.tsx, _home/          → la home pública del producto (marketing)
   admin/
-    page.tsx               → dashboard: lista de clientes y landings
-    clientes/[id]/         → ficha de un cliente
+    page.tsx                → dashboard: lista de clientes y landings
+    clientes/[id]/          → ficha de un cliente
     landings/[id]/
-      page.tsx             → editor CLÁSICO (pestañas: Identidad/Botones/Publicar)
-      visual/               → editor VISUAL experimental (ver más abajo)
-      actions.ts            → Server Actions del editor clásico
-      draft-context.tsx     → estado compartido de "vista previa en vivo"
-      *-form.tsx, *-picker.tsx → piezas del formulario clásico
-    actions.ts              → Server Actions a nivel dashboard (crear/publicar/borrar)
-  layout.tsx                 → metadata global del sitio
+      page.tsx              → solo un redirect() a editor-v2 (ruta vieja)
+      editor-v2/            → EL editor: editor-v2.tsx + sus Server Actions + su CSS
+      preview/              → vista previa a pantalla completa
+      qr/                   → generador del QR de la landing
+      font-picker.tsx, icon-picker.tsx → piezas sueltas que usa el editor
+    actions.ts              → Server Actions del dashboard (crear/publicar/borrar)
+  layout.tsx                → metadata global del sitio
 components/
-  landing-renderer.tsx       → cómo se pinta una landing (lo usan tanto /[slug] como las vistas previas)
-  icons.tsx, action-icons.tsx → todos los íconos (SVG inline, sin librería)
+  landing-renderer.tsx      → cómo se pinta una landing (ver "El editor" más abajo)
+  icons.tsx, action-icons.tsx → todos los íconos
 lib/
-  landing-catalog.ts          → el "catálogo": tipos de botón, colores automáticos, helpers de color/URL
-  compress-image.ts           → compresión de imágenes en el navegador antes de subir
-  supabase/                   → clientes de Supabase (server.ts usa cookies, client.ts es para el browser)
-proxy.ts                      → middleware: refresca la sesión de Supabase en cada request
+  landing-catalog.ts        → el "catálogo": tipos de botón, colores automáticos, helpers de color/URL
+  design-presets.ts         → los 15 presets de diseño y las colecciones de botones
+  fonts.tsx, compress-image.ts
+  supabase/                 → clientes de Supabase (server.ts usa cookies, client.ts es para el browser)
+proxy.ts                    → middleware: refresca la sesión de Supabase en cada request
 ```
 
 ## Los datos: dos tablas
@@ -82,26 +84,39 @@ proxy.ts                      → middleware: refresca la sesión de Supabase en
   `use_auto_color`, `icon`) y `position` (orden en la lista, compartido entre
   ambos tipos).
 
-## Los dos editores
+## El editor
 
-Hay **dos** interfaces para editar una landing, en ramas distintas:
+Hay **un solo** editor: `/admin/landings/[id]/editor-v2`. Es el estilo "celular
+central" — tocás un elemento en la vista previa y se abre un panel solo para eso.
+La ruta vieja `/admin/landings/[id]` es hoy nada más que un `redirect()` a
+editor-v2, y todos los links del dashboard ya apuntan ahí directo.
 
-| | Editor clásico | Editor visual (experimental) |
-|---|---|---|
-| Ruta | `/admin/landings/[id]` | `/admin/landings/[id]/visual` |
-| Rama | `main` (en producción) | `experimento/editor-visual` (sin mergear) |
-| Estilo | Pestañas + formularios largos | Tipo Wix: tocás algo en el celular grande y se abre un modal solo para eso |
-| Guardado de botones | Un formulario combinado (`saveProfileActions`) que manda los 14 tipos juntos | Cada botón tiene su propio guardado independiente (`app/admin/landings/[id]/visual/actions.ts`) |
+El editor clásico (pestañas Identidad/Botones/Publicar) y el prototipo `visual/`
+**ya no existen en `main`**. La rama `experimento/editor-visual` queda solo como
+histórico: no la uses de referencia.
 
-El editor visual **no modifica nada del clásico** — es una carpeta aparte con
-sus propias Server Actions, para poder tirarlo sin riesgo si no convence. Las
-dos cosas que SÍ son compartidas por ambos (porque son de la landing pública,
-no del editor) son `components/landing-renderer.tsx` y los estilos `.public`
-de `globals.css`.
+Lo más importante de cómo está armado, y hay que cuidarlo:
+**`components/landing-renderer.tsx` es el mismo componente que pinta la landing
+pública y el canvas editable del admin.** El editor solo le pasa
+`LandingEditControls`, que agrega onClick, outline y badges *sin tocar el markup
+real*. Por eso la vista previa no puede desincronizarse de lo publicado. Si vas
+a tocar el renderer, mantené esa propiedad — es lo que hace que no exista el bug
+de "en el editor se veía bien".
 
-**Estado al día de hoy**: el editor visual está pusheado en su rama pero no
-mergeado a `main`. Para probarlo en local: `git checkout experimento/editor-visual`
-(o quedate en `main` para el clásico, que es el que está en producción).
+### Cómo agregar un tipo de botón nuevo
+
+Un tipo de acción vive en **seis** lugares. Si te salteás uno, el botón anda
+igual pero se ve mal (ícono genérico o color feo) en algún preset:
+
+1. `lib/landing-catalog.ts` → el union `ActionType`
+2. `lib/landing-catalog.ts` → `ACTION_ORDER` (define el orden en el menú "Agregar")
+3. `lib/landing-catalog.ts` → `ACTION_DEFS` (label, emoji, tipo de input, placeholder)
+4. `lib/landing-catalog.ts` → `AUTO_COLORS` (el color de "color automático")
+5. `components/action-icons.tsx` → `actionIcons` (el ícono real del botón)
+6. `lib/design-presets.ts` → `BRAND_VIVID` (presets oscuros) y `BRAND_ICON` (insignia "Ícono real")
+
+Y además `validTypes` en `app/admin/landings/[id]/editor-v2/actions.ts`, que hoy
+es una copia a mano de `ACTION_ORDER` (vale la pena unificarlas en algún momento).
 
 ## Patrones que se repiten en todo el código (importante si vas a tocar algo)
 

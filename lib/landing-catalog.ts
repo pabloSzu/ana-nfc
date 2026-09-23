@@ -491,9 +491,9 @@ export function isPlausiblePhone(value: string): boolean {
 // generic pink rather than "Instagram" at a glance. #E1306C — also from that same official
 // palette — sits closer to the gradient's recognizable magenta-pink midpoint.
 export const AUTO_COLORS: Record<string, string> = {
-  whatsapp: "#25d366", instagram: "#e1306c", tiktok: "#111111", facebook: "#1877f2", linkedin: "#0a66c2", maps: "#db4437",
+  whatsapp: "#25d366", instagram: "#e1306c", tiktok: "#111111", facebook: "#1877f2", linkedin: "#0a66c2", maps: "#ea4335",
   youtube: "#ff0033", spotify: "#1ed760", mercadopago: "#009ee3", telegram: "#229ed9", email: "#334155",
-  phone: "#475569", calendar: "#e05252", website: "#1f2937", url: "#1f2937",
+  phone: "#475569", calendar: "#e05252", review: "#4285f4", website: "#1f2937", url: "#1f2937",
 };
 
 export const templates: { value: TemplateValue; label: string; description: string }[] = [
@@ -522,7 +522,7 @@ export function getBusinessProfile(value: string) {
   return businessProfiles.find((profile) => profile.value === value) || businessProfiles[0];
 }
 
-type ActionType = "whatsapp" | "instagram" | "tiktok" | "facebook" | "linkedin" | "website" | "email" | "phone" | "maps" | "youtube" | "spotify" | "mercadopago" | "calendar" | "telegram" | "url";
+type ActionType = "whatsapp" | "instagram" | "tiktok" | "facebook" | "linkedin" | "website" | "email" | "phone" | "maps" | "review" | "youtube" | "spotify" | "mercadopago" | "calendar" | "telegram" | "url";
 
 type ActionDef = {
   type: ActionType;
@@ -534,7 +534,7 @@ type ActionDef = {
   prefix?: string;
 };
 
-const ACTION_ORDER: ActionType[] = ["whatsapp", "instagram", "tiktok", "facebook", "linkedin", "website", "maps", "email", "phone", "youtube", "spotify", "mercadopago", "calendar", "telegram", "url"];
+const ACTION_ORDER: ActionType[] = ["whatsapp", "instagram", "tiktok", "facebook", "linkedin", "website", "maps", "review", "email", "phone", "youtube", "spotify", "mercadopago", "calendar", "telegram", "url"];
 
 const ACTION_DEFS: Record<ActionType, ActionDef> = {
   whatsapp: { type: "whatsapp", label: "WhatsApp", icon: "💬", input: "phone", placeholder: "549351XXXXXXXX", message: true },
@@ -545,6 +545,7 @@ const ACTION_DEFS: Record<ActionType, ActionDef> = {
   website: { type: "website", label: "Sitio web", icon: "🌐", input: "url", placeholder: "https://tusitio.com", message: false },
   email: { type: "email", label: "Email", icon: "✉️", input: "email", placeholder: "contacto@negocio.com", message: false },
   phone: { type: "phone", label: "Teléfono", icon: "📞", input: "phone", placeholder: "549351XXXXXXXX", message: false },
+  review: { type: "review", label: "Dejar una reseña", icon: "⭐", input: "url", placeholder: "https://g.page/r/.../review", message: false },
   maps: { type: "maps", label: "Cómo llegar", icon: "📍", input: "url", placeholder: "https://maps.google.com/...", message: false },
   youtube: { type: "youtube", label: "YouTube", icon: "▶️", input: "url", placeholder: "https://youtube.com/@tucanal", message: false },
   spotify: { type: "spotify", label: "Spotify", icon: "🎧", input: "url", placeholder: "https://open.spotify.com/...", message: false },

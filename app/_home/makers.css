@@ -1,69 +1,114 @@
-/* A continuation of the product section: shared container, type and warm background. */
+/* The shared home container frames one visual story: product → tap → digital destination. */
 .bx-makers { background: #faf9f6; color: #281d33; }
 .bx-makers-inner { padding-top: 0; padding-bottom: clamp(64px, 7vw, 100px); }
-.bx-makers-main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: clamp(32px, 5vw, 76px); padding-top: clamp(48px, 6vw, 80px); border-top: 1px solid #e3dde6; }
+.bx-makers-copy { display: grid; grid-template-columns: 1.25fr 1fr; align-items: center; gap: clamp(32px, 6vw, 86px); padding-top: clamp(48px, 6vw, 80px); border-top: 1px solid #e3dde6; }
 .bx-makers-copy .bx-section-kicker { color: #77548e; font-size: 10px; line-height: 1.6; letter-spacing: .14em; margin-bottom: 22px; }
-.bx-makers-copy h2 { font: 800 clamp(40px, 4.4vw, 60px) / 1.04 var(--bx-display), sans-serif; letter-spacing: -.045em; }
-.bx-makers-copy h2 > span { display: block; max-width: 18ch; margin-top: 14px; font-size: .69em; line-height: 1.16; letter-spacing: -.035em; color: #82738c; text-wrap: pretty; }
+.bx-makers-copy h2 { font: 800 clamp(36px, 3.8vw, 50px) / 1.08 var(--bx-display), sans-serif; letter-spacing: -.045em; text-wrap: pretty; }
+.bx-makers-copy h2 > span { display: block; margin-top: 12px; font-size: .76em; line-height: 1.2; letter-spacing: -.035em; color: #82738c; }
 .bx-makers-copy h2 em { color: #7650ae; font-style: normal; }
-.bx-makers-lead { max-width: 46ch; margin-top: 24px; font-size: 16px; line-height: 1.8; color: #6d6375; text-wrap: pretty; }
-.bx-makers-promise { display: flex; align-items: flex-start; gap: 9px; margin-top: 20px; font-size: 12px; line-height: 1.65; font-weight: 600; color: #594865; }
+.bx-makers-lead { max-width: 46ch; font-size: 15px; line-height: 1.8; color: #6d6375; text-wrap: pretty; }
+.bx-makers-promise { display: flex; align-items: flex-start; gap: 9px; margin-top: 16px; font-size: 12px; line-height: 1.65; font-weight: 600; color: #594865; }
 .bx-makers-promise svg { margin-top: 3px; width: 16px; height: 16px; color: #7650ae; }
-.bx-makers-actions { margin-top: 28px; }
-.bx-makers-cta { min-height: 54px; padding: 16px 23px; gap: 28px; border-radius: 12px; font-size: 14px; color: #fff; background: #49315e; box-shadow: 0 8px 18px #49315e14; }
+.bx-makers-actions { margin-top: 22px; }
+.bx-makers-cta { min-height: 52px; padding: 16px 23px; gap: 28px; border-radius: 12px; font-size: 14px; color: #fff; background: #49315e; box-shadow: 0 8px 18px #49315e14; }
 .bx-makers-cta:hover { background: #65417f; transform: translateY(-2px); }
 .bx-makers-cta svg { width: 19px; height: 19px; }
-.bx-makers-actions p { margin-top: 12px; font-size: 11px; line-height: 1.6; color: #776b7e; }
-.bx-makers-visual { min-width: 0; }
-.bx-makers-visual-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; color: #786783; }
-.bx-makers-visual-heading span { font-size: 9px; font-weight: 700; letter-spacing: .12em; line-height: 1.5; }
-.bx-makers-visual-heading svg { width: 18px; height: 18px; }
-.bx-makers-products { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-.bx-makers-products a { display: block; overflow: hidden; border-radius: 16px; background: #f0eaf5; border: 1px solid #e9e1ed; transition: transform .2s, box-shadow .2s; }
+.bx-makers-actions p { margin-top: 10px; font-size: 11px; line-height: 1.6; color: #776b7e; }
+.bx-makers-flow { display: grid; grid-template-columns: minmax(0, .9fr) minmax(180px, .55fr) minmax(0, 1.35fr); gap: 22px; align-items: start; margin-top: 52px; }
+.bx-makers-stage-title { display: flex; align-items: center; gap: 10px; min-height: 28px; margin-bottom: 24px; font: 700 14px / 1.4 var(--bx-display), sans-serif; letter-spacing: -.02em; }
+.bx-makers-stage-title > span { display: grid; place-items: center; flex-shrink: 0; width: 26px; height: 26px; border: 1px solid #dfd2e8; border-radius: 50%; color: #896a9e; font-size: 10px; font-weight: 500; }
+.bx-makers-products { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.bx-makers-products a { display: block; overflow: hidden; border-radius: 15px; background: #f0eaf5; border: 1px solid #e9e1ed; transition: transform .2s, box-shadow .2s; }
 .bx-makers-products a:hover { transform: translateY(-3px); box-shadow: 0 10px 24px #49315e12; }
-.bx-makers-product-art { aspect-ratio: 1.65; overflow: hidden; }
+.bx-makers-product-art { aspect-ratio: 1.35; overflow: hidden; }
 .bx-makers-product-art img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .35s; }
 .bx-makers-products a:hover img { transform: scale(1.04); }
-.bx-makers-product-info { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 14px; background: #ffffffb0; }
-.bx-makers-product-info strong { font-size: 12px; line-height: 1.4; font-weight: 650; }
-.bx-makers-product-info svg { width: 15px; height: 15px; color: #846496; }
-.bx-makers-result { position: relative; display: flex; align-items: center; gap: 13px; margin-top: 20px; padding: 18px; border-radius: 14px; background: #eee7f4; }
-.bx-makers-result::before { content: ''; position: absolute; width: 1px; height: 20px; bottom: 100%; left: 50%; background: #cab7da; }
-.bx-makers-result-icon { display: grid; place-items: center; flex: 0 0 38px; height: 44px; border: 1px solid #d7c8e3; border-radius: 11px; color: #7650ae; background: #f8f4fb; }
-.bx-makers-result-icon svg { width: 21px; height: 21px; }
-.bx-makers-result strong { display: block; font: 700 15px / 1.4 var(--bx-display), sans-serif; letter-spacing: -.025em; }
-.bx-makers-result p { margin-top: 4px; font-size: 11px; line-height: 1.65; color: #766282; }
-.bx-makers-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; margin: 48px 0 0; padding: 28px 0 0; border-top: 1px solid #e3dde6; list-style: none; }
-.bx-makers-steps li { display: flex; align-items: flex-start; gap: 13px; }
-.bx-makers-step-number { font: 500 12px / 1.6 var(--bx-display), sans-serif; color: #997daa; padding-top: 1px; }
-.bx-makers-steps h3 { font: 700 14px / 1.5 var(--bx-display), sans-serif; letter-spacing: -.025em; }
-.bx-makers-steps p { margin-top: 7px; max-width: 34ch; font-size: 12px; line-height: 1.75; color: #776b7e; }
-@media (max-width: 1000px) and (min-width: 761px) {
-  .bx-makers-main { gap: 30px; }
-  .bx-makers-copy h2 { font-size: 44px; }
-  .bx-makers-lead { font-size: 14px; }
-  .bx-makers-products { gap: 10px; }
-  .bx-makers-product-info { padding: 10px; }
-  .bx-makers-result { padding: 14px; }
+.bx-makers-product-info { display: flex; align-items: center; justify-content: space-between; gap: 5px; padding: 12px 10px; background: #ffffffb0; }
+.bx-makers-product-info strong { font-size: 11px; line-height: 1.4; font-weight: 650; }
+.bx-makers-product-info svg { width: 14px; height: 14px; color: #846496; }
+.bx-makers-stage-note { margin-top: 17px; color: #776b7e; font-size: 11px; line-height: 1.7; text-wrap: pretty; }
+.bx-makers-connection { text-align: center; }
+.bx-makers-connection .bx-makers-stage-title { justify-content: center; }
+.bx-makers-tap-art { position: relative; height: 235px; display: grid; place-items: center; }
+.bx-makers-rings { width: 166px; height: 166px; border: 1px solid #d8c4e9; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle, #eee3f7 44%, #f4edf9 45%, #f4edf980 62%, transparent 63%); box-shadow: 0 0 0 13px #ede2f52b; }
+.bx-makers-chip { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; width: 100px; height: 100px; border-radius: 50%; background: #fff; color: #7c4fb3; box-shadow: 0 10px 28px #6042771a, inset 0 0 0 1px #e8dcee; }
+.bx-makers-chip svg { width: 33px; height: 33px; }
+.bx-makers-chip strong { font: 800 14px / 1 var(--bx-display), sans-serif; letter-spacing: .04em; }
+.bx-makers-tap-phone { position: absolute; top: 5px; left: 53%; transform: rotate(14deg); display: flex; flex-direction: column; align-items: center; gap: 3px; width: 70px; height: 105px; padding-top: 12px; border: 3px solid #4f365f; border-radius: 13px; background: #faf6ff; box-shadow: 0 8px 18px #4d306821; color: #6f498f; }
+.bx-makers-tap-phone svg { width: 23px; height: 23px; }
+.bx-makers-tap-phone span { font-size: 9px; line-height: 1.4; font-weight: 700; }
+.bx-makers-flow-arrow { position: absolute; top: 50%; width: 26px; height: 26px; color: #aa8bc0; }
+.bx-makers-arrow-in { left: -14px; }
+.bx-makers-arrow-out { right: -14px; }
+.bx-makers-tap-caption { font: 600 25px / 1.12 var(--bx-hand), cursive; color: #8054a4; }
+.bx-makers-tap-caption strong { font-weight: 600; }
+.bx-makers-tap-help { max-width: 23ch; margin: 14px auto 0; color: #776b7e; font-size: 11px; line-height: 1.75; }
+.bx-makers-mobile-arrow { display: none; }
+.bx-makers-phones { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.bx-makers-phones figure { min-width: 0; margin: 0; }
+.bx-makers-phone-art { aspect-ratio: 1 / 2; overflow: hidden; border-radius: 18px; }
+.bx-makers-phones img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.bx-makers-phones figcaption { margin-top: 12px; text-align: center; }
+.bx-makers-phones figcaption strong { display: block; font-size: 12px; line-height: 1.5; }
+.bx-makers-phones figcaption span { display: block; margin-top: 3px; font-size: 10px; line-height: 1.6; color: #776b7e; }
+.bx-makers-digital .bx-makers-stage-note { text-align: center; }
+.bx-makers-custom-note { margin-top: 22px; padding: 16px 18px; border-left: 2px solid #b998d3; background: #f0eaf580; border-radius: 0 12px 12px 0; font-size: 12px; line-height: 1.75; color: #776b7e; }
+.bx-makers-custom-note strong { display: block; margin-bottom: 4px; color: #594865; font-weight: 700; }
+.bx-makers-footer-note { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 32px; padding-top: 22px; border-top: 1px solid #e3dde6; font-size: 12px; line-height: 1.6; color: #776b7e; }
+.bx-makers-footer-note svg { width: 15px; height: 15px; color: #8054a4; }
+@media (min-width: 761px) and (max-width: 1000px) {
+  .bx-makers-flow { grid-template-columns: minmax(0, 1fr) 160px; gap: 28px; }
+  .bx-makers-digital { grid-column: 1 / -1; }
+  .bx-makers-digital .bx-makers-stage-title { justify-content: center; }
+  .bx-makers-digital .bx-makers-phones { max-width: 580px; margin-inline: auto; gap: 24px; }
+  .bx-makers-rings { width: 135px; height: 135px; }
+  .bx-makers-tap-art { height: 200px; }
+  .bx-makers-stage-title { font-size: 12px; gap: 7px; }
+  .bx-makers-products { gap: 8px; }
+  .bx-makers-product-info { padding: 10px 6px; }
+  .bx-makers-product-info strong { font-size: 9px; }
+  .bx-makers-phones { gap: 6px; }
+  .bx-makers-phones figcaption strong { font-size: 10px; }
+  .bx-makers-flow-arrow { width: 19px; }
+  .bx-makers-connection { position: relative; padding-bottom: 32px; }
+  .bx-makers-arrow-out { display: none; }
+  .bx-makers-mobile-arrow { display: block; position: absolute; bottom: 0; left: calc(50% - 12px); width: 24px; height: 24px; color: #aa8bc0; }
 }
 @media (max-width: 760px) {
-  .bx-makers-main { grid-template-columns: 1fr; gap: 34px; }
-  .bx-makers-copy h2 { font-size: clamp(40px, 8vw, 56px); }
-  .bx-makers-copy h2 > span { max-width: 22ch; font-size: .7em; }
+  .bx-makers-copy { grid-template-columns: 1fr; gap: 24px; }
+  .bx-makers-copy h2 { font-size: clamp(36px, 8vw, 50px); }
+  .bx-makers-copy h2 > span { font-size: .76em; }
+  .bx-makers-title-break { display: none; }
   .bx-makers-lead { max-width: 52ch; font-size: 15px; line-height: 1.75; }
   .bx-makers-copy .bx-section-kicker { margin-bottom: 18px; }
-  .bx-makers-actions { margin-top: 24px; }
-  .bx-makers-products { gap: 12px; }
-  .bx-makers-steps { grid-template-columns: 1fr; gap: 23px; margin-top: 30px; padding-top: 26px; }
-  .bx-makers-steps li { gap: 16px; }
-  .bx-makers-steps p { max-width: 52ch; margin-top: 4px; font-size: 13px; }
+  .bx-makers-flow { grid-template-columns: 1fr; gap: 0; margin-top: 36px; }
+  .bx-makers-stage-title { margin-bottom: 18px; }
+  .bx-makers-product-art { aspect-ratio: 1.6; }
+  .bx-makers-product-info strong { font-size: 12px; }
+  .bx-makers-connection { position: relative; display: grid; grid-template-columns: 1fr 1fr; align-items: center; padding: 34px 0 48px; margin-top: 24px; }
+  .bx-makers-connection::before { content: ''; position: absolute; top: 0; height: 24px; width: 1px; left: 50%; background: #cbb4dd; }
+  .bx-makers-connection .bx-makers-stage-title { grid-column: 1 / -1; }
+  .bx-makers-tap-art { height: 190px; grid-row: span 2; }
+  .bx-makers-rings { width: 138px; height: 138px; }
+  .bx-makers-chip { width: 88px; height: 88px; }
+  .bx-makers-tap-phone { width: 59px; height: 91px; left: 54%; top: 0; padding-top: 8px; }
+  .bx-makers-tap-caption { font-size: 25px; align-self: end; text-align: left; padding-left: 15px; }
+  .bx-makers-tap-help { align-self: start; text-align: left; margin: 12px 0 0; padding-left: 15px; }
+  .bx-makers-flow-arrow { display: none; }
+  .bx-makers-mobile-arrow { display: block; position: absolute; bottom: 12px; left: calc(50% - 12px); width: 24px; height: 24px; color: #aa8bc0; }
+  .bx-makers-phones { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 430px; margin-inline: auto; gap: 24px 18px; }
+  .bx-makers-phone-custom { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: center; }
+  .bx-makers-phone-custom figcaption { text-align: left; margin-top: 0; }
+  .bx-makers-phone-custom figcaption strong { font-size: 19px; line-height: 1.3; color: #594865; letter-spacing: -.03em; }
+  .bx-makers-phone-custom figcaption span { font-size: 12px; margin-top: 10px; }
+  .bx-makers-digital .bx-makers-stage-title { justify-content: center; }
+  .bx-makers-footer-note { align-items: flex-start; justify-content: flex-start; font-size: 11px; }
+  .bx-makers-footer-note svg { margin-top: 2px; }
 }
 @media (max-width: 400px) {
   .bx-makers-cta { width: 100%; justify-content: space-between; }
-  .bx-makers-product-info { padding: 11px 9px; }
   .bx-makers-product-info strong { font-size: 11px; }
-  .bx-makers-result { padding: 14px 12px; gap: 10px; }
-  .bx-makers-result strong { font-size: 14px; }
+  .bx-makers-tap-caption { font-size: 22px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .bx-makers-products a, .bx-makers-products img, .bx-makers-cta { transition: none; }

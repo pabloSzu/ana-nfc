@@ -173,7 +173,7 @@ export const BUTTON_COLLECTIONS: { id: ButtonZoneStyle["collection"]; name: stri
 const BRAND_VIVID: Record<string, string> = {
   spotify: "#1ed760", whatsapp: "#21e778", instagram: "#ff4f91", facebook: "#3b91ff",
   linkedin: "#18a8ff", youtube: "#ff3158", telegram: "#35c8ff", maps: "#ff655c",
-  mercadopago: "#1bc4ff", calendar: "#ff6685", website: "#39d0ff", url: "#39d0ff",
+  mercadopago: "#1bc4ff", calendar: "#ff6685", review: "#5b9bff", website: "#39d0ff", url: "#39d0ff",
   tiktok: "#ff3b9d", email: "#ffc83d", phone: "#35e6a1",
 };
 // `useNetworkAccent` gates this: true only means "nobody asked for one specific color here —
@@ -209,8 +209,9 @@ const BRAND_ICON: Record<string, { background: string; color: string }> = {
   website: { background: "#665cf6", color: "#ffffff" },
   email: { background: "#ffca52", color: "#17191f" },
   phone: { background: "#32b768", color: "#ffffff" },
-  maps: { background: "#ea4335", color: "#ffffff" },
+  maps: { background: "#ffffff", color: "#ea4335" },
   calendar: { background: "#5b6ff5", color: "#ffffff" },
+  review: { background: "#ffffff", color: "#4285f4" },
   mercadopago: { background: "#009ee3", color: "#ffffff" },
 };
 
@@ -415,6 +416,13 @@ export function buttonIconStyle(collection: ButtonZoneStyle["collection"], bg: s
     return { ...base, borderRadius: 9, color: c, background: "rgba(6,9,15,.62)", border: `1px solid ${appearance === "brand" ? `color-mix(in srgb, ${c} 42%, rgba(255,255,255,.28))` : "rgba(255,255,255,.3)"}`, boxShadow: "inset 0 1px 0 rgba(255,255,255,.13)" };
   }
   if (appearance === "brand") {
+    // Mercado Pago is the one mark that arrives as a finished full-color lockup — its cyan oval
+    // IS its badge. Giving it the colored disc every other network gets renders as an oval inside
+    // a circle, and the white disc it briefly had instead vanished on the pale templates
+    // (Minimal Line, Pastel, Firma de Marca, Luxury). A transparent disc lets the logo be itself
+    // at the same footprint as every other badge, and its own navy keyline keeps it crisp on any
+    // button color. Its BRAND_ICON entry below is now only a fallback if this case is ever removed.
+    if (type === "mercadopago") return { ...base, borderRadius: "50%", background: "transparent", boxShadow: "none" };
     const palette = BRAND_ICON[type || ""] || { background: "#6c63ff", color: "#ffffff" };
     // No shadow on the badge itself — even a soft spread-only ring rendered visibly diffuse
     // against the button's own pale surface (confirmed by A/B testing with it removed), and the

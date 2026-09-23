@@ -16,10 +16,15 @@ export default async function Admin() {
   const supabase = await createClient();
   const { data: claims } = await supabase.auth.getClaims();
   if (!claims?.claims) return <main className="auth-shell"><div className="auth-card" style={{ textAlign: "center" }}><div className="auth-mark" style={{ margin: "0 auto 16px" }}>M</div><h1>Mi Landing Web Fácil</h1><p className="muted">Iniciá sesión para gestionar tus clientes y landings.</p><Link className="btn full" href="/admin/login">Ingresar</Link></div></main>;
-  const [{ data: clients }, { data: landings }] = await Promise.all([
+  const [{ data: clients }, { data: landings }, { data: viewCounts }] = await Promise.all([
     supabase.from("clients").select("*").order("created_at", { ascending: false }),
     supabase.from("landings").select("*").order("created_at", { ascending: false }),
+    // Una vista agregada y no las filas crudas: una landing que anda bien va a tener miles de
+    // visitas y acá solo se necesitan dos números. Si la migración todavía no se corrió, esto
+    // devuelve error en vez de tirar, y la columna queda en blanco en lugar de romper el panel.
+    supabase.from("landing_view_counts").select("landing_id,total,last_30_days"),
   ]);
+  const viewsByLanding = new Map((viewCounts || []).map((row) => [row.landing_id as string, row]));
   const totalClients = clients?.length || 0;
   const totalLandings = landings?.length || 0;
   const published = landings?.filter((landing) => landing.published).length || 0;
@@ -71,13 +76,14 @@ export default async function Admin() {
       {!landings?.length ? <div className="empty-state"><IconFileText /><strong>Todavía no creaste ninguna landing</strong><p className="muted">Usá el botón "Nueva landing" de arriba.</p></div> : (
         <div className="table-wrap">
           <table className="data-table">
-            <thead><tr><th>Landing</th><th>Cliente</th><th>Estado</th><th></th></tr></thead>
+            <thead><tr><th>Landing</th><th>Cliente</th><th>Estado</th><th>Escaneos</th><th></th></tr></thead>
             <tbody>
               {landings.map((landing) => { const client = landing.client_id ? clientById.get(landing.client_id) : null; return (
                 <tr key={landing.id}>
                   <td><div className="table-entity"><div className="avatar small colorful" style={{ background: landing.primary_color || "#1f2937" }}>{landing.logo_url ? <img src={landing.logo_url} alt="" /> : landing.business_name.slice(0, 1)}</div><div><strong>{landing.business_name}</strong><small>/{landing.slug}{landing.redirect_url && " externo"}</small></div></div></td>
                   <td>{client ? client.name : <span className="muted">Sin cliente</span>}</td>
                   <td><span className={landing.published ? "status published" : "status"}>{landing.published ? "Publicada" : "Borrador"}</span></td>
+                  <td>{(() => { const views = viewsByLanding.get(landing.id); if (!views?.total) return <span className="muted">—</span>; return <div className="scan-count"><strong>{views.total}</strong>{views.last_30_days ? <small className="muted">{views.last_30_days} en 30 días</small> : null}</div>; })()}</td>
                   <td>
                     <div className="table-actions">
                       <Link className="icon-text-button accent slot-edit" href={`/admin/landings/${landing.id}/editor-v2`}><IconEdit /> Editar</Link>

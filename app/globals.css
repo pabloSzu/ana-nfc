@@ -433,6 +433,21 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; letter-spacing: -0.01e
    below it, baked into the icon file), in EVERY context, so this correction (like the sizing
    above) is a single shared rule, not scoped to any one appearance. */
 .action-type-icon-linkedin { width: 64%; height: 64%; transform: translateY(6.25%); }
+/* Simple Icons brand glyphs (solid fill, like the Fa6 ones above) — not Feather strokes. */
+.action-type-icon-maps { width: 62%; height: 62%; }
+.action-type-icon-review { width: 62%; height: 62%; }
+/* Mercado Pago has two marks. The bare handshake (default) is ~2.3:1, so a square-glyph size
+   leaves it reading as a thin sliver next to WhatsApp or Instagram: it only ever gets 43% of the
+   box's height, and the shared inset took a further bite out of the one dimension it has to work
+   with. It runs the full width instead — with the viewBox now cropped tight to its own ink, that
+   is as much mark as there is to draw. The full-color lockup carries its own oval instead of
+   sitting inside a badge (see buttonIconStyle), so it fills the box too. */
+.action-type-icon-mercadopago { width: 100%; height: 100%; }
+.action-type-icon-mp-lockup { width: 100%; height: 100%; }
+/* Google's pin is a tall teardrop (0.7:1), so unlike the near-square brand glyphs it is its
+   height that fills the badge and its width that falls short — sized to land on the same visual
+   mass as the Instagram or TikTok mark sitting next to it, not the same number. */
+.action-type-icon-maps-pin { width: 74%; height: 74%; }
 /* The brand marks above are solid-fill glyphs (Font Awesome), which is why the shared 70%
    base looks right on them: their own artwork already carves out plenty of internal negative
    space (WhatsApp's speech-bubble notch, the phone silhouette), so the bounding box reads as
@@ -451,7 +466,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; letter-spacing: -0.01e
 .action-type-icon-bell, .action-type-icon-location, .action-type-icon-users, .action-type-icon-award,
 .action-type-icon-video, .action-type-icon-share, .action-type-icon-percent, .action-type-icon-lock,
 .action-type-icon-truck, .action-type-icon-wifi, .action-type-icon-thumbsup, .action-type-icon-website,
-.action-type-icon-email, .action-type-icon-phone, .action-type-icon-maps, .action-type-icon-calendar,
+.action-type-icon-email, .action-type-icon-phone, .action-type-icon-calendar,
 .action-type-icon-url { width: 58%; height: 58%; }
 .action-brand-icon { align-self: center; }
 .action-copy { display: grid; min-width: 0; gap: 2px; text-align: left; }
@@ -1770,3 +1785,22 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
 /* LogoInitials (lib/fonts.tsx) centers on the letters' own size — keep it auto-sized even inside
    editor previews that stretch plain spans/icons to fill the logo frame. */
 .logo-initials { width: auto !important; height: auto !important; }
+
+/* Columna "Escaneos" del panel: el total manda y el dato de los 30 días va abajo, más chico —
+   el primero dice si la tarjeta sirvió alguna vez, el segundo si sigue en uso, que es el que
+   importa cuando toca renovar. */
+.scan-count { display: flex; flex-direction: column; line-height: 1.25; }
+.scan-count strong { font-size: 0.9375rem; font-variant-numeric: tabular-nums; }
+.scan-count small { font-size: 0.6875rem; }
+
+/* Aviso de QR no imprimible. Deliberadamente fuerte: el error que previene no se ve en pantalla
+   (el código sale perfecto), solo aparece cuando ya está impreso y pegado en la pared. */
+.qr-local-warning {
+  text-align: left; border-radius: var(--radius-md); padding: 12px 14px;
+  margin-bottom: var(--space-4); background: rgba(220, 38, 38, .1);
+  border: 1px solid rgba(220, 38, 38, .45);
+}
+.qr-local-warning strong { display: block; font-size: 0.875rem; margin-bottom: 4px; }
+.qr-local-warning p { margin: 0 0 4px; font-size: 0.75rem; line-height: 1.45; opacity: .85; }
+.qr-local-warning p:last-child { margin-bottom: 0; }
+.qr-local-warning code { font-size: 0.7188rem; padding: 1px 4px; border-radius: 4px; background: rgba(0,0,0,.18); }

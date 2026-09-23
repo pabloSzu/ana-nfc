@@ -5,7 +5,11 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "db:dev": "node scripts/db-migrate.mjs dev",
+    "db:dev:apply": "node scripts/db-migrate.mjs dev --apply",
+    "db:prod": "node scripts/db-migrate.mjs prod",
+    "db:prod:apply": "node scripts/db-migrate.mjs prod --apply"
   },
   "dependencies": {
     "@supabase/ssr": "latest",
