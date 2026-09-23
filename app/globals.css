@@ -436,10 +436,13 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; letter-spacing: -0.01e
 /* Simple Icons brand glyphs (solid fill, like the Fa6 ones above) — not Feather strokes. */
 .action-type-icon-maps { width: 62%; height: 62%; }
 .action-type-icon-review { width: 62%; height: 62%; }
-/* Mercado Pago has two marks. The bare handshake (default, ~2.3:1) sits inset like any other
-   glyph, just wider than a square one. The full-color lockup carries its own oval instead of
-   sitting inside a badge (see buttonIconStyle), so it fills the whole box. */
-.action-type-icon-mercadopago { width: 86%; height: 86%; }
+/* Mercado Pago has two marks. The bare handshake (default) is ~2.3:1, so a square-glyph size
+   leaves it reading as a thin sliver next to WhatsApp or Instagram: it only ever gets 43% of the
+   box's height, and the shared inset took a further bite out of the one dimension it has to work
+   with. It runs the full width instead — with the viewBox now cropped tight to its own ink, that
+   is as much mark as there is to draw. The full-color lockup carries its own oval instead of
+   sitting inside a badge (see buttonIconStyle), so it fills the box too. */
+.action-type-icon-mercadopago { width: 100%; height: 100%; }
 .action-type-icon-mp-lockup { width: 100%; height: 100%; }
 /* The brand marks above are solid-fill glyphs (Font Awesome), which is why the shared 70%
    base looks right on them: their own artwork already carves out plenty of internal negative

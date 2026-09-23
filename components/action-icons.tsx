@@ -44,12 +44,13 @@ function YoutubePlayIcon({ className }: { className?: string }) {
 // premium, Pastel, Candy) whose whole look is a see-through surface, and the monochrome ones
 // (Minimal Line, Luxury, Neon Glow) that coordinate every icon to one tone. An opaque cyan oval
 // dropped into any of those reads as a sticker pasted on top.
-// viewBox is cropped to the handshake's measured ink box (x 28.4-240.9, y 274.8-366.5); the
-// brand file's own box is mostly the oval's empty space. The mark is ~2.3:1, hence its own
-// CSS size — see .action-type-icon-mercadopago.
+// viewBox is the handshake's measured ink box exactly (x 28.4-240.9, y 274.8-366.5), with no
+// padding around it: the brand file's own box is mostly the oval's empty space, and any margin
+// left here comes straight off the drawn size. The mark is ~2.3:1, so it can never fill a square
+// box top to bottom — it earns its presence on width instead, hence its own CSS size below.
 function MercadoPagoMarkIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="22 269 225 104" aria-hidden="true" focusable="false">
+    <svg className={className} viewBox="28 274 214 94" aria-hidden="true" focusable="false">
       <path fill="currentColor" d="M99.9,299.2c-0.1,0.1-1.1,1.2-0.4,2.1c1.7,2.1,6.8,3.3,12,2.2c3.1-0.7,7-3.8,10.9-6.9c4.2-3.3,8.3-6.6,12.4-7.9c4.4-1.4,7.2-0.8,9.1-0.2c2,0.6,4.4,2,8.3,4.8c7.2,5.4,36.1,30.7,41.2,35c4-1.8,23.2-9.6,47.5-14.9c-2.1-13-9.9-25.3-21.9-35c-16.7,7-38.4,11.2-58.4,1.5c-0.1,0-10.9-5.1-21.5-4.9c-15.8,0.4-22.7,7.2-29.9,14.5L99.9,299.2L99.9,299.2z" />
       <path fill="currentColor" d="M192.1,331c-0.3-0.3-34-29.8-41.7-35.5c-4.4-3.3-6.9-4.2-9.5-4.5c-1.3-0.2-3.2,0.1-4.5,0.4c-3.6,1-8.2,4.1-12.3,7.3c-4.3,3.4-8.3,6.6-12,7.4c-4.8,1.1-10.6-0.2-13.3-2c-1.1-0.7-1.8-1.6-2.2-2.4c-1-2.3,0.8-4.1,1.1-4.4l9.3-10.1c1.1-1.1,2.2-2.2,3.3-3.2c-3,0.4-5.8,1.2-8.5,1.9c-3.4,0.9-6.6,1.8-9.9,1.8c-1.4,0-8.7-1.2-10.1-1.6c-8.4-2.3-18-4.5-29-9.7c-13.2,9.8-21.8,21.9-24.4,35.5c1.9,0.5,6.9,1.6,8.2,1.9c29.9,6.7,39.2,13.5,40.9,14.9c1.8-2,4.5-3.3,7.4-3.3c3.3,0,6.3,1.7,8.1,4.2c1.7-1.4,4.1-2.5,7.1-2.5c1.4,0,2.8,0.3,4.3,0.7c3.4,1.2,5.1,3.4,6,5.4c1.1-0.5,2.5-0.9,4.2-0.9c1.6,0,3.3,0.4,5,1.1c5.5,2.4,6.4,7.8,5.9,11.9c0.4,0,0.8-0.1,1.2-0.1c6.5,0,11.9,5.3,11.9,11.9c0,2-0.5,3.9-1.4,5.6c1.8,1,6.3,3.3,10.3,2.8c3.2-0.4,4.4-1.5,4.8-2.1c0.3-0.4,0.6-0.9,0.3-1.3l-8.4-9.4c0,0-1.4-1.3-0.9-1.8c0.5-0.5,1.3,0.2,1.9,0.7c4.3,3.6,9.5,9,9.5,9c0.1,0.1,0.4,0.7,2.4,1.1c1.7,0.3,4.6,0.1,6.7-1.6c0.5-0.4,1-1,1.5-1.5c0,0-0.1,0.1-0.1,0.1c2.2-2.8-0.2-5.6-0.2-5.6l-9.9-11.1c0,0-1.4-1.3-0.9-1.8c0.4-0.5,1.3,0.2,2,0.7c3.1,2.6,7.5,7,11.8,11.2c0.8,0.6,4.5,2.9,9.5-0.3c3-2,3.6-4.4,3.5-6.2c-0.2-2.4-2.1-4.1-2.1-4.1l-13.5-13.5c0,0-1.4-1.2-0.9-1.8c0.4-0.5,1.3,0.2,1.9,0.7c4.3,3.6,15.9,14.2,15.9,14.2c0.2,0.1,4.2,3,9.1-0.2c1.8-1.1,2.9-2.8,3-4.8C194.5,333,192.1,331,192.1,331L192.1,331z" />
       <path fill="currentColor" d="M126.8,348.1c-2.1,0-4.4,1.2-4.7,1c-0.2-0.1,0.1-0.9,0.3-1.4c0.2-0.5,2.9-8.7-3.7-11.6c-5.1-2.2-8.3,0.3-9.3,1.4c-0.3,0.3-0.4,0.3-0.4-0.1c-0.1-1.5-0.8-5.5-5.2-6.9c-6.3-1.9-10.4,2.5-11.4,4.1c-0.5-3.6-3.5-6.4-7.2-6.4c-4.1,0-7.3,3.3-7.4,7.3c0,4.1,3.3,7.3,7.3,7.3c2,0,3.8-0.8,5.1-2c0,0,0.1,0.1,0,0.2c-0.3,1.8-0.9,8.4,6,11.1c2.8,1.1,5.1,0.3,7.1-1.1c0.6-0.4,0.7-0.2,0.6,0.3c-0.3,1.7,0.1,5.3,5.2,7.4c3.9,1.6,6.2,0,7.7-1.4c0.7-0.6,0.8-0.5,0.9,0.4c0.2,4.9,4.3,8.8,9.2,8.8c5.1,0,9.2-4.1,9.2-9.2C136,352.3,131.9,348.2,126.8,348.1L126.8,348.1z" />
