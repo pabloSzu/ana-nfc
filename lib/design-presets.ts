@@ -209,7 +209,7 @@ const BRAND_ICON: Record<string, { background: string; color: string }> = {
   website: { background: "#665cf6", color: "#ffffff" },
   email: { background: "#ffca52", color: "#17191f" },
   phone: { background: "#32b768", color: "#ffffff" },
-  maps: { background: "#ea4335", color: "#ffffff" },
+  maps: { background: "#ffffff", color: "#ea4335" },
   calendar: { background: "#5b6ff5", color: "#ffffff" },
   review: { background: "#ffffff", color: "#4285f4" },
   mercadopago: { background: "#009ee3", color: "#ffffff" },

@@ -444,6 +444,10 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; letter-spacing: -0.01e
    sitting inside a badge (see buttonIconStyle), so it fills the box too. */
 .action-type-icon-mercadopago { width: 100%; height: 100%; }
 .action-type-icon-mp-lockup { width: 100%; height: 100%; }
+/* Google's pin is a tall teardrop (0.7:1), so unlike the near-square brand glyphs it is its
+   height that fills the badge and its width that falls short — sized to land on the same visual
+   mass as the Instagram or TikTok mark sitting next to it, not the same number. */
+.action-type-icon-maps-pin { width: 74%; height: 74%; }
 /* The brand marks above are solid-fill glyphs (Font Awesome), which is why the shared 70%
    base looks right on them: their own artwork already carves out plenty of internal negative
    space (WhatsApp's speech-bubble notch, the phone silhouette), so the bounding box reads as
