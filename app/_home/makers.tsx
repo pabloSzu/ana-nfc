@@ -62,15 +62,15 @@ export default function Makers({ whatsappNumber }: { whatsappNumber: string }) {
           <h3 className="bx-makers-stage-title"><span>03</span> Se abre la experiencia</h3>
           <div className="bx-makers-phones">
             <figure>
-              <div className="bx-makers-phone-art"><Image src="/marketing/makers/phone-brand.png" alt="Página de Tu Marca en un celular, con productos, Instagram y contacto" width={1086} height={1448} sizes="(max-width: 760px) 65vw, 240px" /></div>
+              <div className="bx-makers-phone-art"><Image src="/marketing/makers/phone-brand.webp" alt="Página de Tu Marca en un celular, con productos, Instagram y contacto" width={1086} height={1448} sizes="(max-width: 760px) 65vw, 240px" /></div>
               <figcaption><strong>Tu página</strong><span>Tu marca y todos tus links</span></figcaption>
             </figure>
             <figure>
-              <div className="bx-makers-phone-art"><Image src="/marketing/makers/phone-review.png" alt="Celular con una invitación a compartir tu experiencia y dejar una reseña en Google" width={1086} height={1448} sizes="(max-width: 760px) 65vw, 240px" /></div>
+              <div className="bx-makers-phone-art"><Image src="/marketing/makers/phone-review.webp" alt="Celular con una invitación a compartir tu experiencia y dejar una reseña en Google" width={1086} height={1448} sizes="(max-width: 760px) 65vw, 240px" /></div>
               <figcaption><strong>Reseñas de Google</strong><span>Más fácil dejar su opinión</span></figcaption>
             </figure>
             <figure className="bx-makers-phone-custom">
-              <div className="bx-makers-phone-art"><Image src="/marketing/makers/phone-custom.png" alt="Ejemplo de sistema personalizado en un celular, con accesos, registro de visitantes, turnos y catálogo" width={1086} height={1448} sizes="(max-width: 760px) 65vw, 240px" /></div>
+              <div className="bx-makers-phone-art"><Image src="/marketing/makers/phone-custom.webp" alt="Ejemplo de sistema personalizado en un celular, con accesos, registro de visitantes, turnos y catálogo" width={1086} height={1448} sizes="(max-width: 760px) 65vw, 240px" /></div>
               <figcaption><strong>Página o sistema a medida</strong><span>Tu idea, hecha realidad</span></figcaption>
             </figure>
           </div>
