@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ComponentProps } from "react";
 import Link from "next/link";
-import LandingRenderer from "@/components/landing-renderer";
+import LandingRenderer, { LandingPhotoBackground } from "@/components/landing-renderer";
 import ScaledPhoneCanvas from "@/components/scaled-phone-canvas";
 
 type DeviceMode = "small" | "standard" | "large";
@@ -44,8 +44,8 @@ export default function DevicePreview({ landing, actions, backHref }: RendererPr
       </header>
       <section className="device-preview-stage">
         <div className={`device-preview-frame device-${device}`}>
-          <ScaledPhoneCanvas className="scaled-phone-canvas" designWidth={devices.find((item) => item.id === device)?.width} fit={isMobile ? "contain" : "width"}>
-            <LandingRenderer landing={landing} actions={actions} />
+          <ScaledPhoneCanvas className="scaled-phone-canvas" designWidth={devices.find((item) => item.id === device)?.width} fit={isMobile ? "contain" : "width"} photoBackground={!isMobile && landing.background_type === "image" ? <LandingPhotoBackground landing={landing} /> : undefined}>
+            <LandingRenderer landing={landing} actions={actions} externalPhotoBackground={!isMobile && landing.background_type === "image"} />
           </ScaledPhoneCanvas>
         </div>
       </section>

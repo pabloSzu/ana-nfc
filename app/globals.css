@@ -906,10 +906,41 @@ input[type="color"] { padding: 5px; height: 46px; cursor: pointer; }
 }
 @media (min-width: 768px) {
   .landing-page-shell {
-    background: color-mix(in srgb, var(--landing-shell-color, var(--bg)) 82%, #000 18%);
+    --landing-exterior: color-mix(in srgb, var(--landing-shell-color, var(--bg)) 82%, #000 18%);
+    padding-top: 32px;
+    background: var(--landing-exterior);
+  }
+  /* Keep scrolling links behind the top gutter and its rounded corners. The page itself
+     still scrolls normally; only the visual viewport edge stays in place. */
+  .landing-page-shell::before,
+  .landing-page-shell::after {
+    content: "";
+    position: fixed;
+    z-index: 10;
+    pointer-events: none;
+  }
+  .landing-page-shell::before {
+    inset: 0 0 auto;
+    height: 32px;
+    background: var(--landing-exterior);
+  }
+  .landing-page-shell::after {
+    top: 32px;
+    left: 50%;
+    width: min(100%, 520px);
+    height: 20px;
+    transform: translateX(-50%);
+    background:
+      radial-gradient(circle at bottom right, transparent 19.5px, var(--landing-exterior) 20px) left top / 20px 20px no-repeat,
+      radial-gradient(circle at bottom left, transparent 19.5px, var(--landing-exterior) 20px) right top / 20px 20px no-repeat;
   }
   .landing-page-shell > .public {
     max-width: 520px;
+    min-height: calc(100svh - 32px);
+    border-radius: 20px 20px 0 0;
+  }
+  .landing-page-shell > .public.has-branding {
+    min-height: calc(100svh - 32px);
   }
 }
 .public { min-height: 100vh; padding: var(--space-8) var(--space-4); background: var(--bg); container-type: inline-size; }
@@ -1236,6 +1267,9 @@ input[type="color"] { padding: 5px; height: 46px; cursor: pointer; }
 /* Zero-height sticky anchor: the indicator stays fixed against the screen edge while the content
    scrolls beneath it, and takes no layout space (so it can't affect the scroll range). */
 .scaled-phone-thumb-anchor { position: sticky; top: 0; height: 0; z-index: 5; pointer-events: none; }
+.scaled-phone-photo-anchor { position: sticky; top: 0; height: 0; z-index: 0; pointer-events: none; }
+.scaled-phone-photo-layer { position: absolute; top: 0; left: 0; width: 100%; height: var(--landing-photo-height, 100%); overflow: hidden; }
+.scaled-phone-photo-layer .public-photo-viewport { position: relative; height: 100%; }
 .scaled-phone-thumb {
   position: absolute;
   top: 0;
@@ -1795,6 +1829,13 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
 .landing-page-shell > .public .public-photo-viewport {
   position: relative;
   height: 100%;
+}
+@media (min-width: 768px) {
+  .landing-page-shell > .public .public-photo-track {
+    top: 32px;
+    height: calc(100lvh - 32px);
+    border-radius: 20px 20px 0 0;
+  }
 }
 
 /* Searchable font gallery, shared by title, subtitle and buttons. */

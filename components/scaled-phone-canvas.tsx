@@ -20,6 +20,7 @@ export default function ScaledPhoneCanvas({
   className,
   designWidth = DESIGN_WIDTH,
   fit = "width",
+  photoBackground,
   onScaleChange,
 }: {
   children: ReactNode;
@@ -31,6 +32,7 @@ export default function ScaledPhoneCanvas({
    *  "contain": scale so the WHOLE landing fits inside the container on both axes at once,
    *  centered, no scrolling. Used by "Vista previa" on mobile. */
   fit?: "width" | "contain";
+  photoBackground?: ReactNode;
   onScaleChange?: (scale: number) => void;
 }) {
   const outerRef = useRef<HTMLDivElement>(null);
@@ -130,6 +132,7 @@ export default function ScaledPhoneCanvas({
       // mode the final scale can be smaller than `byWidth`; calculating it before that scale
       // was known made the photo stop above the phone's bottom edge and exposed a light strip.
       content.style.setProperty("--landing-viewport-height", `${screenHeight / scale}px`);
+      outer.style.setProperty("--landing-photo-height", `${screenHeight}px`);
       content.style.transform = `scale(${scale})`;
       updateThumb();
       onScaleChangeRef.current?.(scale);
@@ -182,10 +185,11 @@ export default function ScaledPhoneCanvas({
 
   return (
     <div ref={outerRef} className={className} data-fit={fit} style={{ opacity: ready ? 1 : 0 }}>
+      {photoBackground && <div className="scaled-phone-photo-anchor" aria-hidden="true"><div className="scaled-phone-photo-layer">{photoBackground}</div></div>}
       {/* Zero-height sticky anchor so the scroll indicator stays put while the content scrolls
           under it, without taking any layout space. */}
       <div className="scaled-phone-thumb-anchor" aria-hidden="true"><div ref={thumbRef} className="scaled-phone-thumb" /></div>
-      <div ref={spacerRef} style={{ position: "relative", width: "100%", height: "100%" }}>
+      <div ref={spacerRef} style={{ position: "relative", zIndex: 1, width: "100%", height: "100%" }}>
         <div
           ref={contentRef}
           style={{ position: "absolute", top: 0, left: 0, width: designWidth, display: "flex", flexDirection: "column", transformOrigin: "top left" }}

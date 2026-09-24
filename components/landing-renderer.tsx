@@ -48,6 +48,24 @@ type Landing = {
   cover_style?: unknown;
 };
 
+export function LandingPhotoBackground({ landing }: { landing: Landing }) {
+  const position = parseBackgroundPosition(landing.background_style);
+  const tint = resolveBackgroundTint(landing.background_type, position.tint);
+  return <div className="public-photo-viewport">
+    <div className="public-photo-image" style={{
+      backgroundColor: landing.background_color || "#f7f5f0",
+      backgroundImage: landing.background_image_url ? `url(${JSON.stringify(landing.background_image_url)})` : "none",
+      backgroundSize: "cover",
+      backgroundPosition: `${position.x}% ${position.y}%`,
+      backgroundRepeat: "no-repeat",
+      transform: `scale(${position.zoom})`,
+      transformOrigin: `${position.x}% ${position.y}%`,
+      filter: tint > 0 ? `brightness(${(1 - tint * 0.72).toFixed(3)})` : undefined,
+    }} />
+    <div className="public-photo-tint" style={{ backgroundImage: `linear-gradient(180deg, rgba(4,8,10,${(tint * 0.55).toFixed(3)}), rgba(5,8,11,${tint}))` }} />
+  </div>;
+}
+
 // What's "selected" right now, for the highlight outline — mirrors editor-v2's own Panel
 // type structurally (kept independent here, not imported, to avoid a circular dependency
 // between the admin editor and this shared public-facing component).
@@ -106,12 +124,11 @@ function actionHref(action: LandingAction) {
   return buildActionLink(action.type, action.url || "") || "#";
 }
 
-export default function LandingRenderer({ landing, actions, edit }: { landing: Landing; actions: LandingAction[]; edit?: LandingEditControls }) {
+export default function LandingRenderer({ landing, actions, edit, externalPhotoBackground = false }: { landing: Landing; actions: LandingAction[]; edit?: LandingEditControls; externalPhotoBackground?: boolean }) {
   const primary = landing.primary_color || "#1f2937";
   const title = parseTitleStyle(landing);
   const subtitle = parseSubtitleStyle(landing);
   const logo = parseLogoStyle(landing.logo_style);
-  const bgPos = parseBackgroundPosition(landing.background_style);
   const cover = parseCoverStyle(landing.cover_style);
   const isSampleCover = Boolean(edit && cover.enabled && !landing.cover_image_url);
   const coverImageUrl = landing.cover_image_url || (isSampleCover ? SAMPLE_COVER : "");
@@ -145,19 +162,9 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
   // A `brightness()` filter on the image itself scales evenly across the whole photo (a real
   // darkening "filter", not a veil on top of it), and pairs with the overlay below for extra
   // punch near the buttons at the bottom without needing to crank the slider to its max.
-  const bgTint = resolveBackgroundTint(landing.background_type, bgPos.tint);
+  const bgTint = resolveBackgroundTint(landing.background_type, parseBackgroundPosition(landing.background_style).tint);
   const bgLayerStyle: CSSProperties =
-    landing.background_type === "image" && landing.background_image_url
-      ? {
-          backgroundColor: landing.background_color || "#f7f5f0",
-          backgroundImage: `url(${landing.background_image_url})`,
-          backgroundSize: "cover",
-          backgroundPosition: `${bgPos.x}% ${bgPos.y}%`,
-          transform: `scale(${bgPos.zoom})`,
-          transformOrigin: `${bgPos.x}% ${bgPos.y}%`,
-          filter: bgTint > 0 ? `brightness(${(1 - bgTint * 0.72).toFixed(3)})` : undefined,
-        }
-      : landing.background_type === "gradient" && landing.background_gradient_to
+    landing.background_type === "gradient" && landing.background_gradient_to
         ? {
             backgroundColor: landing.background_color || "#f7f5f0",
             backgroundImage: `linear-gradient(145deg, ${landing.background_color || "#f7f5f0"}, ${landing.background_gradient_to})`,
@@ -214,9 +221,9 @@ export default function LandingRenderer({ landing, actions, edit }: { landing: L
   );
 
   return (
-    <main className={`public${zone.showBranding !== false ? " has-branding" : ""}${landing.background_type === "image" && landing.background_image_url ? " public-bg-image" : ""}`} style={{ position: "relative", overflow: "clip", background: landing.background_color || "#f7f5f0", paddingTop: distribution.top, "--landing-top": `${distribution.top}px`, "--landing-logo-gap": `${distribution.logoGap}px` } as CSSProperties}>
+    <main className={`public${zone.showBranding !== false ? " has-branding" : ""}${landing.background_type === "image" && landing.background_image_url ? " public-bg-image" : ""}`} style={{ position: "relative", overflow: "clip", background: externalPhotoBackground && landing.background_type === "image" ? "transparent" : landing.background_color || "#f7f5f0", paddingTop: distribution.top, "--landing-top": `${distribution.top}px`, "--landing-logo-gap": `${distribution.logoGap}px` } as CSSProperties}>
       <FontLinks ids={fontIds} />
-      {landing.background_type === "image" ? <div className="public-bg-layer public-photo-track" aria-hidden="true"><div className="public-photo-viewport"><div className="public-photo-image" style={{ backgroundRepeat: "no-repeat", ...bgLayerStyle }} /><div className="public-photo-tint" style={{ backgroundImage: `linear-gradient(180deg, rgba(4,8,10,${(bgTint * 0.55).toFixed(3)}), rgba(5,8,11,${bgTint}))` }} /></div></div> : <><div className="public-bg-layer" style={{ position: "absolute", inset: 0, zIndex: 0, ...bgLayerStyle }} /><div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none", backgroundImage: `linear-gradient(180deg, rgba(4,8,10,${(bgTint * 0.55).toFixed(3)}), rgba(5,8,11,${bgTint}))` }} /></>}
+      {landing.background_type === "image" ? !externalPhotoBackground && <div className="public-bg-layer public-photo-track" aria-hidden="true"><LandingPhotoBackground landing={landing} /></div> : <><div className="public-bg-layer" style={{ position: "absolute", inset: 0, zIndex: 0, ...bgLayerStyle }} /><div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none", backgroundImage: `linear-gradient(180deg, rgba(4,8,10,${(bgTint * 0.55).toFixed(3)}), rgba(5,8,11,${bgTint}))` }} /></>}
       {edit && (
         <>
           <button type="button" className="editor-bg-hit" onClick={edit.onSelectBackground} aria-label="Editar fondo" />

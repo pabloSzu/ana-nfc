@@ -7,7 +7,7 @@ import { ActionTypeIcon } from "@/components/action-icons";
 import { FiLink, FiZap, FiArrowUpRight } from "react-icons/fi";
 import { IconEye, IconQrCode } from "@/components/icons";
 import DeleteLandingButton from "@/app/admin/delete-landing-button";
-import LandingRenderer, { type LandingEditControls } from "@/components/landing-renderer";
+import LandingRenderer, { LandingPhotoBackground, type LandingEditControls } from "@/components/landing-renderer";
 import ScaledPhoneCanvas from "@/components/scaled-phone-canvas";
 import { compressImage } from "@/lib/compress-image";
 import { headerCardOn, parseDistribution, type DistributionStyle, QUICK_SOCIALS, quickSocialHref, type QuickSocial, AUTO_COLORS, contrastTextColor, getAllActions, parseCoverStyle, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize, resolveTextFont, type BackgroundPosition, type ButtonZoneStyle, type CoverStyle, type LogoStyle, type SubtitleStyle, type TitleStyle } from "@/lib/landing-catalog";
@@ -604,8 +604,8 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
           <div className="v2-stage-toolbar"><span>{preview ? "Vista limpia" : "Tamaño de pantalla"}</span><div className="v2-device-switcher">{DEVICE_OPTIONS.map((option) => <button key={option.id} type="button" className={device === option.id ? "active" : ""} title={option.size} onClick={() => setDevice(option.id)}>{option.label}</button>)}</div></div>
           <div className={`v2-phone device-${device}`}>
             <div className="v2-phone-screen" ref={buttonsContainerRef}>
-              <ScaledPhoneCanvas className="scaled-phone-canvas" designWidth={DEVICE_OPTIONS.find((option) => option.id === device)?.width} onScaleChange={(next) => { phoneScaleRef.current = next; }}>
-                <LandingRenderer landing={rendererLanding} actions={buttons} edit={preview ? undefined : editControls} />
+              <ScaledPhoneCanvas className="scaled-phone-canvas" designWidth={DEVICE_OPTIONS.find((option) => option.id === device)?.width} photoBackground={draft.background_type === "image" ? <LandingPhotoBackground landing={rendererLanding} /> : undefined} onScaleChange={(next) => { phoneScaleRef.current = next; }}>
+                <LandingRenderer landing={rendererLanding} actions={buttons} edit={preview ? undefined : editControls} externalPhotoBackground={draft.background_type === "image"} />
               </ScaledPhoneCanvas>
             </div>
           </div>
