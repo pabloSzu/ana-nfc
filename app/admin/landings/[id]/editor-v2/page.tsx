@@ -10,6 +10,7 @@ import "./editor-v2.css";
 import "./logo-editor.css";
 import "./collections.css";
 import "./phone-first.css";
+import "./image-adjust-dialog.css";
 
 export default async function EditorV2Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

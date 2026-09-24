@@ -16,6 +16,7 @@ import { getFontWeights, LogoInitials, resolveFontWeight } from "@/lib/fonts";
 import IconPicker from "../icon-picker";
 import { DESIGN_PRESETS_V2, buttonCollectionStyle, buttonIconStyle, hasAuthenticLook, recommendedIconAppearance, resolveButtonColors, type DesignPreset } from "@/lib/design-presets";
 import { ThemeSceneLayer, useSharedTheme } from "@/components/theme-scene";
+import ImageAdjustDialog, { type ImageKind, type ImagePlacement } from "./image-adjust-dialog";
 
 type ButtonItem = { id: string; type: string; title: string; subtitle: string; url: string; message: string; icon: string; background_color: string; text_color: string; use_auto_color: boolean; position: number };
 type LandingDraft = {
@@ -29,6 +30,7 @@ type Panel = "templates" | "buttons" | "background" | "cover" | "settings" | "so
 type BackgroundTab = "color" | "gradient" | "image";
 type DeviceMode = "small" | "standard" | "large";
 type SaveAction = (formData: FormData) => void | Promise<void>;
+type ImageEditorDraft = { kind: ImageKind; src: string; file?: File; initial: ImagePlacement };
 
 const SIZES = [
   { label: "Chico", patch: { height: 44, textSize: 13, iconSize: 25, gap: 6 } },
@@ -124,6 +126,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
   const [logoRemoved, setLogoRemoved] = useState(false);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [coverRemoved, setCoverRemoved] = useState(false);
+  const [imageEditor, setImageEditor] = useState<ImageEditorDraft | null>(null);
   const activeButton = typeof panel === "object" && panel ? buttons.find((button) => button.id === panel.buttonId) : null;
   const actionDefs = useMemo(() => getAllActions(), []);
   const draggedButton = useRef<string | null>(null);
@@ -464,37 +467,39 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
     window.addEventListener("pointercancel", handleUp);
   }
 
-  async function onBackgroundFile(file?: File) {
-    if (!file) return;
-    const compressed = await compressImage(file, 1600);
-    const input = document.getElementById("v2-background-file") as HTMLInputElement | null;
-    if (input) { const transfer = new DataTransfer(); transfer.items.add(compressed); input.files = transfer.files; }
-    if (bgPreview) URL.revokeObjectURL(bgPreview);
-    setBgPreview(URL.createObjectURL(compressed)); change({ background_type: "image", bgPosition: { zoom: 1, x: 50, y: 50, tint: .08 } });
-  }
-
-  async function onLogoFile(file?: File) {
-    if (!file) return;
-    const compressed = await compressImage(file, 900);
-    const input = document.getElementById("v2-logo-file") as HTMLInputElement | null;
-    if (input) { const transfer = new DataTransfer(); transfer.items.add(compressed); input.files = transfer.files; }
-    if (logoPreview) URL.revokeObjectURL(logoPreview);
-    setLogoPreview(URL.createObjectURL(compressed)); setLogoRemoved(false); setDirty(true);
-  }
-
-  async function onCoverFile(file?: File) {
-    if (!file) return;
-    const compressed = await compressImage(file, 1600);
-    const input = document.getElementById("v2-cover-file") as HTMLInputElement | null;
-    if (input) { const transfer = new DataTransfer(); transfer.items.add(compressed); input.files = transfer.files; }
-    if (coverPreview) URL.revokeObjectURL(coverPreview);
-    setCoverPreview(URL.createObjectURL(compressed)); setCoverRemoved(false);
-    change({ coverStyle: parseCoverStyle({ enabled: true, mode: draft.coverStyle.mode, ...(draft.coverStyle.mode === "banner" ? { overlay: 0 } : {}) }) });
-  }
-
   const backgroundImage = bgPreview || draft.background_image_url || "";
   const logoImage = logoPreview || (!logoRemoved ? draft.logo_url || "" : "");
   const coverImage = coverPreview || (!coverRemoved ? draft.cover_image_url || "" : "");
+
+  async function openImageEditor(kind: ImageKind, file?: File) {
+    const current = kind === "background" ? backgroundImage : kind === "logo" ? logoImage : coverImage;
+    if (!file && !current) return;
+    const compressed = file ? await compressImage(file, kind === "logo" ? 900 : 1600) : undefined;
+    const src = compressed ? URL.createObjectURL(compressed) : current;
+    const style = kind === "background" ? draft.bgPosition : kind === "logo" ? draft.logoStyle : draft.coverStyle;
+    setImageEditor({ kind, src, file: compressed, initial: compressed ? { zoom: 1, x: 50, y: 50 } : { zoom: style.zoom, x: style.x, y: style.y } });
+  }
+
+  function cancelImageEditor() {
+    if (imageEditor?.file) URL.revokeObjectURL(imageEditor.src);
+    setImageEditor(null);
+  }
+
+  function applyImageEditor(placement: ImagePlacement) {
+    if (!imageEditor) return;
+    const { kind, file, src } = imageEditor;
+    if (file) {
+      const input = document.getElementById(`v2-${kind === "cover" ? "cover" : kind === "logo" ? "logo" : "background"}-file`) as HTMLInputElement | null;
+      if (input) { const transfer = new DataTransfer(); transfer.items.add(file); input.files = transfer.files; }
+      if (kind === "background") { if (bgPreview) URL.revokeObjectURL(bgPreview); setBgPreview(src); }
+      if (kind === "logo") { if (logoPreview) URL.revokeObjectURL(logoPreview); setLogoPreview(src); }
+      if (kind === "cover") { if (coverPreview) URL.revokeObjectURL(coverPreview); setCoverPreview(src); }
+    }
+    if (kind === "background") change({ background_type: "image", bgPosition: { ...draft.bgPosition, ...placement } });
+    if (kind === "logo") { setLogoRemoved(false); change({ logoStyle: { ...draft.logoStyle, ...placement } }); }
+    if (kind === "cover") { setCoverRemoved(false); change({ coverStyle: { ...draft.coverStyle, ...placement, enabled: true } }); }
+    setImageEditor(null);
+  }
   const rendererLanding = {
     ...draft,
     logo_url: logoImage,
@@ -571,8 +576,8 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
           </div>
           {panel === "templates" && <Templates selected={draft.buttonZone.templateId} onApply={applyPreset} />}
           {panel === "buttons" && <ButtonDesign draft={draft} buttons={buttons} onZone={changeZone} onFont={(button_font) => change({ button_font })} onApplyButtonLook={applyButtonLook} onResetButtonColors={resetButtonColors} />}
-          {panel === "background" && <BackgroundControls draft={draft} tab={bgTab} onTab={setBgTab} onChange={change} onFile={onBackgroundFile} />}
-          {panel === "cover" && <CoverControls draft={draft} coverImage={coverImage} onChange={change} onCoverFile={onCoverFile} onRemoveCover={() => {
+          {panel === "background" && <BackgroundControls draft={draft} tab={bgTab} onTab={setBgTab} onChange={change} onFile={(file) => openImageEditor("background", file)} onAdjust={() => openImageEditor("background")} hasImage={Boolean(backgroundImage)} />}
+          {panel === "cover" && <CoverControls draft={draft} coverImage={coverImage} onChange={change} onCoverFile={(file) => openImageEditor("cover", file)} onAdjustCover={() => openImageEditor("cover")} onRemoveCover={() => {
             const input = document.getElementById("v2-cover-file") as HTMLInputElement | null;
             if (input) input.value = "";
             if (coverPreview) URL.revokeObjectURL(coverPreview);
@@ -584,7 +589,12 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
           {panel === "settings" && <SettingsControls draft={draft} onBrandingChange={(showBranding) => changeZone({ showBranding })} publishAction={publishAction} deleteLandingAction={deleteLandingAction} />}
           {panel === "title" && <TitleControls draft={draft} onChange={change} />}
           {panel === "subtitle" && <SubtitleControls draft={draft} onChange={change} />}
-          {panel === "logo" && <LogoControls draft={draft} logoImage={logoImage} onChange={change} onLogo={onLogoFile} onRemoveLogo={() => { setLogoPreview(null); setLogoRemoved(true); setDirty(true); }} />}
+          {panel === "logo" && <LogoControls draft={draft} logoImage={logoImage} onChange={change} onLogo={(file) => openImageEditor("logo", file)} onAdjustLogo={() => openImageEditor("logo")} onRemoveLogo={() => {
+            const input = document.getElementById("v2-logo-file") as HTMLInputElement | null;
+            if (input) input.value = "";
+            if (logoPreview) URL.revokeObjectURL(logoPreview);
+            setLogoPreview(null); setLogoRemoved(true); setDirty(true);
+          }} />}
           {panel === "add" && <ActionCatalog onAdd={addButton} />}
           {activeButton && <ButtonControls button={activeButton} draft={draft} onChange={(patch) => changeButton(activeButton.id, patch)} onDelete={() => deleteButton(activeButton.id)} />}
         </aside>}
@@ -602,6 +612,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
         </section>
       </div>
 
+      {imageEditor && <ImageAdjustDialog key={`${imageEditor.kind}-${imageEditor.src}`} kind={imageEditor.kind} src={imageEditor.src} shape={imageEditor.kind === "logo" ? draft.logoStyle.shape : undefined} coverMode={draft.coverStyle.mode} initial={imageEditor.initial} onApply={applyImageEditor} onCancel={cancelImageEditor} />}
       {deletedButton && <div className="v2-delete-notice"><span role="status">Botón eliminado: <b>{deletedButton.button.title}</b></span><button ref={restoreButtonRef} type="button" onClick={restoreDeletedButton}>Deshacer</button><button type="button" aria-label="Cerrar aviso" onClick={() => setDeletedButton(null)}>×</button></div>}
       {leaveOpen && <div className="v2-modal-backdrop"><div className="v2-modal"><div className="v2-modal-icon">!</div><h2>Tenés cambios sin guardar</h2><p>Si salís ahora, vas a perder los últimos cambios de diseño.</p><button className="v2-save" form="v2-save" name="return_to" value="/admin">Guardar y salir</button><Link href="/admin" className="v2-danger">Salir sin guardar</Link><button className="v2-ghost" onClick={() => { setLeaveOpen(false); setPreview(false); }}>Seguir editando</button></div></div>}
     </main>
@@ -783,7 +794,7 @@ function ButtonDesign({ draft, buttons, onZone, onFont, onApplyButtonLook, onRes
   );
 }
 
-function BackgroundControls({ draft, tab, onTab, onChange, onFile }: { draft: LandingDraft; tab: BackgroundTab; onTab: (t: BackgroundTab) => void; onChange: (p: Partial<LandingDraft>) => void; onFile: (f?: File) => void }) {
+function BackgroundControls({ draft, tab, onTab, onChange, onFile, onAdjust, hasImage }: { draft: LandingDraft; tab: BackgroundTab; onTab: (t: BackgroundTab) => void; onChange: (p: Partial<LandingDraft>) => void; onFile: (f?: File) => void; onAdjust: () => void; hasImage: boolean }) {
   const updatePos = (p: Partial<BackgroundPosition>) => onChange({ bgPosition: { ...draft.bgPosition, ...p } });
   const selectTab = (next: BackgroundTab) => { onTab(next); onChange({ background_type: next }); };
   return <div className="v2-fields">
@@ -799,12 +810,10 @@ function BackgroundControls({ draft, tab, onTab, onChange, onFile }: { draft: La
     </EditorSection>}
 
     {tab === "image" && <EditorSection title="Imagen y encuadre" tone="purple">
-      <label className="v2-upload">Cambiar imagen<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => onFile(event.target.files?.[0])} /></label>
-      <p className="v2-help">Ajustala mirando el celular: nunca se guarda el recorte original.</p>
+      <label className="v2-upload">{hasImage ? "Cambiar imagen" : "Elegir imagen"}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => { onFile(event.target.files?.[0]); event.target.value = ""; }} /></label>
+      {hasImage && <button type="button" className="v2-inline-action" onClick={onAdjust}>Ajustar encuadre del fondo</button>}
+      <p className="v2-help">El recuadro muestra una pantalla de ejemplo. Revisá el resultado en los tamaños del celular.</p>
       <Range label="Oscurecer imagen" min={0} max={.85} step={.01} value={draft.bgPosition.tint} onChange={(tint) => updatePos({ tint })} />
-      <Range label="Acercar" min={1} max={2.2} step={.01} value={draft.bgPosition.zoom} onChange={(zoom) => updatePos({ zoom })} />
-      <Range label="Mover horizontal" min={0} max={100} value={draft.bgPosition.x} onChange={(x) => updatePos({ x })} />
-      <Range label="Mover vertical" min={0} max={100} value={draft.bgPosition.y} onChange={(y) => updatePos({ y })} />
     </EditorSection>}
 
   </div>;
@@ -824,10 +833,9 @@ const HEADER_STYLES: { id: HeaderStyle; title: string; note: string }[] = [
   { id: "banner", title: "Portada banner", note: "Una foto arriba de todo, con el logo montado sobre su borde." },
 ];
 
-function CoverControls({ draft, coverImage, onChange, onCoverFile, onRemoveCover }: { draft: LandingDraft; coverImage: string; onChange: (p: Partial<LandingDraft>) => void; onCoverFile: (f?: File) => void; onRemoveCover: () => void }) {
+function CoverControls({ draft, coverImage, onChange, onCoverFile, onAdjustCover, onRemoveCover }: { draft: LandingDraft; coverImage: string; onChange: (p: Partial<LandingDraft>) => void; onCoverFile: (f?: File) => void; onAdjustCover: () => void; onRemoveCover: () => void }) {
   const style = draft.coverStyle;
   const updateCover = (patch: Partial<CoverStyle>) => onChange({ coverStyle: { ...style, ...patch } });
-  const canPan = style.zoom > 1;
   const hasCard = headerCardOn(draft.buttonZone);
   // The four options are mutually exclusive in the picker even though card and photo are stored
   // separately — a photo wins if both happen to be on (older pages could have that).
@@ -848,17 +856,13 @@ function CoverControls({ draft, coverImage, onChange, onCoverFile, onRemoveCover
     {isPhoto && <>
       <label className="v2-upload">{coverImage ? "Cambiar foto" : "Subir foto de portada"}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => { onCoverFile(event.target.files?.[0]); event.target.value = ""; }} /></label>
       {coverImage && <>
+        <button type="button" className="v2-inline-action" onClick={onAdjustCover}>Ajustar encuadre de la portada</button>
         {current === "fade" && <fieldset className="v2-editor-section" data-tone="blue">
           <legend>Tamaño de portada</legend>
           <div className="v2-segment">{COVER_SIZES.map((option) => <button type="button" key={option.id} className={style.size === option.id ? "active" : ""} onClick={() => updateCover({ size: option.id })}>{option.label}</button>)}</div>
           <p className="v2-help" style={{ margin: "8px 0 0" }}>"Mediano" es el ajuste por defecto. "Grande" llega hasta más abajo, cerca del segundo botón.</p>
         </fieldset>}
-        <details className="v2-cover-adjustments v2-editor-section" data-tone="purple"><summary>{current === "fade" ? "Ajustar encuadre y difuminado" : "Ajustar encuadre"}</summary><div className="v2-fields">
-          <Range label="Acercar" min={1} max={2.5} step={.01} value={style.zoom} onChange={(zoom) => updateCover({ zoom })} />
-          {canPan ? <>
-            <Range label="Mover horizontal" min={0} max={100} value={style.x} onChange={(x) => updateCover({ x })} />
-            <Range label="Mover vertical" min={0} max={100} value={style.y} onChange={(y) => updateCover({ y })} />
-          </> : <p className="v2-help" style={{ margin: 0 }}>Subí el acercamiento para poder mover la foto dentro del marco.</p>}
+        <details className="v2-cover-adjustments v2-editor-section" data-tone="purple"><summary>Efectos de la portada</summary><div className="v2-fields">
           {current === "fade" && <>
             <Range label="Difuminado" min={10} max={90} value={style.fade} onChange={(fade) => updateCover({ fade })} />
             <p className="v2-help" style={{ margin: "-6px 0 0" }}>Dónde empieza a desvanecerse la foto hacia el fondo, cerca de los botones.</p>
@@ -1022,13 +1026,13 @@ function TitleControls({ draft, onChange }: { draft: LandingDraft; onChange: (p:
 
 function SubtitleControls({ draft, onChange }: { draft: LandingDraft; onChange: (p: Partial<LandingDraft>) => void }) { const style=draft.subtitleStyle; const update=(patch:Partial<SubtitleStyle>)=>onChange({subtitleStyle:{...style,...patch}}); const preset=suggestedPreset(draft.buttonZone.templateId); return <div className="v2-fields"><EditorSection title="Contenido" tone="blue"><label>Texto del subtítulo<textarea rows={3} value={draft.description || ""} onKeyDown={(e)=>{ if (e.key==="Enter" && (draft.description||"").includes("\n")) e.preventDefault(); }} onChange={(e)=>onChange({description:e.target.value})}/></label><p className="v2-help" style={{margin:"-4px 0 0"}}>Podés usar Enter para un salto de línea (máximo dos líneas).</p></EditorSection><RecommendedStyles templateName={preset.name} onClick={()=>update({...preset.subtitle,color:preset.foreground,letterSpacing:undefined})} /><EditorSection title="Tipografía y tamaño" tone="purple"><FontPicker label="Tipografía" value={style.font} onChange={(font)=>update({font,weight:resolveFontWeight(font,style.weight)})} usage="body" previewText={draft.description || "Conocé un poco más de mí"} recommended={preset.subtitle.font}/><Range label="Tamaño" min={11} max={26} value={style.size} onChange={(size)=>update({size})}/><FontWeightControl font={style.font} value={style.weight} onChange={weight=>update({weight})}/><LetterSpacingControl value={style.letterSpacing} onChange={(letterSpacing)=>update({letterSpacing})}/></EditorSection><EditorSection title="Colores y fondo" tone="peach"><ColorField label="Color del texto" value={style.color} onChange={(color)=>update({color})}/><Choice active={style.bgMode==="solid"} title="Fondo detrás del texto" note="Mejora la lectura cuando hay una imagen." onClick={()=>update({bgMode:style.bgMode==="solid"?"none":"solid"})}/>{style.bgMode==="solid"&&<ColorField label="Color del fondo" value={style.bg} onChange={(bg)=>update({bg})}/>}</EditorSection></div>; }
 
-function LogoControls({ draft, logoImage, onChange, onLogo, onRemoveLogo }: { draft: LandingDraft; logoImage: string; onChange: (p: Partial<LandingDraft>) => void; onLogo: (file?: File) => void; onRemoveLogo: () => void }) {
+function LogoControls({ draft, logoImage, onChange, onLogo, onAdjustLogo, onRemoveLogo }: { draft: LandingDraft; logoImage: string; onChange: (p: Partial<LandingDraft>) => void; onLogo: (file?: File) => void; onAdjustLogo: () => void; onRemoveLogo: () => void }) {
   const preset = suggestedPreset(draft.buttonZone.templateId);
   const style = draft.logoStyle;
   const primary = draft.primary_color || "#1f2937";
   const update = (patch: Partial<LogoStyle>) => onChange({ logoStyle: { ...style, ...patch } });
   return <div className="v2-fields">
-    <div className="v2-logo-editor"><div style={{ ...logoFrameStyle(style, primary), borderRadius: logoBorderRadius(style.shape, 76), fontSize: logoLetterSize(76, style.initials), fontFamily: resolveTextFont(draft.titleStyle.font) }}>{logoImage ? <span style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${style.zoom * 100}%`, backgroundPosition: `${style.x}% ${style.y}%` }} /> : <LogoInitials font={draft.titleStyle.font}>{logoInitials(draft.business_name, style.initials)}</LogoInitials>}</div><span><label className="v2-upload">{logoImage ? "Cambiar imagen" : "Elegir imagen"}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => onLogo(event.target.files?.[0])} /></label>{logoImage && <button type="button" className="v2-delete" onClick={onRemoveLogo}>Quitar</button>}</span></div>
+    <div className="v2-logo-editor"><div style={{ ...logoFrameStyle(style, primary), borderRadius: logoBorderRadius(style.shape, 76), fontSize: logoLetterSize(76, style.initials), fontFamily: resolveTextFont(draft.titleStyle.font) }}>{logoImage ? <span style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${style.zoom * 100}%`, backgroundPosition: `${style.x}% ${style.y}%` }} /> : <LogoInitials font={draft.titleStyle.font}>{logoInitials(draft.business_name, style.initials)}</LogoInitials>}</div><span><label className="v2-upload">{logoImage ? "Cambiar imagen" : "Elegir imagen"}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => { onLogo(event.target.files?.[0]); event.target.value = ""; }} /></label>{logoImage && <><button type="button" className="v2-inline-action" onClick={onAdjustLogo}>Ajustar encuadre</button><button type="button" className="v2-delete" onClick={onRemoveLogo}>Quitar</button></>}</span></div>
     <RecommendedStyles templateName={preset.name} onClick={() => onChange({ logoStyle: { ...style, ...logoTreatmentPatch("template", draft.buttonZone.templateId), ...preset.logo, zoom: 1, x: 50, y: 50 } })} />
     <fieldset className="v2-logo-section v2-logo-section-bg">
       <legend>1 · Color de fondo</legend>
@@ -1104,14 +1108,8 @@ function LogoControls({ draft, logoImage, onChange, onLogo, onRemoveLogo }: { dr
       </fieldset>
     )}
     <fieldset className="v2-logo-section v2-logo-section-size">
-      <legend>{logoImage ? "5" : "4"} · Tamaño{logoImage ? " y encuadre" : ""}</legend>
+      <legend>{logoImage ? "5" : "4"} · Tamaño</legend>
       <Range label="Tamaño" min={72} max={190} value={style.size} onChange={(size) => update({ size })} />
-      {logoImage && <>
-        <Range label="Zoom" min={1} max={2.5} step={.01} value={style.zoom} onChange={(zoom) => update({ zoom })} />
-        {style.zoom > 1
-          ? <><Range label="Horizontal" min={0} max={100} value={style.x} onChange={(x) => update({ x })} /><Range label="Vertical" min={0} max={100} value={style.y} onChange={(y) => update({ y })} /></>
-          : <p className="v2-help" style={{ margin: 0 }}>Subí el zoom para poder mover la imagen dentro del marco.</p>}
-      </>}
     </fieldset>
   </div>;
 }

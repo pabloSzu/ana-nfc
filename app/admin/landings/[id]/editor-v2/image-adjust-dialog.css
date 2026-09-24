@@ -1,0 +1,25 @@
+.image-adjust-backdrop { position: fixed; inset: 0; z-index: 150; display: grid; place-items: center; padding: 16px; background: rgba(12, 14, 25, .72); }
+.image-adjust-dialog { width: min(100%, 480px); max-height: calc(100dvh - 32px); overflow-y: auto; display: grid; gap: 15px; padding: 20px; border-radius: 18px; background: #fff; box-shadow: 0 24px 70px rgba(0, 0, 0, .32); color: #252936; }
+.image-adjust-heading { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+.image-adjust-heading h2 { margin: 0 0 4px; font-size: 19px; }
+.image-adjust-heading p { margin: 0; color: #737887; font-size: 12px; line-height: 1.4; }
+.image-adjust-heading button { flex: 0 0 auto; width: 31px; height: 31px; border: 0; border-radius: 50%; background: #f0f1f5; color: #323642; font-size: 20px; cursor: pointer; }
+.image-adjust-preview { position: relative; overflow: hidden; margin: 0 auto; background: #e7e8ed; border: 1px solid #d4d6de; cursor: grab; touch-action: none; user-select: none; }
+.image-adjust-preview:active { cursor: grabbing; }
+.image-adjust-preview-logo { width: min(260px, 72vw); aspect-ratio: 1; }
+.image-adjust-shape-round { border-radius: 50%; }
+.image-adjust-shape-square { border-radius: 18px; }
+.image-adjust-shape-sharp { border-radius: 0; }
+.image-adjust-preview-cover { width: min(100%, 390px); aspect-ratio: 1.35 / 1; border-radius: 10px; }
+.image-adjust-preview-banner { aspect-ratio: 3 / 1; }
+.image-adjust-preview-background { width: min(200px, 52vw); aspect-ratio: 9 / 16; border-radius: 10px; }
+.image-adjust-photo { position: absolute; inset: 0; background-repeat: no-repeat; }
+.image-adjust-slider { display: grid; grid-template-columns: 1fr auto; gap: 5px; font-size: 12px; font-weight: 800; }
+.image-adjust-slider span { color: #6657e8; }
+.image-adjust-slider input { grid-column: 1 / -1; }
+.image-adjust-position { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.image-adjust-position label { display: grid; gap: 5px; font-size: 11px; font-weight: 750; }
+.image-adjust-slider input, .image-adjust-position input { width: 100%; accent-color: #6657e8; }
+.image-adjust-note { margin: 0; color: #737887; font-size: 11px; line-height: 1.4; }
+.image-adjust-actions { display: flex; justify-content: flex-end; gap: 9px; }
+@media (max-width: 500px) { .image-adjust-dialog { padding: 16px; gap: 12px; } .image-adjust-position { grid-template-columns: 1fr; gap: 8px; } }
