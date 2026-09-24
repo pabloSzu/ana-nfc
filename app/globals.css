@@ -892,6 +892,26 @@ input[type="color"] { padding: 5px; height: 46px; cursor: pointer; }
 
 /* ---------- Public landing ---------- */
 /* Container width keeps the full-bleed header identical in public and scaled previews. */
+.landing-page-shell {
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100svh;
+  background: var(--landing-shell-color, var(--bg));
+}
+.landing-page-shell > .public {
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100svh;
+  margin: 0 auto;
+}
+@media (min-width: 768px) {
+  .landing-page-shell {
+    background: color-mix(in srgb, var(--landing-shell-color, var(--bg)) 82%, #000 18%);
+  }
+  .landing-page-shell > .public {
+    max-width: 520px;
+  }
+}
 .public { min-height: 100vh; padding: var(--space-8) var(--space-4); background: var(--bg); container-type: inline-size; }
 .public-inner { width: min(100%, 430px); margin: auto; text-align: center; }
 .public .landing-desc { max-width: 340px; margin: 0 auto var(--space-5); color: var(--text-muted); white-space: pre-line; }
@@ -1744,7 +1764,7 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
 
 /* The photo uses screen dimensions, independent of the page's content height. */
 .public-photo-track { position:absolute; inset:0; z-index:0; pointer-events:none; }
-.public-photo-viewport { position:sticky; top:0; height:var(--landing-viewport-height, 100svh); overflow:hidden; }
+.public-photo-viewport { position:sticky; top:0; height:calc(var(--landing-viewport-height, 100svh) + 42px + env(safe-area-inset-bottom)); overflow:hidden; }
 .public-photo-image { position:absolute; inset:0; }
 
 /* Searchable font gallery, shared by title, subtitle and buttons. */

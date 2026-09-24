@@ -88,7 +88,6 @@ export default function ScaledPhoneCanvas({
       let scale = byWidth;
       const flow = getComputedStyle(outer).overflowY === "visible";
       const screenHeight = flow ? (outer.closest(".v2-stage")?.clientHeight ?? window.innerHeight) : outerRect.height;
-      content.style.setProperty("--landing-viewport-height", `${screenHeight / byWidth}px`);
 
       if (fit === "contain") {
         // offsetHeight is the layout-box height: CSS transform never affects it, so it's always
@@ -119,14 +118,18 @@ export default function ScaledPhoneCanvas({
         // scrollHeight of a scaled child isn't reliably its painted height, which used to leave
         // spurious scrollbars or an overscroll gap. Rounded up so a fractional pixel can never
         // create a phantom 1px scroll.
-        const spacerHeight = Math.max(Math.ceil(naturalHeight * scale), Math.round(available));
+        const spacerHeight = Math.max(Math.ceil(naturalHeight * scale), Math.ceil(available));
         spacer.style.height = `${spacerHeight}px`;
-        // The content is stretched to paint out to exactly that same height (not merely to
-        // `available`), so the landing's background never stops a fraction of a pixel short of
-        // the end of the scroll range.
-        content.style.minHeight = `${spacerHeight / scale}px`;
+        // Paint one device pixel past the spacer. Transformed fractional pixels can otherwise
+        // be antialiased against the phone's black frame and show up as a thin bottom seam.
+        // The canvas clips this overscan, so it never changes the visible height or scroll range.
+        content.style.minHeight = `${(spacerHeight + 1) / scale}px`;
       }
 
+      // Photo backgrounds use this unscaled height for their sticky viewport. In `contain`
+      // mode the final scale can be smaller than `byWidth`; calculating it before that scale
+      // was known made the photo stop above the phone's bottom edge and exposed a light strip.
+      content.style.setProperty("--landing-viewport-height", `${screenHeight / scale}px`);
       content.style.transform = `scale(${scale})`;
       updateThumb();
       onScaleChangeRef.current?.(scale);

@@ -1,4 +1,5 @@
 import { cache } from "react";
+import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
@@ -38,5 +39,12 @@ export default async function Landing({ params, searchParams }: { params: Promis
   if (landing.redirect_url) redirect(landing.redirect_url);
   const supabase = await createClient();
   const { data: actions } = await supabase.from("actions").select("*").eq("landing_id", landing.id).eq("enabled", true).order("position");
-  return <LandingRenderer landing={landing} actions={actions || []} />;
+  return (
+    <div
+      className="landing-page-shell"
+      style={{ "--landing-shell-color": landing.background_color || "#f7f5f0" } as CSSProperties}
+    >
+      <LandingRenderer landing={landing} actions={actions || []} />
+    </div>
+  );
 }
