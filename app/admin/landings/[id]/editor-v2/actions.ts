@@ -154,6 +154,7 @@ export async function saveDesignStyle(fd: FormData) {
       message: String(button.message || "").trim(),
       url: value,
       icon: String(button.icon || "").trim(),
+      icon_background_color: hexColor.test(String(button.icon_background_color || "")) ? String(button.icon_background_color) : "",
       background_color: color(String(button.background_color || ""), AUTO_COLORS[type] || "#1f2937"),
       text_color: color(String(button.text_color || ""), "#ffffff"),
       use_auto_color: button.use_auto_color !== false,

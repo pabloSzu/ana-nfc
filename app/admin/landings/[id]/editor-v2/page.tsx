@@ -38,7 +38,7 @@ export default async function EditorV2Page({ params }: { params: Promise<{ id: s
       }}
       initialButtons={(actions || []).map((action) => ({
         id: action.id, type: action.type, title: action.title || "", subtitle: action.subtitle || "",
-        url: action.url || "", message: action.message || "", icon: action.icon || "",
+        url: action.url || "", message: action.message || "", icon: action.icon || "", icon_background_color: action.icon_background_color || "",
         background_color: action.background_color || "", text_color: action.text_color || "#ffffff",
         use_auto_color: action.use_auto_color !== false, position: action.position || 0,
       }))}

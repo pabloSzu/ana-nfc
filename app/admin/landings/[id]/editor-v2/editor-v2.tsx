@@ -18,7 +18,7 @@ import { DESIGN_PRESETS_V2, buttonCollectionStyle, buttonIconStyle, hasAuthentic
 import { ThemeSceneLayer, useSharedTheme } from "@/components/theme-scene";
 import ImageAdjustDialog, { type ImageKind, type ImagePlacement } from "./image-adjust-dialog";
 
-type ButtonItem = { id: string; type: string; title: string; subtitle: string; url: string; message: string; icon: string; background_color: string; text_color: string; use_auto_color: boolean; position: number };
+type ButtonItem = { id: string; type: string; title: string; subtitle: string; url: string; message: string; icon: string; icon_background_color: string; background_color: string; text_color: string; use_auto_color: boolean; position: number };
 type LandingDraft = {
   id: string; slug: string; business_name: string; description?: string | null; logo_url?: string | null; primary_color?: string | null;
   background_color?: string | null; background_type?: string | null; background_gradient_to?: string | null; background_image_url?: string | null;
@@ -323,7 +323,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
     });
   }
 
-  function applyButtonLook(id: string) {
+  function applyButtonLook(id: string, restoreRecommended = false) {
     const preset = DESIGN_PRESETS_V2.find((item) => item.id === id);
     if (!preset) return;
     commitDiscrete();
@@ -332,8 +332,8 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
       buttonZone: {
         ...draft.buttonZone,
         ...preset.buttonZone,
-        contentAlign: draft.buttonZone.contentAlignMode === "manual" ? draft.buttonZone.contentAlign : preset.buttonZone.contentAlign,
-        contentAlignMode: draft.buttonZone.contentAlignMode,
+        contentAlign: restoreRecommended || draft.buttonZone.contentAlignMode === "auto" ? preset.buttonZone.contentAlign : draft.buttonZone.contentAlign,
+        contentAlignMode: restoreRecommended ? "auto" : draft.buttonZone.contentAlignMode,
         templateId: draft.buttonZone.templateId,
         distribution: draft.buttonZone.distribution,
         // A button look carries its template's layout along, but the header card is a header
@@ -347,16 +347,16 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
     });
   }
 
-  function resetButtonColors() {
-    if (!buttons.some((button) => !button.use_auto_color)) return;
+  function resetButtonOverrides() {
+    if (!buttons.some((button) => !button.use_auto_color || button.icon_background_color)) return;
     commitDiscrete();
-    patchButtons((current) => current.map((button) => ({ ...button, use_auto_color: true })));
+    patchButtons((current) => current.map((button) => ({ ...button, use_auto_color: true, icon_background_color: "" })));
   }
 
   function addButton(type: string) {
     const def = actionDefs.find((item) => item.type === type) || actionDefs[actionDefs.length - 1];
     const id = `new-${crypto.randomUUID()}`;
-    const button: ButtonItem = { id, type: def.type, title: def.label, subtitle: "", url: "", message: def.message ? "Hola, quiero hacer una consulta." : "", icon: "", background_color: "#1f2937", text_color: "#ffffff", use_auto_color: true, position: buttons.length };
+    const button: ButtonItem = { id, type: def.type, title: def.label, subtitle: "", url: "", message: def.message ? "Hola, quiero hacer una consulta." : "", icon: "", icon_background_color: "", background_color: "#1f2937", text_color: "#ffffff", use_auto_color: true, position: buttons.length };
     commitDiscrete();
     patchButtons((current) => [...current, button]); setPanel({ buttonId: id });
   }
@@ -575,7 +575,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
             <button className="v2-panel-close" type="button" onClick={() => setPanel(null)}>×</button>
           </div>
           {panel === "templates" && <Templates selected={draft.buttonZone.templateId} onApply={applyPreset} />}
-          {panel === "buttons" && <ButtonDesign draft={draft} buttons={buttons} onZone={changeZone} onFont={(button_font) => change({ button_font })} onApplyButtonLook={applyButtonLook} onResetButtonColors={resetButtonColors} />}
+          {panel === "buttons" && <ButtonDesign draft={draft} buttons={buttons} onZone={changeZone} onFont={(button_font) => change({ button_font })} onApplyButtonLook={applyButtonLook} onResetButtonOverrides={resetButtonOverrides} />}
           {panel === "background" && <BackgroundControls draft={draft} tab={bgTab} onTab={setBgTab} onChange={change} onFile={(file) => openImageEditor("background", file)} onAdjust={() => openImageEditor("background")} hasImage={Boolean(backgroundImage)} />}
           {panel === "cover" && <CoverControls draft={draft} coverImage={coverImage} onChange={change} onCoverFile={(file) => openImageEditor("cover", file)} onAdjustCover={() => openImageEditor("cover")} onRemoveCover={() => {
             const input = document.getElementById("v2-cover-file") as HTMLInputElement | null;
@@ -694,18 +694,27 @@ function ButtonLookSwatch({ preset }: { preset: DesignPreset }) {
   </span>;
 }
 
-function ButtonDesign({ draft, buttons, onZone, onFont, onApplyButtonLook, onResetButtonColors }: { draft: LandingDraft; buttons: ButtonItem[]; onZone: (p: Partial<ButtonZoneStyle>) => void; onFont: (font: string) => void; onApplyButtonLook: (id: string) => void; onResetButtonColors: () => void }) {
+function ButtonDesign({ draft, buttons, onZone, onFont, onApplyButtonLook, onResetButtonOverrides }: { draft: LandingDraft; buttons: ButtonItem[]; onZone: (p: Partial<ButtonZoneStyle>) => void; onFont: (font: string) => void; onApplyButtonLook: (id: string, restoreRecommended?: boolean) => void; onResetButtonOverrides: () => void }) {
   const zone = draft.buttonZone;
   const alignmentPreset = DESIGN_PRESETS_V2.find((preset) => preset.id === zone.preset) || DESIGN_PRESETS_V2.find((preset) => preset.id === zone.templateId) || DESIGN_PRESETS_V2[0];
   const recommendedIcons = recommendedIconAppearance(zone.collection);
-  const customCount = buttons.filter((button) => !button.use_auto_color).length;
-  const inheritedCount = buttons.length - customCount;
+  const customColorCount = buttons.filter((button) => !button.use_auto_color).length;
+  const customIconBackgroundCount = buttons.filter((button) => Boolean(button.icon_background_color)).length;
+  const customVisualCount = buttons.filter((button) => !button.use_auto_color || button.icon_background_color).length;
   return (
     <div className="v2-fields">
-      <RecommendedStyles templateName={suggestedPreset(zone.templateId).name} onClick={() => onApplyButtonLook(suggestedPreset(zone.templateId).id)} />
+      <RecommendedStyles templateName={suggestedPreset(zone.templateId).name} onClick={() => onApplyButtonLook(suggestedPreset(zone.templateId).id, true)} />
+      <p className="v2-help" style={{ margin: 0 }}>Restaura el estilo general de los botones y pone la alineación en Auto. Los colores y fondos de ícono propios se conservan.</p>
+      {(customVisualCount > 0 || zone.contentAlignMode === "manual") && <div className="v2-scope-summary has-custom" role="status">
+        <b>Personalizaciones activas</b>
+        {zone.contentAlignMode === "manual" && <span>Alineación manual: {zone.contentAlign === "center" ? "Centro" : "Izquierda"}. Se conserva al cambiar de plantilla.</span>}
+        {customVisualCount > 0 && <span>{customVisualCount} {customVisualCount === 1 ? "botón tiene" : "botones tienen"} estilo propio ({[customColorCount > 0 && `${customColorCount} con color`, customIconBackgroundCount > 0 && `${customIconBackgroundCount} con fondo de ícono`].filter(Boolean).join(" · ")}).</span>}
+        {customVisualCount > 0 && <button type="button" className="v2-restore-all" onClick={onResetButtonOverrides}>↩ Quitar colores y fondos de ícono propios</button>}
+        {customVisualCount > 0 && <span>No cambia textos, enlaces ni íconos elegidos.</span>}
+      </div>}
       <fieldset>
         <legend>Plantilla de los botones</legend>
-        <p className="v2-help">Son las mismas plantillas del diseño general. Aplican forma, color, tipografía y efectos a la botonera. Los botones con color propio conservan su elección.</p>
+        <p className="v2-help">Son las mismas plantillas del diseño general. Aplican forma, color, tipografía y efectos a la botonera. Las opciones manuales y los estilos propios de cada botón se conservan.</p>
         <div className="v2-look-grid">
           {DESIGN_PRESETS_V2.map((preset) => {
             return <button type="button" key={preset.id} className={zone.preset === preset.id ? "active" : ""} onClick={() => onApplyButtonLook(preset.id)} aria-pressed={zone.preset === preset.id}>
@@ -717,13 +726,7 @@ function ButtonDesign({ draft, buttons, onZone, onFont, onApplyButtonLook, onRes
       </fieldset>
       <fieldset>
         <legend>Regla de color</legend>
-        {buttons.length > 0 && (
-          <div className={`v2-scope-summary ${customCount > 0 ? "has-custom" : ""} ${inheritedCount === 0 ? "none-inherited" : ""}`} role={customCount > 0 ? "status" : undefined}>
-            <b>{inheritedCount === 0 ? "El cambio no afectará ningún botón" : customCount > 0 ? `El cambio se aplicará a ${inheritedCount} de ${buttons.length}` : `El cambio se aplicará a los ${buttons.length} botones`}</b>
-            <span>{customCount === 0 ? "Todos usan el color del diseño general." : `${customCount} ${customCount === 1 ? "botón mantiene su color propio" : "botones mantienen su color propio"}.`}</span>
-            {customCount > 0 && <button type="button" className="v2-restore-all" onClick={onResetButtonColors}>↩ Restaurar todos al diseño general</button>}
-          </div>
-        )}
+        <p className="v2-help" style={{ margin: 0 }}>{customColorCount > 0 ? `${customColorCount} ${customColorCount === 1 ? "botón conserva" : "botones conservan"} su color propio.` : "Todos los botones siguen la regla general de color."}</p>
         <Choice
           active={draft.buttonZone.colorMode === "one"}
           swatch={draft.buttonZone.oneColor}
@@ -1142,6 +1145,12 @@ function ButtonControls({ button,draft,onChange,onDelete }: { button: ButtonItem
     <label>{def?.input === "phone" ? "Número" : def?.input === "email" ? "Email" : def?.input === "username" ? "Usuario" : "Enlace"}<input value={button.url} placeholder={def?.placeholder} onChange={(e)=>onChange({url:e.target.value})}/></label>
     {def?.message && <label>Mensaje de WhatsApp<textarea rows={3} value={button.message} onChange={(e)=>onChange({message:e.target.value})}/></label>}
 </EditorSection><EditorSection title="Ícono" tone="purple">    <IconPicker type={button.type} value={button.icon} onChange={(icon)=>onChange({icon})}/>
+    <fieldset>
+      <legend>Fondo del ícono</legend>
+      <Choice active={!button.icon_background_color} title="Diseño de la plantilla" note="Mantiene el estilo original del ícono." onClick={()=>onChange({icon_background_color:""})}/>
+      <Choice active={Boolean(button.icon_background_color)} swatch={button.icon_background_color || "#1f2937"} title="Color propio" note="Cambia solo el fondo de este ícono; el símbolo ajusta su contraste." onClick={()=>onChange({icon_background_color:button.icon_background_color || "#1f2937"})}/>
+      {button.icon_background_color && <ColorField label="Color del fondo" value={button.icon_background_color} onChange={(icon_background_color)=>onChange({icon_background_color})}/>}
+    </fieldset>
 </EditorSection>    <fieldset>
       <legend>Apariencia de este botón</legend>
       <Choice active={button.use_auto_color} swatch={globalColor} title="Usar el diseño general" note={globalDescription} onClick={()=>onChange({use_auto_color:true})}/>

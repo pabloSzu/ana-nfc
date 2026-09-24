@@ -22,6 +22,7 @@ type LandingAction = {
   background_color?: string | null;
   text_color?: string | null;
   icon_color?: string | null;
+  icon_background_color?: string | null;
   use_auto_color?: boolean | null;
 };
 
@@ -305,7 +306,12 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
                 }}
               >
                 <span className={`action-main action-main-${zone.contentAlign}`} style={zone.contentAlign === "center" ? { width: "100%", display: "grid", gridTemplateColumns: `${zone.iconSize}px minmax(0,1fr) ${zone.iconSize}px`, alignItems: "center", columnGap: 10 } : { width: "100%", display: "flex", alignItems: "center", justifyContent: "flex-start", gap: 10 }}>
-                  <span className="action-brand-icon" style={buttonIconStyle(zone.collection, bg, zone.iconSize, action.type, iconAppearance, isAuthentic, useNetworkAccent)}><ActionTypeIcon type={action.type} icon={action.icon} brandMark={iconAppearance === "brand" && !(isAuthentic && hasAuthenticLook(action.type))} /></span>
+                  <span className="action-brand-icon" style={{
+                    ...buttonIconStyle(zone.collection, bg, zone.iconSize, action.type, iconAppearance, isAuthentic, useNetworkAccent),
+                    ...(/^#[0-9a-f]{6}$/i.test(action.icon_background_color || "")
+                      ? { background: action.icon_background_color!, color: contrastTextColor(action.icon_background_color!) }
+                      : {}),
+                  }}><ActionTypeIcon type={action.type} icon={action.icon} brandMark={iconAppearance === "brand" && !(isAuthentic && hasAuthenticLook(action.type))} /></span>
                   <span className="action-copy" style={{ textAlign: zone.contentAlign === "center" ? "center" : "left" }}>
                     <span className="action-title">{action.title}</span>
                     {action.subtitle && <small style={{ fontSize: 11, opacity: 0.82, fontWeight: 600 }}>{action.subtitle}</small>}
