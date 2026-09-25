@@ -354,5 +354,8 @@
   cursor: pointer;
 }
 .v2-inline-action { display: flex; align-items: center; justify-content: center; gap: 7px; }
+.v2-inline-action.v2-adjust-image { min-height: 42px; border-color: #b9aff7; background: #f2efff; color: #5142c8; font-size: 12px; box-shadow: 0 2px 8px #6657e814; }
+.v2-inline-action.v2-adjust-image:hover { border-color: #8877ee; background: #eae5ff; }
+.v2-inline-action.v2-adjust-image:focus-visible { outline: 3px solid #9587f5; outline-offset: 2px; }
 .v2-inline-action i { width: 14px; height: 14px; border: 1px solid rgba(0,0,0,.12); border-radius: 50%; }
 .v2-reset-action { color: #5749d5; }

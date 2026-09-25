@@ -382,8 +382,11 @@ export function recommendedIconAppearance(collection: ButtonZoneStyle["collectio
   return isBrandIconCollection(collection) || collection === "brutal" ? "brand" : "minimal";
 }
 
-export function buttonIconStyle(collection: ButtonZoneStyle["collection"], bg: string, size: number, type?: string, appearance = recommendedIconAppearance(collection), isAuthentic = false, useNetworkAccent = true): CSSProperties {
+export function buttonIconStyle(collection: ButtonZoneStyle["collection"], bg: string, size: number, type?: string, appearance = recommendedIconAppearance(collection), isAuthentic = false, useNetworkAccent = true, hasCustomIcon = false): CSSProperties {
   const base: CSSProperties = { width: size, height: size, flexGrow: 0, flexShrink: 0, flexBasis: size, display: "inline-grid", placeItems: "center", lineHeight: 0 };
+  // The video play-button already contains YouTube's red shape. A second badge behind it
+  // turns the mark into a white triangle on a disc, which reads like YouTube Music.
+  if (appearance === "brand" && type === "youtube" && !hasCustomIcon) return { ...base, background: "transparent", border: "none", boxShadow: "none" };
   // Gated on `appearance === "brand"` — this used to fire for Instagram/Spotify on Vibrante no
   // matter which icon appearance was selected, so "Ícono minimalista" vs "Ícono real" had no
   // visible effect on their badge at all (reported: "casi ni cambian los iconos").

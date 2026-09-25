@@ -415,6 +415,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; letter-spacing: -0.01e
    smaller still (64% box size, ~56% resulting ink) because they're solid rounded squares, which
    need to stay further under the ~70.7% (1/√2) a circle can inscribe before its corners clip. */
 .action-type-icon-youtube { width: 65%; height: 65%; }
+.action-type-icon-youtube-lockup { width: 88%; height: 88%; }
 .action-type-icon-spotify { width: 64%; height: 64%; }
 .action-type-icon-telegram { width: 64%; height: 64%; }
 .action-type-icon-facebook { width: 62%; height: 62%; }

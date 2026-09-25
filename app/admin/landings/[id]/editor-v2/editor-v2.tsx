@@ -814,7 +814,7 @@ function BackgroundControls({ draft, tab, onTab, onChange, onFile, onAdjust, has
 
     {tab === "image" && <EditorSection title="Imagen y encuadre" tone="purple">
       <label className="v2-upload">{hasImage ? "Cambiar imagen" : "Elegir imagen"}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => { onFile(event.target.files?.[0]); event.target.value = ""; }} /></label>
-      {hasImage && <button type="button" className="v2-inline-action" onClick={onAdjust}>Ajustar encuadre del fondo</button>}
+      {hasImage && <button type="button" className="v2-inline-action v2-adjust-image" onClick={onAdjust}>Ajustar encuadre del fondo</button>}
       <p className="v2-help">El recuadro muestra una pantalla de ejemplo. Revisá el resultado en los tamaños del celular.</p>
       <Range label="Oscurecer imagen" min={0} max={.85} step={.01} value={draft.bgPosition.tint} onChange={(tint) => updatePos({ tint })} />
     </EditorSection>}
@@ -859,7 +859,7 @@ function CoverControls({ draft, coverImage, onChange, onCoverFile, onAdjustCover
     {isPhoto && <>
       <label className="v2-upload">{coverImage ? "Cambiar foto" : "Subir foto de portada"}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => { onCoverFile(event.target.files?.[0]); event.target.value = ""; }} /></label>
       {coverImage && <>
-        <button type="button" className="v2-inline-action" onClick={onAdjustCover}>Ajustar encuadre de la portada</button>
+        <button type="button" className="v2-inline-action v2-adjust-image" onClick={onAdjustCover}>Ajustar encuadre de la portada</button>
         {current === "fade" && <fieldset className="v2-editor-section" data-tone="blue">
           <legend>Tamaño de portada</legend>
           <div className="v2-segment">{COVER_SIZES.map((option) => <button type="button" key={option.id} className={style.size === option.id ? "active" : ""} onClick={() => updateCover({ size: option.id })}>{option.label}</button>)}</div>
@@ -1035,7 +1035,7 @@ function LogoControls({ draft, logoImage, onChange, onLogo, onAdjustLogo, onRemo
   const primary = draft.primary_color || "#1f2937";
   const update = (patch: Partial<LogoStyle>) => onChange({ logoStyle: { ...style, ...patch } });
   return <div className="v2-fields">
-    <div className="v2-logo-editor"><div style={{ ...logoFrameStyle(style, primary), borderRadius: logoBorderRadius(style.shape, 76), fontSize: logoLetterSize(76, style.initials), fontFamily: resolveTextFont(draft.titleStyle.font) }}>{logoImage ? <span style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${style.zoom * 100}%`, backgroundPosition: `${style.x}% ${style.y}%` }} /> : <LogoInitials font={draft.titleStyle.font}>{logoInitials(draft.business_name, style.initials)}</LogoInitials>}</div><span><label className="v2-upload">{logoImage ? "Cambiar imagen" : "Elegir imagen"}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => { onLogo(event.target.files?.[0]); event.target.value = ""; }} /></label>{logoImage && <><button type="button" className="v2-inline-action" onClick={onAdjustLogo}>Ajustar encuadre</button><button type="button" className="v2-delete" onClick={onRemoveLogo}>Quitar</button></>}</span></div>
+    <div className="v2-logo-editor"><div style={{ ...logoFrameStyle(style, primary), borderRadius: logoBorderRadius(style.shape, 76), fontSize: logoLetterSize(76, style.initials), fontFamily: resolveTextFont(draft.titleStyle.font) }}>{logoImage ? <span style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${style.zoom * 100}%`, backgroundPosition: `${style.x}% ${style.y}%` }} /> : <LogoInitials font={draft.titleStyle.font}>{logoInitials(draft.business_name, style.initials)}</LogoInitials>}</div><span><label className="v2-upload">{logoImage ? "Cambiar imagen" : "Elegir imagen"}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => { onLogo(event.target.files?.[0]); event.target.value = ""; }} /></label>{logoImage && <><button type="button" className="v2-inline-action v2-adjust-image" onClick={onAdjustLogo}>Ajustar encuadre</button><button type="button" className="v2-delete" onClick={onRemoveLogo}>Quitar</button></>}</span></div>
     <RecommendedStyles templateName={preset.name} onClick={() => onChange({ logoStyle: { ...style, ...logoTreatmentPatch("template", draft.buttonZone.templateId), ...preset.logo, zoom: 1, x: 50, y: 50 } })} />
     <fieldset className="v2-logo-section v2-logo-section-bg">
       <legend>1 · Color de fondo</legend>

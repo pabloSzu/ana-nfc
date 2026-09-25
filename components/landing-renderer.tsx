@@ -7,7 +7,7 @@ import {
 } from "@/lib/landing-catalog";
 import { getFontFamily, resolveFontWeight, resolveTextFont, FontLinks, LogoInitials } from "@/lib/fonts";
 import { buttonCollectionStyle, buttonCollectionWidth, buttonIconStyle, hasAuthenticLook, resolveButtonColors } from "@/lib/design-presets";
-import { ActionTypeIcon } from "@/components/action-icons";
+import { ActionTypeIcon, hasCustomActionIcon } from "@/components/action-icons";
 import { IconEdit, IconImage } from "@/components/icons";
 import type { CSSProperties } from "react";
 
@@ -307,7 +307,7 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
               >
                 <span className={`action-main action-main-${zone.contentAlign}`} style={zone.contentAlign === "center" ? { width: "100%", display: "grid", gridTemplateColumns: `${zone.iconSize}px minmax(0,1fr) ${zone.iconSize}px`, alignItems: "center", columnGap: 10 } : { width: "100%", display: "flex", alignItems: "center", justifyContent: "flex-start", gap: 10 }}>
                   <span className="action-brand-icon" style={{
-                    ...buttonIconStyle(zone.collection, bg, zone.iconSize, action.type, iconAppearance, isAuthentic, useNetworkAccent),
+                    ...buttonIconStyle(zone.collection, bg, zone.iconSize, action.type, iconAppearance, isAuthentic, useNetworkAccent, hasCustomActionIcon(action.icon)),
                     ...(/^#[0-9a-f]{6}$/i.test(action.icon_background_color || "")
                       ? { background: action.icon_background_color!, color: contrastTextColor(action.icon_background_color!) }
                       : {}),

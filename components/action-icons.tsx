@@ -25,10 +25,13 @@ function SpotifyWavesIcon({ className }: { className?: string }) {
   );
 }
 
-function YoutubePlayIcon({ className }: { className?: string }) {
+// The supplied video mark includes the red rounded rectangle, not just the play triangle.
+// A thin white keyline keeps that red silhouette visible on YouTube-red buttons.
+function YoutubeVideoIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M9.25 7.25 17 12l-7.75 4.75z" fill="currentColor" />
+    <svg className={`${className || ""} action-type-icon-youtube-lockup`} viewBox="-4 -4 264 188" aria-hidden="true" focusable="false">
+      <path d="M250.346 28.075A32.18 32.18 0 0 0 227.69 5.418C207.824 0 127.87 0 127.87 0S47.912.164 28.046 5.582A32.18 32.18 0 0 0 5.39 28.24c-6.009 35.298-8.34 89.084.165 122.97a32.18 32.18 0 0 0 22.656 22.657c19.866 5.418 99.822 5.418 99.822 5.418s79.955 0 99.82-5.418a32.18 32.18 0 0 0 22.657-22.657c6.338-35.348 8.291-89.1-.164-123.134Z" fill="#ff0000" stroke="#ffffff" strokeWidth="7" />
+      <path d="m102.421 128.06 66.328-38.418-66.328-38.418z" fill="#ffffff" />
     </svg>
   );
 }
@@ -221,21 +224,26 @@ export const CUSTOM_ICON_OPTIONS: { id: string; label: string; category: IconCat
   { id: "zap", label: "Rayo", category: "Otros" },
 ];
 
+export function hasCustomActionIcon(icon?: string | null): boolean {
+  return Boolean(icon && customIcons[icon]);
+}
+
 export function ActionTypeIcon({ type, icon, className, brandMark = false }: { type: string; icon?: string | null; className?: string; brandMark?: boolean }) {
-  const iconKey = icon && customIcons[icon] ? icon : (actionIcons[type] ? type : "url");
-  const sharedClassName = `action-type-icon action-type-icon-${iconKey}${icon && customIcons[icon] ? " action-type-icon-custom" : ""}${className ? ` ${className}` : ""}`;
-  if (brandMark && !icon && type === "spotify") return <SpotifyWavesIcon className={sharedClassName} />;
-  if (brandMark && !icon && type === "youtube") return <YoutubePlayIcon className={sharedClassName} />;
+  const hasCustomIcon = hasCustomActionIcon(icon);
+  const iconKey = hasCustomIcon ? icon! : (actionIcons[type] ? type : "url");
+  const sharedClassName = `action-type-icon action-type-icon-${iconKey}${hasCustomIcon ? " action-type-icon-custom" : ""}${className ? ` ${className}` : ""}`;
+  if (brandMark && !hasCustomIcon && type === "spotify") return <SpotifyWavesIcon className={sharedClassName} />;
+  if (brandMark && !hasCustomIcon && type === "youtube") return <YoutubeVideoIcon className={sharedClassName} />;
   // The lockup gets its own class on top: it fills the whole box (it IS the badge), while the
   // bare handshake above sits inset like every other glyph.
   // Google's own flat four-color G, from Flat Color Icons — the mark Google itself uses at this
   // size. Unlike the Maps pin and the Mercado Pago lockup, which are inlined from the brands'
   // own files, this one needs no inlining: it is a handful of plain paths with no gradients,
   // filters or ids, so it costs nothing and cannot collide with another SVG's defs.
-  if (brandMark && !icon && type === "review") return <FcGoogle className={sharedClassName} />;
-  if (brandMark && !icon && type === "maps") return <GoogleMapsIcon className={`${sharedClassName} action-type-icon-maps-pin`} />;
-  if (brandMark && !icon && type === "mercadopago") return <MercadoPagoIcon className={`${sharedClassName} action-type-icon-mp-lockup`} />;
-  const Icon = (icon && customIcons[icon]) || actionIcons[type] || FiLink;
+  if (brandMark && !hasCustomIcon && type === "review") return <FcGoogle className={sharedClassName} />;
+  if (brandMark && !hasCustomIcon && type === "maps") return <GoogleMapsIcon className={`${sharedClassName} action-type-icon-maps-pin`} />;
+  if (brandMark && !hasCustomIcon && type === "mercadopago") return <MercadoPagoIcon className={`${sharedClassName} action-type-icon-mp-lockup`} />;
+  const Icon = (hasCustomIcon && icon ? customIcons[icon] : null) || actionIcons[type] || FiLink;
   // Feather-style (Fi) icons draw with a 2px stroke by default, which reads as thin/hard to
   // make out at button-icon sizes — bumping it here (ignored by the solid-fill Fa6 brand marks,
   // which have no stroke to speak of) makes every outline icon read bolder across the board.

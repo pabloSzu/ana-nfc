@@ -20,6 +20,14 @@
 .image-adjust-position { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .image-adjust-position label { display: grid; gap: 5px; font-size: 11px; font-weight: 750; }
 .image-adjust-slider input, .image-adjust-position input { width: 100%; accent-color: #6657e8; }
+/* Native range tracks extend under the thumb, so the dot appears to stop short at 0 and 100.
+   Draw the visible track between the thumb's actual endpoint centers instead. */
+.image-adjust-position input[type="range"] { appearance: none; display: block; height: 18px; margin: 0; background: linear-gradient(#c8c9d6, #c8c9d6) center / calc(100% - 16px) 4px no-repeat; cursor: pointer; }
+.image-adjust-position input[type="range"]::-webkit-slider-runnable-track { height: 4px; background: transparent; }
+.image-adjust-position input[type="range"]::-webkit-slider-thumb { appearance: none; box-sizing: border-box; width: 16px; height: 16px; margin-top: -6px; border: 2px solid #fff; border-radius: 50%; background: #6657e8; box-shadow: 0 1px 4px #3336; }
+.image-adjust-position input[type="range"]::-moz-range-track { height: 4px; background: transparent; }
+.image-adjust-position input[type="range"]::-moz-range-thumb { box-sizing: border-box; width: 16px; height: 16px; border: 2px solid #fff; border-radius: 50%; background: #6657e8; box-shadow: 0 1px 4px #3336; }
+.image-adjust-position input:disabled { cursor: not-allowed; opacity: .4; }
 .image-adjust-note { margin: 0; color: #737887; font-size: 11px; line-height: 1.4; }
 .image-adjust-actions { display: flex; justify-content: flex-end; gap: 9px; }
 @media (max-width: 500px) { .image-adjust-dialog { padding: 16px; gap: 12px; } .image-adjust-position { grid-template-columns: 1fr; gap: 8px; } }
