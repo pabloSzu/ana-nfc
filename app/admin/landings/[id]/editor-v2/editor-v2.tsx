@@ -10,7 +10,7 @@ import DeleteLandingButton from "@/app/admin/delete-landing-button";
 import LandingRenderer, { LandingPhotoBackground, type LandingEditControls } from "@/components/landing-renderer";
 import ScaledPhoneCanvas from "@/components/scaled-phone-canvas";
 import { compressImage } from "@/lib/compress-image";
-import { headerCardOn, parseDistribution, type DistributionStyle, QUICK_SOCIALS, quickSocialHref, type QuickSocial, AUTO_COLORS, contrastTextColor, getAllActions, parseCoverStyle, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize, resolveTextFont, type BackgroundPosition, type ButtonZoneStyle, type CoverStyle, type LogoStyle, type SubtitleStyle, type TitleStyle } from "@/lib/landing-catalog";
+import { headerCardOn, parseDistribution, type DistributionStyle, QUICK_SOCIALS, quickSocialHref, type QuickSocial, AUTO_COLORS, contrastTextColor, getAllActions, parseCoverStyle, parseLogoStyle, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize, resolveTextFont, type BackgroundPosition, type ButtonZoneStyle, type CoverStyle, type LogoStyle, type SubtitleStyle, type TitleStyle } from "@/lib/landing-catalog";
 import FontPicker from "../font-picker";
 import { getFontWeights, LogoInitials, resolveFontWeight } from "@/lib/fonts";
 import IconPicker from "../icon-picker";
@@ -115,6 +115,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
   const [deletedButton, setDeletedButton] = useState<{ button: ButtonItem; index: number } | null>(null);
   const restoreButtonRef = useRef<HTMLButtonElement>(null);
   const [leaveOpen, setLeaveOpen] = useState(false);
+  const [restoreDesignOpen, setRestoreDesignOpen] = useState(false);
   // Purely a personal viewing preference for the app's OWN chrome — nothing to do with the
   // landing being edited — shared with /admin via the same localStorage key (theme-scene.tsx),
   // so switching it in either place keeps both in sync.
@@ -291,39 +292,38 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
     requestAnimationFrame(() => buttonElements.current.get(restoredId)?.querySelector("a")?.focus());
   }
 
-  function applyPreset(id: string) {
+  function applyPreset(id: string, restoreOverrides = false) {
     const preset = DESIGN_PRESETS_V2.find((item) => item.id === id);
     if (!preset) return;
     commitDiscrete();
     patchDraft({
       primary_color: preset.accent, button_font: preset.buttonFont,
-      background_type: "gradient", background_color: preset.bg1, background_gradient_to: preset.bg2,
-      // Picking any look — full template or just the button look below — always applies its
-      // own recommended color rule and icon appearance now. This used to be "sticky" (kept
-      // whatever you'd manually set before) whenever only the button look changed, on the
-      // theory that a deliberate choice should survive a smaller change. In practice that meant
-      // the exact same click (pick a button look) behaved differently depending on invisible
-      // state nobody could see — confusing on its own terms. One predictable rule instead:
-      // picking a look always gives you that look, in full; Ctrl+Z is the way back if it wasn't
-      // what you wanted, same as any other edit here.
+      background_type: preset.background.startsWith("linear-gradient") ? "gradient" : "color",
+      background_color: preset.bg1, background_gradient_to: preset.bg2,
       buttonZone: {
         ...draft.buttonZone,
         ...preset.buttonZone,
-        contentAlign: draft.buttonZone.contentAlignMode === "manual" ? draft.buttonZone.contentAlign : preset.buttonZone.contentAlign,
-        contentAlignMode: draft.buttonZone.contentAlignMode,
+        contentAlign: preset.buttonZone.contentAlign,
+        contentAlignMode: "auto",
         colorMode: preset.buttonZone.colorMode,
         oneColor: preset.oneColor,
         colorModeManual: false,
         iconAppearance: recommendedIconAppearance(preset.buttonZone.collection),
         templateId: id,
-        distribution: preset.buttonZone.distribution,
+        distribution: parseDistribution(preset.buttonZone.distribution, preset.buttonZone.layout),
         headerCard: preset.buttonZone.layout === "profile-card",
       },
-      titleStyle: { ...draft.titleStyle, ...preset.title, color: preset.foreground }, subtitleStyle: { ...draft.subtitleStyle, ...preset.subtitle, color: preset.foreground }, logoStyle: { ...draft.logoStyle, ...logoTreatmentPatch("template", id), ...preset.logo },
+      titleStyle: { ...draft.titleStyle, ...preset.title, color: preset.foreground, bgMode: "none", letterSpacing: undefined, eyebrowColor: undefined, eyebrowSize: 10, eyebrowWeight: 600 },
+      subtitleStyle: { ...draft.subtitleStyle, ...preset.subtitle, color: preset.foreground, bgMode: "none", letterSpacing: undefined },
+      logoStyle: parseLogoStyle({ ...logoTreatmentPatch("template", id), ...preset.logo, zoom: draft.logoStyle.zoom, x: draft.logoStyle.x, y: draft.logoStyle.y }),
+      coverStyle: { ...draft.coverStyle, enabled: false },
     });
+    // A template switch preserves deliberate per-button exceptions. Only the explicitly
+    // confirmed global restore clears them; both actions stay undoable as one history step.
+    if (restoreOverrides) patchButtons((current) => current.map((button) => ({ ...button, use_auto_color: true, icon_background_color: "" })));
   }
 
-  function applyButtonLook(id: string, restoreRecommended = false) {
+  function applyButtonLook(id: string) {
     const preset = DESIGN_PRESETS_V2.find((item) => item.id === id);
     if (!preset) return;
     commitDiscrete();
@@ -332,8 +332,8 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
       buttonZone: {
         ...draft.buttonZone,
         ...preset.buttonZone,
-        contentAlign: restoreRecommended || draft.buttonZone.contentAlignMode === "auto" ? preset.buttonZone.contentAlign : draft.buttonZone.contentAlign,
-        contentAlignMode: restoreRecommended ? "auto" : draft.buttonZone.contentAlignMode,
+        contentAlign: preset.buttonZone.contentAlign,
+        contentAlignMode: "auto",
         templateId: draft.buttonZone.templateId,
         distribution: draft.buttonZone.distribution,
         // A button look carries its template's layout along, but the header card is a header
@@ -574,7 +574,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
             <div><span>Paso simple</span><h2>{panelTitle(panel)}</h2></div>
             <button className="v2-panel-close" type="button" onClick={() => setPanel(null)}>×</button>
           </div>
-          {panel === "templates" && <Templates selected={draft.buttonZone.templateId} onApply={applyPreset} />}
+          {panel === "templates" && <Templates selected={draft.buttonZone.templateId} onApply={(id) => applyPreset(id)} onRestore={() => setRestoreDesignOpen(true)} />}
           {panel === "buttons" && <ButtonDesign draft={draft} buttons={buttons} onZone={changeZone} onFont={(button_font) => change({ button_font })} onApplyButtonLook={applyButtonLook} onResetButtonOverrides={resetButtonOverrides} />}
           {panel === "background" && <BackgroundControls draft={draft} tab={bgTab} onTab={setBgTab} onChange={change} onFile={(file) => openImageEditor("background", file)} onAdjust={() => openImageEditor("background")} hasImage={Boolean(backgroundImage)} />}
           {panel === "cover" && <CoverControls draft={draft} coverImage={coverImage} onChange={change} onCoverFile={(file) => openImageEditor("cover", file)} onAdjustCover={() => openImageEditor("cover")} onRemoveCover={() => {
@@ -613,6 +613,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
       </div>
 
       {imageEditor && <ImageAdjustDialog key={`${imageEditor.kind}-${imageEditor.src}`} kind={imageEditor.kind} src={imageEditor.src} shape={imageEditor.kind === "logo" ? draft.logoStyle.shape : undefined} coverMode={draft.coverStyle.mode} initial={imageEditor.initial} onApply={applyImageEditor} onCancel={cancelImageEditor} />}
+      {restoreDesignOpen && <div className="v2-modal-backdrop"><div className="v2-modal" role="dialog" aria-modal="true" aria-labelledby="v2-restore-title"><div className="v2-modal-icon">↩</div><h2 id="v2-restore-title">Restaurar diseño de {suggestedPreset(draft.buttonZone.templateId).name}</h2><p>Vuelve al fondo, encabezado, logo, textos y botones recomendados. Quita colores propios de cada botón. Conserva textos, enlaces, íconos elegidos e imágenes subidas; las fotos de fondo y portada quedan ocultas, no borradas.</p><button type="button" className="v2-save" onClick={() => { applyPreset(suggestedPreset(draft.buttonZone.templateId).id, true); setRestoreDesignOpen(false); }}>Restaurar diseño</button><button type="button" className="v2-ghost" onClick={() => setRestoreDesignOpen(false)}>Cancelar</button></div></div>}
       {deletedButton && <div className="v2-delete-notice"><span role="status">Botón eliminado: <b>{deletedButton.button.title}</b></span><button ref={restoreButtonRef} type="button" onClick={restoreDeletedButton}>Deshacer</button><button type="button" aria-label="Cerrar aviso" onClick={() => setDeletedButton(null)}>×</button></div>}
       {leaveOpen && <div className="v2-modal-backdrop"><div className="v2-modal"><div className="v2-modal-icon">!</div><h2>Tenés cambios sin guardar</h2><p>Si salís ahora, vas a perder los últimos cambios de diseño.</p><button className="v2-save" form="v2-save" name="return_to" value="/admin">Guardar y salir</button><Link href="/admin" className="v2-danger">Salir sin guardar</Link><button className="v2-ghost" onClick={() => { setLeaveOpen(false); setPreview(false); }}>Seguir editando</button></div></div>}
     </main>
@@ -669,7 +670,22 @@ function TemplateSwatch({ preset }: { preset: DesignPreset }) {
   );
 }
 
-function Templates({ selected, onApply }: { selected: string; onApply: (id: string) => void }) { return <div><p className="v2-help">Todas mantienen la estructura simple tipo Linktree: logo, título, subtítulo y botones centrados. La miniatura muestra el resultado real de colores, tipografía y botones.</p><div className="v2-template-grid">{DESIGN_PRESETS_V2.map((preset) => <button key={preset.id} type="button" className={selected === preset.id ? "selected" : ""} onClick={() => onApply(preset.id)}><TemplateSwatch preset={preset} /><b>{preset.name}</b><small>{preset.description}</small></button>)}</div></div>; }
+function Templates({ selected, onApply, onRestore }: { selected: string; onApply: (id: string) => void; onRestore: () => void }) {
+  const current = suggestedPreset(selected);
+  return <div className="v2-fields">
+    <div className="v2-template-restore">
+      <span>Diseño actual: <strong>{current.name}</strong></span>
+      <button type="button" className="v2-recommended-styles" onClick={onRestore}>
+        <span className="v2-recommended-icon" aria-hidden="true"><FiZap /></span>
+        <span className="v2-recommended-copy"><strong>Restaurar diseño recomendado</strong><small>De {current.name}, para toda la landing</small></span>
+        <FiArrowUpRight className="v2-recommended-arrow" aria-hidden="true" />
+      </button>
+      <p className="v2-help">Restablece la apariencia completa sin borrar textos, enlaces ni imágenes. Podés deshacerlo.</p>
+    </div>
+    <p className="v2-help">Elegí una plantilla para aplicar su fondo, encabezado, logo, textos y botones. Se conservan los colores propios de botones individuales y las fotos subidas (aunque la plantilla muestre su fondo recomendado).</p>
+    <div className="v2-template-grid">{DESIGN_PRESETS_V2.map((preset) => <button key={preset.id} type="button" className={selected === preset.id ? "selected" : ""} onClick={() => selected === preset.id ? onRestore() : onApply(preset.id)} aria-pressed={selected === preset.id}><TemplateSwatch preset={preset} /><b>{preset.name}</b><small>{preset.description}</small></button>)}</div>
+  </div>;
+}
 
 function ButtonLookSwatch({ preset }: { preset: DesignPreset }) {
   const iconAppearance = recommendedIconAppearance(preset.buttonZone.collection);
@@ -694,36 +710,39 @@ function ButtonLookSwatch({ preset }: { preset: DesignPreset }) {
   </span>;
 }
 
-function ButtonDesign({ draft, buttons, onZone, onFont, onApplyButtonLook, onResetButtonOverrides }: { draft: LandingDraft; buttons: ButtonItem[]; onZone: (p: Partial<ButtonZoneStyle>) => void; onFont: (font: string) => void; onApplyButtonLook: (id: string, restoreRecommended?: boolean) => void; onResetButtonOverrides: () => void }) {
+function ButtonDesign({ draft, buttons, onZone, onFont, onApplyButtonLook, onResetButtonOverrides }: { draft: LandingDraft; buttons: ButtonItem[]; onZone: (p: Partial<ButtonZoneStyle>) => void; onFont: (font: string) => void; onApplyButtonLook: (id: string) => void; onResetButtonOverrides: () => void }) {
   const zone = draft.buttonZone;
   const alignmentPreset = DESIGN_PRESETS_V2.find((preset) => preset.id === zone.preset) || DESIGN_PRESETS_V2.find((preset) => preset.id === zone.templateId) || DESIGN_PRESETS_V2[0];
   const recommendedIcons = recommendedIconAppearance(zone.collection);
   const customColorCount = buttons.filter((button) => !button.use_auto_color).length;
   const customIconBackgroundCount = buttons.filter((button) => Boolean(button.icon_background_color)).length;
   const customVisualCount = buttons.filter((button) => !button.use_auto_color || button.icon_background_color).length;
+  const selectedSize = SIZES.find((item) => Object.entries(item.patch).every(([key, value]) => zone[key as keyof typeof item.patch] === value))?.label;
+  const currentButtonLook = DESIGN_PRESETS_V2.find((preset) => preset.id === zone.preset)?.name || "Personalizado";
+  const recommendedSize = DESIGN_PRESETS_V2.find((preset) => preset.id === zone.preset)?.buttonZone;
+  const usesRecommendedSize = Boolean(recommendedSize && zone.height === recommendedSize.height && zone.textSize === recommendedSize.textSize && zone.iconSize === recommendedSize.iconSize && zone.gap === recommendedSize.gap);
   return (
     <div className="v2-fields">
-      <RecommendedStyles templateName={suggestedPreset(zone.templateId).name} onClick={() => onApplyButtonLook(suggestedPreset(zone.templateId).id, true)} />
-      <p className="v2-help" style={{ margin: 0 }}>Restaura el estilo general de los botones y pone la alineación en Auto. Los colores y fondos de ícono propios se conservan.</p>
+      <p className="v2-help" style={{ margin: 0 }}>Cambiar el diseño de los botones aplica también sus tamaños y alineación. Tus textos, enlaces y estilos propios de cada botón se conservan.</p>
       {(customVisualCount > 0 || zone.contentAlignMode === "manual") && <div className="v2-scope-summary has-custom" role="status">
         <b>Personalizaciones activas</b>
-        {zone.contentAlignMode === "manual" && <span>Alineación manual: {zone.contentAlign === "center" ? "Centro" : "Izquierda"}. Se conserva al cambiar de plantilla.</span>}
+        {zone.contentAlignMode === "manual" && <span>Alineación manual: {zone.contentAlign === "center" ? "Centro" : "Izquierda"}. Se reemplaza si elegís otra plantilla.</span>}
         {customVisualCount > 0 && <span>{customVisualCount} {customVisualCount === 1 ? "botón tiene" : "botones tienen"} estilo propio ({[customColorCount > 0 && `${customColorCount} con color`, customIconBackgroundCount > 0 && `${customIconBackgroundCount} con fondo de ícono`].filter(Boolean).join(" · ")}).</span>}
         {customVisualCount > 0 && <button type="button" className="v2-restore-all" onClick={onResetButtonOverrides}>↩ Quitar colores y fondos de ícono propios</button>}
         {customVisualCount > 0 && <span>No cambia textos, enlaces ni íconos elegidos.</span>}
       </div>}
-      <fieldset>
-        <legend>Plantilla de los botones</legend>
-        <p className="v2-help">Son las mismas plantillas del diseño general. Aplican forma, color, tipografía y efectos a la botonera. Las opciones manuales y los estilos propios de cada botón se conservan.</p>
-        <div className="v2-look-grid">
-          {DESIGN_PRESETS_V2.map((preset) => {
-            return <button type="button" key={preset.id} className={zone.preset === preset.id ? "active" : ""} onClick={() => onApplyButtonLook(preset.id)} aria-pressed={zone.preset === preset.id}>
+      <details className="v2-button-look-picker" key={zone.preset}>
+        <summary><span><strong>Diseño de botones: {currentButtonLook}</strong><small>Elegí otro estilo para toda la botonera</small></span></summary>
+        <div className="v2-button-look-content">
+          <p className="v2-help">Aplica forma, color, tipografía, tamaño y alineación. Los colores propios de botones individuales se conservan.</p>
+          <div className="v2-look-grid">
+            {DESIGN_PRESETS_V2.map((preset) => <button type="button" key={preset.id} className={zone.preset === preset.id ? "active" : ""} onClick={() => onApplyButtonLook(preset.id)} aria-pressed={zone.preset === preset.id}>
               <ButtonLookSwatch preset={preset} />
               <b>{preset.name}</b>
-            </button>;
-          })}
+            </button>)}
+          </div>
         </div>
-      </fieldset>
+      </details>
       <fieldset>
         <legend>Regla de color</legend>
         <p className="v2-help" style={{ margin: 0 }}>{customColorCount > 0 ? `${customColorCount} ${customColorCount === 1 ? "botón conserva" : "botones conservan"} su color propio.` : "Todos los botones siguen la regla general de color."}</p>
@@ -768,7 +787,7 @@ function ButtonDesign({ draft, buttons, onZone, onFont, onApplyButtonLook, onRes
         />
       </fieldset>
       <div className="v2-fields-row">
-        <fieldset><legend>Tamaño</legend><div className="v2-segment">{SIZES.map((item) => <button type="button" className={draft.buttonZone.height === item.patch.height ? "active" : ""} key={item.label} onClick={() => onZone(item.patch)}>{item.label}</button>)}</div></fieldset>
+        <fieldset><legend>Tamaño de botones</legend><div className="v2-segment">{SIZES.map((item) => <button type="button" className={selectedSize === item.label ? "active" : ""} aria-pressed={selectedSize === item.label} key={item.label} onClick={() => onZone(item.patch)}>{item.label}</button>)}</div><p className="v2-help" style={{ margin: "8px 0 0", fontSize: 11 }}>{selectedSize ? "Incluye alto, texto, ícono y espacio." : usesRecommendedSize ? `Tamaño recomendado por ${currentButtonLook}.` : "Tamaño personalizado; ajustalo abajo."}</p></fieldset>
         <fieldset>
           <legend>Alineación</legend>
           <div className="v2-segment">
@@ -776,11 +795,11 @@ function ButtonDesign({ draft, buttons, onZone, onFont, onApplyButtonLook, onRes
             <button type="button" className={zone.contentAlignMode === "manual" && zone.contentAlign === "center" ? "active" : ""} aria-pressed={zone.contentAlignMode === "manual" && zone.contentAlign === "center"} onClick={() => onZone({ contentAlignMode: "manual", contentAlign: "center" })}>Centro</button>
             <button type="button" className={zone.contentAlignMode === "manual" && zone.contentAlign === "left" ? "active" : ""} aria-pressed={zone.contentAlignMode === "manual" && zone.contentAlign === "left"} onClick={() => onZone({ contentAlignMode: "manual", contentAlign: "left" })}>Izq.</button>
           </div>
-          <p className="v2-help" style={{ margin: "8px 0 0", fontSize: 11 }}>{zone.contentAlignMode === "auto" ? `Recomendado por ${alignmentPreset.name}.` : "Se mantiene aunque cambies de plantilla."}</p>
+          <p className="v2-help" style={{ margin: "8px 0 0", fontSize: 11 }}>{zone.contentAlignMode === "auto" ? `Recomendado por ${alignmentPreset.name}.` : "Es una edición manual; otra plantilla aplicará su propia alineación."}</p>
         </fieldset>
       </div>
       <details className="v2-advanced">
-        <summary>Más opciones</summary>
+        <summary><span><strong>Personalizar medidas y tipografía</strong><small>Alto, espacios, tamaño de íconos y texto</small></span></summary>
         <div className="v2-fields" style={{ marginTop: 10 }}>
           <FontPicker label="Tipografía" value={draft.button_font || "modern"} onChange={onFont} usage="buttons" previewText={buttons[0]?.title || "Conocé mi trabajo"} recommended={suggestedPreset(zone.templateId).buttonFont} />
           <div className="v2-fields-row">
@@ -919,7 +938,6 @@ function DistributionControls({ draft, onZone }: { draft: LandingDraft; onZone: 
   const update = (patch: Partial<DistributionStyle>) => onZone({ distribution: { ...style, ...patch } });
   return <div className="v2-fields">
     <p className="v2-help">Ajustá el aire entre los elementos. El contenido conserva su orden y se adapta al celular.</p>
-    <RecommendedStyles templateName={suggestedPreset(draft.buttonZone.templateId).name} onClick={()=>onZone({distribution:suggestedPreset(draft.buttonZone.templateId).buttonZone.distribution})} />
 <EditorSection title="Posición y espacios" tone="blue">    <div className="v2-segment">{[
       {name:"Compacto",top:48,logoGap:10,buttonsGap:4,socialsGap:6},
       {name:"Equilibrado",top:64,logoGap:18,buttonsGap:10,socialsGap:12},
@@ -1005,14 +1023,6 @@ function suggestedPreset(templateId: string): DesignPreset {
   return DESIGN_PRESETS_V2.find((item) => item.id === templateId) || DESIGN_PRESETS_V2[0];
 }
 
-function RecommendedStyles({ templateName, onClick }: { templateName: string; onClick: () => void }) {
-  return <button type="button" className="v2-recommended-styles" onClick={onClick}>
-    <span className="v2-recommended-icon" aria-hidden="true"><FiZap /></span>
-    <span className="v2-recommended-copy"><strong>Usar estilos recomendados</strong><small>Plantilla: {templateName}</small></span>
-    <FiArrowUpRight className="v2-recommended-arrow" aria-hidden="true" />
-  </button>;
-}
-
 function FontWeightControl({font,value,onChange}:{font:string;value:number;onChange:(weight:number)=>void}) {
   const weights=getFontWeights(font);
   const selected=resolveFontWeight(font,value);
@@ -1025,18 +1035,16 @@ function LetterSpacingControl({value,defaultValue=0,onChange}:{value?:number;def
   return <div className="v2-letter-spacing"><label className="v2-range"><span>Separación entre letras<b>{Number(spacing.toFixed(3))} em</b></span><input type="range" min={-.05} max={.3} step={.005} value={spacing} onChange={event=>onChange(Number(event.target.value))}/></label>{value!==undefined&&<button type="button" className="v2-spacing-reset" onClick={()=>onChange(undefined)}>Restablecer</button>}</div>;
 }
 
-function TitleControls({ draft, onChange }: { draft: LandingDraft; onChange: (p: Partial<LandingDraft>) => void }) { const style=draft.titleStyle; const update=(patch:Partial<TitleStyle>)=>onChange({titleStyle:{...style,...patch}}); const preset=suggestedPreset(draft.buttonZone.templateId); return <div className="v2-fields"><EditorSection title="Contenido" tone="blue"><label>Rubro o frase breve (opcional)<input maxLength={60} value={style.eyebrow || ""} placeholder="Ej: ARQUITECTURA & INTERIORES" onChange={(e)=>update({eyebrow:e.target.value})}/></label><p className="v2-help">Una línea pequeña encima del nombre. Dejalo vacío para ocultarla.</p><label>Texto del título<input value={draft.business_name} onChange={(e)=>onChange({business_name:e.target.value})}/></label></EditorSection><RecommendedStyles templateName={preset.name} onClick={()=>update({...preset.title,color:preset.foreground,letterSpacing:undefined})} /><EditorSection title="Tipografía y tamaño" tone="purple"><FontPicker label="Tipografía" value={style.font} onChange={(font)=>update({font,weight:resolveFontWeight(font,style.weight),eyebrowWeight:resolveFontWeight(font,style.eyebrowWeight)})} previewText={draft.business_name} recommended={preset.title.font}/><Range label="Tamaño" min={20} max={48} value={style.size} onChange={(size)=>update({size})}/><FontWeightControl font={style.font} value={style.weight} onChange={weight=>update({weight})}/><LetterSpacingControl value={style.letterSpacing} defaultValue={draft.buttonZone.layout==="poster"?-.045:-.01} onChange={(letterSpacing)=>update({letterSpacing})}/></EditorSection>{Boolean(style.eyebrow) && <EditorSection title="Rubro o frase breve" tone="green"><p className="v2-help" style={{margin:"0 0 4px"}}>Usa la misma tipografía del título para que se lean como un conjunto; acá ajustás su tamaño, grosor y color.</p><Range label="Tamaño" min={8} max={20} value={style.eyebrowSize} onChange={(eyebrowSize)=>update({eyebrowSize})}/><FontWeightControl font={style.font} value={style.eyebrowWeight} onChange={eyebrowWeight=>update({eyebrowWeight})}/><Choice active={!style.eyebrowColor} title="Mismo color del título" note="Se mantiene en conjunto si después cambiás el color del título." onClick={()=>update({eyebrowColor:undefined})}/><Choice active={Boolean(style.eyebrowColor)} swatch={style.eyebrowColor||style.color} title="Color propio" note="Por ejemplo, el color de tu marca para destacarlo." onClick={()=>update({eyebrowColor:style.eyebrowColor||style.color})}/>{style.eyebrowColor&&<ColorField label="Color del rubro" value={style.eyebrowColor} onChange={(eyebrowColor)=>update({eyebrowColor})}/>}</EditorSection>}<EditorSection title="Colores y fondo" tone="peach"><ColorField label="Color del texto" value={style.color} onChange={(color)=>update({color})}/><Choice active={style.bgMode==="solid"} title="Fondo detrás del título" note="Ayuda a leerlo sobre fotografías." onClick={()=>update({bgMode:style.bgMode==="solid"?"none":"solid"})}/>{style.bgMode==="solid"&&<ColorField label="Color del fondo" value={style.bg} onChange={(bg)=>update({bg})}/>}</EditorSection></div>; }
+function TitleControls({ draft, onChange }: { draft: LandingDraft; onChange: (p: Partial<LandingDraft>) => void }) { const style=draft.titleStyle; const update=(patch:Partial<TitleStyle>)=>onChange({titleStyle:{...style,...patch}}); const preset=suggestedPreset(draft.buttonZone.templateId); return <div className="v2-fields"><EditorSection title="Contenido" tone="blue"><label>Rubro o frase breve (opcional)<input maxLength={60} value={style.eyebrow || ""} placeholder="Ej: ARQUITECTURA & INTERIORES" onChange={(e)=>update({eyebrow:e.target.value})}/></label><p className="v2-help">Una línea pequeña encima del nombre. Dejalo vacío para ocultarla.</p><label>Texto del título<input value={draft.business_name} onChange={(e)=>onChange({business_name:e.target.value})}/></label></EditorSection><EditorSection title="Tipografía y tamaño" tone="purple"><FontPicker label="Tipografía" value={style.font} onChange={(font)=>update({font,weight:resolveFontWeight(font,style.weight),eyebrowWeight:resolveFontWeight(font,style.eyebrowWeight)})} previewText={draft.business_name} recommended={preset.title.font}/><Range label="Tamaño" min={20} max={48} value={style.size} onChange={(size)=>update({size})}/><FontWeightControl font={style.font} value={style.weight} onChange={weight=>update({weight})}/><LetterSpacingControl value={style.letterSpacing} defaultValue={draft.buttonZone.layout==="poster"?-.045:-.01} onChange={(letterSpacing)=>update({letterSpacing})}/></EditorSection>{Boolean(style.eyebrow) && <EditorSection title="Rubro o frase breve" tone="green"><p className="v2-help" style={{margin:"0 0 4px"}}>Usa la misma tipografía del título para que se lean como un conjunto; acá ajustás su tamaño, grosor y color.</p><Range label="Tamaño" min={8} max={20} value={style.eyebrowSize} onChange={(eyebrowSize)=>update({eyebrowSize})}/><FontWeightControl font={style.font} value={style.eyebrowWeight} onChange={eyebrowWeight=>update({eyebrowWeight})}/><Choice active={!style.eyebrowColor} title="Mismo color del título" note="Se mantiene en conjunto si después cambiás el color del título." onClick={()=>update({eyebrowColor:undefined})}/><Choice active={Boolean(style.eyebrowColor)} swatch={style.eyebrowColor||style.color} title="Color propio" note="Por ejemplo, el color de tu marca para destacarlo." onClick={()=>update({eyebrowColor:style.eyebrowColor||style.color})}/>{style.eyebrowColor&&<ColorField label="Color del rubro" value={style.eyebrowColor} onChange={(eyebrowColor)=>update({eyebrowColor})}/>}</EditorSection>}<EditorSection title="Colores y fondo" tone="peach"><ColorField label="Color del texto" value={style.color} onChange={(color)=>update({color})}/><Choice active={style.bgMode==="solid"} title="Fondo detrás del título" note="Ayuda a leerlo sobre fotografías." onClick={()=>update({bgMode:style.bgMode==="solid"?"none":"solid"})}/>{style.bgMode==="solid"&&<ColorField label="Color del fondo" value={style.bg} onChange={(bg)=>update({bg})}/>}</EditorSection></div>; }
 
-function SubtitleControls({ draft, onChange }: { draft: LandingDraft; onChange: (p: Partial<LandingDraft>) => void }) { const style=draft.subtitleStyle; const update=(patch:Partial<SubtitleStyle>)=>onChange({subtitleStyle:{...style,...patch}}); const preset=suggestedPreset(draft.buttonZone.templateId); return <div className="v2-fields"><EditorSection title="Contenido" tone="blue"><label>Texto del subtítulo<textarea rows={3} value={draft.description || ""} onKeyDown={(e)=>{ if (e.key==="Enter" && (draft.description||"").includes("\n")) e.preventDefault(); }} onChange={(e)=>onChange({description:e.target.value})}/></label><p className="v2-help" style={{margin:"-4px 0 0"}}>Podés usar Enter para un salto de línea (máximo dos líneas).</p></EditorSection><RecommendedStyles templateName={preset.name} onClick={()=>update({...preset.subtitle,color:preset.foreground,letterSpacing:undefined})} /><EditorSection title="Tipografía y tamaño" tone="purple"><FontPicker label="Tipografía" value={style.font} onChange={(font)=>update({font,weight:resolveFontWeight(font,style.weight)})} usage="body" previewText={draft.description || "Conocé un poco más de mí"} recommended={preset.subtitle.font}/><Range label="Tamaño" min={11} max={26} value={style.size} onChange={(size)=>update({size})}/><FontWeightControl font={style.font} value={style.weight} onChange={weight=>update({weight})}/><LetterSpacingControl value={style.letterSpacing} onChange={(letterSpacing)=>update({letterSpacing})}/></EditorSection><EditorSection title="Colores y fondo" tone="peach"><ColorField label="Color del texto" value={style.color} onChange={(color)=>update({color})}/><Choice active={style.bgMode==="solid"} title="Fondo detrás del texto" note="Mejora la lectura cuando hay una imagen." onClick={()=>update({bgMode:style.bgMode==="solid"?"none":"solid"})}/>{style.bgMode==="solid"&&<ColorField label="Color del fondo" value={style.bg} onChange={(bg)=>update({bg})}/>}</EditorSection></div>; }
+function SubtitleControls({ draft, onChange }: { draft: LandingDraft; onChange: (p: Partial<LandingDraft>) => void }) { const style=draft.subtitleStyle; const update=(patch:Partial<SubtitleStyle>)=>onChange({subtitleStyle:{...style,...patch}}); const preset=suggestedPreset(draft.buttonZone.templateId); return <div className="v2-fields"><EditorSection title="Contenido" tone="blue"><label>Texto del subtítulo<textarea rows={3} value={draft.description || ""} onKeyDown={(e)=>{ if (e.key==="Enter" && (draft.description||"").includes("\n")) e.preventDefault(); }} onChange={(e)=>onChange({description:e.target.value})}/></label><p className="v2-help" style={{margin:"-4px 0 0"}}>Podés usar Enter para un salto de línea (máximo dos líneas).</p></EditorSection><EditorSection title="Tipografía y tamaño" tone="purple"><FontPicker label="Tipografía" value={style.font} onChange={(font)=>update({font,weight:resolveFontWeight(font,style.weight)})} usage="body" previewText={draft.description || "Conocé un poco más de mí"} recommended={preset.subtitle.font}/><Range label="Tamaño" min={11} max={26} value={style.size} onChange={(size)=>update({size})}/><FontWeightControl font={style.font} value={style.weight} onChange={weight=>update({weight})}/><LetterSpacingControl value={style.letterSpacing} onChange={(letterSpacing)=>update({letterSpacing})}/></EditorSection><EditorSection title="Colores y fondo" tone="peach"><ColorField label="Color del texto" value={style.color} onChange={(color)=>update({color})}/><Choice active={style.bgMode==="solid"} title="Fondo detrás del texto" note="Mejora la lectura cuando hay una imagen." onClick={()=>update({bgMode:style.bgMode==="solid"?"none":"solid"})}/>{style.bgMode==="solid"&&<ColorField label="Color del fondo" value={style.bg} onChange={(bg)=>update({bg})}/>}</EditorSection></div>; }
 
 function LogoControls({ draft, logoImage, onChange, onLogo, onAdjustLogo, onRemoveLogo }: { draft: LandingDraft; logoImage: string; onChange: (p: Partial<LandingDraft>) => void; onLogo: (file?: File) => void; onAdjustLogo: () => void; onRemoveLogo: () => void }) {
-  const preset = suggestedPreset(draft.buttonZone.templateId);
   const style = draft.logoStyle;
   const primary = draft.primary_color || "#1f2937";
   const update = (patch: Partial<LogoStyle>) => onChange({ logoStyle: { ...style, ...patch } });
   return <div className="v2-fields">
     <div className="v2-logo-editor"><div style={{ ...logoFrameStyle(style, primary), borderRadius: logoBorderRadius(style.shape, 76), fontSize: logoLetterSize(76, style.initials), fontFamily: resolveTextFont(draft.titleStyle.font) }}>{logoImage ? <span style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${style.zoom * 100}%`, backgroundPosition: `${style.x}% ${style.y}%` }} /> : <LogoInitials font={draft.titleStyle.font}>{logoInitials(draft.business_name, style.initials)}</LogoInitials>}</div><span><label className="v2-upload">{logoImage ? "Cambiar imagen" : "Elegir imagen"}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => { onLogo(event.target.files?.[0]); event.target.value = ""; }} /></label>{logoImage && <><button type="button" className="v2-inline-action v2-adjust-image" onClick={onAdjustLogo}>Ajustar encuadre</button><button type="button" className="v2-delete" onClick={onRemoveLogo}>Quitar</button></>}</span></div>
-    <RecommendedStyles templateName={preset.name} onClick={() => onChange({ logoStyle: { ...style, ...logoTreatmentPatch("template", draft.buttonZone.templateId), ...preset.logo, zoom: 1, x: 50, y: 50 } })} />
     <fieldset className="v2-logo-section v2-logo-section-bg">
       <legend>1 · Color de fondo</legend>
       <p className="v2-help" style={{ margin: "0 0 4px" }}>Se ve detrás del círculo del logo (si no subiste foto, es el color de fondo de la inicial). Elegilo primero: la forma y el borde se juzgan mejor contra tu color real.</p>
