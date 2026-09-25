@@ -25,13 +25,25 @@ function SpotifyWavesIcon({ className }: { className?: string }) {
   );
 }
 
-// The supplied video mark includes the red rounded rectangle, not just the play triangle.
-// A thin white keyline keeps that red silhouette visible on YouTube-red buttons.
-function YoutubeVideoIcon({ className }: { className?: string }) {
+// Use the supplied red video mark unless a red button would swallow its silhouette.
+// The white variant keeps the play triangle transparent, so it works on any red surface.
+function youtubeNeedsWhiteMark(background?: string): boolean {
+  const hex = background?.match(/^#([0-9a-f]{6})$/i)?.[1];
+  if (!hex) return false;
+  const red = parseInt(hex.slice(0, 2), 16);
+  const green = parseInt(hex.slice(2, 4), 16);
+  const blue = parseInt(hex.slice(4, 6), 16);
+  return red >= 170 && green <= 100 && blue <= 110;
+}
+
+function YoutubeVideoIcon({ className, monochrome = false }: { className?: string; monochrome?: boolean }) {
+  const shape = "M250.346 28.075A32.18 32.18 0 0 0 227.69 5.418C207.824 0 127.87 0 127.87 0S47.912.164 28.046 5.582A32.18 32.18 0 0 0 5.39 28.24c-6.009 35.298-8.34 89.084.165 122.97a32.18 32.18 0 0 0 22.656 22.657c19.866 5.418 99.822 5.418 99.822 5.418s79.955 0 99.82-5.418a32.18 32.18 0 0 0 22.657-22.657c6.338-35.348 8.291-89.1-.164-123.134Z";
+  const play = "M102.421 128.06 168.749 89.642 102.421 51.224z";
   return (
-    <svg className={`${className || ""} action-type-icon-youtube-lockup`} viewBox="-4 -4 264 188" aria-hidden="true" focusable="false">
-      <path d="M250.346 28.075A32.18 32.18 0 0 0 227.69 5.418C207.824 0 127.87 0 127.87 0S47.912.164 28.046 5.582A32.18 32.18 0 0 0 5.39 28.24c-6.009 35.298-8.34 89.084.165 122.97a32.18 32.18 0 0 0 22.656 22.657c19.866 5.418 99.822 5.418 99.822 5.418s79.955 0 99.82-5.418a32.18 32.18 0 0 0 22.657-22.657c6.338-35.348 8.291-89.1-.164-123.134Z" fill="#ff0000" stroke="#ffffff" strokeWidth="7" />
-      <path d="m102.421 128.06 66.328-38.418-66.328-38.418z" fill="#ffffff" />
+    <svg className={`${className || ""} action-type-icon-youtube-lockup`} viewBox="0 0 256 180" aria-hidden="true" focusable="false">
+      {monochrome
+        ? <path d={`${shape} ${play}`} fill="#ffffff" fillRule="evenodd" />
+        : <><path d={shape} fill="#ff0000" /><path d={play} fill="#ffffff" /></>}
     </svg>
   );
 }
@@ -228,12 +240,12 @@ export function hasCustomActionIcon(icon?: string | null): boolean {
   return Boolean(icon && customIcons[icon]);
 }
 
-export function ActionTypeIcon({ type, icon, className, brandMark = false }: { type: string; icon?: string | null; className?: string; brandMark?: boolean }) {
+export function ActionTypeIcon({ type, icon, className, brandMark = false, brandBackground }: { type: string; icon?: string | null; className?: string; brandMark?: boolean; brandBackground?: string }) {
   const hasCustomIcon = hasCustomActionIcon(icon);
   const iconKey = hasCustomIcon ? icon! : (actionIcons[type] ? type : "url");
   const sharedClassName = `action-type-icon action-type-icon-${iconKey}${hasCustomIcon ? " action-type-icon-custom" : ""}${className ? ` ${className}` : ""}`;
   if (brandMark && !hasCustomIcon && type === "spotify") return <SpotifyWavesIcon className={sharedClassName} />;
-  if (brandMark && !hasCustomIcon && type === "youtube") return <YoutubeVideoIcon className={sharedClassName} />;
+  if (brandMark && !hasCustomIcon && type === "youtube") return <YoutubeVideoIcon className={sharedClassName} monochrome={youtubeNeedsWhiteMark(brandBackground)} />;
   // The lockup gets its own class on top: it fills the whole box (it IS the badge), while the
   // bare handshake above sits inset like every other glyph.
   // Google's own flat four-color G, from Flat Color Icons — the mark Google itself uses at this

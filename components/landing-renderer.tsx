@@ -6,7 +6,7 @@ import {
   parseDistribution, readableInk, parseTitleStyle, parseSubtitleStyle, parseLogoStyle, parseBackgroundPosition, parseButtonZone, parseCoverStyle, headerCardOn, COVER_SIZE_EXTRA, hexToRgba, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize,
 } from "@/lib/landing-catalog";
 import { getFontFamily, resolveFontWeight, resolveTextFont, FontLinks, LogoInitials } from "@/lib/fonts";
-import { buttonCollectionStyle, buttonCollectionWidth, buttonIconStyle, hasAuthenticLook, resolveButtonColors } from "@/lib/design-presets";
+import { buttonCollectionStyle, buttonCollectionWidth, buttonIconStyle, hasAuthenticLook, resolveButtonColors, youtubeMarkSurfaceColor } from "@/lib/design-presets";
 import { ActionTypeIcon, hasCustomActionIcon } from "@/components/action-icons";
 import { IconEdit, IconImage } from "@/components/icons";
 import type { CSSProperties } from "react";
@@ -311,7 +311,7 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
                     ...(/^#[0-9a-f]{6}$/i.test(action.icon_background_color || "")
                       ? { background: action.icon_background_color!, color: contrastTextColor(action.icon_background_color!) }
                       : {}),
-                  }}><ActionTypeIcon type={action.type} icon={action.icon} brandMark={iconAppearance === "brand" && !(isAuthentic && hasAuthenticLook(action.type))} /></span>
+                  }}><ActionTypeIcon type={action.type} icon={action.icon} brandMark={iconAppearance === "brand" && !(isAuthentic && hasAuthenticLook(action.type))} brandBackground={youtubeMarkSurfaceColor(zone.collection, bg, action.icon_background_color)} /></span>
                   <span className="action-copy" style={{ textAlign: zone.contentAlign === "center" ? "center" : "left" }}>
                     <span className="action-title">{action.title}</span>
                     {action.subtitle && <small style={{ fontSize: 11, opacity: 0.82, fontWeight: 600 }}>{action.subtitle}</small>}

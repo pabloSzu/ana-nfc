@@ -382,6 +382,14 @@ export function recommendedIconAppearance(collection: ButtonZoneStyle["collectio
   return isBrandIconCollection(collection) || collection === "brutal" ? "brand" : "minimal";
 }
 
+export function youtubeMarkSurfaceColor(collection: ButtonZoneStyle["collection"], buttonColor: string, iconBackground?: string | null): string | undefined {
+  if (/^#[0-9a-f]{6}$/i.test(iconBackground || "")) return iconBackground!;
+  // These collections use buttonColor only as an accent; the actual surface behind
+  // the transparent YouTube mark is pale, dark, or translucent rather than red.
+  if (["brandmark", "brandpanel", "glass", "glow", "luxury", "minimal", "pastel", "aura", "editorial"].includes(collection)) return undefined;
+  return buttonColor;
+}
+
 export function buttonIconStyle(collection: ButtonZoneStyle["collection"], bg: string, size: number, type?: string, appearance = recommendedIconAppearance(collection), isAuthentic = false, useNetworkAccent = true, hasCustomIcon = false): CSSProperties {
   const base: CSSProperties = { width: size, height: size, flexGrow: 0, flexShrink: 0, flexBasis: size, display: "inline-grid", placeItems: "center", lineHeight: 0 };
   // The video play-button already contains YouTube's red shape. A second badge behind it
