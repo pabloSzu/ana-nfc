@@ -315,8 +315,8 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
                       ? { background: customIconBackground, color: contrastTextColor(customIconBackground) }
                       : {}),
                   }}><ActionTypeIcon type={action.type} icon={action.icon} brandMark={shouldUseBrandMark(zone.collection, action.type, iconAppearance, isAuthentic)} brandBackground={youtubeMarkSurfaceColor(zone.collection, bg, action.icon_background_color)} instagramAsset={customIconBackground && instagramAsset === "color" ? "mono" : instagramAsset} /></span>
-                  <span className="action-copy" style={{ textAlign: zone.contentAlign === "center" ? "center" : "left" }}>
-                    <span className="action-title">{action.title}</span>
+                  <span className="action-copy" style={{ textAlign: zone.contentAlign === "center" ? "center" : "left", color: zone.textColor || undefined }}>
+                    <span className={`action-title${zone.titleLines === 2 ? " action-title-two-lines" : ""}`} style={{ fontWeight: zone.fontWeight === undefined ? undefined : resolveFontWeight(landing.button_font || "modern", zone.fontWeight), letterSpacing: zone.letterSpacing === undefined ? undefined : `${zone.letterSpacing}em`, fontSynthesis: zone.fontWeight === undefined ? undefined : "none" }}>{action.title}</span>
                     {action.subtitle && <small style={{ fontSize: 11, opacity: 0.82, fontWeight: 600 }}>{action.subtitle}</small>}
                   </span>
                   {zone.contentAlign === "center" && <span className="action-icon-balance" aria-hidden="true" />}

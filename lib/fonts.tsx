@@ -55,6 +55,14 @@ export function resolveFontWeight(id: string, requested: number): number {
   return weights.reduce((nearest, weight) => Math.abs(weight-requested) < Math.abs(nearest-requested) ? weight : nearest, weights[0]);
 }
 
+// Button text is small, so display faces should use their actual cut rather than a
+// browser-synthesized 800/900. Template switches and manual font changes share this rule.
+export function recommendedButtonTypography(id: string): { fontWeight: number; letterSpacing: number; titleLines: 1 } {
+  const requested = id === "bold" || id === "anton" || id === "alfa-slab" || id === "chango" || id === "viaoda" || id === "kavivanar" || id === "salsa"
+    ? 400 : id === "minimal" || id === "friendly" || id === "mono" || id === "space-mono" || id === "elegant" || id === "domine" || id === "old-standard" ? 600 : 700;
+  return { fontWeight: resolveFontWeight(id, requested), letterSpacing: id === "mono" || id === "space-mono" ? .01 : 0, titleLines: 1 };
+}
+
 export function getFontFamily(id: string | null | undefined): string {
   return (FONT_OPTIONS.find((option) => option.id === id) || FONT_OPTIONS[0]).family;
 }

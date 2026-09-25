@@ -479,6 +479,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; letter-spacing: -0.01e
 .action-brand-icon { align-self: center; }
 .action-copy { display: grid; min-width: 0; gap: 2px; text-align: left; }
 .action-title { display: block; min-width: 0; overflow: hidden; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
+.action-title-two-lines { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; white-space: normal; overflow-wrap: anywhere; text-overflow: initial; }
 .public-inner { padding-inline: 14px; }
 .public .action { max-width: 100%; min-width: 0; overflow: hidden; }
 .public .action > .action-main { max-width: 100%; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1875,6 +1876,8 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
 .font-picker-live .font-picker-option-meta { font-size:10px; }
 .font-picker-live .font-picker-option-meta svg { flex-shrink:0; color:#7958cd; }
 .font-picker-live .font-picker-sample { font-size:21px; }
+.font-picker-more { width:100%; margin-top:10px; padding:10px; border:1px solid #d8c9ec; border-radius:10px; background:#faf7ff; color:#6443a1; font-size:11px; font-weight:750; cursor:pointer; }
+.font-picker-more:hover { background:#f1e9ff; }
 .font-picker-live .font-picker-count { margin-top:7px; font-size:10px; }
 @media(max-width:840px) {
  .font-picker-live .font-picker-options { max-height:190px; }

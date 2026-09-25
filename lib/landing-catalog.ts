@@ -219,6 +219,8 @@ export type ButtonZoneStyle = {
   shadow: "none" | "soft" | "strong"; finish: "solid" | "glass" | "outline";
   collection: "soft" | "brand" | "brandmark" | "brandpanel" | "glass" | "glow" | "luxury" | "minimal" | "split" | "bento" | "pastel" | "metallic" | "retro" | "editorial" | "candy" | "ocean" | "brutal" | "corporate" | "gummy" | "aura";
   colorMode: "auto" | "one"; oneColor: string; textSize: number; iconSize: number;
+  // Optional so existing landings keep their previous typography until explicitly edited.
+  fontWeight?: number; letterSpacing?: number; titleLines?: 1 | 2; textColor?: string;
   iconAppearance: "brand" | "minimal";
   contentAlign: "center" | "left";
   contentAlignMode: "auto" | "manual";
@@ -265,6 +267,10 @@ export function parseButtonZone(raw: unknown): ButtonZoneStyle {
     width: clamp(parsed.width, 72, 100, DEFAULT_BUTTON_ZONE.width),
     textSize: clamp(parsed.textSize, 12, 18, DEFAULT_BUTTON_ZONE.textSize),
     iconSize: clamp(parsed.iconSize, 22, 38, DEFAULT_BUTTON_ZONE.iconSize),
+    fontWeight: typeof parsed.fontWeight === "number" && Number.isFinite(parsed.fontWeight) ? clamp(parsed.fontWeight, 400, 900, 700) : undefined,
+    letterSpacing: typeof parsed.letterSpacing === "number" && Number.isFinite(parsed.letterSpacing) ? clamp(parsed.letterSpacing, -.03, .08, 0) : undefined,
+    titleLines: parsed.titleLines === 2 ? 2 : parsed.titleLines === 1 ? 1 : undefined,
+    textColor: typeof parsed.textColor === "string" && /^#[0-9a-f]{6}$/i.test(parsed.textColor) ? parsed.textColor : undefined,
     collection: collections.includes(merged.collection) ? merged.collection : "soft",
     colorMode: colorModes.includes(merged.colorMode) ? merged.colorMode : "auto",
     finish: finishes.includes(merged.finish) ? merged.finish : "solid",
