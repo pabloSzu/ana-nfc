@@ -421,6 +421,13 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; letter-spacing: -0.01e
 .action-type-icon-facebook { width: 62%; height: 62%; }
 .action-type-icon-tiktok { width: 62%; height: 62%; }
 .action-type-icon-instagram { width: 64%; height: 64%; }
+.action-type-icon-instagram-color { width: 84%; height: 84%; }
+.action-type-icon-instagram-mono {
+  width: 56%; height: 56%;
+  background: currentColor;
+  -webkit-mask: url("/brand-icons/instagram-mono.svg") center / contain no-repeat;
+  mask: url("/brand-icons/instagram-mono.svg") center / contain no-repeat;
+}
 /* Real, verified centering fix — not a guess: measured each brand glyph's own drawn-ink
    bounding box against its SVG box's true center, using the browser's own
    getBoundingClientRect (not a pixel-color scan against a background, which earlier turned out

@@ -382,6 +382,15 @@ export function recommendedIconAppearance(collection: ButtonZoneStyle["collectio
   return isBrandIconCollection(collection) || collection === "brutal" ? "brand" : "minimal";
 }
 
+export function shouldUseBrandMark(collection: ButtonZoneStyle["collection"], type: string, appearance: ButtonZoneStyle["iconAppearance"], isAuthentic: boolean): boolean {
+  return appearance === "brand" && ((collection === "aura" || collection === "gummy") || !(isAuthentic && hasAuthenticLook(type)));
+}
+
+export function instagramAssetMode(collection: ButtonZoneStyle["collection"], type: string, appearance: ButtonZoneStyle["iconAppearance"], hasCustomIcon = false): "color" | "mono" | undefined {
+  if (type !== "instagram" || hasCustomIcon || !["aura", "gummy", "brandmark"].includes(collection)) return undefined;
+  return appearance === "brand" ? "color" : "mono";
+}
+
 export function youtubeMarkSurfaceColor(collection: ButtonZoneStyle["collection"], buttonColor: string, iconBackground?: string | null): string | undefined {
   if (/^#[0-9a-f]{6}$/i.test(iconBackground || "")) return iconBackground!;
   // These collections use buttonColor only as an accent; the actual surface behind
@@ -392,6 +401,9 @@ export function youtubeMarkSurfaceColor(collection: ButtonZoneStyle["collection"
 
 export function buttonIconStyle(collection: ButtonZoneStyle["collection"], bg: string, size: number, type?: string, appearance = recommendedIconAppearance(collection), isAuthentic = false, useNetworkAccent = true, hasCustomIcon = false): CSSProperties {
   const base: CSSProperties = { width: size, height: size, flexGrow: 0, flexShrink: 0, flexBasis: size, display: "inline-grid", placeItems: "center", lineHeight: 0 };
+  // The full-color Instagram SVG includes its own rounded gradient tile. Do not draw
+  // another CSS badge underneath it in the collections where that asset is used.
+  if (instagramAssetMode(collection, type || "", appearance, hasCustomIcon) === "color") return { ...base, borderRadius: Math.round(size * .26), background: "transparent", border: "none", boxShadow: "none" };
   // The video play-button already contains YouTube's red shape. A second badge behind it
   // turns the mark into a white triangle on a disc, which reads like YouTube Music.
   if (appearance === "brand" && type === "youtube" && !hasCustomIcon) return { ...base, background: "transparent", border: "none", boxShadow: "none" };
@@ -411,13 +423,21 @@ export function buttonIconStyle(collection: ButtonZoneStyle["collection"], bg: s
     // real never accidentally converge on the same button color again.
     return { ...base, borderRadius: "50%", background: "rgba(10,10,16,.34)", color: "#ffffff", border: "1px solid rgba(255,255,255,.3)" };
   }
-  // Halo and Arcade had the exact same problem as Vibrante above, just structurally: their
-  // per-network "vivid accent" badge used to render identically regardless of `appearance`, so
-  // the icon toggle did nothing for every network on these two templates, not just two of them.
-  // "Real" keeps that vivid per-network accent (unchanged below). "Minimal" now genuinely means
-  // monochrome — one neutral tone for every icon regardless of which network it is, matching
-  // what the toggle's own label already promises ("tratamiento monocromático coordinado con la
-  // botonera") instead of silently reusing the colored version under a different name.
+  // Halo/Arcade keep their own button styling, while the brand option uses each network's
+  // actual badge colors. No extra rim: at these sizes it crowds the mark and looks off-center.
+  if ((collection === "aura" || collection === "gummy") && appearance === "brand" && type && BRAND_ICON[type] && !hasCustomIcon) {
+    if (type === "mercadopago") return { ...base, background: "transparent", border: "none", boxShadow: "none" };
+    const palette = BRAND_ICON[type];
+    return {
+      ...base,
+      borderRadius: type === "instagram" || type === "tiktok" ? Math.round(size * .26) : "50%",
+      background: palette.background,
+      color: palette.color,
+      border: "none",
+      boxShadow: "none",
+    };
+  }
+  // Minimal remains monochrome on both collections, regardless of network color.
   if (collection === "aura") {
     const c = appearance === "brand" ? brandVivid(bg, type, useNetworkAccent) : "#eef6ff";
     return { ...base, borderRadius: "50%", color: c, background: "rgba(3,8,12,.78)", border: `1.5px solid ${appearance === "brand" ? c : "rgba(238,246,255,.55)"}`, boxShadow: "none" };

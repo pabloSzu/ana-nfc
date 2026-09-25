@@ -1,4 +1,5 @@
 import type { IconType } from "react-icons";
+import Image from "next/image";
 import {
   FaCarSide, FaFacebookF, FaInstagram, FaLinkedinIn, FaSpotify, FaTelegram, FaTicket,
   FaTiktok, FaUtensils, FaWhatsapp, FaYoutube,
@@ -240,10 +241,12 @@ export function hasCustomActionIcon(icon?: string | null): boolean {
   return Boolean(icon && customIcons[icon]);
 }
 
-export function ActionTypeIcon({ type, icon, className, brandMark = false, brandBackground }: { type: string; icon?: string | null; className?: string; brandMark?: boolean; brandBackground?: string }) {
+export function ActionTypeIcon({ type, icon, className, brandMark = false, brandBackground, instagramAsset }: { type: string; icon?: string | null; className?: string; brandMark?: boolean; brandBackground?: string; instagramAsset?: "color" | "mono" }) {
   const hasCustomIcon = hasCustomActionIcon(icon);
   const iconKey = hasCustomIcon ? icon! : (actionIcons[type] ? type : "url");
   const sharedClassName = `action-type-icon action-type-icon-${iconKey}${hasCustomIcon ? " action-type-icon-custom" : ""}${className ? ` ${className}` : ""}`;
+  if (!hasCustomIcon && type === "instagram" && instagramAsset === "color") return <Image src="/brand-icons/instagram-color.svg" alt="" width={265} height={265} unoptimized className={`${sharedClassName} action-type-icon-instagram-color`} aria-hidden="true" />;
+  if (!hasCustomIcon && type === "instagram" && instagramAsset === "mono") return <span className={`${sharedClassName} action-type-icon-instagram-mono`} aria-hidden="true" />;
   if (brandMark && !hasCustomIcon && type === "spotify") return <SpotifyWavesIcon className={sharedClassName} />;
   if (brandMark && !hasCustomIcon && type === "youtube") return <YoutubeVideoIcon className={sharedClassName} monochrome={youtubeNeedsWhiteMark(brandBackground)} />;
   // The lockup gets its own class on top: it fills the whole box (it IS the badge), while the

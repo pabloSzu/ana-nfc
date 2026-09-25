@@ -14,7 +14,7 @@ import { headerCardOn, parseDistribution, type DistributionStyle, QUICK_SOCIALS,
 import FontPicker from "../font-picker";
 import { getFontWeights, LogoInitials, resolveFontWeight } from "@/lib/fonts";
 import IconPicker from "../icon-picker";
-import { DESIGN_PRESETS_V2, buttonCollectionStyle, buttonIconStyle, hasAuthenticLook, recommendedIconAppearance, resolveButtonColors, youtubeMarkSurfaceColor, type DesignPreset } from "@/lib/design-presets";
+import { DESIGN_PRESETS_V2, buttonCollectionStyle, buttonIconStyle, instagramAssetMode, recommendedIconAppearance, resolveButtonColors, shouldUseBrandMark, youtubeMarkSurfaceColor, type DesignPreset } from "@/lib/design-presets";
 import { ThemeSceneLayer, useSharedTheme } from "@/components/theme-scene";
 import ImageAdjustDialog, { type ImageKind, type ImagePlacement } from "./image-adjust-dialog";
 
@@ -657,7 +657,7 @@ function TemplateSwatch({ preset }: { preset: DesignPreset }) {
                 key={example.type}
                 style={{ ...buttonCollectionStyle(preset.buttonZone.collection, color, text, index, example.type, isAuthentic, useNetworkAccent), borderRadius: Math.max(0, preset.buttonZone.radius * .42), display: "grid", gridTemplateColumns: preset.buttonZone.contentAlign === "center" ? "11px minmax(0,1fr) 11px" : "11px minmax(0,1fr)", alignItems: "center", columnGap: 4, textAlign: preset.buttonZone.contentAlign === "center" ? "center" : "left" }}
               >
-                <span className="template-shot-icon" style={buttonIconStyle(preset.buttonZone.collection, color, 11, example.type, iconAppearance, isAuthentic, useNetworkAccent)}><ActionTypeIcon type={example.type} brandMark={iconAppearance === "brand" && !(isAuthentic && hasAuthenticLook(example.type))} brandBackground={youtubeMarkSurfaceColor(preset.buttonZone.collection, color)} /></span>
+                <span className="template-shot-icon" style={buttonIconStyle(preset.buttonZone.collection, color, 11, example.type, iconAppearance, isAuthentic, useNetworkAccent)}><ActionTypeIcon type={example.type} brandMark={shouldUseBrandMark(preset.buttonZone.collection, example.type, iconAppearance, isAuthentic)} brandBackground={youtubeMarkSurfaceColor(preset.buttonZone.collection, color)} instagramAsset={instagramAssetMode(preset.buttonZone.collection, example.type, iconAppearance)} /></span>
                 <span>{example.label}</span>
                 {preset.buttonZone.contentAlign === "center" && <span aria-hidden="true" />}
               </span>
@@ -686,7 +686,7 @@ function ButtonLookSwatch({ preset }: { preset: DesignPreset }) {
       const isAuthentic = preset.buttonZone.colorMode === "auto";
       const useNetworkAccent = preset.buttonZone.colorMode === "auto";
       return <span className={`v2-look-button icon-appearance-${iconAppearance}`} key={example.type} style={{ ...buttonCollectionStyle(preset.buttonZone.collection, background, contrastTextColor(background), index, example.type, isAuthentic, useNetworkAccent), borderRadius: Math.max(0, preset.buttonZone.radius * .35), display: "grid", gridTemplateColumns: preset.buttonZone.contentAlign === "center" ? "15px minmax(0,1fr) 15px" : "15px minmax(0,1fr)", alignItems: "center", columnGap: 5, textAlign: preset.buttonZone.contentAlign === "center" ? "center" : "left" }}>
-        <span className="v2-look-button-icon" style={buttonIconStyle(preset.buttonZone.collection, background, 15, example.type, iconAppearance, isAuthentic, useNetworkAccent)}><ActionTypeIcon type={example.type} brandMark={iconAppearance === "brand" && !(isAuthentic && hasAuthenticLook(example.type))} brandBackground={youtubeMarkSurfaceColor(preset.buttonZone.collection, background)} /></span>
+        <span className="v2-look-button-icon" style={buttonIconStyle(preset.buttonZone.collection, background, 15, example.type, iconAppearance, isAuthentic, useNetworkAccent)}><ActionTypeIcon type={example.type} brandMark={shouldUseBrandMark(preset.buttonZone.collection, example.type, iconAppearance, isAuthentic)} brandBackground={youtubeMarkSurfaceColor(preset.buttonZone.collection, background)} instagramAsset={instagramAssetMode(preset.buttonZone.collection, example.type, iconAppearance)} /></span>
         <span>{example.label}</span>
         {preset.buttonZone.contentAlign === "center" && <span aria-hidden="true" />}
       </span>;
@@ -1185,7 +1185,7 @@ function ChoicePreviewChips({ zone, types, background, iconAppearance, isAuthent
         return (
           <span key={type} className="v2-choice-preview-chip" style={{ ...buttonCollectionStyle(zone.collection, bg, text, index, type, isAuthentic, useNetworkAccent), width: 30, height: 30, borderRadius: Math.max(6, zone.radius * .32) }}>
             <span style={buttonIconStyle(zone.collection, bg, 16, type, iconAppearance, isAuthentic, useNetworkAccent)}>
-              <ActionTypeIcon type={type} brandMark={iconAppearance === "brand" && !(isAuthentic && hasAuthenticLook(type))} brandBackground={youtubeMarkSurfaceColor(zone.collection, bg)} />
+              <ActionTypeIcon type={type} brandMark={shouldUseBrandMark(zone.collection, type, iconAppearance, isAuthentic)} brandBackground={youtubeMarkSurfaceColor(zone.collection, bg)} instagramAsset={instagramAssetMode(zone.collection, type, iconAppearance)} />
             </span>
           </span>
         );
