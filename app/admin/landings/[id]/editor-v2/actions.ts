@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { normalizeUrl, isPlausiblePhone, AUTO_COLORS } from "@/lib/landing-catalog";
+import { normalizeUrl, isPlausiblePhone, AUTO_COLORS, businessProfiles } from "@/lib/landing-catalog";
 
 const hexColor = /^#[0-9a-f]{6}$/i;
 function color(value: FormDataEntryValue | null, fallback: string) {
@@ -24,7 +24,7 @@ async function ownedLanding(landingId: string, userId: string) {
   return { supabase, data, error };
 }
 
-const validTypes = ["whatsapp", "instagram", "tiktok", "facebook", "linkedin", "website", "email", "phone", "maps", "review", "youtube", "spotify", "mercadopago", "calendar", "telegram", "url"];
+const validTypes = ["whatsapp", "instagram", "tiktok", "facebook", "linkedin", "website", "email", "phone", "maps", "review", "youtube", "spotify", "mercadopago", "calendar", "telegram", "cv", "url"];
 
 const validFontsIdentity = ["modern", "classic", "friendly", "minimal"];
 const validFonts = ["modern", "classic", "friendly", "minimal"];
@@ -49,6 +49,27 @@ export async function saveDesignStyle(fd: FormData) {
   if (!landing) saveFail("Landing inexistente o sin permisos.");
   const businessName = String(fd.get("business_name") || "").trim();
   if (!businessName) saveFail("El nombre de la landing es obligatorio.");
+  const businessType = String(fd.get("business_type") || "custom");
+  if (!businessProfiles.some((profile) => profile.value === businessType)) saveFail("Tipo de página inválido.");
+  let requestedButtons: Array<Record<string, unknown>> = [];
+  try {
+    const parsed: unknown = JSON.parse(String(fd.get("buttons") || "[]"));
+    if (!Array.isArray(parsed) || !parsed.every((item) => item && typeof item === "object" && !Array.isArray(item))) saveFail("No se pudieron leer los enlaces del borrador.");
+    requestedButtons = parsed as Array<Record<string, unknown>>;
+  } catch {
+    saveFail("No se pudieron leer los enlaces del borrador.");
+  }
+  const pendingCvFile = fd.get("cv_file");
+  for (let position = 0; position < requestedButtons.length; position++) {
+    const button = requestedButtons[position];
+    const type = validTypes.includes(String(button.type)) ? String(button.type) : "url";
+    const title = String(button.title || "").trim();
+    const value = String(button.url || "").trim();
+    if (!title) saveFail(`El botón ${position + 1} necesita un nombre.`);
+    if (type === "cv" && !value && !(pendingCvFile instanceof File && pendingCvFile.size > 0)) saveFail("Subí un PDF o agregá un enlace para el documento.");
+    if (type === "email" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) saveFail(`El email del botón “${title}” no parece válido.`);
+    if (["whatsapp", "phone"].includes(type) && value && !isPlausiblePhone(value)) saveFail(`El número del botón “${title}” parece incompleto.`);
+  }
   const backgroundType = ["color", "gradient", "image"].includes(String(fd.get("background_type")))
     ? String(fd.get("background_type"))
     : "color";
@@ -91,8 +112,21 @@ export async function saveDesignStyle(fd: FormData) {
   } else if (fd.get("remove_cover_image") === "true") {
     coverImageUrl = "";
   }
+  const cvFile = fd.get("cv_file");
+  let cvUploadedUrl: string | undefined;
+  if (cvFile instanceof File && cvFile.size > 0) {
+    if (cvFile.size > 10 * 1024 * 1024) saveFail("El PDF no puede superar 10 MB.");
+    if (!/\.pdf$/i.test(cvFile.name) || (cvFile.type && cvFile.type !== "application/pdf")) saveFail("El documento debe ser un archivo PDF.");
+    const signature = new TextDecoder().decode(await cvFile.slice(0, 5).arrayBuffer());
+    if (signature !== "%PDF-") saveFail("El archivo no parece ser un PDF válido.");
+    const path = `${user.id}/${landingId}/cv-${Date.now()}.pdf`;
+    const { error: uploadError } = await supabase.storage.from("landing-assets").upload(path, cvFile, { contentType: "application/pdf", upsert: false });
+    if (uploadError) saveFail(uploadError.message);
+    cvUploadedUrl = supabase.storage.from("landing-assets").getPublicUrl(path).data.publicUrl;
+  }
   const landingUpdate: Record<string, unknown> = {
     business_name: businessName,
+    business_type: businessType,
     description: String(fd.get("description") || "").trim(),
     primary_color: color(fd.get("primary_color"), "#1f2937"),
     background_type: backgroundType,
@@ -116,14 +150,6 @@ export async function saveDesignStyle(fd: FormData) {
   const { error } = await supabase.from("landings").update(landingUpdate).eq("id", landingId).eq("owner_id", user.id);
   if (error) saveFail(error.message);
 
-  let requestedButtons: Array<Record<string, unknown>> = [];
-  try {
-    const parsed = JSON.parse(String(fd.get("buttons") || "[]"));
-    if (Array.isArray(parsed)) requestedButtons = parsed;
-  } catch {
-    saveFail("No se pudieron leer los botones del borrador.");
-  }
-
   const { data: existing, error: existingError } = await supabase
     .from("actions")
     .select("id,enabled")
@@ -142,7 +168,8 @@ export async function saveDesignStyle(fd: FormData) {
     const type = validTypes.includes(String(button.type)) ? String(button.type) : "url";
     const title = String(button.title || "").trim();
     if (!title) saveFail(`El botón ${position + 1} necesita un nombre.`);
-    let value = String(button.url || "").trim();
+    let value = type === "cv" && cvUploadedUrl ? cvUploadedUrl : String(button.url || "").trim();
+    if (type === "cv" && !value) saveFail("Subí un PDF o agregá un enlace para el documento.");
     if (type === "email" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) saveFail(`El email del botón “${title}” no parece válido.`);
     if (["whatsapp", "phone"].includes(type) && value && !isPlausiblePhone(value)) saveFail(`El número del botón “${title}” parece incompleto.`);
     if (!["whatsapp", "email", "phone"].includes(type) && value && !value.startsWith("http")) value = normalizeUrl(value);

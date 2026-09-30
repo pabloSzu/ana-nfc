@@ -127,6 +127,7 @@ const actionIcons: Record<string, IconType> = {
   calendar: FiClock,
   telegram: FaTelegram,
   review: SiGoogle,
+  cv: FiFileText,
   url: FiLink,
 };
 

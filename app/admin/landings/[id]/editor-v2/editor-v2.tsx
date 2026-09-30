@@ -2,35 +2,37 @@
 
 import Link from "next/link";
 import LandingSeparator from "@/components/landing-separator";
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { startTransition, useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
 import { ActionTypeIcon, hasCustomActionIcon } from "@/components/action-icons";
 import { FiLink, FiZap, FiArrowUpRight } from "react-icons/fi";
 import { IconEye, IconQrCode } from "@/components/icons";
 import DeleteLandingButton from "@/app/admin/delete-landing-button";
 import LandingRenderer, { LandingPhotoBackground, type LandingEditControls } from "@/components/landing-renderer";
+import ContactSaveIcon from "@/components/contact-save-icon";
 import ScaledPhoneCanvas from "@/components/scaled-phone-canvas";
 import { compressImage } from "@/lib/compress-image";
-import { headerCardOn, parseDistribution, type DistributionStyle, QUICK_SOCIALS, quickSocialHref, type QuickSocial, AUTO_COLORS, contrastTextColor, getAllActions, parseCoverStyle, parseLogoStyle, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize, resolveTextFont, type BackgroundPosition, type ButtonZoneStyle, type CoverStyle, type LogoStyle, type SubtitleStyle, type TitleStyle } from "@/lib/landing-catalog";
+import { headerCardOn, parseDistribution, type DistributionStyle, QUICK_SOCIALS, quickSocialHref, type QuickSocial, AUTO_COLORS, contrastTextColor, getAllActions, parseCoverStyle, parseLogoStyle, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize, resolveTextFont, FONT_OPTIONS, type BackgroundPosition, type ButtonZoneStyle, type CoverStyle, type LogoStyle, type SubtitleStyle, type TitleStyle } from "@/lib/landing-catalog";
 import FontPicker from "../font-picker";
-import { getFontWeights, LogoInitials, recommendedButtonTypography, resolveFontWeight } from "@/lib/fonts";
+import { FontLinks, getFontWeights, LogoInitials, recommendedButtonTypography, resolveFontWeight } from "@/lib/fonts";
 import IconPicker from "../icon-picker";
 import { DESIGN_PRESETS_V2, buttonCollectionStyle, buttonIconStyle, instagramAssetMode, recommendedIconAppearance, resolveButtonColors, shouldUseBrandMark, youtubeMarkSurfaceColor, type DesignPreset } from "@/lib/design-presets";
 import { ThemeSceneLayer, useSharedTheme } from "@/components/theme-scene";
 import ImageAdjustDialog, { type ImageKind, type ImagePlacement } from "./image-adjust-dialog";
+import { createClient as createBrowserClient } from "@/lib/supabase/client";
 
 type ButtonItem = { id: string; type: string; title: string; subtitle: string; url: string; message: string; icon: string; icon_background_color: string; background_color: string; text_color: string; use_auto_color: boolean; position: number };
 type LandingDraft = {
-  id: string; slug: string; business_name: string; description?: string | null; logo_url?: string | null; primary_color?: string | null;
+  id: string; slug: string; business_name: string; business_type?: string | null; description?: string | null; logo_url?: string | null; primary_color?: string | null;
   background_color?: string | null; background_type?: string | null; background_gradient_to?: string | null; background_image_url?: string | null;
   text_color?: string | null; text_panel?: boolean | null; text_panel_color?: string | null; font_pair?: string | null; button_font?: string | null;
   published?: boolean | null; buttonZone: ButtonZoneStyle; titleStyle: TitleStyle; subtitleStyle: SubtitleStyle; logoStyle: LogoStyle; bgPosition: BackgroundPosition;
   cover_image_url?: string | null; coverStyle: CoverStyle;
 };
-type Panel = "templates" | "buttons" | "background" | "cover" | "settings" | "socials" | "distribution" | "title" | "subtitle" | "logo" | "add" | { buttonId: string } | null;
+type Panel = "templates" | "buttons" | "background" | "cover" | "settings" | "contact" | "contact-design" | "contact-name" | "contact-role" | "contact-company" | "socials" | "distribution" | "title" | "subtitle" | "logo" | "add" | { buttonId: string } | null;
 type BackgroundTab = "color" | "gradient" | "image";
 type DeviceMode = "small" | "standard" | "large";
 type SaveAction = (formData: FormData) => void | Promise<void>;
-type ImageEditorDraft = { kind: ImageKind; src: string; file?: File; initial: ImagePlacement };
+type ImageEditorDraft = { kind: ImageKind; src: string; file?: File; initial: ImagePlacement; contactFrameWidth?: number };
 
 const SIZES = [
   { label: "Chico", patch: { height: 44, textSize: 13, iconSize: 25, gap: 6 } },
@@ -38,11 +40,17 @@ const SIZES = [
   { label: "Grande", patch: { height: 60, textSize: 16, iconSize: 32, gap: 12 } },
 ];
 const BRAND_BUTTON_TYPES = new Set(["whatsapp", "instagram", "tiktok", "facebook", "linkedin", "youtube", "spotify", "telegram", "mercadopago", "maps", "review"]);
+const PDF_TITLE_OPTIONS = ["Ver CV", "Ver catálogo", "Ver menú", "Ver portfolio"];
 const DEVICE_OPTIONS: { id: DeviceMode; label: string; size: string; width: number }[] = [
   { id: "small", label: "Chico", size: "360 px", width: 360 },
   { id: "standard", label: "Común", size: "390 px", width: 390 },
   { id: "large", label: "Grande", size: "430 px", width: 430 },
 ];
+const CONTACT_LOOKS = [
+  { id: "essential", name: "Esencial", description: "Cálida y directa; tus datos son protagonistas.", layout: "card", accent: "#343d31", backdrop: "#e9eae2", font: "modern" },
+  { id: "editorial", name: "Editorial", description: "Una presentación visual para marcas personales.", layout: "card", accent: "#46372f", backdrop: "#e9e3dc", font: "domine" },
+  { id: "professional", name: "Profesional", description: "Ficha ordenada para trabajo y servicios.", layout: "document", accent: "#163b49", backdrop: "#e8eff0", font: "manrope" },
+] as const;
 const LOGO_SHAPE_OPTIONS: { id: LogoStyle["shape"]; label: string }[] = [
   { id: "round", label: "Circular" },
   { id: "square", label: "Cuadrado redondeado" },
@@ -101,7 +109,7 @@ function logoTreatmentPatch(treatment: LogoTreatment, templateId = "minimal"): P
 export default function EditorV2({ landing, initialButtons, saveAction, publishAction, deleteLandingAction }: { landing: LandingDraft; initialButtons: ButtonItem[]; saveAction: SaveAction; publishAction: SaveAction; deleteLandingAction: SaveAction }) {
   const [draft, setDraft] = useState(landing);
   const [buttons, setButtons] = useState(initialButtons);
-  const [panel, setPanel] = useState<Panel>("templates");
+  const [panel, setPanel] = useState<Panel>(landing.business_type === "contact" ? null : "templates");
   const [bgTab, setBgTab] = useState<BackgroundTab>("color");
   const [preview, setPreview] = useState(false);
   const [device, setDevice] = useState<DeviceMode>("standard");
@@ -121,6 +129,11 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
   const [logoRemoved, setLogoRemoved] = useState(false);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [coverRemoved, setCoverRemoved] = useState(false);
+  const [cvFileName, setCvFileName] = useState("");
+  const [cvFileError, setCvFileError] = useState("");
+  const [cvPreviewUrl, setCvPreviewUrl] = useState("");
+  const cvPreviewUrlRef = useRef("");
+  const [cvUploading, setCvUploading] = useState(false);
   const [imageEditor, setImageEditor] = useState<ImageEditorDraft | null>(null);
   const activeButton = typeof panel === "object" && panel ? buttons.find((button) => button.id === panel.buttonId) : null;
   const actionDefs = useMemo(() => getAllActions(), []);
@@ -142,6 +155,10 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty]);
+
+  useEffect(() => () => {
+    if (cvPreviewUrlRef.current) URL.revokeObjectURL(cvPreviewUrlRef.current);
+  }, []);
 
   useEffect(() => {
     panelRef.current?.scrollTo({ top: 0 });
@@ -261,10 +278,58 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
   const changeZone = (patch: Partial<ButtonZoneStyle>) => change({ buttonZone: { ...draft.buttonZone, ...patch } });
   const patchButtons = (updater: (current: ButtonItem[]) => ButtonItem[]) => { setButtons(updater); setDirty(true); };
   const changeButton = (id: string, patch: Partial<ButtonItem>) => { commitContinuous(); patchButtons((current) => current.map((button) => button.id === id ? { ...button, ...patch } : button)); };
+  const changeContactAction = (type: "phone" | "email" | "whatsapp" | "website" | "cv", value: string) => {
+    commitContinuous();
+    const newId = `new-${crypto.randomUUID()}`;
+    patchButtons((current) => {
+      const existing = current.find((button) => button.type === type);
+      if (!value.trim()) return current.filter((button) => button.type !== type);
+      if (existing) return current.map((button) => button.id === existing.id ? { ...button, url: value } : button);
+      const def = actionDefs.find((action) => action.type === type)!;
+      return [...current, { id: newId, type, title: type === "cv" ? "Ver CV / portfolio" : def.label, subtitle: type === "cv" ? "Documento" : "", url: value, message: type === "whatsapp" ? "Hola, quiero hacer una consulta." : "", icon: "", icon_background_color: "", background_color: "#1f2937", text_color: "#ffffff", use_auto_color: true, position: current.length }];
+    });
+  };
+  const selectCvFile = (file?: File) => {
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024 || !/\.pdf$/i.test(file.name) || (file.type && file.type !== "application/pdf")) {
+      if (cvPreviewUrlRef.current) URL.revokeObjectURL(cvPreviewUrlRef.current);
+      cvPreviewUrlRef.current = "";
+      setCvPreviewUrl("");
+      setCvFileError("Elegí un PDF de hasta 10 MB.");
+      setCvFileName("");
+      const input = document.getElementById("v2-cv-file") as HTMLInputElement | null;
+      if (input) input.value = "";
+      return;
+    }
+    setCvFileError("");
+    setCvFileName(file.name);
+    if (cvPreviewUrlRef.current) URL.revokeObjectURL(cvPreviewUrlRef.current);
+    cvPreviewUrlRef.current = URL.createObjectURL(file);
+    setCvPreviewUrl(cvPreviewUrlRef.current);
+    if (buttons.some((button) => button.type === "cv")) { setDirty(true); return; }
+    commitDiscrete();
+    const id = `new-${crypto.randomUUID()}`;
+    patchButtons((current) => [...current, { id, type: "cv", title: "Ver CV / portfolio", subtitle: "Documento PDF", url: "", message: "", icon: "", icon_background_color: "", background_color: "#5754ae", text_color: "#ffffff", use_auto_color: true, position: current.length }]);
+  };
+  const clearSelectedCvFile = () => {
+    const input = document.getElementById("v2-cv-file") as HTMLInputElement | null;
+    if (input) input.value = "";
+    setCvFileName("");
+    setCvFileError("");
+    if (cvPreviewUrlRef.current) URL.revokeObjectURL(cvPreviewUrlRef.current);
+    cvPreviewUrlRef.current = "";
+    setCvPreviewUrl("");
+  };
+  const removeCv = () => {
+    clearSelectedCvFile();
+    const cv = buttons.find((button) => button.type === "cv");
+    if (cv) deleteButton(cv.id);
+  };
 
   function deleteButton(id: string) {
     const index = buttons.findIndex((button) => button.id === id);
     if (index < 0) return;
+    if (buttons[index].type === "cv") clearSelectedCvFile();
     commitDiscrete();
     setDeletedButton({ button: buttons[index], index });
     patchButtons((current) => current.filter((button) => button.id !== id));
@@ -312,11 +377,28 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
       titleStyle: { ...draft.titleStyle, ...preset.title, color: preset.foreground, bgMode: "none", letterSpacing: undefined, eyebrowColor: undefined, eyebrowSize: 10, eyebrowWeight: 600 },
       subtitleStyle: { ...draft.subtitleStyle, ...preset.subtitle, color: preset.foreground, bgMode: "none", letterSpacing: undefined },
       logoStyle: parseLogoStyle({ ...logoTreatmentPatch("template", id), ...preset.logo, zoom: draft.logoStyle.zoom, x: draft.logoStyle.x, y: draft.logoStyle.y }),
-      coverStyle: { ...draft.coverStyle, enabled: false },
+      coverStyle: draft.business_type === "contact" ? draft.coverStyle : { ...draft.coverStyle, enabled: false },
     });
     // A template switch preserves deliberate per-button exceptions. Only the explicitly
     // confirmed global restore clears them; both actions stay undoable as one history step.
     if (restoreOverrides) patchButtons((current) => current.map((button) => ({ ...button, use_auto_color: true, icon_background_color: "" })));
+  }
+
+  function applyContactLook(id: (typeof CONTACT_LOOKS)[number]["id"]) {
+    const look = CONTACT_LOOKS.find((item) => item.id === id);
+    if (!look) return;
+    commitDiscrete();
+    patchDraft({
+      primary_color: look.accent,
+      background_type: "color",
+      background_color: look.backdrop,
+      button_font: "minimal",
+      buttonZone: { ...draft.buttonZone, contactTheme: look.id, contactLayout: look.layout, contactDensity: "balanced", contactSurfaceColor: undefined, contactCoverColor: undefined },
+      titleStyle: { ...draft.titleStyle, font: look.font, italic: false, size: id === "editorial" ? 38 : 28, color: id === "editorial" ? "#433b35" : id === "professional" ? "#202637" : "#243028", weight: id === "editorial" ? 500 : 700, eyebrowFont: look.font, eyebrowItalic: false, eyebrowSize: 14, eyebrowColor: id === "editorial" ? "#665f59" : "#47505f", bgMode: "none" },
+      subtitleStyle: { ...draft.subtitleStyle, font: "minimal", italic: false, size: 14, color: id === "editorial" ? "#665f59" : "#47505f", bgMode: "none" },
+      logoStyle: { ...draft.logoStyle, shape: "round", borderWidth: 0, shadow: "none", size: id === "professional" ? 80 : 104 },
+      coverStyle: { ...draft.coverStyle, mode: "banner" },
+    });
   }
 
   function applyButtonLook(id: string) {
@@ -352,9 +434,13 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
   }
 
   function addButton(type: string) {
+    if (type === "cv") {
+      const existing = buttons.find((button) => button.type === "cv");
+      if (existing) { setPanel({ buttonId: existing.id }); return; }
+    }
     const def = actionDefs.find((item) => item.type === type) || actionDefs[actionDefs.length - 1];
     const id = `new-${crypto.randomUUID()}`;
-    const button: ButtonItem = { id, type: def.type, title: def.label, subtitle: "", url: "", message: def.message ? "Hola, quiero hacer una consulta." : "", icon: "", icon_background_color: "", background_color: "#1f2937", text_color: "#ffffff", use_auto_color: true, position: buttons.length };
+    const button: ButtonItem = { id, type: def.type, title: type === "cv" ? "Ver archivo PDF" : def.label, subtitle: "", url: "", message: def.message ? "Hola, quiero hacer una consulta." : "", icon: "", icon_background_color: "", background_color: "#1f2937", text_color: "#ffffff", use_auto_color: true, position: buttons.length };
     commitDiscrete();
     patchButtons((current) => [...current, button]); setPanel({ buttonId: id });
   }
@@ -472,10 +558,13 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
   async function openImageEditor(kind: ImageKind, file?: File) {
     const current = kind === "background" ? backgroundImage : kind === "logo" ? logoImage : coverImage;
     if (!file && !current) return;
-    const compressed = file ? await compressImage(file, kind === "logo" ? 900 : 1600) : undefined;
+    const compressed = file ? await compressImage(file, kind === "logo" ? 900 : kind === "cover" ? 2000 : 1600, kind === "cover" ? .9 : .82) : undefined;
     const src = compressed ? URL.createObjectURL(compressed) : current;
     const style = kind === "background" ? draft.bgPosition : kind === "logo" ? draft.logoStyle : draft.coverStyle;
-    setImageEditor({ kind, src, file: compressed, initial: compressed ? { zoom: 1, x: 50, y: 50 } : { zoom: style.zoom, x: style.x, y: style.y } });
+    const contactFrameWidth = kind === "cover" && draft.business_type === "contact"
+      ? document.querySelector<HTMLElement>(".is-contact-editor .contact-hero-art")?.offsetWidth
+      : undefined;
+    setImageEditor({ kind, src, file: compressed, contactFrameWidth, initial: compressed ? { zoom: 1, x: 50, y: 50 } : { zoom: style.zoom, x: style.x, y: style.y } });
   }
 
   function cancelImageEditor() {
@@ -495,7 +584,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
     }
     if (kind === "background") change({ background_type: "image", bgPosition: { ...draft.bgPosition, ...placement } });
     if (kind === "logo") { setLogoRemoved(false); change({ logoStyle: { ...draft.logoStyle, ...placement } }); }
-    if (kind === "cover") { setCoverRemoved(false); change({ coverStyle: { ...draft.coverStyle, ...placement, enabled: true } }); }
+    if (kind === "cover") { setCoverRemoved(false); change({ coverStyle: { ...draft.coverStyle, ...placement, enabled: true, ...(draft.business_type === "contact" ? { mode: "banner", overlay: coverImage ? draft.coverStyle.overlay : 0 } : {}) } }); }
     setImageEditor(null);
   }
   const rendererLanding = {
@@ -518,14 +607,17 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
     draggingId,
     onSelectTemplates: () => selectPanel("templates"),
     onSelectSettings: () => selectPanel("settings"),
+    onSelectContact: () => selectPanel("contact"),
+    onSelectContactDesign: () => selectPanel("contact-design"),
     onSelectSocials: () => selectPanel("socials"),
     onSelectDistribution: () => selectPanel("distribution"),
     onSelectLogo: () => selectPanel("logo"),
-    onSelectTitle: () => selectPanel("title"),
-    onSelectSubtitle: () => selectPanel("subtitle"),
+    onSelectTitle: () => selectPanel(draft.business_type === "contact" ? "contact-name" : "title"),
+    onSelectRole: () => selectPanel(draft.business_type === "contact" ? "contact-role" : "title"),
+    onSelectSubtitle: () => selectPanel(draft.business_type === "contact" ? "contact-company" : "subtitle"),
     onSelectBackground: () => { setBgTab(draft.background_type === "image" ? "image" : draft.background_type === "gradient" ? "gradient" : "color"); selectPanel("background"); },
     onSelectCover: () => selectPanel("cover"),
-    onSelectZone: () => selectPanel("buttons"),
+    onSelectZone: () => selectPanel(draft.business_type === "contact" ? "add" : "buttons"),
     onSelectButton: (id) => selectPanel({ buttonId: id }),
     onDeleteButton: deleteButton,
     onAddButton: () => selectPanel("add"),
@@ -533,11 +625,62 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
     onDragStart: (clientY, id) => startDrag(clientY, id),
   };
 
+  async function handleSaveSubmit(event: FormEvent<HTMLFormElement>) {
+    const form = event.currentTarget;
+    const cvInput = form.querySelector<HTMLInputElement>("#v2-cv-file");
+    const file = cvInput?.files?.[0];
+    if (!file) return;
+    event.preventDefault();
+    if (cvUploading) return;
+    if (!buttons.some((button) => button.type === "cv")) { setCvFileError("Agregá el botón de CV antes de guardar el archivo."); return; }
+    const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
+    setCvUploading(true);
+    let publicUrl: string;
+    try {
+      if (file.size > 10 * 1024 * 1024 || !/\.pdf$/i.test(file.name) || (file.type && file.type !== "application/pdf")) throw new Error("Elegí un PDF de hasta 10 MB.");
+      if (new TextDecoder().decode(await file.slice(0, 5).arrayBuffer()) !== "%PDF-") throw new Error("El archivo no parece ser un PDF válido.");
+      const supabase = createBrowserClient();
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      if (authError || !authData.user) throw new Error("Tu sesión venció. Volvé a ingresar antes de guardar.");
+      const path = `${authData.user.id}/${draft.id}/cv-${crypto.randomUUID()}.pdf`;
+      const { error: uploadError } = await supabase.storage.from("landing-assets").upload(path, file, { contentType: "application/pdf", upsert: false });
+      if (uploadError) throw new Error("No se pudo subir el PDF. Probá de nuevo.");
+      publicUrl = supabase.storage.from("landing-assets").getPublicUrl(path).data.publicUrl;
+    } catch (error) {
+      setCvFileError(error instanceof Error ? error.message : "No se pudo subir el PDF.");
+      setCvUploading(false);
+      return;
+    }
+    const formData = new FormData(form);
+    formData.delete("cv_file");
+    formData.set("buttons", JSON.stringify(buttons.map((button) => button.type === "cv" ? { ...button, url: publicUrl } : button)));
+    formData.set("return_to", submitter?.name === "return_to" ? submitter.value : `/admin/landings/${draft.id}/editor-v2`);
+    startTransition(async () => {
+      try { await saveAction(formData); }
+      finally { setCvUploading(false); }
+    });
+  }
+
+  const contactControlsProps = {
+    draft, buttons, cvFileName, cvFileError, onClearCvFile: clearSelectedCvFile,
+    onChange: change, onActionChange: changeContactAction, onRemoveCv: removeCv,
+    onEditPhoto: () => selectPanel("logo"), onEditLinks: () => selectPanel("add"), onEditText: (field: "name" | "role" | "company") => selectPanel(`contact-${field}`),
+  };
+  function removeContactCover() {
+    const input = document.getElementById("v2-cover-file") as HTMLInputElement | null;
+    if (input) input.value = "";
+    if (coverPreview) URL.revokeObjectURL(coverPreview);
+    setCoverPreview(null);
+    setCoverRemoved(true);
+    change({ coverStyle: { ...draft.coverStyle, enabled: false } });
+  }
+
   return (
-    <main className="v2-shell">
-      <form id="v2-save" action={saveAction} onSubmit={() => { setDirty(false); setDeletedButton(null); }}>
+    <main className={`v2-shell${draft.business_type === "contact" ? " is-contact-editor" : ""}`}>
+      <form id="v2-save" action={saveAction} onSubmit={handleSaveSubmit}>
         <input type="hidden" name="landing_id" value={draft.id} />
         <input type="hidden" name="business_name" value={draft.business_name} /><input type="hidden" name="description" value={draft.description || ""} />
+        <input type="hidden" name="business_type" value={draft.business_type || "custom"} />
         <input type="hidden" name="primary_color" value={draft.primary_color || "#1f2937"} /><input type="hidden" name="background_type" value={draft.background_type || "color"} />
         <input type="hidden" name="background_color" value={draft.background_color || "#f7f5f0"} /><input type="hidden" name="background_gradient_to" value={draft.background_gradient_to || "#a6c1ee"} />
         <input type="hidden" name="text_color" value={draft.text_color || "#ffffff"} /><input type="hidden" name="text_panel_color" value={draft.text_panel_color || "#000000"} />
@@ -549,42 +692,42 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
         <input id="v2-background-file" hidden type="file" name="background_image" accept="image/png,image/jpeg,image/webp" />
         <input id="v2-logo-file" hidden type="file" name="logo_image" accept="image/png,image/jpeg,image/webp" />
         <input id="v2-cover-file" hidden type="file" name="cover_image" accept="image/png,image/jpeg,image/webp" />
+        <input id="v2-cv-file" hidden type="file" name="cv_file" accept="application/pdf,.pdf" onChange={(event) => selectCvFile(event.target.files?.[0])} />
         <input type="hidden" name="remove_logo_image" value={String(logoRemoved)} />
         <input type="hidden" name="remove_cover_image" value={String(coverRemoved)} />
       </form>
 
       <header className="v2-topbar">
         <button className="v2-back" type="button" onClick={() => dirty ? setLeaveOpen(true) : location.assign("/admin")}>←</button>
-        <div><span>Editor de landing</span><strong>{draft.business_name}</strong></div>
+        <div><span>{draft.business_type === "contact" ? "Editor de tarjeta" : "Editor de landing"}</span><strong>{draft.business_name}</strong></div>
         <div className="v2-status"><i className={dirty ? "is-dirty" : ""} />{dirty ? "Cambios sin guardar" : "Todo guardado"}</div>
         <div className="v2-history" data-tick={historyTick}>
           <button type="button" title="Deshacer (Ctrl+Z)" aria-label="Deshacer" disabled={pastRef.current.length === 0} onClick={undo}>↶</button>
           <button type="button" title="Rehacer (Ctrl+Y)" aria-label="Rehacer" disabled={futureRef.current.length === 0} onClick={redo}>↷</button>
         </div>
-        <button className="v2-ghost" type="button" onClick={() => { setPanel(panel === "settings" ? null : "settings"); setPreview(false); }}>Ajustes</button>
-        <button className="v2-ghost" type="button" onClick={() => { setPreview(!preview); setPanel(preview ? (window.innerWidth <= 840 ? null : "templates") : null); }}>{preview ? "Seguir editando" : "Vista previa"}</button>
-        <button className="v2-save" form="v2-save" type="submit" name="return_to" value={`/admin/landings/${draft.id}/editor-v2`} disabled={!dirty}>Guardar cambios</button>
+        <button className="v2-ghost" type="button" onClick={() => { setPanel(draft.business_type === "contact" ? "settings" : panel === "settings" ? null : "settings"); setPreview(false); }}>{draft.business_type === "contact" ? "Publicar" : "Ajustes"}</button>
+        <button className="v2-ghost" type="button" onClick={() => { setPreview(!preview); setPanel(preview ? (window.innerWidth <= 840 || draft.business_type === "contact" ? null : "templates") : null); }}>{preview ? "Seguir editando" : "Vista previa"}</button>
+        <button className="v2-save" form="v2-save" type="submit" name="return_to" value={`/admin/landings/${draft.id}/editor-v2`} disabled={!dirty || cvUploading}>{cvUploading ? "Subiendo PDF…" : "Guardar cambios"}</button>
       </header>
 
       <div className={`v2-workspace ${preview ? "is-preview" : ""} ${panel ? "has-panel" : ""}`}>
         {!preview && panel && <aside ref={panelRef} className="v2-panel">
           <div className="v2-panel-head">
-            <div><span>Paso simple</span><h2>{panelTitle(panel)}</h2></div>
+            <div><span>{draft.business_type === "contact" ? "Tarjeta personal" : "Paso simple"}</span><h2>{draft.business_type === "contact" && typeof panel === "object" ? "Editar enlace" : draft.business_type === "contact" && panel === "logo" ? "Foto de perfil" : draft.business_type === "contact" && panel === "cover" ? "Portada de la tarjeta" : draft.business_type === "contact" && panel === "add" ? "Agregar un enlace" : draft.business_type === "contact" && panel === "settings" ? "Publicar tarjeta" : draft.business_type === "contact" && panel === "templates" ? "Elegí un diseño" : panelTitle(panel)}</h2></div>
             <button className="v2-panel-close" type="button" onClick={() => setPanel(null)}>×</button>
           </div>
-          {panel === "templates" && <Templates selected={draft.buttonZone.templateId} onApply={(id) => applyPreset(id)} onRestore={() => setRestoreDesignOpen(true)} />}
+          {draft.business_type === "contact" && panel === "templates" && <button type="button" className="v2-ghost v2-contact-return" onClick={() => setPanel("contact-design")}>← Volver a Diseño</button>}
+          {draft.business_type === "contact" && (panel === "contact-name" || panel === "contact-role" || panel === "contact-company") && <button type="button" className="v2-ghost v2-contact-return" onClick={() => setPanel("contact")}>← Volver a Contenido</button>}
+          {panel === "templates" && (draft.business_type === "contact" ? <ContactLooks selected={draft.buttonZone.contactTheme || "classic"} onApply={applyContactLook} /> : <Templates selected={draft.buttonZone.templateId} onApply={(id) => applyPreset(id)} onRestore={() => setRestoreDesignOpen(true)} />)}
+          {panel === "contact-design" && <ContactDesignControls draft={draft} onChange={change} onBackground={() => selectPanel("background")} onTemplates={() => selectPanel("templates")} />}
           {panel === "buttons" && <ButtonDesign draft={draft} buttons={buttons} backgroundImage={backgroundImage} onZone={changeZone} onFont={(button_font) => change({ button_font, buttonZone: { ...draft.buttonZone, fontWeight: resolveFontWeight(button_font, draft.buttonZone.fontWeight ?? recommendedButtonTypography(button_font).fontWeight), letterSpacing: draft.buttonZone.letterSpacing ?? recommendedButtonTypography(button_font).letterSpacing } })} onApplyButtonLook={applyButtonLook} onResetButtonOverrides={resetButtonOverrides} />}
           {panel === "background" && <BackgroundControls draft={draft} tab={bgTab} onTab={setBgTab} onChange={change} onFile={(file) => openImageEditor("background", file)} onAdjust={() => openImageEditor("background")} hasImage={Boolean(backgroundImage)} />}
-          {panel === "cover" && <CoverControls draft={draft} coverImage={coverImage} onChange={change} onCoverFile={(file) => openImageEditor("cover", file)} onAdjustCover={() => openImageEditor("cover")} onRemoveCover={() => {
-            const input = document.getElementById("v2-cover-file") as HTMLInputElement | null;
-            if (input) input.value = "";
-            if (coverPreview) URL.revokeObjectURL(coverPreview);
-            setCoverPreview(null); setCoverRemoved(true);
-            change({ coverStyle: { ...draft.coverStyle, enabled: false } });
-          }} />}
-          {panel === "distribution" && <DistributionControls draft={draft} onZone={changeZone} />}
+          {panel === "cover" && <CoverControls draft={draft} coverImage={coverImage} onChange={change} onCoverFile={(file) => openImageEditor("cover", file)} onAdjustCover={() => openImageEditor("cover")} onRemoveCover={removeContactCover} />}
+          {panel === "distribution" && (draft.business_type === "contact" ? <ContactDistributionControls draft={draft} onChange={change} /> : <DistributionControls draft={draft} onZone={changeZone} />)}
           {panel === "socials" && <SocialControls links={draft.buttonZone.quickSocials || []} onChange={(quickSocials) => changeZone({ quickSocials })} filled={draft.buttonZone.quickSocialsFilled !== false} onFilled={(quickSocialsFilled) => changeZone({ quickSocialsFilled })} />}
-          {panel === "settings" && <SettingsControls draft={draft} onBrandingChange={(showBranding) => changeZone({ showBranding })} publishAction={publishAction} deleteLandingAction={deleteLandingAction} />}
+          {panel === "settings" && <SettingsControls draft={draft} buttons={buttons} dirty={dirty} onTypeChange={(business_type) => { if (draft.business_type !== business_type) { commitDiscrete(); patchDraft({ business_type }); } if (business_type === "contact") setPanel("contact"); }} onBrandingChange={(showBranding) => changeZone({ showBranding })} publishAction={publishAction} deleteLandingAction={deleteLandingAction} />}
+          {panel === "contact" && <ContactControls {...contactControlsProps} />}
+          {(panel === "contact-name" || panel === "contact-role" || panel === "contact-company") && <ContactTextControls field={panel.slice(8) as "name" | "role" | "company"} draft={draft} onChange={change} />}
           {panel === "title" && <TitleControls draft={draft} onChange={change} />}
           {panel === "subtitle" && <SubtitleControls draft={draft} onChange={change} />}
           {panel === "logo" && <LogoControls draft={draft} logoImage={logoImage} onChange={change} onLogo={(file) => openImageEditor("logo", file)} onAdjustLogo={() => openImageEditor("logo")} onRemoveLogo={() => {
@@ -593,8 +736,8 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
             if (logoPreview) URL.revokeObjectURL(logoPreview);
             setLogoPreview(null); setLogoRemoved(true); setDirty(true);
           }} />}
-          {panel === "add" && <ActionCatalog onAdd={addButton} />}
-          {activeButton && <ButtonControls button={activeButton} draft={draft} onChange={(patch) => changeButton(activeButton.id, patch)} onDelete={() => deleteButton(activeButton.id)} />}
+          {panel === "add" && <ActionCatalog onAdd={addButton} isContact={draft.business_type === "contact"} />}
+          {activeButton && <ButtonControls button={activeButton} draft={draft} cvFileName={cvFileName} cvFileError={cvFileError} onClearCvFile={clearSelectedCvFile} onChange={(patch) => changeButton(activeButton.id, patch)} onDelete={() => activeButton.type === "cv" ? removeCv() : deleteButton(activeButton.id)} />}
         </aside>}
 
         <section className={`v2-stage device-${device}`}>
@@ -603,14 +746,14 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
           <div className={`v2-phone device-${device}`}>
             <div className="v2-phone-screen" ref={buttonsContainerRef}>
               <ScaledPhoneCanvas className="scaled-phone-canvas" designWidth={DEVICE_OPTIONS.find((option) => option.id === device)?.width} photoBackground={draft.background_type === "image" ? <LandingPhotoBackground landing={rendererLanding} /> : undefined} onScaleChange={(next) => { phoneScaleRef.current = next; }}>
-                <LandingRenderer landing={rendererLanding} actions={buttons} edit={preview ? undefined : editControls} externalPhotoBackground={draft.background_type === "image"} />
+                <LandingRenderer landing={rendererLanding} actions={preview && cvPreviewUrl ? buttons.map((button) => button.type === "cv" ? { ...button, url: cvPreviewUrl } : button) : buttons} edit={preview ? undefined : editControls} editorPreview={preview} externalPhotoBackground={draft.background_type === "image"} />
               </ScaledPhoneCanvas>
             </div>
           </div>
         </section>
       </div>
 
-      {imageEditor && <ImageAdjustDialog key={`${imageEditor.kind}-${imageEditor.src}`} kind={imageEditor.kind} src={imageEditor.src} shape={imageEditor.kind === "logo" ? draft.logoStyle.shape : undefined} coverMode={draft.coverStyle.mode} initial={imageEditor.initial} onApply={applyImageEditor} onCancel={cancelImageEditor} />}
+      {imageEditor && <ImageAdjustDialog key={`${imageEditor.kind}-${imageEditor.src}`} kind={imageEditor.kind} src={imageEditor.src} shape={imageEditor.kind === "logo" ? draft.logoStyle.shape : undefined} coverMode={imageEditor.kind === "cover" && draft.business_type === "contact" ? "banner" : draft.coverStyle.mode} contactCoverSize={imageEditor.kind === "cover" && draft.business_type === "contact" ? draft.coverStyle.size : undefined} contactFrameWidth={imageEditor.contactFrameWidth || (draft.buttonZone.contactLayout === "document" ? 384 : 402)} contactCoverOverlay={imageEditor.kind === "cover" && draft.business_type === "contact" ? imageEditor.file && !coverImage ? 0 : draft.coverStyle.overlay : undefined} initial={imageEditor.initial} onApply={applyImageEditor} onCancel={cancelImageEditor} />}
       {restoreDesignOpen && <div className="v2-modal-backdrop"><div className="v2-modal" role="dialog" aria-modal="true" aria-labelledby="v2-restore-title"><div className="v2-modal-icon">↩</div><h2 id="v2-restore-title">Restaurar diseño de {suggestedPreset(draft.buttonZone.templateId).name}</h2><p>Vuelve al fondo, encabezado, logo, textos y botones recomendados. Quita colores propios de cada botón. Conserva textos, enlaces, íconos elegidos e imágenes subidas; las fotos de fondo y portada quedan ocultas, no borradas.</p><button type="button" className="v2-save" onClick={() => { applyPreset(suggestedPreset(draft.buttonZone.templateId).id, true); setRestoreDesignOpen(false); }}>Restaurar diseño</button><button type="button" className="v2-ghost" onClick={() => setRestoreDesignOpen(false)}>Cancelar</button></div></div>}
       {deletedButton && <div className="v2-delete-notice"><span role="status">Botón eliminado: <b>{deletedButton.button.title}</b></span><button ref={restoreButtonRef} type="button" onClick={restoreDeletedButton}>Deshacer</button><button type="button" aria-label="Cerrar aviso" onClick={() => setDeletedButton(null)}>×</button></div>}
       {leaveOpen && <div className="v2-modal-backdrop"><div className="v2-modal"><div className="v2-modal-icon">!</div><h2>Tenés cambios sin guardar</h2><p>Si salís ahora, vas a perder los últimos cambios de diseño.</p><button className="v2-save" form="v2-save" name="return_to" value="/admin">Guardar y salir</button><Link href="/admin" className="v2-danger">Salir sin guardar</Link><button className="v2-ghost" onClick={() => { setLeaveOpen(false); setPreview(false); }}>Seguir editando</button></div></div>}
@@ -618,7 +761,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
   );
 }
 
-function panelTitle(panel: Exclude<Panel, null>) { if (typeof panel === "object") return "Editar botón"; return ({ templates: "Elegí una plantilla", buttons: "Editar todos los botones", background: "Fondo de la página", cover: "Encabezado",settings: "Ajustes de la landing", socials: "Redes rápidas", distribution: "Distribución", title: "Editar título", subtitle: "Editar subtítulo", logo: "Editar logo", add: "Agregar un botón" } as const)[panel]; }
+function panelTitle(panel: Exclude<Panel, null>) { if (typeof panel === "object") return "Editar botón"; return ({ templates: "Elegí una plantilla", buttons: "Editar todos los botones", background: "Fondo de la página", cover: "Encabezado",settings: "Ajustes de la landing", contact: "Contenido de la tarjeta", "contact-design": "Diseño de la tarjeta", "contact-name": "Editar nombre", "contact-role": "Editar cargo", "contact-company": "Editar empresa", socials: "Redes rápidas", distribution: "Distribución", title: "Editar título", subtitle: "Editar subtítulo", logo: "Editar logo", add: "Agregar un botón" } as const)[panel]; }
 
 function TemplateSwatch({ preset }: { preset: DesignPreset }) {
   const iconAppearance = recommendedIconAppearance(preset.buttonZone.collection);
@@ -682,6 +825,28 @@ function Templates({ selected, onApply, onRestore }: { selected: string; onApply
     </div>
     <p className="v2-help">Elegí una plantilla para aplicar su fondo, encabezado, logo, textos y botones. Se conservan los colores propios de botones individuales y las fotos subidas (aunque la plantilla muestre su fondo recomendado).</p>
     <div className="v2-template-grid">{DESIGN_PRESETS_V2.map((preset) => <button key={preset.id} type="button" className={selected === preset.id ? "selected" : ""} onClick={() => selected === preset.id ? onRestore() : onApply(preset.id)} aria-pressed={selected === preset.id}><TemplateSwatch preset={preset} /><b>{preset.name}</b><small>{preset.description}</small></button>)}</div>
+  </div>;
+}
+
+function ContactLooks({ selected, onApply }: { selected: string; onApply: (id: (typeof CONTACT_LOOKS)[number]["id"]) => void }) {
+  return <div className="v2-fields">
+    <p className="v2-help">Elegí una presentación completa. Tus datos y fotos se conservan; la portada siempre ocupa el mismo espacio, con imagen o sin ella.</p>
+    {!CONTACT_LOOKS.some((look) => look.id === selected) && <p className="v2-help">Tu tarjeta usa un diseño anterior. No cambiará hasta que elijas uno de estos tres.</p>}
+    <div className="v2-contact-look-grid">{CONTACT_LOOKS.map((look) => <button type="button" key={look.id} className={`v2-contact-look is-${look.id}${selected === look.id ? " is-selected" : ""}`} aria-pressed={selected === look.id} onClick={() => onApply(look.id)}>
+      <span className="v2-contact-look-art" aria-hidden="true"><i className="look-cover"/><i className="look-avatar"/><i className="look-name"/><i className="look-line"/><i className="look-action"/></span>
+      <strong>{look.name}</strong><small>{look.description}</small>
+    </button>)}</div>
+  </div>;
+}
+
+function CvSourceField({ value, fileName, error, context = "contact", onUrlChange, onClearFile }: { value: string; fileName: string; error: string; context?: "contact" | "landing"; onUrlChange: (value: string) => void; onClearFile: () => void }) {
+  const [editingLink, setEditingLink] = useState(false);
+  const hasUploadedPdf = /\/storage\/v1\/object\/public\/landing-assets\/[^?#]+\/cv-[^/?#]+\.pdf(?:[?#]|$)/i.test(value);
+  return <div className="v2-cv-source">
+    <label className="v2-upload" htmlFor="v2-cv-file">{fileName ? "Cambiar PDF seleccionado" : value ? "Reemplazar por un PDF" : "Subir PDF"}</label>
+    {fileName ? <div className="v2-cv-selected"><span>PDF listo para guardar: <strong>{fileName}</strong></span><button type="button" onClick={onClearFile}>Elegir un enlace en su lugar</button></div> : hasUploadedPdf && !editingLink ? <div className="v2-cv-selected"><span>Tenés un PDF cargado.</span><a href={value} target="_blank" rel="noopener noreferrer">Ver PDF actual ↗</a><button type="button" onClick={() => setEditingLink(true)}>Usar otro enlace en su lugar</button></div> : <label>{context === "contact" ? "O pegá el enlace a tu CV o portfolio" : "O pegá un enlace al documento"}<input type="url" value={value} placeholder="https://..." onFocus={(event) => { if (hasUploadedPdf) event.target.select(); }} onChange={(event) => onUrlChange(event.target.value)} /></label>}
+    {error && <p className="v2-help" role="alert" style={{ margin: 0, color: "#b53232" }}>{error}</p>}
+    <p className="v2-help" style={{ margin: 0 }}>El botón abrirá el PDF o enlace para verlo. Si subís un PDF, cualquier persona con el enlace podrá acceder a él.</p>
   </div>;
 }
 
@@ -842,14 +1007,15 @@ function BackgroundControls({ draft, tab, onTab, onChange, onFile, onAdjust, has
   const updatePos = (p: Partial<BackgroundPosition>) => onChange({ bgPosition: { ...draft.bgPosition, ...p } });
   const selectTab = (next: BackgroundTab) => { onTab(next); onChange({ background_type: next }); };
   return <div className="v2-fields">
+    {draft.business_type === "contact" && <p className="v2-help">Este fondo rodea la tarjeta. El color de la tarjeta y la portada se cambian en Diseño.</p>}
 <EditorSection title="Tipo de fondo" tone="blue">    <div className="v2-segment">
       <button className={tab === "color" ? "active" : ""} onClick={() => selectTab("color")}>Color</button>
       <button className={tab === "gradient" ? "active" : ""} onClick={() => selectTab("gradient")}>Degradado</button>
       <button className={tab === "image" ? "active" : ""} onClick={() => selectTab("image")}>Imagen</button>
     </div>
 
-</EditorSection>    {tab !== "image" && <EditorSection title="Paleta de colores" tone="peach">
-      <ColorField label="Color principal" value={draft.background_color || "#f7f5f0"} onChange={(background_color) => onChange({ background_color })} />
+</EditorSection>    {tab !== "image" && <EditorSection title={draft.business_type === "contact" ? "Fondo exterior" : "Paleta de colores"} tone="peach">
+      <ColorField label={draft.business_type === "contact" ? "Color del fondo" : "Color principal"} value={draft.background_color || "#f7f5f0"} onChange={(background_color) => onChange({ background_color })} />
       {tab === "gradient" && <ColorField label="Segundo color" value={draft.background_gradient_to || "#a6c1ee"} onChange={(background_gradient_to) => onChange({ background_gradient_to })} />}
     </EditorSection>}
 
@@ -880,6 +1046,29 @@ const HEADER_STYLES: { id: HeaderStyle; title: string; note: string }[] = [
 function CoverControls({ draft, coverImage, onChange, onCoverFile, onAdjustCover, onRemoveCover }: { draft: LandingDraft; coverImage: string; onChange: (p: Partial<LandingDraft>) => void; onCoverFile: (f?: File) => void; onAdjustCover: () => void; onRemoveCover: () => void }) {
   const style = draft.coverStyle;
   const updateCover = (patch: Partial<CoverStyle>) => onChange({ coverStyle: { ...style, ...patch } });
+  if (draft.business_type === "contact") {
+    const hasPhoto = Boolean(coverImage);
+    const photoVisible = hasPhoto && style.enabled;
+    const customColor = draft.buttonZone.contactCoverColor;
+    return <div className="v2-fields">
+      <div className="v2-contact-cover-status" role="status"><strong>{photoVisible ? "Foto visible" : hasPhoto ? "Foto cargada, pero oculta" : "Sin foto"}</strong><span>{photoVisible ? "La tarjeta muestra la foto con este tamaño y encuadre." : hasPhoto ? "La foto está guardada, pero ahora se ve el diseño sin foto." : customColor ? "Se muestra tu color personalizado." : "Se muestra el color y detalle del diseño elegido."} Mirá la tarjeta para ver el resultado exacto.</span></div>
+      <EditorSection title="Alto de la portada" tone="blue">
+        <div className="v2-segment" aria-label="Alto de la portada">{COVER_SIZES.map((option) => <button type="button" key={option.id} className={style.size === option.id ? "active" : ""} aria-pressed={style.size === option.id} onClick={() => updateCover({ size: option.id })}>{option.label}</button>)}</div>
+        {photoVisible && <p className="v2-help" style={{ margin: "8px 0 0" }}>Cambia cuánto se ve de la foto, sin estirarla ni cambiar su zoom.</p>}
+      </EditorSection>
+      {hasPhoto && <div className="v2-segment" aria-label="Visibilidad de la foto de portada"><button type="button" className={style.enabled ? "active" : ""} aria-pressed={style.enabled} onClick={() => updateCover({ enabled: true, mode: "banner" })}>Mostrar foto</button><button type="button" className={!style.enabled ? "active" : ""} aria-pressed={!style.enabled} onClick={() => updateCover({ enabled: false })}>Ocultar foto</button></div>}
+      <label className="v2-upload">{hasPhoto ? "Cambiar foto de portada" : "Subir foto de portada"}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => { onCoverFile(event.target.files?.[0]); event.target.value = ""; }} /></label>
+      {hasPhoto && <>
+        <button type="button" className="v2-suggested" onClick={onAdjustCover}>Ajustar encuadre de la foto →</button>
+        {photoVisible && <details className="v2-contact-more"><summary>Oscurecer la imagen <span>Opcional</span></summary><div className="v2-contact-more-body"><Range label="Oscuridad" min={0} max={.85} step={.01} value={style.overlay} onChange={(overlay) => updateCover({ overlay })} /><p className="v2-help" style={{ margin: 0 }}>Una foto nueva comienza sin oscurecimiento.</p></div></details>}
+        <button type="button" className="v2-ghost" onClick={onRemoveCover}>Quitar foto</button>
+      </>}
+      {!photoVisible && <EditorSection title="Portada sin foto" tone="blue">
+        <p className="v2-help" style={{ margin: 0 }}>El diseño aporta el color y un detalle sutil. Si querés, elegí un color propio.</p>
+        {customColor ? <><ColorField label="Color de la portada" value={customColor} onChange={(contactCoverColor) => onChange({ buttonZone: { ...draft.buttonZone, contactCoverColor } })} /><button type="button" className="v2-ghost" onClick={() => onChange({ buttonZone: { ...draft.buttonZone, contactCoverColor: undefined } })}>Usar color del diseño</button></> : <button type="button" className="v2-suggested" onClick={() => onChange({ buttonZone: { ...draft.buttonZone, contactCoverColor: draft.primary_color || "#1f2937" } })}>Elegir color propio</button>}
+      </EditorSection>}
+    </div>;
+  }
   const hasCard = headerCardOn(draft.buttonZone);
   // The four options are mutually exclusive in the picker even though card and photo are stored
   // separately — a photo wins if both happen to be on (older pages could have that).
@@ -955,6 +1144,22 @@ function SeparatorPicker({style,onChange}: {style:DistributionStyle;onChange:(va
   </fieldset>;
 }
 
+function ContactDistributionControls({ draft, onChange }: { draft: LandingDraft; onChange: (patch: Partial<LandingDraft>) => void }) {
+  const density = draft.buttonZone.contactDensity || "balanced";
+  const isDocument = draft.buttonZone.contactLayout === "document";
+  return <div className="v2-fields">
+    <p className="v2-help">Ajustá el espacio y la foto sin cambiar el diseño ni tus datos. Los tamaños se adaptan a pantallas chicas.</p>
+    <EditorSection title="Espacios" tone="blue">
+      <div className="v2-segment">
+        {(["compact", "balanced", "airy"] as const).map((value) => <button type="button" key={value} className={density === value ? "active" : ""} onClick={() => onChange({ buttonZone: { ...draft.buttonZone, contactDensity: value } })}>{value === "compact" ? "Compacta" : value === "airy" ? "Amplia" : "Equilibrada"}</button>)}
+      </div>
+    </EditorSection>
+    <EditorSection title="Foto de perfil" tone="purple">
+      <Range label="Tamaño de foto" min={isDocument ? 64 : 80} max={isDocument ? 112 : 160} step={4} value={isDocument ? Math.min(112, Math.max(64, draft.logoStyle.size)) : draft.logoStyle.size} onChange={(size) => onChange({ logoStyle: { ...draft.logoStyle, size } })} />
+    </EditorSection>
+  </div>;
+}
+
 function DistributionControls({ draft, onZone }: { draft: LandingDraft; onZone: (patch: Partial<ButtonZoneStyle>) => void }) {
   const style = parseDistribution(draft.buttonZone.distribution, draft.buttonZone.layout);
   const update = (patch: Partial<DistributionStyle>) => onZone({ distribution: { ...style, ...patch } });
@@ -1019,22 +1224,201 @@ function SocialControls({ links, onChange, filled, onFilled }: { links: QuickSoc
 // itself. Everything here posts straight to the same server actions the admin list uses
 // (`publishAction`/`deleteLandingAction`, both passed down from the page), so there's exactly
 // one place in the whole app that actually flips `published` or deletes a landing row.
-function SettingsControls({ draft, onBrandingChange, publishAction, deleteLandingAction }: { draft: LandingDraft; onBrandingChange: (show: boolean) => void; publishAction: SaveAction; deleteLandingAction: SaveAction }) {
+function SettingsControls({ draft, buttons, dirty, onTypeChange, onBrandingChange, publishAction, deleteLandingAction }: { draft: LandingDraft; buttons: ButtonItem[]; dirty: boolean; onTypeChange: (type: string) => void; onBrandingChange: (show: boolean) => void; publishAction: SaveAction; deleteLandingAction: SaveAction }) {
   const isPublished = Boolean(draft.published);
+  const missingContact = draft.business_type === "contact" && !buttons.some((button) => ["phone", "email", "whatsapp"].includes(button.type) && button.url.trim());
+  if (draft.business_type === "contact") return <div className="v2-fields">
+    <div className="v2-contact-publish-status"><i className={isPublished ? "is-online" : ""} aria-hidden="true" /><div><strong>{isPublished ? "Tu tarjeta está publicada" : "Tu tarjeta está en borrador"}</strong><span>{isPublished ? "Quien tenga el enlace o escanee tu NFC puede verla." : "Solo vos podés verla hasta que la publiques."}</span></div></div>
+    <EditorSection title="Publicación" tone="green">
+      <form action={publishAction}>
+        <input type="hidden" name="id" value={draft.id} />
+        <input type="hidden" name="published" value={String(!isPublished)} />
+        <input type="hidden" name="return_to" value={`/admin/landings/${draft.id}/editor-v2`} />
+        <button className="v2-save" style={{ width: "100%" }} type="submit" disabled={!isPublished && (dirty || missingContact)}>{isPublished ? "Despublicar tarjeta" : "Publicar tarjeta"}</button>
+      </form>
+      {!isPublished && dirty && <p className="v2-help" role="status">Primero guardá los cambios con el botón de arriba.</p>}
+      {!isPublished && missingContact && <p className="v2-help" role="status">Agregá un teléfono, email o WhatsApp en Contenido.</p>}
+      {isPublished && <a className="v2-suggested" href={`/${draft.slug}`} target="_blank" rel="noreferrer"><IconEye /> Abrir tarjeta publicada</a>}
+      <Link className="v2-suggested" href={`/admin/landings/${draft.id}/qr`}><IconQrCode /> Ver código QR y NFC</Link>
+    </EditorSection>
+    <details className="v2-contact-more"><summary>Más ajustes <span>Firma, tipo de página y eliminación</span></summary><div className="v2-contact-more-body">
+      <Choice active={draft.buttonZone.showBranding !== false} title="Mostrar firma de BioNFC" note="Aparece al final de la tarjeta." onClick={() => onBrandingChange(draft.buttonZone.showBranding === false)} />
+      <p className="v2-help" style={{ margin: 0 }}>Cambiar a landing modifica la presentación, pero conserva tus datos y enlaces.</p>
+      <button type="button" className="v2-ghost" onClick={() => onTypeChange("custom")}>Cambiar a landing de enlaces</button>
+      <DeleteLandingButton action={deleteLandingAction} landingId={draft.id} label="Eliminar tarjeta" />
+    </div></details>
+  </div>;
   return <div className="v2-fields">
     <div className="v2-brand">
       <span><b>{isPublished ? "Tu landing está online" : "Tu landing está en borrador"}</b><small>{isPublished ? "Cualquiera con el link o el tag NFC puede verla." : "Todavía no es visible para el público."}</small></span>
     </div>
+    <EditorSection title="Tipo de página" tone="blue">
+      <Choice active={draft.business_type === "contact"} title="Tarjeta personal" note="Presentación de perfil, contacto descargable y enlaces en fichas." onClick={() => onTypeChange("contact")} />
+      <Choice active={draft.business_type !== "contact"} title="Landing de enlaces" note="Conserva el diseño y los botones, sin el acceso a Guardar contacto." onClick={() => onTypeChange("custom")} />
+    </EditorSection>
 <EditorSection title="Firma de BioNFC" tone="purple">    <Choice active={draft.buttonZone.showBranding !== false} title="Mostrar firma de BioNFC" note="Agrega el logo y un enlace a BioNFC al final de tu página. Guardá los cambios para aplicar esta opción." onClick={() => onBrandingChange(draft.buttonZone.showBranding === false)} />
 </EditorSection><EditorSection title="Publicación y acceso" tone="green">    <form action={publishAction}>
       <input type="hidden" name="id" value={draft.id} />
       <input type="hidden" name="published" value={String(!isPublished)} />
       <input type="hidden" name="return_to" value={`/admin/landings/${draft.id}/editor-v2`} />
-      <button className="v2-save" style={{ width: "100%" }} type="submit">{isPublished ? "Despublicar" : "Publicar landing"}</button>
+      <button className="v2-save" style={{ width: "100%" }} type="submit" disabled={!isPublished && (dirty || missingContact)}>{isPublished ? "Despublicar" : draft.business_type === "contact" ? "Publicar tarjeta" : "Publicar landing"}</button>
     </form>
-    <a className="v2-suggested" href={`/${draft.slug}`} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", gap: 8 }}><IconEye /> Ver landing publicada</a>
+    {!isPublished && dirty && <p className="v2-help" role="status">Guardá los cambios antes de publicar.</p>}
+    {!isPublished && missingContact && <p className="v2-help" role="status">Agregá un teléfono, email o WhatsApp para poder publicar la tarjeta.</p>}
+    <a className="v2-suggested" href={`/${draft.slug}`} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", gap: 8 }}><IconEye /> Ver {draft.business_type === "contact" ? "tarjeta" : "landing"} publicada</a>
     <Link className="v2-suggested" href={`/admin/landings/${draft.id}/qr`} style={{ display: "flex", alignItems: "center", gap: 8 }}><IconQrCode /> Código QR para el tag NFC</Link>
-</EditorSection>    <DeleteLandingButton action={deleteLandingAction} landingId={draft.id} label="Eliminar landing" />
+</EditorSection>    <DeleteLandingButton action={deleteLandingAction} landingId={draft.id} label={draft.business_type === "contact" ? "Eliminar tarjeta" : "Eliminar landing"} />
+  </div>;
+}
+
+function ContactDesignControls({ draft, onChange, onBackground, onTemplates }: { draft: LandingDraft; onChange: (patch: Partial<LandingDraft>) => void; onBackground: () => void; onTemplates: () => void }) {
+  const layout = draft.buttonZone.contactLayout === "document" ? "document" : "card";
+  const theme = draft.buttonZone.contactTheme || "classic";
+  const selectedLook = CONTACT_LOOKS.find((look) => look.id === theme);
+  const defaultSurface = theme === "essential" ? "#faf7ef" : theme === "editorial" ? "#f3efea" : theme === "professional" ? "#ffffff" : theme === "noir" ? "#242b36" : theme === "paper" ? "#f8f2e6" : theme === "linen" ? "#f3f0e5" : layout === "document" || contrastTextColor(draft.titleStyle.color) === "#ffffff" ? "#ffffff" : "#111422";
+  return <div className="v2-fields">
+    <EditorSection title="Diseño de la tarjeta" tone="blue">
+      <button type="button" className="v2-contact-current-look" onClick={onTemplates}><span className={`v2-contact-look is-${theme} v2-contact-current-look-art`} aria-hidden="true"><span className="v2-contact-look-art"><i className="look-cover"/><i className="look-avatar"/><i className="look-name"/><i className="look-line"/><i className="look-action"/></span></span><span className="v2-contact-current-look-copy"><strong>{selectedLook?.name || "Diseño anterior"}</strong><small>{layout === "document" ? "Ficha profesional" : "Tarjeta visual"}</small></span><span className="v2-contact-look-change">Cambiar →</span></button>
+    </EditorSection>
+    <EditorSection title="Colores" tone="purple">
+      <ColorField label="Color principal" value={draft.primary_color || "#1f2937"} onChange={(primary_color) => onChange({ primary_color })} />
+      <ColorField label="Tarjeta" value={draft.buttonZone.contactSurfaceColor || defaultSurface} onChange={(contactSurfaceColor) => onChange({ buttonZone: { ...draft.buttonZone, contactSurfaceColor } })} />
+      <p className="v2-help" style={{ margin: 0 }}>El color de cada texto se cambia junto al campo Nombre, Cargo o Empresa.</p>
+      {draft.buttonZone.contactSurfaceColor && <button type="button" className="v2-ghost" onClick={() => onChange({ buttonZone: { ...draft.buttonZone, contactSurfaceColor: undefined } })}>Usar color recomendado de la plantilla</button>}
+    </EditorSection>
+    <EditorSection title="Botón Guardar contacto" tone="green">
+      <p className="v2-help" style={{ margin: 0 }}>Elegí cómo destaca la acción principal. La forma y la tipografía siguen el diseño de la tarjeta.</p>
+      <div className="v2-segment" aria-label="Estilo del botón Guardar contacto">
+        {([{ id: "solid", label: "Destacado" }, { id: "outline", label: "Contorno" }, { id: "subtle", label: "Suave" }] as const).map((option) => <button key={option.id} type="button" className={(draft.buttonZone.contactSaveVariant || "solid") === option.id ? "active" : ""} aria-pressed={(draft.buttonZone.contactSaveVariant || "solid") === option.id} onClick={() => onChange({ buttonZone: { ...draft.buttonZone, contactSaveVariant: option.id } })}>{option.label}</button>)}
+      </div>
+      <div className="v2-segment" aria-label="Color del botón Guardar contacto"><button type="button" className={!draft.buttonZone.contactSaveColor ? "active" : ""} aria-pressed={!draft.buttonZone.contactSaveColor} onClick={() => onChange({ buttonZone: { ...draft.buttonZone, contactSaveColor: undefined } })}>Color del diseño</button><button type="button" className={draft.buttonZone.contactSaveColor ? "active" : ""} aria-pressed={Boolean(draft.buttonZone.contactSaveColor)} onClick={() => onChange({ buttonZone: { ...draft.buttonZone, contactSaveColor: draft.buttonZone.contactSaveColor || draft.primary_color || "#1f2937" } })}>Color propio</button></div>
+      {draft.buttonZone.contactSaveColor && <ColorField label="Color del botón" value={draft.buttonZone.contactSaveColor} onChange={(contactSaveColor) => onChange({ buttonZone: { ...draft.buttonZone, contactSaveColor } })} />}
+      <div className="v2-contact-icon-field"><span>Ícono</span><div className="v2-contact-icon-options" role="group" aria-label="Ícono del botón Guardar contacto">{([{ id: "add", label: "Persona con más" }, { id: "card", label: "Tarjeta de contacto" }, { id: "download", label: "Descargar" }] as const).map((option) => <button key={option.id} type="button" aria-label={option.label} title={option.label} className={(draft.buttonZone.contactSaveIcon || "add") === option.id ? "active" : ""} aria-pressed={(draft.buttonZone.contactSaveIcon || "add") === option.id} onClick={() => onChange({ buttonZone: { ...draft.buttonZone, contactSaveIcon: option.id } })}><ContactSaveIcon icon={option.id} /></button>)}</div></div>
+      <label>Texto del botón<input value={draft.buttonZone.contactSaveLabel || ""} maxLength={36} placeholder="Guardar contacto" onChange={(event) => onChange({ buttonZone: { ...draft.buttonZone, contactSaveLabel: event.target.value } })} /></label>
+      <p className="v2-help" style={{ margin: 0 }}>Si dejás el texto vacío, se muestra “Guardar contacto”. El archivo que recibe el visitante no cambia.</p>
+    </EditorSection>
+    <details className="v2-contact-more"><summary>Fondo exterior <span>Opcional</span></summary><div className="v2-contact-more-body"><p className="v2-help" style={{ margin: 0 }}>Es el espacio alrededor de la tarjeta, no su portada.</p><button type="button" className="v2-suggested" onClick={onBackground}>Cambiar fondo exterior →</button></div></details>
+  </div>;
+}
+
+function ContactTextControls({ field, draft, onChange }: { field: "name" | "role" | "company"; draft: LandingDraft; onChange: (patch: Partial<LandingDraft>) => void }) {
+  const [fontPickerOpen, setFontPickerOpen] = useState(false);
+  const fontButtonRef = useRef<HTMLButtonElement>(null);
+  const isName = field === "name";
+  const isRole = field === "role";
+  const label = isName ? "Nombre y apellido" : isRole ? "Cargo o profesión" : "Empresa";
+  const value = isName ? draft.business_name : isRole ? draft.titleStyle.eyebrow || "" : draft.description || "";
+  const font = isName ? draft.titleStyle.font : isRole ? draft.titleStyle.eyebrowFont || draft.titleStyle.font : draft.subtitleStyle.font;
+  const weight = isName ? draft.titleStyle.weight : isRole ? draft.titleStyle.eyebrowWeight : draft.subtitleStyle.weight;
+  const italic = isName ? draft.titleStyle.italic === true : isRole ? draft.titleStyle.eyebrowItalic === true : draft.subtitleStyle.italic === true;
+  const color = isName ? draft.titleStyle.color : isRole ? draft.titleStyle.eyebrowColor || draft.titleStyle.color : draft.subtitleStyle.color;
+  const size = isName ? draft.titleStyle.size : isRole ? draft.titleStyle.eyebrowSize : draft.subtitleStyle.size;
+  const selectedFont = FONT_OPTIONS.find((option) => option.id === font || option.family === font)?.id || "modern";
+  const selectedFontOption = FONT_OPTIONS.find((option) => option.id === selectedFont)!;
+  const sizes = (isName ? [20, 24, 28, 32, 36, 40, 44, 48] : isRole ? [10, 12, 14, 16, 18, 20] : [12, 14, 16, 18, 20, 22, 24, 26]);
+  if (!sizes.includes(size)) sizes.push(size);
+  sizes.sort((a, b) => a - b);
+  function updateValue(next: string) {
+    if (isName) onChange({ business_name: next });
+    else if (isRole) onChange({ titleStyle: { ...draft.titleStyle, eyebrow: next } });
+    else onChange({ description: next });
+  }
+  function updateFont(next: string) {
+    if (isName) onChange({ titleStyle: { ...draft.titleStyle, font: next, weight: resolveFontWeight(next, weight) } });
+    else if (isRole) onChange({ titleStyle: { ...draft.titleStyle, eyebrowFont: next, eyebrowWeight: resolveFontWeight(next, weight) } });
+    else onChange({ subtitleStyle: { ...draft.subtitleStyle, font: next, weight: resolveFontWeight(next, weight) } });
+  }
+  function updateWeight(next: number) {
+    if (isName) onChange({ titleStyle: { ...draft.titleStyle, weight: next } });
+    else if (isRole) onChange({ titleStyle: { ...draft.titleStyle, eyebrowWeight: next } });
+    else onChange({ subtitleStyle: { ...draft.subtitleStyle, weight: next } });
+  }
+  function updateItalic(next: boolean) {
+    if (isName) onChange({ titleStyle: { ...draft.titleStyle, italic: next } });
+    else if (isRole) onChange({ titleStyle: { ...draft.titleStyle, eyebrowItalic: next } });
+    else onChange({ subtitleStyle: { ...draft.subtitleStyle, italic: next } });
+  }
+  function updateSize(next: number) {
+    if (isName) onChange({ titleStyle: { ...draft.titleStyle, size: next } });
+    else if (isRole) onChange({ titleStyle: { ...draft.titleStyle, eyebrowSize: next } });
+    else onChange({ subtitleStyle: { ...draft.subtitleStyle, size: next } });
+  }
+  function updateColor(next: string) {
+    if (isName) onChange({ titleStyle: { ...draft.titleStyle, color: next } });
+    else if (isRole) onChange({ titleStyle: { ...draft.titleStyle, eyebrowColor: next } });
+    else onChange({ subtitleStyle: { ...draft.subtitleStyle, color: next } });
+  }
+  return <div className="v2-fields"><div className="v2-contact-text-editor">
+    <label htmlFor={`v2-contact-${field}-input`}>{label}</label>
+    <input id={`v2-contact-${field}-input`} value={value} maxLength={isName ? 120 : isRole ? 60 : 100} placeholder={isRole ? "Ej: Diseñadora gráfica" : field === "company" ? "Ej: Estudio Aurora" : "Tu nombre"} onChange={(event) => updateValue(event.target.value)} />
+    <div className="v2-contact-font-select"><span>Fuente</span><button ref={fontButtonRef} type="button" aria-expanded={fontPickerOpen} aria-controls={`v2-contact-font-options-${field}`} onClick={() => setFontPickerOpen((open) => !open)} style={{ fontFamily: selectedFontOption.family }}>{selectedFontOption.label} <span aria-hidden="true">⌄</span></button>
+      {fontPickerOpen && <div id={`v2-contact-font-options-${field}`} className="v2-contact-font-options" aria-label="Fuentes disponibles" onKeyDown={(event) => { if (event.key === "Escape") { setFontPickerOpen(false); fontButtonRef.current?.focus(); } }}><FontLinks ids={FONT_OPTIONS.map((option) => option.id)} />{FONT_OPTIONS.map((option) => <button key={option.id} type="button" aria-pressed={selectedFont === option.id} onClick={() => { updateFont(option.id); setFontPickerOpen(false); fontButtonRef.current?.focus(); }} style={{ fontFamily: option.family }}>{option.label}{selectedFont === option.id && <span aria-hidden="true">✓</span>}</button>)}</div>}
+    </div>
+    <div className="v2-contact-text-tools" aria-label={`Formato de ${label.toLowerCase()}`}>
+      <label className="v2-contact-size-select"><span>Tamaño</span><select value={size} onChange={(event) => updateSize(Number(event.target.value))}>{sizes.map((option) => <option key={option} value={option}>{option} px</option>)}</select></label>
+      <button type="button" className={weight >= 600 ? "active" : ""} aria-label="Negrita" aria-pressed={weight >= 600} onClick={() => updateWeight(weight >= 600 ? 400 : 700)}><strong>B</strong></button>
+      <button type="button" className={italic ? "active" : ""} aria-label="Cursiva" aria-pressed={italic} onClick={() => updateItalic(!italic)}><em>I</em></button>
+      <label className="v2-contact-color-select"><span>Color</span><input type="color" value={color} aria-label={`Color de ${label.toLowerCase()}`} onChange={(event) => updateColor(event.target.value)} /></label>
+    </div>
+  </div>
+  </div>;
+}
+
+function ContactControls({ draft, buttons, cvFileName, cvFileError, onClearCvFile, onChange, onActionChange, onRemoveCv, onEditPhoto, onEditLinks, onEditText, section = "all" }: { draft: LandingDraft; buttons: ButtonItem[]; cvFileName: string; cvFileError: string; onClearCvFile: () => void; onChange: (patch: Partial<LandingDraft>) => void; onActionChange: (type: "phone" | "email" | "whatsapp" | "website" | "cv", value: string) => void; onRemoveCv: () => void; onEditPhoto: () => void; onEditLinks: () => void; onEditText: (field: "name" | "role" | "company") => void; section?: "all" | "profile" | "channels" }) {
+  const actionValue = (type: string) => buttons.find((button) => button.type === type)?.url || "";
+  const cv = buttons.find((button) => button.type === "cv");
+  return <div className="v2-fields">
+    {section === "all" && <div className="v2-contact-content-intro"><p>Completá tu perfil y tus medios de contacto. El diseño no borra estos datos.</p></div>}
+    {section !== "channels" && <>
+    <EditorSection title="Perfil" tone="blue">
+      <div className="v2-contact-profile-links">
+        <button type="button" onClick={() => onEditText("name")}><span><strong>Nombre</strong><small>{draft.business_name || "Agregar nombre"}</small></span><b aria-hidden="true">→</b></button>
+        <button type="button" onClick={() => onEditText("role")}><span><strong>Cargo</strong><small>{draft.titleStyle.eyebrow || "Agregar cargo o profesión"}</small></span><b aria-hidden="true">→</b></button>
+        <button type="button" onClick={() => onEditText("company")}><span><strong>Empresa</strong><small>{draft.description || "Agregar empresa"}</small></span><b aria-hidden="true">→</b></button>
+        <button type="button" onClick={onEditPhoto}><span><strong>Foto de perfil</strong><small>{draft.logo_url ? "Cambiar o ajustar la foto" : "Agregar foto o usar iniciales"}</small></span><b aria-hidden="true">→</b></button>
+      </div>
+      <label>Sobre mí (opcional)<textarea value={draft.buttonZone.contactBio || ""} maxLength={360} rows={3} placeholder="Contá brevemente qué hacés." onChange={(event) => onChange({ buttonZone: { ...draft.buttonZone, contactBio: event.target.value } })} /></label>
+    </EditorSection>
+    </>}
+    {section !== "profile" && <>
+    <EditorSection title="Cómo te contactan" tone="green">
+      <label>Teléfono<input type="tel" value={actionValue("phone")} placeholder="Ej: +54 9 351 123 4567" onChange={(event) => onActionChange("phone", event.target.value)} /></label>
+      <label>Email<input type="email" value={actionValue("email")} placeholder="hola@tuempresa.com" onChange={(event) => onActionChange("email", event.target.value)} /></label>
+      <label>WhatsApp<input type="tel" value={actionValue("whatsapp")} placeholder="Ej: 5493511234567" onChange={(event) => onActionChange("whatsapp", event.target.value)} /></label>
+      <p className="v2-help" style={{ margin: 0 }}>Con uno alcanza para empezar. Podés agregar los demás después.</p>
+      {!actionValue("phone") && !actionValue("email") && !actionValue("whatsapp") && <p className="v2-help" role="status" style={{ margin: 0, color: "#9b4d23" }}>Agregá al menos un medio de contacto para que la tarjeta sea útil.</p>}
+    </EditorSection>
+    <details className="v2-contact-more"><summary>Más datos para guardar <span>Opcional</span></summary><div className="v2-contact-more-body">
+      <p className="v2-help" style={{ margin: 0 }}>Aparecen en tu tarjeta y en el contacto que descarga el visitante.</p>
+      <label>Segundo teléfono<input type="tel" value={draft.buttonZone.contactSecondPhone || ""} maxLength={50} placeholder="Ej: +54 11 4567 8901" onChange={(event) => onChange({ buttonZone: { ...draft.buttonZone, contactSecondPhone: event.target.value } })} /></label>
+      <label>Dirección<input type="text" value={draft.buttonZone.contactAddress || ""} maxLength={200} placeholder="Calle, número, ciudad y provincia" onChange={(event) => onChange({ buttonZone: { ...draft.buttonZone, contactAddress: event.target.value } })} /></label>
+    </div></details>
+    </>}
+    {section === "all" && <>
+    <details className="v2-contact-more"><summary>Enlaces y documentos <span>Sitio web, CV y proyectos</span></summary><div className="v2-contact-more-body">
+      <p className="v2-help" style={{ margin: 0 }}>Tu sitio web, CV y otros enlaces aparecen debajo de tus datos, con la presentación del diseño elegido.</p>
+      <label>Sitio web<input type="url" value={actionValue("website")} placeholder="https://tuempresa.com" onChange={(event) => onActionChange("website", event.target.value)} /></label>
+      <CvSourceField value={actionValue("cv")} fileName={cvFileName} error={cvFileError} onUrlChange={(value) => onActionChange("cv", value)} onClearFile={onClearCvFile} />
+      {cv && <button type="button" className="v2-delete" onClick={onRemoveCv}>Quitar CV / portfolio</button>}
+      <button type="button" className="v2-suggested" onClick={onEditLinks}>Agregar LinkedIn, proyectos u otro enlace</button>
+    </div></details>
+    <details className="v2-contact-more"><summary>¿Qué guarda “Guardar contacto”? <span>Ver datos que recibirá el visitante</span></summary><div className="v2-contact-more-body">
+      <p className="v2-help" style={{ margin: 0 }}>En la página publicada, el visitante toca el botón, descarga o abre un archivo de contacto (.vcf) y confirma si quiere guardarlo en su agenda. No se agrega automáticamente.</p>
+      <div className="v2-contact-export-preview">
+        <b>Datos que llevará</b>
+        <span>Nombre: {draft.business_name || "Sin completar"}</span>
+        {draft.titleStyle.eyebrow && <span>Cargo: {draft.titleStyle.eyebrow}</span>}
+        {draft.description && <span>Empresa: {draft.description}</span>}
+        {(actionValue("phone") || actionValue("whatsapp")) && <span>Teléfono: {actionValue("phone") || actionValue("whatsapp")}</span>}
+        {draft.buttonZone.contactSecondPhone && <span>Segundo teléfono: {draft.buttonZone.contactSecondPhone}</span>}
+        {actionValue("email") && <span>Email: {actionValue("email")}</span>}
+        {draft.buttonZone.contactAddress && <span>Dirección: {draft.buttonZone.contactAddress}</span>}
+        {actionValue("website") && <span>Web: {actionValue("website")}</span>}
+        <span>Enlace permanente a esta tarjeta</span>
+      </div>
+      <p className="v2-help" style={{ margin: 0 }}>Si cargás teléfono y WhatsApp diferentes, el contacto guarda el teléfono; WhatsApp sigue como acceso rápido. El CV y los demás enlaces se abren desde la tarjeta, no se adjuntan a la agenda.</p>
+    </div></details>
+    </>}
   </div>;
 }
 
@@ -1063,19 +1447,32 @@ function SubtitleControls({ draft, onChange }: { draft: LandingDraft; onChange: 
 
 function LogoControls({ draft, logoImage, onChange, onLogo, onAdjustLogo, onRemoveLogo }: { draft: LandingDraft; logoImage: string; onChange: (p: Partial<LandingDraft>) => void; onLogo: (file?: File) => void; onAdjustLogo: () => void; onRemoveLogo: () => void }) {
   const style = draft.logoStyle;
+  const isContact = draft.business_type === "contact";
   const primary = draft.primary_color || "#1f2937";
   const update = (patch: Partial<LogoStyle>) => onChange({ logoStyle: { ...style, ...patch } });
+  if (isContact) return <div className="v2-fields v2-contact-photo-controls">
+    <div className="v2-contact-photo-preview" style={{ ...logoFrameStyle(style, primary), borderRadius: logoBorderRadius(style.shape, 88), fontFamily: resolveTextFont(draft.titleStyle.font) }}>
+      {logoImage ? <span style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${style.zoom * 100}%`, backgroundPosition: `${style.x}% ${style.y}%` }} /> : <LogoInitials font={draft.titleStyle.font}>{logoInitials(draft.business_name, style.initials)}</LogoInitials>}
+    </div>
+    <label className="v2-upload">{logoImage ? "Cambiar foto de perfil" : "Subir foto de perfil"}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => { onLogo(event.target.files?.[0]); event.target.value = ""; }} /></label>
+    {logoImage && <div className="v2-contact-photo-actions"><button type="button" className="v2-suggested" onClick={onAdjustLogo}>Ajustar encuadre</button><button type="button" className="v2-ghost" onClick={onRemoveLogo}>Quitar foto</button></div>}
+    <EditorSection title="Presentación" tone="blue">
+      <div className="v2-segment" aria-label="Forma de la foto">{LOGO_SHAPE_OPTIONS.map((option) => <button type="button" key={option.id} className={style.shape === option.id ? "active" : ""} aria-pressed={style.shape === option.id} onClick={() => update({ shape: option.id, treatment: "custom" })}>{option.label}</button>)}</div>
+      <Range label="Tamaño" min={draft.buttonZone.contactLayout === "document" ? 64 : 80} max={draft.buttonZone.contactLayout === "document" ? 112 : 160} step={4} value={draft.buttonZone.contactLayout === "document" ? Math.min(112, Math.max(64, style.size)) : style.size} onChange={(size) => update({ size })} />
+      {!logoImage && <><p className="v2-help" style={{ margin: 0 }}>Sin foto se muestran tus iniciales.</p><ColorField label="Color de las iniciales" value={style.backgroundMode === "custom" ? style.fallback : primary} onChange={(fallback) => update({ backgroundMode: "custom", fallback })} /></>}
+    </EditorSection>
+  </div>;
   return <div className="v2-fields">
     <div className="v2-logo-editor"><div style={{ ...logoFrameStyle(style, primary), borderRadius: logoBorderRadius(style.shape, 76), fontSize: logoLetterSize(76, style.initials), fontFamily: resolveTextFont(draft.titleStyle.font) }}>{logoImage ? <span style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${style.zoom * 100}%`, backgroundPosition: `${style.x}% ${style.y}%` }} /> : <LogoInitials font={draft.titleStyle.font}>{logoInitials(draft.business_name, style.initials)}</LogoInitials>}</div><span><label className="v2-upload">{logoImage ? "Cambiar imagen" : "Elegir imagen"}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => { onLogo(event.target.files?.[0]); event.target.value = ""; }} /></label>{logoImage && <><button type="button" className="v2-inline-action v2-adjust-image" onClick={onAdjustLogo}>Ajustar encuadre</button><button type="button" className="v2-delete" onClick={onRemoveLogo}>Quitar</button></>}</span></div>
     <fieldset className="v2-logo-section v2-logo-section-bg">
       <legend>1 · Color de fondo</legend>
-      <p className="v2-help" style={{ margin: "0 0 4px" }}>Se ve detrás del círculo del logo (si no subiste foto, es el color de fondo de la inicial). Elegilo primero: la forma y el borde se juzgan mejor contra tu color real.</p>
+      <p className="v2-help" style={{ margin: "0 0 4px" }}>{isContact ? "Se ve detrás de tu foto. Si todavía no subiste una, es el color de fondo de tus iniciales." : "Se ve detrás del círculo del logo (si no subiste foto, es el color de fondo de la inicial). Elegilo primero: la forma y el borde se juzgan mejor contra tu color real."}</p>
       <Choice active={style.backgroundMode === "auto"} swatch={primary} title="Automático" note="El color sugerido por tu plantilla." onClick={() => update({ backgroundMode: "auto" })} />
       <Choice active={style.backgroundMode === "custom"} swatch={style.fallback} title="Personalizado" note="Elegí cualquier color para el fondo del logo." onClick={() => update({ backgroundMode: "custom" })} />
       {style.backgroundMode === "custom" && <ColorField label="Color de fondo" value={style.fallback} onChange={(fallback) => update({ fallback })} />}
     </fieldset>
     <fieldset className="v2-logo-section v2-logo-section-shape">
-      <legend>2 · Forma del logo</legend>
+      <legend>2 · Forma {isContact ? "de la foto" : "del logo"}</legend>
       <div className="v2-logo-shape-grid">
         {LOGO_SHAPE_OPTIONS.map((option) => (
           <button type="button" key={option.id} className={style.shape === option.id ? "active" : ""} aria-pressed={style.shape === option.id} onClick={() => update({ shape: option.id, treatment: "custom" })}>
@@ -1142,26 +1539,36 @@ function LogoControls({ draft, logoImage, onChange, onLogo, onAdjustLogo, onRemo
     )}
     <fieldset className="v2-logo-section v2-logo-section-size">
       <legend>{logoImage ? "5" : "4"} · Tamaño</legend>
-      <Range label="Tamaño" min={72} max={190} value={style.size} onChange={(size) => update({ size })} />
+      <Range label="Tamaño" min={isContact && draft.buttonZone.contactLayout === "document" ? 64 : isContact ? 80 : 72} max={isContact && draft.buttonZone.contactLayout === "document" ? 112 : isContact ? 160 : 190} step={4} value={isContact && draft.buttonZone.contactLayout === "document" ? Math.min(112, Math.max(64, style.size)) : style.size} onChange={(size) => update({ size })} />
     </fieldset>
   </div>;
 }
 
-function ActionCatalog({ onAdd }: { onAdd: (type: string) => void }) {
-  const networkActions = getAllActions().filter((action) => action.type !== "url");
+function ActionCatalog({ onAdd, isContact = false }: { onAdd: (type: string) => void; isContact?: boolean }) {
+  const networkActions = getAllActions().filter((action) => action.type !== "url" && (!isContact || !["phone", "email", "whatsapp", "website", "cv"].includes(action.type)));
   return <div>
-    <p className="v2-help">Elegí la red o acción. Ya viene con su nombre, ícono y color oficial.</p>
-    <div className="v2-action-grid">{networkActions.map((action)=><button type="button" key={action.type} onClick={()=>onAdd(action.type)}><ActionTypeIcon type={action.type}/><span><b>{action.label}</b><small>{action.input === "phone" ? "Número de teléfono" : action.input === "username" ? "Nombre de usuario" : "Enlace"}</small></span><em>＋</em></button>)}</div>
+    <p className="v2-help">{isContact ? "Agregá redes, proyectos u otros enlaces. Teléfono, email, WhatsApp, web y CV se completan en Datos de contacto." : "Elegí la red o acción. Ya viene con su nombre, ícono y color oficial."}</p>
+    <div className="v2-action-grid">{networkActions.map((action)=><button type="button" key={action.type} className={action.type === "cv" ? "is-pdf" : undefined} onClick={()=>onAdd(action.type)}><ActionTypeIcon type={action.type}/><span><b>{action.label}</b><small>{action.type === "cv" ? "Subí un CV, catálogo, menú o dossier" : action.input === "phone" ? "Número de teléfono" : action.input === "username" ? "Nombre de usuario" : "Enlace"}</small></span>{action.type === "cv" && <strong className="v2-action-pdf-badge">PDF</strong>}<em>＋</em></button>)}</div>
     <button type="button" className="v2-custom-action" onClick={()=>onAdd("url")}>
       <span className="v2-custom-action-icon"><FiLink /></span>
-      <span><b>Agregar botón personalizado</b><small>Cualquier enlace: tu menú, un formulario, otra red, lo que necesites.</small></span>
+      <span><b>{isContact ? "Agregar otro enlace" : "Agregar botón personalizado"}</b><small>{isContact ? "Portfolio, proyecto, formulario u otra página." : "Cualquier enlace: tu menú, un formulario, otra red, lo que necesites."}</small></span>
       <em>＋</em>
     </button>
   </div>;
 }
 
-function ButtonControls({ button,draft,onChange,onDelete }: { button: ButtonItem; draft: LandingDraft; onChange:(p:Partial<ButtonItem>)=>void; onDelete:()=>void }) {
+function ButtonControls({ button,draft,cvFileName,cvFileError,onClearCvFile,onChange,onDelete }: { button: ButtonItem; draft: LandingDraft; cvFileName: string; cvFileError: string; onClearCvFile: () => void; onChange:(p:Partial<ButtonItem>)=>void; onDelete:()=>void }) {
   const def=getAllActions().find((item)=>item.type===button.type);
+  if (draft.business_type === "contact") return <div className="v2-fields">
+    <p className="v2-help">Este enlace se muestra como una ficha de la tarjeta. El color principal se cambia en Datos de contacto.</p>
+    <EditorSection title="Contenido y destino" tone="blue">
+      <label>Título<input value={button.title} onChange={(event) => onChange({ title: event.target.value })} /></label>
+      <label>Detalle <small>Opcional</small><input value={button.subtitle} onChange={(event) => onChange({ subtitle: event.target.value })} /></label>
+      {button.type === "cv" ? <CvSourceField value={button.url} fileName={cvFileName} error={cvFileError} onUrlChange={(url) => onChange({ url })} onClearFile={onClearCvFile} /> : <label>{def?.input === "username" ? "Usuario" : "Enlace"}<input type={def?.input === "username" ? "text" : "url"} value={button.url} placeholder={def?.placeholder || "https://..."} onChange={(event) => onChange({ url: event.target.value })} /></label>}
+    </EditorSection>
+    <EditorSection title="Ícono" tone="purple"><IconPicker type={button.type} value={button.icon} onChange={(icon) => onChange({ icon })} /></EditorSection>
+    <button type="button" className="v2-delete" onClick={onDelete}>Quitar enlace</button>
+  </div>;
   const brandColor = AUTO_COLORS[button.type] || draft.primary_color || "#1f2937";
   const globalColor = resolveButtonColors({ zone: draft.buttonZone, type: button.type, position: 0, primary: draft.primary_color || "#1f2937", customColor: null, useAutoColor: true }).background;
   const globalDescription = draft.buttonZone.colorMode === "one"
@@ -1169,10 +1576,11 @@ function ButtonControls({ button,draft,onChange,onDelete }: { button: ButtonItem
     : `Usa el color oficial de ${def?.label || "esta acción"}.`;
   const ownColor = button.background_color || brandColor;
   return <div className="v2-fields">
-    <div className="v2-brand"><ActionTypeIcon type={button.type} icon={button.icon}/><span><b>{def?.label || "Enlace"}</b><small>{button.icon ? "Ícono personalizado" : "Ícono incluido automáticamente"}</small></span></div>
-<EditorSection title="Contenido y destino" tone="blue">    <label>Texto del botón<input value={button.title} onChange={(e)=>onChange({title:e.target.value})}/></label>
+    {button.type === "cv" ? <div className="v2-document-heading"><ActionTypeIcon type="cv"/><span><strong>Documento PDF</strong><small>CV, catálogo, menú, portfolio o cualquier archivo en PDF.</small></span><em>PDF</em></div> : <div className="v2-brand"><ActionTypeIcon type={button.type} icon={button.icon}/><span><b>{def?.label || "Enlace"}</b><small>{button.icon ? "Ícono personalizado" : "Ícono incluido automáticamente"}</small></span></div>}
+<EditorSection title="Contenido y destino" tone="blue">    <label>{button.type === "cv" ? "Texto que verá la gente" : "Texto del botón"}<input value={button.title} placeholder={button.type === "cv" ? "Ej: Ver catálogo" : undefined} onChange={(e)=>onChange({title:e.target.value})}/></label>
+    {button.type === "cv" && <div className="v2-document-examples" aria-label="Ejemplos de texto para el botón">{PDF_TITLE_OPTIONS.map((title) => <button key={title} type="button" aria-pressed={button.title === title} onClick={() => onChange({ title })}>{title}</button>)}</div>}
     <label>Texto secundario <small>Opcional</small><input value={button.subtitle} onChange={(e)=>onChange({subtitle:e.target.value})}/></label>
-    <label>{def?.input === "phone" ? "Número" : def?.input === "email" ? "Email" : def?.input === "username" ? "Usuario" : "Enlace"}<input value={button.url} placeholder={def?.placeholder} onChange={(e)=>onChange({url:e.target.value})}/></label>
+    {button.type === "cv" ? <CvSourceField context="landing" value={button.url} fileName={cvFileName} error={cvFileError} onUrlChange={(url) => onChange({ url })} onClearFile={onClearCvFile} /> : <label>{def?.input === "phone" ? "Número" : def?.input === "email" ? "Email" : def?.input === "username" ? "Usuario" : "Enlace"}<input value={button.url} placeholder={def?.placeholder} onChange={(e)=>onChange({url:e.target.value})}/></label>}
     {def?.message && <label>Mensaje de WhatsApp<textarea rows={3} value={button.message} onChange={(e)=>onChange({message:e.target.value})}/></label>}
 </EditorSection><EditorSection title="Ícono" tone="purple">    <IconPicker type={button.type} value={button.icon} onChange={(icon)=>onChange({icon})}/>
     <fieldset>

@@ -8,7 +8,9 @@ export default async function QR({ params }: { params: Promise<{ id: string }> }
   const supabase = await createClient();
   const { data: landing } = await supabase.from("landings").select("*").eq("id", id).maybeSingle();
   if (!landing) notFound();
-  const url = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000") + "/" + landing.slug;
+  // La URL física usa el ID estable, no el slug editable: una tarjeta o un QR ya entregado
+  // deben seguir abriendo la landing aunque se cambie su nombre o enlace público.
+  const url = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000") + "/go/" + landing.id;
   // El QR apunta a la misma URL pero marcada, para poder separar después cuántos escaneos
   // vinieron del código impreso y cuántos del chip. Es la única forma de distinguirlos, y solo
   // funciona si se decide antes de imprimir: sobre un QR ya entregado no hay vuelta atrás.
@@ -48,7 +50,7 @@ export default async function QR({ params }: { params: Promise<{ id: string }> }
           <a className="btn" href={qr} target="_blank" rel="noreferrer"><IconExternalLink /> Descargar QR</a>
           <a className="btn secondary" href={url} target="_blank" rel="noreferrer"><IconEye /> Ver landing</a>
         </div>
-        <p className="muted" style={{ marginTop: "var(--space-5)", fontSize: "0.75rem" }}>En la tag NFC grabá {url}?s=nfc — misma página, pero así el panel te separa los escaneos del chip de los del QR.</p>
+        <p className="muted" style={{ marginTop: "var(--space-5)", fontSize: "0.75rem" }}>En la tag NFC grabá {url}?s=nfc. Esta dirección permanece igual aunque cambies el link público; el panel separa los escaneos del chip y del QR.</p>
       </div>
     </main>
   );

@@ -1,0 +1,127 @@
+.is-contact-editor .v2-panel {
+  width: 420px;
+  --v2-panel-pad-x: 16px;
+  padding-bottom: 16px;
+  border-color: #e2e0eb;
+  border-radius: 20px;
+  background: #faf9fc;
+  background-image: none;
+  box-shadow: 0 22px 58px #1d1b332a;
+}
+.is-contact-editor .v2-panel::before { background: #faf9fc; }
+.is-contact-editor .v2-panel .v2-panel-head {
+  margin-bottom: 12px;
+  padding-top: 13px;
+  padding-bottom: 11px;
+  border-bottom: 0;
+  background: #faf9fc;
+}
+.is-contact-editor .v2-panel-head span::after { content: none; }
+.is-contact-editor .v2-panel-head h2 { font-size: 18px; line-height: 1.2; }
+.is-contact-editor .v2-fields { gap: 10px; }
+.is-contact-editor .v2-fields fieldset { gap: 7px; padding: 12px; border-radius: 12px; box-shadow: none; }
+.is-contact-editor .v2-fields legend { padding-bottom: 8px; font-size: 11px; }
+.is-contact-editor .v2-fields legend::before { display: none; }
+.is-contact-editor .v2-fields label { font-size: 12px; }
+.is-contact-editor .v2-fields input:not([type=color]):not([type=range]),
+.is-contact-editor .v2-fields textarea { min-height: 42px; margin-top: 5px; padding: 9px 11px; }
+.is-contact-editor .v2-help { margin-bottom: 8px; font-size: 12px; }
+.is-contact-editor .v2-contact-more > summary { padding: 12px 14px; }
+.is-contact-editor .v2-contact-more-body { gap: 10px; padding: 12px; }
+.is-contact-editor .v2-contact-return { margin: 0 0 12px; padding: 7px 0; background: transparent; box-shadow: none; }
+.is-contact-editor .v2-contact-content-intro { padding: 9px 11px; border: 0; background: #f0eff8; }
+.is-contact-editor .v2-contact-current-look { width: 100%; gap: 10px; padding: 7px; font: inherit; text-align: left; cursor: pointer; }
+.is-contact-editor .v2-contact-current-look-art { position: relative; display: block; width: 42px; height: 46px; flex: 0 0 42px; padding: 0; overflow: hidden; border-radius: 7px; }
+.is-contact-editor .v2-contact-current-look-art .v2-contact-look-art { position: absolute; top: 0; left: 0; width: 92px; height: 108px; transform: scale(.44); }
+.is-contact-editor .v2-contact-current-look-copy { display: grid; gap: 3px; min-width: 0; }
+.is-contact-editor .v2-contact-current-look-copy strong { color: #2c3040; font-size: 13px; }
+.is-contact-editor .v2-contact-current-look-copy small { color: #70778b; font-size: 11px; }
+.is-contact-editor .v2-contact-look-change { margin-left: auto; color: #5546c2; font-size: 11px; font-weight: 800; white-space: nowrap; }
+.is-contact-editor .v2-contact-publish-status { display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid #e4e2ec; border-radius: 12px; background: #fff; }
+.is-contact-editor .v2-contact-publish-status > i { width: 10px; height: 10px; flex: 0 0 10px; border-radius: 50%; background: #b7bac4; }
+.is-contact-editor .v2-contact-publish-status > i.is-online { background: #32a871; }
+.is-contact-editor .v2-contact-publish-status > div { display: grid; gap: 3px; }
+.is-contact-editor .v2-contact-publish-status strong { color: #252936; font-size: 13px; }
+.is-contact-editor .v2-contact-publish-status span { color: #697080; font-size: 11px; line-height: 1.35; }
+.is-contact-editor .v2-fields fieldset > a.v2-suggested { display: flex; align-items: center; gap: 8px; text-decoration: none; }
+.is-contact-editor .v2-contact-more-body > .v2-ghost { text-align: left; }
+.is-contact-editor .v2-contact-photo-preview { display: grid; place-items: center; width: 88px; height: 88px; margin: 0 auto 2px; overflow: hidden; font-size: 29px; }
+.is-contact-editor .v2-contact-photo-preview > span { display: block; width: 100%; height: 100%; background-repeat: no-repeat; }
+.is-contact-editor .v2-contact-photo-preview .logo-initials { width: auto; height: auto; }
+.is-contact-editor .v2-contact-photo-actions { display: flex; gap: 8px; }
+.is-contact-editor .v2-contact-photo-actions > button { flex: 1; }
+.is-contact-editor .v2-contact-photo-controls .v2-upload { margin: 0; }
+.is-contact-editor .v2-contact-profile-links { display: grid; overflow: hidden; border: 1px solid #e5e3ed; border-radius: 12px; background: #fff; }
+.is-contact-editor .v2-contact-profile-links button { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 10px 12px; border: 0; border-bottom: 1px solid #ecebf1; background: #fff; text-align: left; cursor: pointer; }
+.is-contact-editor .v2-contact-profile-links button:last-child { border-bottom: 0; }
+.is-contact-editor .v2-contact-profile-links button:hover { background: #f8f7ff; }
+.is-contact-editor .v2-contact-profile-links button > span { display: grid; gap: 2px; min-width: 0; }
+.is-contact-editor .v2-contact-profile-links strong { color: #303241; font-size: 12px; }
+.is-contact-editor .v2-contact-profile-links small { overflow: hidden; color: #747887; font-size: 11px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.is-contact-editor .v2-contact-profile-links b { color: #6657e8; font-size: 17px; }
+.is-contact-editor .v2-contact-text-editor { display: grid; gap: 9px; padding: 14px; border: 1px solid #e2e0ea; border-radius: 14px; background: #fff; }
+.is-contact-editor .v2-contact-text-editor > label { color: #303241; font-size: 13px; font-weight: 800; }
+.is-contact-editor .v2-contact-text-editor > input { width: 100%; min-height: 44px; margin: 0; padding: 10px 11px; border: 1px solid #dcdce5; border-radius: 9px; background: #fff; color: #20232d; font: inherit; }
+.is-contact-editor .v2-contact-text-tools { display: grid; grid-template-columns: minmax(70px, 1fr) 36px 36px 46px; align-items: end; gap: 6px; min-width: 0; padding-top: 9px; border-top: 1px solid #eeedf2; }
+.is-contact-editor .v2-contact-text-tools > label { display: grid; gap: 4px; min-width: 0; margin: 0; }
+.is-contact-editor .v2-contact-text-tools > label > span { color: #747887; font-size: 10px; font-weight: 700; }
+.is-contact-editor .v2-contact-font-select { display: grid; gap: 4px; min-width: 0; }
+.is-contact-editor .v2-contact-font-select > span { color: #747887; font-size: 10px; font-weight: 700; }
+.is-contact-editor .v2-contact-font-select > button { display: flex; align-items: center; justify-content: space-between; gap: 4px; width: 100%; height: 38px; min-width: 0; padding: 0 10px; overflow: hidden; border: 1px solid #dedee7; border-radius: 8px; background: #fff; color: #252936; font-size: 14px; white-space: nowrap; cursor: pointer; }
+.is-contact-editor .v2-contact-font-select > button > span { font-family: Inter, sans-serif; font-size: 15px; }
+.is-contact-editor .v2-contact-font-options { display: grid; max-height: 220px; overflow-y: auto; border: 1px solid #dedee7; border-radius: 9px; background: #fff; box-shadow: 0 7px 18px #1d1b3318; }
+.is-contact-editor .v2-contact-font-options > button { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 38px; padding: 7px 11px; border: 0; border-bottom: 1px solid #f0eff4; background: #fff; color: #252936; font-size: 15px; text-align: left; cursor: pointer; }
+.is-contact-editor .v2-contact-font-options > button:last-child { border-bottom: 0; }
+.is-contact-editor .v2-contact-font-options > button:hover,
+.is-contact-editor .v2-contact-font-options > button[aria-pressed=true] { background: #f2efff; }
+.is-contact-editor .v2-contact-font-options > button > span { color: #6657e8; font-family: Inter, sans-serif; }
+.is-contact-editor .v2-contact-text-tools select { width: 100%; min-width: 0; height: 36px; padding: 0 5px; border: 1px solid #dedee7; border-radius: 8px; background: #fff; color: #252936; font: 600 11px Inter, sans-serif; }
+.is-contact-editor .v2-contact-text-tools > button { width: 36px; height: 36px; border: 1px solid #dedee7; border-radius: 8px; background: #fff; color: #303241; font-size: 15px; cursor: pointer; }
+.is-contact-editor .v2-contact-text-tools > button.active { border-color: #6657e8; background: #f0edff; color: #493cc4; }
+.is-contact-editor .v2-contact-color-select input[type=color] { width: 46px; height: 36px; margin: 0; padding: 2px; border: 1px solid #dedee7; border-radius: 8px; background: #fff; cursor: pointer; }
+.is-contact-editor .v2-contact-cover-status { display: grid; gap: 3px; padding: 10px 12px; border: 1px solid #e4e1eb; border-radius: 11px; background: #fff; }
+.is-contact-editor .v2-contact-cover-status strong { color: #303241; font-size: 12px; }
+.is-contact-editor .v2-contact-cover-status span { color: #737887; font-size: 11px; line-height: 1.4; }
+.is-contact-editor .v2-contact-cover-preview { position: relative; display: grid; place-items: center; overflow: hidden; border: 1px solid #e1dfeb; border-radius: 13px; background-color: var(--cover-preview-color); background-image: radial-gradient(circle at 20% 18%, #ffffff55, transparent 38%), linear-gradient(120deg, transparent 40%, #ffffff1c 40% 45%, transparent 45%); color: #fff; text-align: center; font-size: 12px; font-weight: 700; }
+.is-contact-editor .v2-contact-cover-preview.is-line { background: #fbfafc; color: #626577; }
+.is-contact-editor .v2-contact-cover-preview.is-line::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 8px; background: var(--cover-preview-color); }
+.is-contact-editor .v2-contact-cover-preview > span:first-child:not(.v2-contact-cover-preview-photo) { padding: 16px; }
+.is-contact-editor .v2-contact-cover-preview-photo,
+.is-contact-editor .v2-contact-cover-preview-veil { position: absolute; inset: 0; }
+.is-contact-editor .v2-contact-cover-preview-photo { background-size: cover; background-repeat: no-repeat; }
+.is-contact-editor .v2-contact-cover-size-label { margin: 2px 0 -5px; color: #303241; font-size: 12px; font-weight: 800; }
+.is-contact-editor .v2-contact-look-grid { grid-template-columns: 1fr; }
+.is-contact-editor .v2-contact-look { grid-template-columns: 92px 1fr; column-gap: 12px; align-items: start; }
+.is-contact-editor .v2-contact-look-art { grid-row: span 2; width: 92px; height: 112px; }
+.is-contact-editor .v2-contact-look strong { align-self: end; font-size: 14px; }
+.is-contact-editor .v2-contact-look small { align-self: start; font-size: 11px; }
+.v2-contact-look.is-essential .v2-contact-look-art { background: #faf7ef; }
+.v2-contact-look.is-essential .look-cover { background: #d8ddcd; }
+.v2-contact-look.is-essential .look-avatar { background: #d5aa88; border-color: #faf7ef; }
+.v2-contact-look.is-essential .look-name { background: #243028; }
+.v2-contact-look.is-essential .look-action { background: #343d31; }
+.v2-contact-look.is-editorial .v2-contact-look-art { background: #f3efea; }
+.v2-contact-look.is-editorial .look-cover { height: 42px; background: #585a50; }
+.v2-contact-look.is-editorial .look-avatar { left: auto; right: 12px; top: 30px; background: #cbaa91; border-color: #f3efea; }
+.v2-contact-look.is-editorial .look-name { left: 11px; right: 40px; top: 64px; background: #433b35; }
+.v2-contact-look.is-editorial .look-line { left: 11px; right: 55px; top: 74px; }
+.v2-contact-look.is-editorial .look-action { left: 11px; right: 35px; top: 88px; height: 13px; background: #46372f; }
+.v2-contact-look.is-professional .v2-contact-look-art { background: #fff; }
+.v2-contact-look.is-professional .look-cover { height: 21px; background: #153c49; }
+.v2-contact-look.is-professional .look-avatar { left: 12px; top: 31px; width: 25px; height: 25px; border: 0; background: #d4dee0; }
+.v2-contact-look.is-professional .look-name { left: 44px; right: 10px; top: 34px; background: #202637; }
+.v2-contact-look.is-professional .look-line { left: 44px; right: 25px; top: 45px; }
+.v2-contact-look.is-professional .look-action { left: 12px; right: 12px; top: 81px; height: 5px; background: #163b49; border-radius: 0; box-shadow: 0 12px 0 #dae4e6; }
+@media (min-width: 841px) and (max-width: 1000px) {
+  .is-contact-editor .v2-panel { width: 370px; }
+}
+@media (max-width: 840px) {
+  .is-contact-editor .v2-panel { width: auto; max-height: 42dvh; border-radius: 20px 20px 0 0; box-shadow: 0 -14px 34px #12142329; }
+}
+.is-contact-editor .v2-contact-icon-field { display: grid; gap: 8px; }
+.is-contact-editor .v2-contact-icon-field > span { color: #303241; font-size: 12px; font-weight: 800; }
+.is-contact-editor .v2-contact-icon-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.is-contact-editor .v2-contact-icon-options button { min-width: 0; min-height: 48px; display: grid; place-items: center; padding: 8px 4px; border: 1px solid #e1dfeb; border-radius: 11px; background: #fff; color: #4f5260; cursor: pointer; }
+.is-contact-editor .v2-contact-icon-options button.active { border-color: #6657e8; background: #f1efff; color: #493dc4; box-shadow: inset 0 0 0 1px #6657e8; }
+.is-contact-editor .v2-contact-icon-options button:focus-visible { outline: 2px solid #6657e8; outline-offset: 2px; }
+.is-contact-editor .v2-contact-icon-options svg { width: 20px; height: 20px; }

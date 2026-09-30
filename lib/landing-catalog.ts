@@ -199,6 +199,19 @@ export function parseDistribution(raw: unknown, layout = "center"): Distribution
 
 export type ButtonZoneStyle = {
   distribution?: DistributionStyle;
+  // Contact pages share their data and editor, but can present it as a compact card or a document.
+  contactLayout?: "card" | "document";
+  contactTheme?: "classic" | "paper" | "linen" | "noir" | "photo" | "essential" | "editorial" | "professional";
+  contactSurfaceColor?: string;
+  contactCoverColor?: string;
+  contactDensity?: "compact" | "balanced" | "airy";
+  contactBio?: string;
+  contactSecondPhone?: string;
+  contactAddress?: string;
+  contactSaveVariant?: "solid" | "outline" | "subtle";
+  contactSaveColor?: string;
+  contactSaveLabel?: string;
+  contactSaveIcon?: "download" | "card" | "add";
   // Stored with presentation settings; absent on older pages means visible.
   showBranding?: boolean;
   quickSocials?: QuickSocial[];
@@ -255,6 +268,18 @@ export function parseButtonZone(raw: unknown): ButtonZoneStyle {
   const contentAligns: ButtonZoneStyle["contentAlign"][] = ["center","left"];
   return {
     ...merged,
+    contactLayout: parsed.contactLayout === "document" ? "document" : "card",
+    contactTheme: ["paper", "linen", "noir", "photo", "essential", "editorial", "professional"].includes(String(parsed.contactTheme)) ? parsed.contactTheme : "classic",
+    contactSurfaceColor: typeof parsed.contactSurfaceColor === "string" && /^#[0-9a-f]{6}$/i.test(parsed.contactSurfaceColor) ? parsed.contactSurfaceColor : undefined,
+    contactCoverColor: typeof parsed.contactCoverColor === "string" && /^#[0-9a-f]{6}$/i.test(parsed.contactCoverColor) ? parsed.contactCoverColor : undefined,
+    contactDensity: parsed.contactDensity === "compact" || parsed.contactDensity === "airy" ? parsed.contactDensity : "balanced",
+    contactBio: typeof parsed.contactBio === "string" ? parsed.contactBio.trim().slice(0, 360) : "",
+    contactSecondPhone: typeof parsed.contactSecondPhone === "string" ? parsed.contactSecondPhone.trim().slice(0, 50) : "",
+    contactAddress: typeof parsed.contactAddress === "string" ? parsed.contactAddress.trim().slice(0, 200) : "",
+    contactSaveVariant: parsed.contactSaveVariant === "outline" || parsed.contactSaveVariant === "subtle" ? parsed.contactSaveVariant : "solid",
+    contactSaveColor: typeof parsed.contactSaveColor === "string" && /^#[0-9a-f]{6}$/i.test(parsed.contactSaveColor) ? parsed.contactSaveColor : undefined,
+    contactSaveLabel: typeof parsed.contactSaveLabel === "string" ? parsed.contactSaveLabel.trim().slice(0, 36) : "",
+    contactSaveIcon: parsed.contactSaveIcon === "card" || parsed.contactSaveIcon === "download" ? parsed.contactSaveIcon : "add",
     showBranding: parsed.showBranding !== false,
     quickSocials: parseQuickSocials(parsed.quickSocials),
     quickSocialsFilled: parsed.quickSocialsFilled !== false,
@@ -296,12 +321,10 @@ export function headerCardOn(zone: ButtonZoneStyle): boolean {
 // ---------- Per-element text/logo/background styling — matches the "linkme" ----------
 // reference design exactly: each element has its own font/weight/size/color/background,
 // not just the app's older shared font_pair + text_color + one text_panel toggle.
-// The eyebrow keeps sharing the title's FONT on purpose — they read as one identity block, and
-// a second font picker there is the kind of choice that mostly produces mismatches. Size, weight
-// and colour are its own, which is what actually makes an eyebrow work (an accent-coloured line
-// above the name is a standard treatment).
-export type TitleStyle = { letterSpacing?: number; eyebrow?: string; eyebrowSize: number; eyebrowWeight: number; eyebrowColor?: string; font: string; weight: number; size: number; color: string; bgMode: "none" | "solid"; bg: string; align: "left" | "center" | "right" };
-export type SubtitleStyle = { letterSpacing?: number; font: string; weight: number; size: number; color: string; bgMode: "none" | "solid"; bg: string };
+// The eyebrow shares the title font by default. Contact cards can opt into a separate font,
+// while older landing designs keep their previous appearance.
+export type TitleStyle = { letterSpacing?: number; eyebrow?: string; eyebrowFont?: string; eyebrowItalic?: boolean; eyebrowSize: number; eyebrowWeight: number; eyebrowColor?: string; font: string; italic?: boolean; weight: number; size: number; color: string; bgMode: "none" | "solid"; bg: string; align: "left" | "center" | "right" };
+export type SubtitleStyle = { letterSpacing?: number; font: string; italic?: boolean; weight: number; size: number; color: string; bgMode: "none" | "solid"; bg: string };
 export type LogoStyle = {
   treatment: "template" | "clean" | "badge" | "card" | "highlight" | "brutal" | "custom";
   shape: "round" | "square" | "sharp";
@@ -351,13 +374,13 @@ export function parseTitleStyle(landing: BackgroundLike & { text_color?: string 
   const value = hasKeys(landing.title_style)
     ? { ...DEFAULT_TITLE_STYLE, ...(landing.title_style as Partial<TitleStyle>) }
     : { ...DEFAULT_TITLE_STYLE, color: landing.text_color || autoTextColor(landing), font: landing.font_pair || "modern" };
-  return { ...value, letterSpacing: parseLetterSpacing(value.letterSpacing), eyebrow: typeof value.eyebrow === "string" ? value.eyebrow.trim().slice(0, 60) : "", eyebrowSize: Math.min(20, Math.max(8, Number(value.eyebrowSize) || 10)), eyebrowWeight: [400,500,600,700,800,900].includes(Number(value.eyebrowWeight)) ? Number(value.eyebrowWeight) : 600, eyebrowColor: /^#[0-9a-f]{6}$/i.test(String(value.eyebrowColor)) ? value.eyebrowColor : undefined, size: Math.min(48, Math.max(18, Number(value.size) || 28)), weight: [400,500,600,700,800,900].includes(Number(value.weight)) ? Number(value.weight) : 900, align: ["left","center","right"].includes(value.align) ? value.align : "center", bgMode: value.bgMode === "solid" ? "solid" : "none" };
+  return { ...value, letterSpacing: parseLetterSpacing(value.letterSpacing), eyebrow: typeof value.eyebrow === "string" ? value.eyebrow.trim().slice(0, 60) : "", eyebrowFont: typeof value.eyebrowFont === "string" ? value.eyebrowFont : undefined, eyebrowItalic: value.eyebrowItalic === true, eyebrowSize: Math.min(20, Math.max(8, Number(value.eyebrowSize) || 10)), eyebrowWeight: [400,500,600,700,800,900].includes(Number(value.eyebrowWeight)) ? Number(value.eyebrowWeight) : 600, eyebrowColor: /^#[0-9a-f]{6}$/i.test(String(value.eyebrowColor)) ? value.eyebrowColor : undefined, italic: value.italic === true, size: Math.min(48, Math.max(18, Number(value.size) || 28)), weight: [400,500,600,700,800,900].includes(Number(value.weight)) ? Number(value.weight) : 900, align: ["left","center","right"].includes(value.align) ? value.align : "center", bgMode: value.bgMode === "solid" ? "solid" : "none" };
 }
 export function parseSubtitleStyle(landing: BackgroundLike & { text_color?: string | null; font_pair?: string | null; subtitle_style?: unknown }): SubtitleStyle {
   const value = hasKeys(landing.subtitle_style)
     ? { ...DEFAULT_SUBTITLE_STYLE, ...(landing.subtitle_style as Partial<SubtitleStyle>) }
     : { ...DEFAULT_SUBTITLE_STYLE, color: landing.text_color || autoTextColor(landing), font: landing.font_pair || "modern" };
-  return { ...value, letterSpacing: parseLetterSpacing(value.letterSpacing), size: Math.min(26, Math.max(10, Number(value.size) || 14)), weight: [400,500,600,700,800,900].includes(Number(value.weight)) ? Number(value.weight) : 500, bgMode: value.bgMode === "solid" ? "solid" : "none" };
+  return { ...value, letterSpacing: parseLetterSpacing(value.letterSpacing), italic: value.italic === true, size: Math.min(26, Math.max(10, Number(value.size) || 14)), weight: [400,500,600,700,800,900].includes(Number(value.weight)) ? Number(value.weight) : 500, bgMode: value.bgMode === "solid" ? "solid" : "none" };
 }
 export function parseLogoStyle(raw: unknown): LogoStyle {
   const value = hasKeys(raw) ? { ...DEFAULT_LOGO_STYLE, ...(raw as Partial<LogoStyle>) } : { ...DEFAULT_LOGO_STYLE };
@@ -440,6 +463,7 @@ const DEFAULT_COVER_STYLE: CoverStyle = { enabled: false, mode: "fade", size: "m
 // How much extra height (px, on top of the logo+text reserve computed in landing-renderer.tsx)
 // each size adds — "large" is tuned to comfortably reach past a second button.
 export const COVER_SIZE_EXTRA: Record<CoverStyle["size"], number> = { small: -40, medium: 0, large: 110 };
+export const CONTACT_COVER_HEIGHT: Record<CoverStyle["size"], number> = { small: 112, medium: 154, large: 202 };
 
 export function parseCoverStyle(raw: unknown): CoverStyle {
   const parsed = hasKeys(raw) ? raw as Partial<CoverStyle> : {};
@@ -499,7 +523,7 @@ export function isPlausiblePhone(value: string): boolean {
 export const AUTO_COLORS: Record<string, string> = {
   whatsapp: "#25d366", instagram: "#e1306c", tiktok: "#111111", facebook: "#1877f2", linkedin: "#0a66c2", maps: "#ea4335",
   youtube: "#ff0033", spotify: "#1ed760", mercadopago: "#009ee3", telegram: "#229ed9", email: "#334155",
-  phone: "#475569", calendar: "#e05252", review: "#4285f4", website: "#1f2937", url: "#1f2937",
+  phone: "#475569", calendar: "#e05252", review: "#4285f4", website: "#1f2937", cv: "#5754ae", url: "#1f2937",
 };
 
 export const templates: { value: TemplateValue; label: string; description: string }[] = [
@@ -518,6 +542,7 @@ export const businessProfiles: {
   templates: TemplateValue[];
 }[] = [
   { value: "custom", label: "Personalizado", description: "Armá tu landing desde cero.", icon: "✨", templates: ["professional", "hotel", "tourism", "restaurant", "business"] },
+  { value: "contact", label: "Tarjeta personal", description: "Compartí tus datos y permití guardar tu contacto.", icon: "👤", templates: ["professional", "business"] },
   { value: "hotel", label: "Hotelería", description: "Hoteles, cabañas y alojamientos.", icon: "🏨", templates: ["hotel", "professional"] },
   { value: "tourism", label: "Turismo", description: "Agencias y excursiones.", icon: "🧭", templates: ["tourism", "professional"] },
   { value: "restaurant", label: "Gastronomía", description: "Restaurantes, bares y cafeterías.", icon: "🍽️", templates: ["restaurant", "professional"] },
@@ -528,7 +553,7 @@ export function getBusinessProfile(value: string) {
   return businessProfiles.find((profile) => profile.value === value) || businessProfiles[0];
 }
 
-type ActionType = "whatsapp" | "instagram" | "tiktok" | "facebook" | "linkedin" | "website" | "email" | "phone" | "maps" | "review" | "youtube" | "spotify" | "mercadopago" | "calendar" | "telegram" | "url";
+type ActionType = "whatsapp" | "instagram" | "tiktok" | "facebook" | "linkedin" | "website" | "email" | "phone" | "maps" | "review" | "youtube" | "spotify" | "mercadopago" | "calendar" | "telegram" | "cv" | "url";
 
 type ActionDef = {
   type: ActionType;
@@ -540,7 +565,7 @@ type ActionDef = {
   prefix?: string;
 };
 
-const ACTION_ORDER: ActionType[] = ["whatsapp", "instagram", "tiktok", "facebook", "linkedin", "website", "maps", "review", "email", "phone", "youtube", "spotify", "mercadopago", "calendar", "telegram", "url"];
+const ACTION_ORDER: ActionType[] = ["whatsapp", "instagram", "tiktok", "facebook", "linkedin", "website", "maps", "review", "email", "phone", "youtube", "spotify", "mercadopago", "calendar", "telegram", "cv", "url"];
 
 const ACTION_DEFS: Record<ActionType, ActionDef> = {
   whatsapp: { type: "whatsapp", label: "WhatsApp", icon: "💬", input: "phone", placeholder: "549351XXXXXXXX", message: true },
@@ -558,6 +583,7 @@ const ACTION_DEFS: Record<ActionType, ActionDef> = {
   mercadopago: { type: "mercadopago", label: "Pagar con Mercado Pago", icon: "💳", input: "url", placeholder: "https://mpago.la/...", message: false },
   calendar: { type: "calendar", label: "Reservar turno", icon: "📅", input: "url", placeholder: "https://calendly.com/...", message: false },
   telegram: { type: "telegram", label: "Telegram", icon: "📨", input: "username", placeholder: "tucanal", prefix: "t.me/", message: false },
+  cv: { type: "cv", label: "Archivo PDF", icon: "📄", input: "url", placeholder: "https://.../documento.pdf", message: false },
   url: { type: "url", label: "Enlace", icon: "🔗", input: "url", placeholder: "https://...", message: false },
 };
 

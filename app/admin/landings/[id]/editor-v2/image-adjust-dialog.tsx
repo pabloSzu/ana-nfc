@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
+import { CONTACT_COVER_HEIGHT, type CoverStyle } from "@/lib/landing-catalog";
 
 export type ImagePlacement = { zoom: number; x: number; y: number };
 export type ImageKind = "logo" | "cover" | "background";
@@ -13,11 +14,14 @@ const titles: Record<ImageKind, string> = {
 
 const clamp = (value: number) => Math.max(0, Math.min(100, value));
 
-export default function ImageAdjustDialog({ kind, src, shape, coverMode, initial, onApply, onCancel }: {
+export default function ImageAdjustDialog({ kind, src, shape, coverMode, contactCoverSize, contactFrameWidth, contactCoverOverlay, initial, onApply, onCancel }: {
   kind: ImageKind;
   src: string;
   shape?: "round" | "square" | "sharp";
   coverMode?: "fade" | "banner";
+  contactCoverSize?: CoverStyle["size"];
+  contactFrameWidth?: number;
+  contactCoverOverlay?: number;
   initial: ImagePlacement;
   onApply: (placement: ImagePlacement) => void;
   onCancel: () => void;
@@ -31,6 +35,12 @@ export default function ImageAdjustDialog({ kind, src, shape, coverMode, initial
   const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null);
   const [previewSize, setPreviewSize] = useState<{ width: number; height: number } | null>(null);
   const maxZoom = kind === "background" ? 2.2 : 2.5;
+  const contactCover = kind === "cover" && contactCoverSize !== undefined;
+  const coverHeight = contactCover ? CONTACT_COVER_HEIGHT[contactCoverSize] : 0;
+  const qualityScale = contactCover && imageSize ? Math.max((contactFrameWidth || 402) / imageSize.width, CONTACT_COVER_HEIGHT.large / imageSize.height) * placement.zoom : 0;
+  const cropSize = previewSize && contactCover
+    ? { width: previewSize.width, height: previewSize.width * CONTACT_COVER_HEIGHT.large / (contactFrameWidth || 402) }
+    : previewSize;
 
   useEffect(() => { cancelRef.current = onCancel; }, [onCancel]);
 
@@ -68,13 +78,13 @@ export default function ImageAdjustDialog({ kind, src, shape, coverMode, initial
   }, []);
 
   const canMove = (() => {
-    if (!imageSize || !previewSize || !imageSize.width || !imageSize.height || !previewSize.width || !previewSize.height) return { x: true, y: true };
+    if (!imageSize || !cropSize || !imageSize.width || !imageSize.height || !cropSize.width || !cropSize.height) return { x: true, y: true };
     const scale = kind === "logo"
-      ? previewSize.width / imageSize.width * placement.zoom
-      : Math.max(previewSize.width / imageSize.width, previewSize.height / imageSize.height) * placement.zoom;
+      ? cropSize.width / imageSize.width * placement.zoom
+      : Math.max(cropSize.width / imageSize.width, cropSize.height / imageSize.height) * placement.zoom;
     return {
-      x: imageSize.width * scale > previewSize.width + 0.5,
-      y: imageSize.height * scale > previewSize.height + 0.5,
+      x: imageSize.width * scale > cropSize.width + 0.5,
+      y: imageSize.height * scale > cropSize.height + 0.5,
     };
   })();
 
@@ -82,10 +92,15 @@ export default function ImageAdjustDialog({ kind, src, shape, coverMode, initial
     const drag = dragRef.current;
     if (!drag) return;
     const bounds = event.currentTarget.getBoundingClientRect();
+    const coverScale = imageSize && cropSize && kind !== "logo"
+      ? Math.max(cropSize.width / imageSize.width, cropSize.height / imageSize.height) * placement.zoom
+      : null;
+    const horizontalTravel = coverScale && imageSize && cropSize ? imageSize.width * coverScale - cropSize.width : bounds.width;
+    const verticalTravel = coverScale && imageSize && cropSize ? imageSize.height * coverScale - cropSize.height : bounds.height;
     setPlacement((current) => ({
       ...current,
-      x: canMove.x ? clamp(drag.initialX - (event.clientX - drag.x) / bounds.width * 100) : current.x,
-      y: canMove.y ? clamp(drag.initialY - (event.clientY - drag.y) / bounds.height * 100) : current.y,
+      x: canMove.x ? clamp(drag.initialX - (event.clientX - drag.x) / Math.max(horizontalTravel, 1) * 100) : current.x,
+      y: canMove.y ? clamp(drag.initialY - (event.clientY - drag.y) / Math.max(verticalTravel, 1) * 100) : current.y,
     }));
   }
 
@@ -105,7 +120,8 @@ export default function ImageAdjustDialog({ kind, src, shape, coverMode, initial
       </div>
       <div
         ref={previewRef}
-        className={`image-adjust-preview image-adjust-preview-${kind} image-adjust-shape-${shape || "square"} ${kind === "cover" && coverMode === "banner" ? "image-adjust-preview-banner" : ""}`}
+        className={`image-adjust-preview image-adjust-preview-${kind} image-adjust-shape-${shape || "square"} ${kind === "cover" && coverMode === "banner" ? "image-adjust-preview-banner" : ""}${contactCover ? " is-contact-cover" : ""}`}
+        style={contactCover ? { aspectRatio: `${contactFrameWidth || 402} / ${coverHeight}` } : undefined}
         role="img"
         aria-label={`Vista del encuadre de ${kind === "logo" ? "logo" : kind === "cover" ? "portada" : "fondo"}`}
         onPointerDown={(event) => {
@@ -115,7 +131,9 @@ export default function ImageAdjustDialog({ kind, src, shape, coverMode, initial
         onPointerMove={onPointerMove}
         onPointerUp={() => { dragRef.current = null; }}
         onPointerCancel={() => { dragRef.current = null; }}
-      ><div className="image-adjust-photo" style={imageStyle} /></div>
+      >{contactCover ? <div className="image-adjust-contact-canvas" style={{ aspectRatio: `${contactFrameWidth || 402} / ${CONTACT_COVER_HEIGHT.large}` }}><div className="image-adjust-photo" style={imageStyle} /></div> : <div className="image-adjust-photo" style={imageStyle} />}{contactCover && <><span className="image-adjust-cover-veil" style={{ background: `rgba(0,0,0,${contactCoverOverlay || 0})` }} /><span className="image-adjust-visible-label">Área visible en tu tarjeta</span></>}</div>
+      {contactCover && <p className="image-adjust-note">El borde punteado muestra exactamente qué parte se verá en la portada {contactCoverSize === "small" ? "chica" : contactCoverSize === "medium" ? "mediana" : "grande"}. El tamaño cambia el área visible, no la escala de la foto.</p>}
+      {qualityScale > .5 && <p className="image-adjust-quality" role="status">{qualityScale > 1 ? "La foto es demasiado pequeña para este zoom: puede verse pixelada." : "En pantallas de alta resolución esta foto podría verse poco nítida con este zoom."} Probá una imagen de mayor resolución o reducí el zoom.</p>}
       <label className="image-adjust-slider">Zoom <span>{Math.round(placement.zoom * 100)}%</span>
         <input type="range" min={1} max={maxZoom} step={.01} value={placement.zoom} onChange={(event) => setPlacement((current) => ({ ...current, zoom: Number(event.target.value) }))} />
       </label>

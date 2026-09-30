@@ -1,9 +1,10 @@
 import LandingSeparator from "@/components/landing-separator";
-import { FiTrash2, FiSliders } from "react-icons/fi";
+import { FiTrash2, FiSliders, FiArrowUpRight, FiUser } from "react-icons/fi";
+import ContactSaveIcon from "@/components/contact-save-icon";
 import BioNFCLogo from "@/components/bionfc-logo";
 import {
   QUICK_SOCIALS, quickSocialHref, buildActionLink, buttonZoneShadow, resolveBackgroundTint, contrastTextColor,
-  parseDistribution, readableInk, parseTitleStyle, parseSubtitleStyle, parseLogoStyle, parseBackgroundPosition, parseButtonZone, parseCoverStyle, headerCardOn, COVER_SIZE_EXTRA, hexToRgba, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize,
+  parseDistribution, readableInk, parseTitleStyle, parseSubtitleStyle, parseLogoStyle, parseBackgroundPosition, parseButtonZone, parseCoverStyle, headerCardOn, COVER_SIZE_EXTRA, CONTACT_COVER_HEIGHT, hexToRgba, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize,
 } from "@/lib/landing-catalog";
 import { getFontFamily, resolveFontWeight, resolveTextFont, FontLinks, LogoInitials } from "@/lib/fonts";
 import { buttonCollectionStyle, buttonCollectionWidth, buttonIconStyle, instagramAssetMode, resolveButtonColors, shouldUseBrandMark, youtubeMarkSurfaceColor } from "@/lib/design-presets";
@@ -27,6 +28,8 @@ type LandingAction = {
 };
 
 type Landing = {
+  slug?: string;
+  business_type?: string | null;
   business_name: string;
   description?: string | null;
   logo_url?: string | null;
@@ -70,7 +73,7 @@ export function LandingPhotoBackground({ landing }: { landing: Landing }) {
 // What's "selected" right now, for the highlight outline — mirrors editor-v2's own Panel
 // type structurally (kept independent here, not imported, to avoid a circular dependency
 // between the admin editor and this shared public-facing component).
-export type LandingEditSelection = "templates" | "buttons" | "background" | "cover" | "settings" | "socials" | "distribution" | "title" | "subtitle" | "logo" | "add" | { buttonId: string } | null;
+export type LandingEditSelection = "templates" | "buttons" | "background" | "cover" | "settings" | "contact" | "contact-design" | "contact-name" | "contact-role" | "contact-company" | "socials" | "distribution" | "title" | "subtitle" | "logo" | "add" | { buttonId: string } | null;
 
 // Everything the editor needs to turn this same real render into a live, click-to-edit
 // canvas — no separate mock. Every hook here only ever *adds* non-layout-affecting behavior
@@ -81,10 +84,13 @@ export type LandingEditControls = {
   draggingId: string | null;
   onSelectTemplates: () => void;
   onSelectSettings: () => void;
+  onSelectContact: () => void;
+  onSelectContactDesign: () => void;
   onSelectSocials: () => void;
   onSelectDistribution: () => void;
   onSelectLogo: () => void;
   onSelectTitle: () => void;
+  onSelectRole: () => void;
   onSelectSubtitle: () => void;
   onSelectBackground: () => void;
   onSelectCover: () => void;
@@ -125,22 +131,36 @@ function actionHref(action: LandingAction) {
   return buildActionLink(action.type, action.url || "") || "#";
 }
 
-export default function LandingRenderer({ landing, actions, edit, externalPhotoBackground = false }: { landing: Landing; actions: LandingAction[]; edit?: LandingEditControls; externalPhotoBackground?: boolean }) {
+export default function LandingRenderer({ landing, actions, edit, externalPhotoBackground = false, editorPreview = false }: { landing: Landing; actions: LandingAction[]; edit?: LandingEditControls; externalPhotoBackground?: boolean; editorPreview?: boolean }) {
+  const isContact = landing.business_type === "contact";
   const primary = landing.primary_color || "#1f2937";
   const title = parseTitleStyle(landing);
   const subtitle = parseSubtitleStyle(landing);
   const logo = parseLogoStyle(landing.logo_style);
   const cover = parseCoverStyle(landing.cover_style);
-  const isSampleCover = Boolean(edit && cover.enabled && !landing.cover_image_url);
+  const isSampleCover = Boolean(!isContact && edit && cover.enabled && !landing.cover_image_url);
   const coverImageUrl = landing.cover_image_url || (isSampleCover ? SAMPLE_COVER : "");
-  const showCover = Boolean(cover.enabled && coverImageUrl);
+  const showCover = Boolean(!isContact && cover.enabled && coverImageUrl);
+  const contactHeroImage = isContact && cover.enabled ? coverImageUrl : "";
   const showEyebrow = Boolean(title.eyebrow) || Boolean(edit);
-  const isSampleButtons = Boolean(edit) && actions.length === 0;
+  const isSampleButtons = Boolean(edit) && actions.length === 0 && !isContact;
   const shownActions = isSampleButtons ? SAMPLE_ACTIONS : actions;
+  const contactQuickActions = isContact ? ["phone", "email", "whatsapp"].flatMap((type) => {
+    const action = actions.find((item) => item.type === type && item.url);
+    return action ? [action] : [];
+  }) : [];
+  const contactQuickIds = new Set(contactQuickActions.map((action) => action.id));
+  const contentActions = isContact ? shownActions.filter((action) => !contactQuickIds.has(action.id) && (!(["phone", "email", "whatsapp"].includes(action.type)) || Boolean(action.url))) : shownActions;
   const zone = parseButtonZone(landing.button_style);
+  const isDocument = isContact && zone.contactLayout === "document";
+  const contactTheme = isContact ? zone.contactTheme || "classic" : "classic";
+  const editableContactTypography = isContact;
+  const contactInk = zone.contactSurfaceColor ? contrastTextColor(zone.contactSurfaceColor) : contactTheme === "essential" ? "#243028" : contactTheme === "editorial" ? "#433b35" : contactTheme === "professional" ? "#202637" : contactTheme === "noir" ? "#f6f1e8" : contactTheme === "paper" ? "#31271f" : contactTheme === "linen" ? "#26352b" : isDocument ? "#202637" : title.color;
+  const contactSurface = zone.contactSurfaceColor || (contactTheme === "essential" ? "#faf7ef" : contactTheme === "editorial" ? "#f3efea" : contactTheme === "professional" ? "#ffffff" : contactTheme === "noir" ? "#242b36" : contactTheme === "paper" ? "#f8f2e6" : contactTheme === "linen" ? "#f3f0e5" : isDocument ? "#ffffff" : contrastTextColor(title.color) === "#ffffff" ? "rgba(255,255,255,.91)" : "rgba(17,20,34,.83)");
+  const avatarSize = isDocument ? Math.min(112, Math.max(64, logo.size)) : logo.size;
   const isBanner = showCover && cover.mode === "banner";
   // Card and photo are exclusive choices in the editor; a photo wins if an older page has both.
-  const hasHeaderCard = headerCardOn(zone) && !showCover;
+  const hasHeaderCard = !isContact && headerCardOn(zone) && !showCover;
   // "profile-card" is the old way the card was stored — it's otherwise the plain centered layout.
   const layoutClass = zone.layout === "profile-card" ? "center" : zone.layout;
   const distribution = parseDistribution(zone.distribution, zone.layout);
@@ -152,7 +172,7 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
   // In the editor, preload every font in the catalog so every option in every font picker
   // previews correctly and instantly. On the real page (and admin previews), load only the
   // 2-3 fonts this specific landing actually uses — visitors never download the other five.
-  const fontIds = [title.font, subtitle.font, landing.button_font];
+  const fontIds = [title.font, title.eyebrowFont, subtitle.font, landing.button_font];
 
   // Always set the same longhand background properties (never the `background` shorthand)
   // so React never has to reconcile a shorthand against the sibling `backgroundRepeat` set
@@ -203,9 +223,9 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
   const heading = (
     <h1
       className={edit ? "editor-hit" : undefined}
-      data-tag="Título"
+      data-tag={isContact ? "Nombre" : "Título"}
       onClick={edit?.onSelectTitle}
-      style={{ fontFamily: resolveTextFont(title.font), letterSpacing: title.letterSpacing === undefined ? undefined : `${title.letterSpacing}em`, fontWeight: resolveFontWeight(title.font, title.weight), fontSynthesis: "none", fontSize: title.size, color: title.color, background: title.bgMode === "solid" ? hexToRgba(title.bg, 0.55) : "transparent", textAlign: title.align, borderRadius: 12, padding: title.bgMode === "solid" ? "4px 10px" : 0, margin: "0 0 7px", display: "inline-block", position: edit ? "relative" : undefined }}
+      style={{ fontFamily: resolveTextFont(title.font), letterSpacing: title.letterSpacing === undefined ? undefined : `${title.letterSpacing}em`, fontWeight: editableContactTypography ? title.weight : resolveFontWeight(title.font, title.weight), fontStyle: title.italic ? "italic" : "normal", fontSynthesis: editableContactTypography ? "style weight" : "none", fontSize: title.size, color: title.color, background: isDocument ? "transparent" : title.bgMode === "solid" ? hexToRgba(title.bg, 0.55) : "transparent", textAlign: isDocument ? "left" : title.align, borderRadius: 12, padding: isDocument ? 0 : title.bgMode === "solid" ? "4px 10px" : 0, margin: "0 0 7px", display: "inline-block", position: edit ? "relative" : undefined }}
     >
       {landing.business_name}
     </h1>
@@ -213,31 +233,64 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
   const description = showDescription && (
     <p
       className={`landing-desc${edit ? " editor-hit" : ""}${edit?.selected === "subtitle" ? " is-selected" : ""}`}
-      data-tag="Subtítulo"
+      data-tag={isContact ? "Empresa" : "Subtítulo"}
       onClick={edit?.onSelectSubtitle}
-      style={{ fontFamily: resolveTextFont(subtitle.font), letterSpacing: subtitle.letterSpacing === undefined ? undefined : `${subtitle.letterSpacing}em`, fontWeight: resolveFontWeight(subtitle.font, subtitle.weight), fontSynthesis: "none", fontSize: subtitle.size, color: subtitle.color, background: subtitle.bgMode === "solid" ? hexToRgba(subtitle.bg, 0.55) : "transparent", borderRadius: 10, padding: subtitle.bgMode === "solid" ? "4px 9px" : 0, display: "inline-block", position: edit ? "relative" : undefined }}
+      style={{ fontFamily: resolveTextFont(subtitle.font), letterSpacing: subtitle.letterSpacing === undefined ? undefined : `${subtitle.letterSpacing}em`, fontWeight: editableContactTypography ? subtitle.weight : resolveFontWeight(subtitle.font, subtitle.weight), fontStyle: subtitle.italic ? "italic" : "normal", fontSynthesis: editableContactTypography ? "style weight" : "none", fontSize: subtitle.size, color: subtitle.color, background: isDocument ? "transparent" : subtitle.bgMode === "solid" ? hexToRgba(subtitle.bg, 0.55) : "transparent", borderRadius: 10, padding: isDocument ? 0 : subtitle.bgMode === "solid" ? "4px 9px" : 0, display: "inline-block", position: edit ? "relative" : undefined }}
     >
-      {landing.description || (edit ? <span className="editor-placeholder-text">Tocá para agregar una descripción</span> : "")}
+      {landing.description || (edit ? <span className="editor-placeholder-text">{isContact ? "Tocá para agregar tu empresa" : "Tocá para agregar una descripción"}</span> : "")}
     </p>
   );
+  const roleFont = editableContactTypography ? title.eyebrowFont || title.font : title.font;
+  const role = showEyebrow && <p className={`landing-eyebrow${edit ? " editor-hit" : ""}`} data-tag={isContact ? "Cargo" : "Rubro o frase breve"} onClick={isContact ? edit?.onSelectRole : edit?.onSelectTitle} style={{ color: title.eyebrowColor || title.color, fontFamily: resolveTextFont(roleFont), fontStyle: title.eyebrowItalic ? "italic" : "normal", fontSize: title.eyebrowSize, fontWeight: editableContactTypography ? title.eyebrowWeight : resolveFontWeight(roleFont, title.eyebrowWeight), fontSynthesis: editableContactTypography ? "style weight" : "none" }}>{title.eyebrow || <span className="editor-placeholder-text">{isContact ? "Tocá para agregar tu cargo" : "Tocá para agregar tu rubro"}</span>}</p>;
+  const saveColor = zone.contactSaveColor || primary;
+  const saveVariant = zone.contactSaveVariant || "solid";
+  const saveContactStyle: CSSProperties = {
+    fontFamily: buttonFont,
+    background: saveVariant === "solid" ? saveColor : saveVariant === "subtle" ? `color-mix(in srgb, ${saveColor} 15%, var(--contact-surface))` : "transparent",
+    color: saveVariant === "solid" ? contrastTextColor(saveColor) : contactInk,
+    border: saveVariant === "outline" ? `1.5px solid ${saveColor}` : saveVariant === "subtle" ? `1px solid color-mix(in srgb, ${saveColor} 35%, transparent)` : "1px solid rgba(0,0,0,.16)",
+    boxShadow: saveVariant === "solid" ? undefined : "none",
+  };
+  const saveContactContent = <><ContactSaveIcon icon={zone.contactSaveIcon} />{zone.contactSaveLabel || "Guardar contacto"}</>;
+  const saveContactAction = landing.slug && (editorPreview ? <div className="landing-save-contact" style={saveContactStyle}>{saveContactContent}</div> : <a className={`landing-save-contact${edit ? " editor-hit" : ""}${edit?.selected === "contact-design" ? " is-selected" : ""}`}
+    data-tag={edit ? "Diseño del botón principal" : undefined}
+    href={`/api/contact/${encodeURIComponent(landing.slug)}`}
+    onClick={edit ? (event) => { event.preventDefault(); edit.onSelectContactDesign(); } : undefined}
+    style={saveContactStyle}>
+    {saveContactContent}
+  </a>);
+  const quickContactActions = (contactQuickActions.length > 0 || edit) && <div className="contact-quick-actions" aria-label="Contactar">
+    {contactQuickActions.map((action) => <a key={action.id} href={actionHref(action)} className={edit ? "editor-hit" : undefined} data-tag={edit ? "Editar contacto" : undefined} onClick={edit ? (event) => { event.preventDefault(); edit.onSelectContact(); } : undefined} style={{ color: contactInk }}><span><ActionTypeIcon type={action.type} /></span><b>{action.type === "phone" ? isDocument ? "Teléfono" : "Llamar" : action.type === "email" ? "Email" : "WhatsApp"}</b><small>{action.url}</small></a>)}
+    {edit && contactQuickActions.length === 0 && <button type="button" className="contact-quick-empty" onClick={edit.onSelectContact}>＋ Agregar teléfono, email o WhatsApp</button>}
+  </div>;
+  const hasExtraContactDetails = isContact && Boolean(zone.contactSecondPhone || zone.contactAddress);
+  const contactLinksMargin = contentActions.length > 0 ? "var(--contact-section-space)" : 8;
 
   return (
-    <main className={`public${zone.showBranding !== false ? " has-branding" : ""}${landing.background_type === "image" && landing.background_image_url ? " public-bg-image" : ""}`} style={{ position: "relative", overflow: "clip", background: externalPhotoBackground && landing.background_type === "image" ? "transparent" : landing.background_color || "#f7f5f0", paddingTop: distribution.top, "--landing-top": `${distribution.top}px`, "--landing-logo-gap": `${distribution.logoGap}px` } as CSSProperties}>
+    <main className={`public${isContact ? ` is-contact contact-theme-${contactTheme} contact-density-${zone.contactDensity || "balanced"}${zone.contactSurfaceColor ? " contact-custom-surface" : ""}${zone.contactCoverColor ? " contact-custom-cover" : ""}` : ""}${isDocument ? " contact-layout-document" : ""}${zone.showBranding !== false ? " has-branding" : ""}${landing.background_type === "image" && landing.background_image_url ? " public-bg-image" : ""}`} style={{ position: "relative", overflow: "clip", background: externalPhotoBackground && landing.background_type === "image" ? "transparent" : landing.background_color || "#f7f5f0", paddingTop: isContact ? 24 : distribution.top, "--landing-top": `${distribution.top}px`, "--landing-logo-gap": `${distribution.logoGap}px`, "--contact-avatar-size": `${avatarSize}px`, "--contact-accent": primary, "--contact-ink": contactInk, "--contact-surface": contactSurface, "--contact-cover-color": zone.contactCoverColor || primary, "--contact-role-color": title.eyebrowColor || title.color, "--contact-company-color": subtitle.color } as CSSProperties}>
       <FontLinks ids={fontIds} />
       {landing.background_type === "image" ? !externalPhotoBackground && <div className="public-bg-layer public-photo-track" aria-hidden="true"><LandingPhotoBackground landing={landing} /></div> : <><div className="public-bg-layer" style={{ position: "absolute", inset: 0, zIndex: 0, ...bgLayerStyle }} /><div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none", backgroundImage: `linear-gradient(180deg, rgba(4,8,10,${(bgTint * 0.55).toFixed(3)}), rgba(5,8,11,${bgTint}))` }} /></>}
       {edit && (
         <>
           <button type="button" className="editor-bg-hit" onClick={edit.onSelectBackground} aria-label="Editar fondo" />
           <div className="editor-quick-tools">
-            <button type="button" className={edit.selected === "templates" ? "active" : ""} onClick={edit.onSelectTemplates}>✦ Plantillas</button>
-            <button type="button" className={edit.selected === "cover" ? "active" : ""} onClick={edit.onSelectCover}><IconImage /> Encabezado</button>
-            <button type="button" className={edit.selected === "distribution" ? "active" : ""} onClick={edit.onSelectDistribution}><FiSliders aria-hidden="true" /> Distribución</button>
-            <button type="button" className={edit.selected === "background" ? "active" : ""} onClick={edit.onSelectBackground}><IconImage /> Fondo</button>
+            {!isContact && <button type="button" className={edit.selected === "templates" ? "active" : ""} onClick={edit.onSelectTemplates}>✦ Plantillas</button>}
+            {isContact && <button type="button" className={edit.selected === "contact-design" || edit.selected === "templates" || edit.selected === "distribution" || edit.selected === "background" ? "active" : ""} onClick={edit.onSelectContactDesign}><FiSliders aria-hidden="true" /> Diseño</button>}
+            {isContact && <button type="button" className={edit.selected === "cover" ? "active" : ""} onClick={edit.onSelectCover}><IconImage /> Portada</button>}
+            {isContact && <button type="button" className={edit.selected === "contact" || edit.selected === "contact-name" || edit.selected === "contact-role" || edit.selected === "contact-company" ? "active" : ""} onClick={edit.onSelectContact}><FiUser aria-hidden="true" /> Contenido</button>}
+            {!isContact && <button type="button" className={edit.selected === "cover" ? "active" : ""} onClick={edit.onSelectCover}><IconImage /> Encabezado</button>}
+            {!isContact && <button type="button" className={edit.selected === "distribution" ? "active" : ""} onClick={edit.onSelectDistribution}><FiSliders aria-hidden="true" /> Distribución</button>}
+            {!isContact && <button type="button" className={edit.selected === "background" ? "active" : ""} onClick={edit.onSelectBackground}><IconImage /> Fondo</button>}
           </div>
         </>
       )}
       <div className={`public-inner layout-${layoutClass}${hasHeaderCard ? " has-header-card" : ""}`} style={{ position: "relative", zIndex: 2 }}>
-        <div className="landing-header-region" style={showCover ? ({ "--cover-h": `${coverReserve}px` } as CSSProperties) : undefined}>
+        <div className={`landing-header-region${isContact ? " contact-hero" : ""}`} style={showCover ? ({ "--cover-h": `${coverReserve}px` } as CSSProperties) : undefined}>
+        {isContact && <div className={`contact-hero-art${edit ? " editor-hit" : ""}`} role={edit ? "button" : undefined} aria-label={edit ? "Editar portada de la tarjeta" : undefined} tabIndex={edit ? 0 : undefined} data-tag={edit ? "Portada" : undefined} onClick={edit?.onSelectCover} onKeyDown={edit ? (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); edit.onSelectCover(); } } : undefined} style={{ height: CONTACT_COVER_HEIGHT[cover.size] }}>
+          {contactHeroImage && <div className="contact-hero-photo-mask" aria-hidden="true" style={{ maskImage: cover.mode === "fade" ? coverFadeGradient(cover.fade) : undefined }}><div className="contact-hero-photo-canvas"><div className="contact-hero-photo" style={{ backgroundImage: `url(${JSON.stringify(contactHeroImage)})`, backgroundPosition: `${cover.x}% ${cover.y}%`, transform: `scale(${cover.zoom})`, transformOrigin: `${cover.x}% ${cover.y}%` }} /></div></div>}
+          {contactHeroImage && !isSampleCover && <div className="contact-hero-veil" aria-hidden="true" style={{ background: `rgba(0,0,0,${cover.overlay})`, maskImage: cover.mode === "fade" ? coverFadeGradient(cover.fade) : undefined }} />}
+          <span>{isSampleCover ? "FOTO DE EJEMPLO · SUBÍ LA TUYA" : isDocument ? "FICHA PROFESIONAL" : "TARJETA PERSONAL"}</span>
+        </div>}
         {showCover && (
           // The banner runs from the very top of the page down to the middle of the logo, with a
           // hard edge, so the logo sits half on the photo and half on the page.
@@ -248,13 +301,13 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
             {!isSampleCover && <div className="landing-cover-veil" style={{ background: isBanner ? `rgba(0, 0, 0, ${cover.overlay})` : hexToRgba(contrastTextColor(title.color), cover.overlay) }} />}
           </div>
         )}
-        {isSampleCover && <button type="button" className="editor-sample-badge" onClick={edit?.onSelectCover}><strong>Portada de ejemplo</strong><span>(Subí la tuya)</span></button>}
+        {isSampleCover && !isContact && <button type="button" className="editor-sample-badge" onClick={edit?.onSelectCover}><strong>Portada de ejemplo</strong><span>(Subí la tuya)</span></button>}
         <div className="landing-identity-block">
         <div
           className={edit ? "avatar editor-hit" : "avatar"}
-          data-tag="Logo"
+          data-tag={isContact ? "Foto de perfil" : "Logo"}
           onClick={edit?.onSelectLogo}
-          style={{ ...logoFrameStyle(logo, primary), width: logo.size, height: logo.size, borderRadius: logoBorderRadius(logo.shape, logo.size), margin: `0 auto ${distribution.logoGap}px`, fontSize: logoLetterSize(logo.size, logo.initials), position: edit ? "relative" : undefined }}
+          style={{ ...logoFrameStyle(logo, primary), width: avatarSize, height: avatarSize, borderRadius: logoBorderRadius(logo.shape, avatarSize), margin: `0 auto ${distribution.logoGap}px`, fontSize: logoLetterSize(avatarSize, logo.initials), position: edit ? "relative" : undefined }}
         >
           {landing.logo_url ? (
             <div style={{ width: "100%", height: "100%", borderRadius: "inherit", overflow: "hidden", backgroundImage: `url(${landing.logo_url})`, backgroundSize: `${logo.zoom * 100}%`, backgroundPosition: `${logo.x}% ${logo.y}%`, backgroundRepeat: "no-repeat" }} />
@@ -262,19 +315,30 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
             <div style={{ width: "100%", height: "100%", borderRadius: "inherit", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: resolveTextFont(title.font) }}><LogoInitials font={title.font}>{logoInitials(landing.business_name, logo.initials)}</LogoInitials></div>
           )}
         </div>
-        {showEyebrow && <p className={`landing-eyebrow${edit ? " editor-hit" : ""}`} data-tag="Rubro o frase breve" onClick={edit?.onSelectTitle} style={{ color: title.eyebrowColor || title.color, fontFamily: resolveTextFont(title.font), fontSize: title.eyebrowSize, fontWeight: resolveFontWeight(title.font, title.eyebrowWeight), fontSynthesis: "none" }}>{title.eyebrow || <span className="editor-placeholder-text">Tocá para agregar tu rubro</span>}</p>}
+        {!isContact && role}
         {heading}
         <br />
+        {isContact && role}
         {description}
         </div>
         </div>
-        {distribution.separator && <div className={`landing-separator${edit ? " editor-hit" : ""}${edit?.selected === "distribution" ? " is-selected" : ""}`} data-tag={edit ? "Separador" : undefined} onClick={edit?.onSelectDistribution} style={{ paddingBlock: distribution.separatorSpace }}>
+        {!isContact && distribution.separator && <div className={`landing-separator${edit ? " editor-hit" : ""}${edit?.selected === "distribution" ? " is-selected" : ""}`} data-tag={edit ? "Separador" : undefined} onClick={edit?.onSelectDistribution} style={{ paddingBlock: distribution.separatorSpace }}>
           <div style={{ width: `${distribution.separatorWidth}%` }}><LandingSeparator variant={distribution.separatorStyle} color={distribution.separatorColor} weight={distribution.separatorWeight} /></div>
           {edit && <button type="button" aria-label="Editar separador" onClick={edit.onSelectDistribution}><IconEdit aria-hidden="true" /></button>}
         </div>}
-        <div className={`public-actions${edit?.selected === "buttons" ? " editor-zone-selected" : ""}`} style={{ position: "relative", marginTop: distribution.buttonsGap + (edit ? 34 : 0), display: "flex", flexDirection: "column", gap: zone.gap }}>
-          {edit && <button type="button" className="editor-zone-tag" onClick={edit.onSelectZone}>✦ Editar todos los botones</button>}
-          {shownActions.map((action, index) => {
+        {isContact && zone.contactBio && <section className={`contact-about${edit ? " editor-hit" : ""}`} aria-label="Sobre mí" data-tag={edit ? "Sobre mí" : undefined} onClick={edit?.onSelectContact}><span>SOBRE MÍ</span><p>{zone.contactBio}</p></section>}
+        {isContact && <div className="contact-primary-actions">
+          {(contactQuickActions.length > 0 || hasExtraContactDetails || edit) && <h2 className="contact-contact-heading">Contacto</h2>}
+          {quickContactActions}
+          {hasExtraContactDetails && <div className={`contact-extra-details${edit ? " editor-hit" : ""}`} data-tag={edit ? "Más datos de contacto" : undefined} onClick={edit?.onSelectContact}>
+            {zone.contactSecondPhone && <div><span>Otro teléfono</span><strong>{zone.contactSecondPhone}</strong></div>}
+            {zone.contactAddress && <div><span>Dirección</span><strong>{zone.contactAddress}</strong></div>}
+          </div>}
+          {saveContactAction}
+        </div>}
+        <div className={`public-actions${edit?.selected === "buttons" ? " editor-zone-selected" : ""}`} style={{ position: "relative", marginTop: isContact ? contactLinksMargin : distribution.buttonsGap + (edit ? 34 : 0), display: "flex", flexDirection: "column", gap: isContact ? 10 : zone.gap }}>
+          {edit && !isContact && <button type="button" className="editor-zone-tag" onClick={edit.onSelectZone}>✦ Editar todos los botones</button>}
+          {contentActions.map((action, index) => {
             const { background: bg, text, isAuthentic, useNetworkAccent } = resolveButtonColors({
               zone, type: action.type, position: index, primary,
               customColor: action.background_color, useAutoColor: action.use_auto_color,
@@ -285,46 +349,46 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
             const customIconBackground = /^#[0-9a-f]{6}$/i.test(action.icon_background_color || "") ? action.icon_background_color! : undefined;
             const instagramAsset = instagramAssetMode(zone.collection, action.type, iconAppearance, hasCustomIcon);
             return (
-              <div key={action.id} ref={edit && !isSampleButtons ? (el) => edit.onButtonRef(action.id, el) : undefined} className={`landing-action-row${edit ? " editor-action-row" : ""}${isDragging ? " is-dragging" : ""}${isSampleButtons ? " editor-sample-row" : ""}`} style={{ position: "relative", width: buttonCollectionWidth(zone, index), margin: "0 auto" }}>
+              <div key={action.id} ref={edit && !isSampleButtons ? (el) => edit.onButtonRef(action.id, el) : undefined} className={`landing-action-row${edit ? " editor-action-row" : ""}${isDragging ? " is-dragging" : ""}${isSampleButtons ? " editor-sample-row" : ""}`} style={{ position: "relative", width: isContact ? "100%" : buttonCollectionWidth(zone, index), margin: "0 auto" }}>
               <a
                 data-button-id={edit ? action.id : undefined}
-                className={`action button-collection-${zone.collection} icon-appearance-${iconAppearance}${edit && !isSampleButtons ? " editor-hit" : ""}${isSelected ? " is-selected" : ""}${isDragging ? " is-dragging" : ""}${isSampleButtons ? " is-sample" : ""}`}
+                className={`action ${isContact ? "contact-feature-card" : `button-collection-${zone.collection} icon-appearance-${iconAppearance}`}${edit && !isSampleButtons ? " editor-hit" : ""}${isSelected ? " is-selected" : ""}${isDragging ? " is-dragging" : ""}${isSampleButtons ? " is-sample" : ""}`}
                 href={actionHref(action)}
                 target={edit ? undefined : (noBlank.has(action.type) ? undefined : "_blank")}
                 rel="noreferrer"
-                onClick={edit ? (event) => { event.preventDefault(); if (isSampleButtons) edit.onAddButton(); else edit.onSelectButton(action.id); } : undefined}
+                onClick={edit ? (event) => { event.preventDefault(); if (isSampleButtons) edit.onAddButton(); else edit.onSelectButton(action.id); } : editorPreview && !action.url ? (event) => event.preventDefault() : undefined}
                 style={{
-                  ...buttonCollectionStyle(zone.collection, bg, text, index, action.type, isAuthentic, useNetworkAccent),
+                  ...(isContact ? { background: "var(--contact-surface)", color: contactInk, border: "1px solid color-mix(in srgb, var(--contact-ink) 15%, transparent)" } : buttonCollectionStyle(zone.collection, bg, text, index, action.type, isAuthentic, useNetworkAccent)),
                   width: "100%",
-                  minHeight: zone.height,
+                  minHeight: isContact ? 68 : zone.height,
                   margin: "0 auto",
-                  borderRadius: zone.radius,
-                  boxShadow: buttonCollectionStyle(zone.collection, bg, text, index, action.type, isAuthentic, useNetworkAccent).boxShadow || buttonZoneShadow(zone.shadow),
+                  borderRadius: isContact ? 18 : zone.radius,
+                  boxShadow: isContact ? "0 6px 18px rgba(15,17,30,.08)" : buttonCollectionStyle(zone.collection, bg, text, index, action.type, isAuthentic, useNetworkAccent).boxShadow || buttonZoneShadow(zone.shadow),
                   fontFamily: buttonFont,
-                  fontSize: zone.textSize,
+                  fontSize: isContact ? 14 : zone.textSize,
                   flexDirection: "column",
-                  alignItems: zone.contentAlign === "left" ? "flex-start" : "center",
+                  alignItems: isContact || zone.contentAlign === "left" ? "flex-start" : "center",
                   gap: 0,
                   position: edit ? "relative" : undefined,
                 }}
               >
-                <span className={`action-main action-main-${zone.contentAlign}`} style={zone.contentAlign === "center" ? { width: "100%", display: "grid", gridTemplateColumns: `${zone.iconSize}px minmax(0,1fr) ${zone.iconSize}px`, alignItems: "center", columnGap: 10 } : { width: "100%", display: "flex", alignItems: "center", justifyContent: "flex-start", gap: 10 }}>
+                <span className={`action-main action-main-${isContact ? "left" : zone.contentAlign}`} style={isContact ? { width: "100%", display: "flex", alignItems: "center", gap: 12 } : zone.contentAlign === "center" ? { width: "100%", display: "grid", gridTemplateColumns: `${zone.iconSize}px minmax(0,1fr) ${zone.iconSize}px`, alignItems: "center", columnGap: 10 } : { width: "100%", display: "flex", alignItems: "center", justifyContent: "flex-start", gap: 10 }}>
                   <span className="action-brand-icon" style={{
-                    ...buttonIconStyle(zone.collection, bg, zone.iconSize, action.type, iconAppearance, isAuthentic, useNetworkAccent, hasCustomIcon),
-                    ...(zone.textColor && iconAppearance === "minimal" && !hasCustomIcon
+                    ...(isContact ? { width: 42, height: 42, flex: "0 0 42px", display: "grid", placeItems: "center", borderRadius: 13, background: primary, color: contrastTextColor(primary) } : buttonIconStyle(zone.collection, bg, zone.iconSize, action.type, iconAppearance, isAuthentic, useNetworkAccent, hasCustomIcon)),
+                    ...(!isContact && zone.textColor && iconAppearance === "minimal" && !hasCustomIcon
                       ? { color: zone.textColor }
                       : {}),
-                    ...(customIconBackground
+                    ...(!isContact && customIconBackground
                       ? { background: customIconBackground, color: contrastTextColor(customIconBackground) }
                       : {}),
-                  }}><ActionTypeIcon type={action.type} icon={action.icon} brandMark={shouldUseBrandMark(zone.collection, action.type, iconAppearance, isAuthentic)} brandBackground={youtubeMarkSurfaceColor(zone.collection, bg, action.icon_background_color)} instagramAsset={customIconBackground && instagramAsset === "color" ? "mono" : instagramAsset} /></span>
-                  <span className="action-copy" style={{ textAlign: zone.contentAlign === "center" ? "center" : "left", color: zone.textColor || undefined }}>
-                    <span className={`action-title${zone.titleLines === 2 ? " action-title-two-lines" : ""}`} style={{ fontWeight: zone.fontWeight === undefined ? undefined : resolveFontWeight(landing.button_font || "modern", zone.fontWeight), letterSpacing: zone.letterSpacing === undefined ? undefined : `${zone.letterSpacing}em`, fontSynthesis: zone.fontWeight === undefined ? undefined : "none", color: zone.textColor || undefined }}>{action.title}</span>
-                    {action.subtitle && <small style={{ fontSize: 11, opacity: 0.82, fontWeight: 600, color: zone.textColor || undefined }}>{action.subtitle}</small>}
+                  }}><ActionTypeIcon type={action.type} icon={action.icon} brandMark={!isContact && shouldUseBrandMark(zone.collection, action.type, iconAppearance, isAuthentic)} brandBackground={youtubeMarkSurfaceColor(zone.collection, bg, action.icon_background_color)} instagramAsset={isContact ? "mono" : customIconBackground && instagramAsset === "color" ? "mono" : instagramAsset} /></span>
+                  <span className="action-copy" style={{ textAlign: isContact ? "left" : zone.contentAlign === "center" ? "center" : "left", color: isContact ? contactInk : zone.textColor || undefined, flex: isContact ? "1 1 auto" : undefined }}>
+                    <span className={`action-title${zone.titleLines === 2 ? " action-title-two-lines" : ""}`} style={{ fontWeight: isContact ? 750 : zone.fontWeight === undefined ? undefined : resolveFontWeight(landing.button_font || "modern", zone.fontWeight), letterSpacing: isContact ? undefined : zone.letterSpacing === undefined ? undefined : `${zone.letterSpacing}em`, fontSynthesis: zone.fontWeight === undefined ? undefined : "none", color: isContact ? contactInk : zone.textColor || undefined }}>{action.title}</span>
+                    {action.subtitle && <small style={{ fontSize: 11, opacity: 0.82, fontWeight: 600, color: isContact ? contactInk : zone.textColor || undefined }}>{action.subtitle}</small>}
                   </span>
-                  {zone.contentAlign === "center" && <span className="action-icon-balance" aria-hidden="true" />}
+                  {isContact ? !edit && <FiArrowUpRight className="contact-feature-arrow" aria-hidden="true" /> : zone.contentAlign === "center" && <span className="action-icon-balance" aria-hidden="true" />}
                 </span>
-                {edit && !isSampleButtons && !action.use_auto_color && <span className="editor-own-badge">Propio</span>}
+                {edit && !isContact && !isSampleButtons && !action.use_auto_color && <span className="editor-own-badge">Propio</span>}
                 {edit && !isSampleButtons && (
                   <span
                     className="editor-drag"
@@ -336,13 +400,13 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
                 )}
               </a>
               {isSampleButtons && <span className="editor-own-badge">Ejemplo</span>}
-              {edit && !isSampleButtons && <button type="button" className="editor-delete-action" aria-label={`Eliminar botón: ${action.title}`} title={`Eliminar ${action.title}`} disabled={Boolean(edit.draggingId)} onClick={() => edit.onDeleteButton(action.id)}><FiTrash2 aria-hidden="true" /></button>}
+              {edit && !isSampleButtons && <button type="button" className="editor-delete-action" aria-label={`${isContact ? "Quitar enlace" : "Eliminar botón"}: ${action.title}`} title={`Eliminar ${action.title}`} disabled={Boolean(edit.draggingId)} onClick={() => edit.onDeleteButton(action.id)}><FiTrash2 aria-hidden="true" /></button>}
               </div>
             );
           })}
-          {edit && <button type="button" className="editor-add-link" onClick={edit.onAddButton}><span className="editor-add-icon">＋</span> Agregar botón</button>}
+          {edit && <button type="button" className="editor-add-link" onClick={edit.onAddButton}><span className="editor-add-icon">＋</span> {isContact ? "Agregar enlace" : "Agregar botón"}</button>}
         </div>
-        {(socialLinks.length > 0 || edit) && <div className={`landing-socials-block${edit ? " editor-hit" : ""}${edit?.selected === "socials" ? " is-selected" : ""}`} data-tag={edit ? "Redes rápidas" : undefined} onClick={edit ? () => edit.onSelectSocials() : undefined} style={{ marginTop: distribution.socialsGap }}>
+        {(socialLinks.length > 0 || (edit && !isContact)) && <div className={`landing-socials-block${edit ? " editor-hit" : ""}${edit?.selected === "socials" ? " is-selected" : ""}`} data-tag={edit ? "Redes rápidas" : undefined} onClick={edit ? () => edit.onSelectSocials() : undefined} style={{ marginTop: isContact ? 14 : distribution.socialsGap }}>
           {socialLinks.length > 0 && <nav className="landing-socials" aria-label="Redes sociales" data-tone={bottomTone} data-filled={zone.quickSocialsFilled === false ? "no" : "yes"}>
             {socialLinks.map(link => <a key={link.type} href={link.href} target="_blank" rel="noopener noreferrer" aria-label={QUICK_SOCIALS.find(option => option.type === link.type)?.label} onClick={edit ? event => { event.preventDefault(); edit.onSelectSocials(); } : undefined}><ActionTypeIcon type={link.type} /></a>)}
           </nav>}

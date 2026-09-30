@@ -80,8 +80,8 @@ export default function RenameLandingButton({ action, landingId, currentName, cu
               </div>
               {slugChanged && (
                 <p className="rename-warning">
-                  ⚠️ Si ya imprimiste un tag NFC o QR para esta landing, apunta a <strong>/{currentSlug}</strong>.
-                  Al cambiar el link, ese tag va a dejar de abrir esta página — vas a necesitar uno nuevo.
+                  ⚠️ Si grabaste manualmente <strong>/{currentSlug}</strong> en un NFC o QR, ese enlace dejará de funcionar.
+                  Los códigos nuevos generados desde el panel usan una dirección permanente y no se ven afectados.
                 </p>
               )}
               <div className="rename-confirm-actions">
