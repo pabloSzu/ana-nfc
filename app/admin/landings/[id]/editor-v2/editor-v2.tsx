@@ -1465,8 +1465,9 @@ function LogoControls({ draft, logoImage, onChange, onLogo, onAdjustLogo, onRemo
   const isContact = draft.business_type === "contact";
   const primary = draft.primary_color || "#1f2937";
   const update = (patch: Partial<LogoStyle>) => onChange({ logoStyle: { ...style, ...patch } });
+  const legacyContactShadow = style.shadow === "glow" || style.shadow === "hard";
   if (isContact) return <div className="v2-fields v2-contact-photo-controls">
-    <div className="v2-contact-photo-preview" style={{ ...logoFrameStyle(style, primary), borderRadius: logoBorderRadius(style.shape, 88), fontFamily: resolveTextFont(draft.titleStyle.font) }}>
+    <div className="v2-contact-photo-preview" style={{ ...logoFrameStyle(style, primary), borderRadius: logoBorderRadius(style.shape, 88), fontFamily: resolveTextFont(draft.titleStyle.font), fontSize: logoLetterSize(88, style.initials) }}>
       {logoImage ? <span style={{ backgroundImage: `url(${logoImage})`, backgroundSize: `${style.zoom * 100}%`, backgroundPosition: `${style.x}% ${style.y}%` }} /> : <LogoInitials font={draft.titleStyle.font}>{logoInitials(draft.business_name, style.initials)}</LogoInitials>}
     </div>
     <label className="v2-upload">{logoImage ? "Cambiar foto de perfil" : "Subir foto de perfil"}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => { onLogo(event.target.files?.[0]); event.target.value = ""; }} /></label>
@@ -1474,7 +1475,35 @@ function LogoControls({ draft, logoImage, onChange, onLogo, onAdjustLogo, onRemo
     <EditorSection title="Presentación" tone="blue">
       <div className="v2-segment" aria-label="Forma de la foto">{LOGO_SHAPE_OPTIONS.map((option) => <button type="button" key={option.id} className={style.shape === option.id ? "active" : ""} aria-pressed={style.shape === option.id} onClick={() => update({ shape: option.id, treatment: "custom" })}>{option.label}</button>)}</div>
       <Range label="Tamaño" min={draft.buttonZone.contactLayout === "document" ? 64 : 80} max={draft.buttonZone.contactLayout === "document" ? 112 : 160} step={4} value={draft.buttonZone.contactLayout === "document" ? Math.min(112, Math.max(64, style.size)) : style.size} onChange={(size) => update({ size })} />
-      {!logoImage && <><p className="v2-help" style={{ margin: 0 }}>Sin foto se muestran tus iniciales.</p><ColorField label="Color de las iniciales" value={style.backgroundMode === "custom" ? style.fallback : primary} onChange={(fallback) => update({ backgroundMode: "custom", fallback })} /></>}
+    </EditorSection>
+    {!logoImage && <EditorSection title="Iniciales" tone="green">
+      <p className="v2-help" style={{ margin: 0 }}>Se toman de tu nombre y usan su misma tipografía.</p>
+      <div className="v2-segment" aria-label="Cantidad de iniciales">
+        <button type="button" className={style.initials === "one" ? "active" : ""} aria-pressed={style.initials === "one"} onClick={() => update({ initials: "one" })}>Una · {logoInitials(draft.business_name, "one")}</button>
+        <button type="button" className={style.initials === "two" ? "active" : ""} aria-pressed={style.initials === "two"} onClick={() => update({ initials: "two" })}>Dos · {logoInitials(draft.business_name, "two")}</button>
+      </div>
+      <span className="v2-contact-control-label">Fondo de las iniciales</span>
+      <div className="v2-segment" aria-label="Color de fondo de las iniciales">
+        <button type="button" className={style.backgroundMode === "auto" ? "active" : ""} aria-pressed={style.backgroundMode === "auto"} onClick={() => update({ backgroundMode: "auto" })}>Color del diseño</button>
+        <button type="button" className={style.backgroundMode === "custom" ? "active" : ""} aria-pressed={style.backgroundMode === "custom"} onClick={() => update({ backgroundMode: "custom" })}>Color propio</button>
+      </div>
+      {style.backgroundMode === "custom" && <ColorField label="Color de fondo" value={style.fallback} onChange={(fallback) => update({ fallback })} />}
+    </EditorSection>}
+    <EditorSection title="Borde y sombra" tone="purple">
+      <span className="v2-contact-control-label">Borde</span>
+      <div className="v2-segment" aria-label="Borde de la foto de perfil">
+        {([{ width: 0, label: "Sin borde" }, { width: 2, label: "Fino" }, { width: 4, label: "Destacado" }] as const).map(({ width, label }) => {
+          const selected = width === 0 ? style.borderWidth === 0 : width === 2 ? style.borderWidth > 0 && style.borderWidth < 4 : style.borderWidth >= 4;
+          return <button type="button" key={width} className={selected ? "active" : ""} aria-pressed={selected} onClick={() => update({ borderWidth: width, treatment: "custom" })}>{label}</button>;
+        })}
+      </div>
+      {style.borderWidth > 0 && <ColorField label="Color del borde" value={style.borderColor} onChange={(borderColor) => update({ borderColor, treatment: "custom" })} />}
+      <span className="v2-contact-control-label">Sombra</span>
+      <div className="v2-segment" aria-label="Sombra de la foto de perfil">
+        <button type="button" className={style.shadow === "none" ? "active" : ""} aria-pressed={style.shadow === "none"} onClick={() => update({ shadow: "none", treatment: "custom" })}>Sin sombra</button>
+        <button type="button" className={style.shadow === "soft" ? "active" : ""} aria-pressed={style.shadow === "soft"} onClick={() => update({ shadow: "soft", treatment: "custom" })}>Suave</button>
+      </div>
+      {legacyContactShadow && <p className="v2-help" style={{ margin: 0 }}>Esta tarjeta conserva una sombra anterior. Elegí una opción para reemplazarla.</p>}
     </EditorSection>
   </div>;
   return <div className="v2-fields">

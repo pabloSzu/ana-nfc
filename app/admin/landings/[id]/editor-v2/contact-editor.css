@@ -45,12 +45,13 @@
 .is-contact-editor .v2-contact-publish-status span { color: #697080; font-size: 11px; line-height: 1.35; }
 .is-contact-editor .v2-fields fieldset > a.v2-suggested { display: flex; align-items: center; gap: 8px; text-decoration: none; }
 .is-contact-editor .v2-contact-more-body > .v2-ghost { text-align: left; }
-.is-contact-editor .v2-contact-photo-preview { display: grid; place-items: center; width: 88px; height: 88px; margin: 0 auto 2px; overflow: hidden; font-size: 29px; }
+.is-contact-editor .v2-contact-photo-preview { display: grid; place-items: center; width: 88px; height: 88px; margin: 8px auto 10px; overflow: hidden; }
 .is-contact-editor .v2-contact-photo-preview > span { display: block; width: 100%; height: 100%; background-repeat: no-repeat; }
 .is-contact-editor .v2-contact-photo-preview .logo-initials { width: auto; height: auto; }
 .is-contact-editor .v2-contact-photo-actions { display: flex; gap: 8px; }
 .is-contact-editor .v2-contact-photo-actions > button { flex: 1; }
 .is-contact-editor .v2-contact-photo-controls .v2-upload { margin: 0; }
+.is-contact-editor .v2-contact-control-label { color: #565a69; font-size: 11px; font-weight: 800; }
 .is-contact-editor .v2-contact-profile-links { display: grid; overflow: hidden; border: 1px solid #e5e3ed; border-radius: 12px; background: #fff; }
 .is-contact-editor .v2-contact-profile-links button { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 10px 12px; border: 0; border-bottom: 1px solid #ecebf1; background: #fff; text-align: left; cursor: pointer; }
 .is-contact-editor .v2-contact-profile-links button:last-child { border-bottom: 0; }
