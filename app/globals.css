@@ -631,7 +631,48 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; letter-spacing: -0.01e
   border-radius: 0;
   background: var(--contact-accent);
 }
-.public.is-contact.contact-custom-cover .contact-hero-art:not(:has(.contact-hero-photo-mask)) { background-color: var(--contact-cover-color) !important; background-image: none !important; }
+.public.is-contact.contact-custom-cover .contact-hero-art:not(:has(.contact-hero-photo-mask)) { background-color: var(--contact-cover-color) !important; }
+.public.is-contact.contact-custom-cover .contact-hero-art.contact-cover-pattern-original:not(:has(.contact-hero-photo-mask)) { background-image: none !important; }
+
+/* Curated, resolution-independent finishes for contact covers without a photo. The original
+   finish remains untouched unless a person explicitly chooses one of these variants. */
+.public.is-contact .contact-hero-art:not(.contact-cover-pattern-original):not(:has(.contact-hero-photo-mask)) > span { display: none; }
+:is(.public.is-contact .contact-hero-art, .v2-contact-cover-pattern-swatch).contact-cover-pattern-solid:not(:has(.contact-hero-photo-mask)) {
+  background-color: var(--contact-cover-color);
+  background-image: none;
+}
+:is(.public.is-contact .contact-hero-art, .v2-contact-cover-pattern-swatch).contact-cover-pattern-solid:not(:has(.contact-hero-photo-mask))::before { background-image: none; }
+:is(.public.is-contact .contact-hero-art, .v2-contact-cover-pattern-swatch).contact-cover-pattern-aura:not(:has(.contact-hero-photo-mask)) {
+  background-color: color-mix(in srgb, var(--contact-cover-color) 34%, var(--contact-surface));
+  background-image: radial-gradient(ellipse 70% 110% at 5% -10%, #ffffff99, transparent 76%), radial-gradient(ellipse 56% 95% at 93% 105%, color-mix(in srgb, var(--contact-cover-color) 47%, transparent), transparent 78%), linear-gradient(145deg, transparent 32%, #ffffff2c 55%, transparent 78%);
+}
+:is(.public.is-contact .contact-hero-art, .v2-contact-cover-pattern-swatch).contact-cover-pattern-aura:not(:has(.contact-hero-photo-mask))::before {
+  background-image: repeating-radial-gradient(circle at 82% 64%, transparent 0 17px, #ffffff39 18px 19px, transparent 20px 32px);
+  opacity: .7;
+}
+:is(.public.is-contact .contact-hero-art, .v2-contact-cover-pattern-swatch).contact-cover-pattern-cartoon:not(:has(.contact-hero-photo-mask)) {
+  background-color: var(--contact-cover-color);
+  background-image: radial-gradient(circle at 92% -12%, color-mix(in srgb, var(--contact-cover-color) 72%, #fff) 0 88px, transparent 89px), radial-gradient(circle at -8% 115%, color-mix(in srgb, var(--contact-cover-color) 78%, #10131a) 0 110px, transparent 111px), linear-gradient(145deg, transparent 0 61%, color-mix(in srgb, var(--contact-cover-color) 83%, #fff) 61% 76%, transparent 76%);
+}
+:is(.public.is-contact .contact-hero-art, .v2-contact-cover-pattern-swatch).contact-cover-pattern-cartoon:not(:has(.contact-hero-photo-mask))::before {
+  background-image: radial-gradient(circle at 79% 66%, transparent 0 28px, #ffffffab 29px 31px, transparent 32px), radial-gradient(circle at 20% 22%, #ffffffc9 0 4px, transparent 5px);
+}
+:is(.public.is-contact .contact-hero-art, .v2-contact-cover-pattern-swatch).contact-cover-pattern-dots:not(:has(.contact-hero-photo-mask)) {
+  background-color: color-mix(in srgb, var(--contact-cover-color) 22%, var(--contact-surface));
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--contact-ink) 22%, transparent) 1px, transparent 1.35px);
+  background-size: 19px 19px;
+}
+:is(.public.is-contact .contact-hero-art, .v2-contact-cover-pattern-swatch).contact-cover-pattern-dots:not(:has(.contact-hero-photo-mask))::before { background-image: none; }
+:is(.public.is-contact .contact-hero-art, .v2-contact-cover-pattern-swatch).contact-cover-pattern-grid:not(:has(.contact-hero-photo-mask)) {
+  background-color: color-mix(in srgb, var(--contact-cover-color) 26%, var(--contact-surface));
+  background-image: linear-gradient(90deg, color-mix(in srgb, var(--contact-ink) 13%, transparent) 1px, transparent 1px), linear-gradient(0deg, color-mix(in srgb, var(--contact-ink) 13%, transparent) 1px, transparent 1px);
+  background-size: 28px 28px, 28px 28px;
+}
+:is(.public.is-contact .contact-hero-art, .v2-contact-cover-pattern-swatch).contact-cover-pattern-grid:not(:has(.contact-hero-photo-mask))::before { background-image: none; }
+.v2-contact-cover-pattern-swatch.contact-cover-pattern-original {
+  background-color: color-mix(in srgb, var(--contact-cover-color) 30%, var(--contact-surface));
+  background-image: radial-gradient(circle at 18% 15%, #ffffff72, transparent 38%), linear-gradient(115deg, transparent 38%, #ffffff30 39% 46%, transparent 47% 62%, #0000000d 63% 66%, transparent 67%);
+}
 .public.is-contact.contact-theme-professional .landing-identity-block { padding-top: 20px !important; }
 .public.is-contact.contact-theme-professional .contact-primary-actions { border-color: #dce4e6; }
 .public.is-contact.contact-theme-professional .contact-feature-card { border-color: #e5eaeb !important; }

@@ -204,6 +204,7 @@ export type ButtonZoneStyle = {
   contactTheme?: "classic" | "paper" | "linen" | "noir" | "photo" | "essential" | "editorial" | "professional";
   contactSurfaceColor?: string;
   contactCoverColor?: string;
+  contactCoverPattern?: "original" | "solid" | "aura" | "cartoon" | "dots" | "grid";
   contactDensity?: "compact" | "balanced" | "airy";
   contactBio?: string;
   contactSecondPhone?: string;
@@ -272,6 +273,7 @@ export function parseButtonZone(raw: unknown): ButtonZoneStyle {
     contactTheme: ["paper", "linen", "noir", "photo", "essential", "editorial", "professional"].includes(String(parsed.contactTheme)) ? parsed.contactTheme : "classic",
     contactSurfaceColor: typeof parsed.contactSurfaceColor === "string" && /^#[0-9a-f]{6}$/i.test(parsed.contactSurfaceColor) ? parsed.contactSurfaceColor : undefined,
     contactCoverColor: typeof parsed.contactCoverColor === "string" && /^#[0-9a-f]{6}$/i.test(parsed.contactCoverColor) ? parsed.contactCoverColor : undefined,
+    contactCoverPattern: parsed.contactCoverPattern === "solid" || parsed.contactCoverPattern === "aura" || parsed.contactCoverPattern === "cartoon" || parsed.contactCoverPattern === "dots" || parsed.contactCoverPattern === "grid" ? parsed.contactCoverPattern : "original",
     contactDensity: parsed.contactDensity === "compact" || parsed.contactDensity === "airy" ? parsed.contactDensity : "balanced",
     contactBio: typeof parsed.contactBio === "string" ? parsed.contactBio.trim().slice(0, 360) : "",
     contactSecondPhone: typeof parsed.contactSecondPhone === "string" ? parsed.contactSecondPhone.trim().slice(0, 50) : "",

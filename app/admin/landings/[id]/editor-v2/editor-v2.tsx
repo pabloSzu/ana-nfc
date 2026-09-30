@@ -1034,6 +1034,14 @@ const COVER_SIZES: { id: CoverStyle["size"]; label: string }[] = [
   { id: "medium", label: "Mediano" },
   { id: "large", label: "Grande" },
 ];
+const CONTACT_COVER_PATTERNS: { id: NonNullable<ButtonZoneStyle["contactCoverPattern"]>; label: string }[] = [
+  { id: "original", label: "Original" },
+  { id: "solid", label: "Liso" },
+  { id: "aura", label: "Degradado" },
+  { id: "cartoon", label: "Cartoon" },
+  { id: "dots", label: "Puntos" },
+  { id: "grid", label: "Cuadrícula" },
+];
 
 type HeaderStyle = "none" | "card" | CoverStyle["mode"];
 const HEADER_STYLES: { id: HeaderStyle; title: string; note: string }[] = [
@@ -1050,6 +1058,10 @@ function CoverControls({ draft, coverImage, onChange, onCoverFile, onAdjustCover
     const hasPhoto = Boolean(coverImage);
     const photoVisible = hasPhoto && style.enabled;
     const customColor = draft.buttonZone.contactCoverColor;
+    const pattern = draft.buttonZone.contactCoverPattern || "original";
+    const theme = draft.buttonZone.contactTheme || "classic";
+    const patternSurface = draft.buttonZone.contactSurfaceColor || (theme === "noir" ? "#242b36" : theme === "paper" ? "#f8f2e6" : theme === "linen" ? "#f3f0e5" : theme === "essential" ? "#faf7ef" : theme === "editorial" ? "#f3efea" : "#ffffff");
+    const patternPreviewStyle = { "--contact-cover-color": customColor || draft.primary_color || "#1f2937", "--contact-surface": patternSurface, "--contact-ink": contrastTextColor(patternSurface) } as CSSProperties;
     return <div className="v2-fields">
       <div className="v2-contact-cover-status" role="status"><strong>{photoVisible ? "Foto visible" : hasPhoto ? "Foto cargada, pero oculta" : "Sin foto"}</strong><span>{photoVisible ? "La tarjeta muestra la foto con este tamaño y encuadre." : hasPhoto ? "La foto está guardada, pero ahora se ve el diseño sin foto." : customColor ? "Se muestra tu color personalizado." : "Se muestra el color y detalle del diseño elegido."} Mirá la tarjeta para ver el resultado exacto.</span></div>
       <EditorSection title="Alto de la portada" tone="blue">
@@ -1064,7 +1076,10 @@ function CoverControls({ draft, coverImage, onChange, onCoverFile, onAdjustCover
         <button type="button" className="v2-ghost" onClick={onRemoveCover}>Quitar foto</button>
       </>}
       {!photoVisible && <EditorSection title="Portada sin foto" tone="blue">
-        <p className="v2-help" style={{ margin: 0 }}>El diseño aporta el color y un detalle sutil. Si querés, elegí un color propio.</p>
+        <p className="v2-help" style={{ margin: 0 }}>Elegí un acabado. “Original” conserva el de la plantilla; los demás usan sus colores. La foto cargada no se modifica.</p>
+        <div className="v2-contact-cover-pattern-grid" role="group" aria-label="Diseño de la portada sin foto">
+          {CONTACT_COVER_PATTERNS.map((option) => <button key={option.id} type="button" className={pattern === option.id ? "active" : ""} aria-pressed={pattern === option.id} onClick={() => onChange({ buttonZone: { ...draft.buttonZone, contactCoverPattern: option.id } })}><span className={`v2-contact-cover-pattern-swatch contact-cover-pattern-${option.id}`} style={patternPreviewStyle} aria-hidden="true" /><strong>{option.label}</strong></button>)}
+        </div>
         {customColor ? <><ColorField label="Color de la portada" value={customColor} onChange={(contactCoverColor) => onChange({ buttonZone: { ...draft.buttonZone, contactCoverColor } })} /><button type="button" className="v2-ghost" onClick={() => onChange({ buttonZone: { ...draft.buttonZone, contactCoverColor: undefined } })}>Usar color del diseño</button></> : <button type="button" className="v2-suggested" onClick={() => onChange({ buttonZone: { ...draft.buttonZone, contactCoverColor: draft.primary_color || "#1f2937" } })}>Elegir color propio</button>}
       </EditorSection>}
     </div>;

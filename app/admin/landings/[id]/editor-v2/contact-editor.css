@@ -82,6 +82,13 @@
 .is-contact-editor .v2-contact-cover-status { display: grid; gap: 3px; padding: 10px 12px; border: 1px solid #e4e1eb; border-radius: 11px; background: #fff; }
 .is-contact-editor .v2-contact-cover-status strong { color: #303241; font-size: 12px; }
 .is-contact-editor .v2-contact-cover-status span { color: #737887; font-size: 11px; line-height: 1.4; }
+.is-contact-editor .v2-contact-cover-pattern-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+.is-contact-editor .v2-contact-cover-pattern-grid button { min-width: 0; display: grid; gap: 7px; padding: 6px 6px 9px; border: 1px solid #e2dfe9; border-radius: 12px; background: #fff; color: #343746; cursor: pointer; text-align: left; }
+.is-contact-editor .v2-contact-cover-pattern-grid button.active { border-color: #6657e8; box-shadow: 0 0 0 2px #6657e82b; }
+.is-contact-editor .v2-contact-cover-pattern-grid button:focus-visible { outline: 2px solid #6657e8; outline-offset: 2px; }
+.is-contact-editor .v2-contact-cover-pattern-grid strong { padding-left: 4px; font-size: 12px; font-weight: 800; }
+.is-contact-editor .v2-contact-cover-pattern-swatch { position: relative; display: block; height: 72px; overflow: hidden; border-radius: 8px; }
+.is-contact-editor .v2-contact-cover-pattern-swatch::before { content: ""; position: absolute; inset: 0; pointer-events: none; }
 .is-contact-editor .v2-contact-cover-preview { position: relative; display: grid; place-items: center; overflow: hidden; border: 1px solid #e1dfeb; border-radius: 13px; background-color: var(--cover-preview-color); background-image: radial-gradient(circle at 20% 18%, #ffffff55, transparent 38%), linear-gradient(120deg, transparent 40%, #ffffff1c 40% 45%, transparent 45%); color: #fff; text-align: center; font-size: 12px; font-weight: 700; }
 .is-contact-editor .v2-contact-cover-preview.is-line { background: #fbfafc; color: #626577; }
 .is-contact-editor .v2-contact-cover-preview.is-line::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 8px; background: var(--cover-preview-color); }
