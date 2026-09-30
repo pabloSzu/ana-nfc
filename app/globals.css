@@ -467,6 +467,14 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; letter-spacing: -0.01e
   opacity: .76;
   text-align: left;
 }
+.public.contact-layout-document .landing-identity-block:not(:has(.landing-eyebrow)) .landing-desc { grid-row: 2; }
+.public.contact-layout-document .landing-identity-block:not(:has(.landing-eyebrow)) .avatar,
+.public.contact-layout-document .landing-identity-block:not(:has(.landing-desc)) .avatar { grid-row: 1 / 3; }
+.public.contact-layout-document .landing-identity-block:not(:has(.landing-eyebrow)):not(:has(.landing-desc)) {
+  grid-template-rows: auto;
+}
+.public.contact-layout-document .landing-identity-block:not(:has(.landing-eyebrow)):not(:has(.landing-desc)) .avatar,
+.public.contact-layout-document .landing-identity-block:not(:has(.landing-eyebrow)):not(:has(.landing-desc)) h1 { grid-row: 1; align-self: center; }
 .public.contact-layout-document .contact-primary-actions {
   display: flex;
   flex-direction: column;

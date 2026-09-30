@@ -142,7 +142,6 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
   const coverImageUrl = landing.cover_image_url || (isSampleCover ? SAMPLE_COVER : "");
   const showCover = Boolean(!isContact && cover.enabled && coverImageUrl);
   const contactHeroImage = isContact && cover.enabled ? coverImageUrl : "";
-  const showEyebrow = Boolean(title.eyebrow) || Boolean(edit);
   const isSampleButtons = Boolean(edit) && actions.length === 0 && !isContact;
   const shownActions = isSampleButtons ? SAMPLE_ACTIONS : actions;
   const contactQuickActions = isContact ? ["phone", "email", "whatsapp"].flatMap((type) => {
@@ -153,6 +152,9 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
   const contentActions = isContact ? shownActions.filter((action) => !contactQuickIds.has(action.id) && (!(["phone", "email", "whatsapp"].includes(action.type)) || Boolean(action.url))) : shownActions;
   const zone = parseButtonZone(landing.button_style);
   const isDocument = isContact && zone.contactLayout === "document";
+  // The document layout centers the name beside the avatar when there is no role/company.
+  // Empty editor placeholders must not create extra grid rows that the published card lacks.
+  const showEyebrow = Boolean(title.eyebrow) || Boolean(edit && !isDocument);
   const contactTheme = isContact ? zone.contactTheme || "classic" : "classic";
   const editableContactTypography = isContact;
   const contactInk = zone.contactSurfaceColor ? contrastTextColor(zone.contactSurfaceColor) : contactTheme === "essential" ? "#243028" : contactTheme === "editorial" ? "#433b35" : contactTheme === "professional" ? "#202637" : contactTheme === "noir" ? "#f6f1e8" : contactTheme === "paper" ? "#31271f" : contactTheme === "linen" ? "#26352b" : isDocument ? "#202637" : title.color;
@@ -192,7 +194,7 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
           }
         : { backgroundColor: landing.background_color || "#f7f5f0", backgroundImage: "none" };
 
-  const showDescription = Boolean(landing.description) || Boolean(edit);
+  const showDescription = Boolean(landing.description) || Boolean(edit && !isDocument);
   // How tall the cover photo needs to be to reach down to the button zone — driven by which
   // elements EXIST (logo, eyebrow, description), never by distribution or typography.
   // A version of this keyed off the identity block's own measured/rendered height used to make
