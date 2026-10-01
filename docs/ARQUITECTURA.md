@@ -90,6 +90,11 @@ npm run db:prod         # dry-run contra producción
 npm run db:prod:apply   # aplica en producción
 ```
 
+Solo si una base quedó atrasada respecto de una migración más nueva que ya tiene aplicada,
+usar `npm run db:prod -- --include-all` para ver qué migraciones antiguas faltan y, luego
+de verificarlas una por una, `npm run db:prod:apply -- --include-all`. No usar esta opción
+como rutina: puede aplicar cambios viejos que no esperabas.
+
 Cada comando imprime el entorno y el project ref antes de hacer nada. **Sin `--apply` no
 escribe.** El riesgo real con dos bases no es escribir mal el SQL: es correr en prod lo
 que creías que corrías en dev.

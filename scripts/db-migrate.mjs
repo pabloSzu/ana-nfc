@@ -10,6 +10,7 @@ import { readFileSync, existsSync } from "node:fs";
 const ENV_FILE = ".env.db.local";
 const [, , target, ...flags] = process.argv;
 const apply = flags.includes("--apply");
+const includeAll = flags.includes("--include-all");
 
 if (!["dev", "prod"].includes(target)) {
   console.error("Uso: node scripts/db-migrate.mjs <dev|prod> [--apply]\n\nSin --apply hace un dry-run y no toca nada.");
@@ -40,9 +41,11 @@ const ref = url.match(/postgres\.([a-z0-9]+):/)?.[1] || "desconocido";
 console.log(`\n  entorno : ${target.toUpperCase()}`);
 console.log(`  proyecto: ${ref}`);
 console.log(`  modo    : ${apply ? "APLICAR (escribe en la base)" : "dry-run (no escribe nada)"}\n`);
+if (includeAll) console.log("  historial: incluir migraciones antiguas faltantes\n");
 
 const args = ["--yes", "supabase", "db", "push", "--db-url", url];
 if (!apply) args.push("--dry-run");
+if (includeAll) args.push("--include-all");
 
 const result = spawnSync("npx", args, { stdio: "inherit", shell: true });
 process.exit(result.status ?? 1);
