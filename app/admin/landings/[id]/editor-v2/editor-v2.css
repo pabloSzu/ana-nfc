@@ -132,20 +132,6 @@
 .v2-social-field > button { justify-self: start; }
 .v2-social-error { color: #9d293c; font-size: 12px; line-height: 1.5; }
 
-/* A consistent, prominent way back to the template's recommended styling. */
-.v2-recommended-styles { display: flex; align-items: center; gap: 12px; width: 100%; padding: 17px 16px; border: 1px solid #ffffff30; border-radius: 15px; background: linear-gradient(115deg, #6235cc, #4938bb 60%, #2654b6); color: #fff; box-shadow: 0 7px 20px #6242ce30; text-align: left; cursor: pointer; transition: filter .15s, box-shadow .15s; }
-.v2-recommended-styles:hover { filter: brightness(1.08); box-shadow: 0 9px 24px #6242ce45; }
-.v2-recommended-styles:focus-visible { outline: 3px solid #9575eb; outline-offset: 3px; }
-.v2-recommended-icon { display: grid; place-items: center; flex: 0 0 36px; height: 36px; border-radius: 10px; background: #ffffff20; }
-.v2-recommended-icon svg { width: 20px; height: 20px; }
-.v2-recommended-copy { display: grid; gap: 5px; min-width: 0; }
-.v2-recommended-copy strong { color: #fff; font-size: 13px; line-height: 1.4; font-weight: 800; }
-.v2-recommended-copy small { color: #ede8ff; font-size: 11px; line-height: 1.4; overflow-wrap: anywhere; }
-.v2-recommended-arrow { width: 18px; height: 18px; flex-shrink: 0; margin-left: auto; }
-.v2-template-restore { display: grid; gap: 10px; padding: 14px; border: 1px solid #e3dff3; border-radius: 16px; background: #faf9ff; }
-.v2-template-restore > span { font-size: 12px; color: #5d5872; }
-.v2-template-restore > span strong { color: #332a64; }
-.v2-template-restore .v2-help { margin: 0; font-size: 11px; }
 .v2-button-look-picker { border: 1.5px solid #b9cdf4; border-radius: 16px; background: #f4f8ff; overflow: hidden; }
 .v2-button-look-picker summary { display: flex; align-items: center; gap: 10px; padding: 16px; cursor: pointer; list-style: none; }
 .v2-button-look-picker summary::-webkit-details-marker { display: none; }

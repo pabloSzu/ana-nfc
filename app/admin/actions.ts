@@ -10,13 +10,13 @@ export async function deleteClient(fd:FormData){const {s,user}=await auth();cons
 export async function newLanding(fd: FormData) {
   const { s, user } = await auth();
   const businessName = String(fd.get("business_name") || "").trim();
-  if (!businessName) redirect("/admin?error=" + encodeURIComponent("El nombre de la landing es obligatorio."));
+  const businessType = String(fd.get("business_type") || "custom");
+  if (!businessName) redirect("/admin?error=" + encodeURIComponent(businessType === "contact" ? "El nombre de la persona es obligatorio." : "El nombre de la landing es obligatorio."));
   let slug = slugify(String(fd.get("slug") || businessName));
   const { data: ex, error: slugError } = await s.from("landings").select("id").eq("slug", slug).maybeSingle();
   if (slugError) redirect("/admin?error=" + encodeURIComponent(slugError.message));
   if (ex) slug += "-" + Math.floor(Math.random() * 999);
   const clientId = String(fd.get("client_id") || "") || null;
-  const businessType = String(fd.get("business_type") || "custom");
   if (!businessProfiles.some((profile) => profile.value === businessType)) redirect("/admin?error=Tipo de perfil inválido");
   const { data: client, error: clientError } = clientId ? await s.from("clients").select("primary_color,background_color").eq("id", clientId).eq("owner_id", user.id).maybeSingle() : { data: null, error: null };
   if (clientError) redirect("/admin?error=" + encodeURIComponent(clientError.message));
@@ -31,9 +31,41 @@ export async function newLanding(fd: FormData) {
   }).select("id").single();
   if (error || !data) redirect("/admin?error=" + encodeURIComponent(error?.message || "No se pudo crear la landing"));
   revalidatePath("/admin");
-  redirect("/admin/landings/" + data.id + "/editor-v2?saved=Landing creada");
+  redirect("/admin/landings/" + data.id + "/editor-v2?saved=" + encodeURIComponent(isContact ? "Tarjeta creada" : "Landing creada"));
 }
 
-export async function publish(fd:FormData){const {s,user}=await auth();const id=String(fd.get("id")||"");const returnTo=String(fd.get("return_to")||"/admin");const target=returnTo.startsWith("/admin")?returnTo:"/admin";const desired=String(fd.get("published"))==="true";const {data:landing,error:lookupError}=await s.from("landings").select("id,slug,business_type").eq("id",id).eq("owner_id",user.id).maybeSingle();if(lookupError)redirect(target+"?error="+encodeURIComponent(lookupError.message));if(!landing)redirect(target+"?error=Landing inexistente o sin permisos");if(desired&&landing.business_type==="contact"){const {data:actions,error:actionsError}=await s.from("actions").select("type,url").eq("landing_id",id).eq("enabled",true).in("type",["phone","email","whatsapp"]);if(actionsError)redirect(target+"?error="+encodeURIComponent(actionsError.message));if(!actions?.some((action)=>String(action.url||"").trim()))redirect(target+"?error="+encodeURIComponent("Agregá un teléfono, email o WhatsApp antes de publicar la tarjeta."))}const {error}=await s.from("landings").update({published:desired}).eq("id",id).eq("owner_id",user.id);if(error)redirect(target+"?error="+encodeURIComponent(error.message));revalidatePath("/admin");revalidatePath("/admin/landings/"+id);if(landing.slug)revalidatePath("/"+landing.slug);redirect(target+"?saved="+(desired?"Landing publicada":"Landing despublicada"))}
+export async function publish(fd: FormData) {
+  const { s, user } = await auth();
+  const id = String(fd.get("id") || "");
+  const returnTo = String(fd.get("return_to") || "/admin");
+  const target = returnTo.startsWith("/admin") ? returnTo : "/admin";
+  const desired = String(fd.get("published")) === "true";
+  const { data: landing, error: lookupError } = await s.from("landings").select("id,slug,business_type").eq("id", id).eq("owner_id", user.id).maybeSingle();
+  if (lookupError) redirect(target + "?error=" + encodeURIComponent(lookupError.message));
+  if (!landing) redirect(target + "?error=Página inexistente o sin permisos");
+  if (desired && landing.business_type === "contact") {
+    const { data: actions, error: actionsError } = await s.from("actions").select("type,url").eq("landing_id", id).eq("enabled", true).in("type", ["phone", "email", "whatsapp"]);
+    if (actionsError) redirect(target + "?error=" + encodeURIComponent(actionsError.message));
+    if (!actions?.some((action) => String(action.url || "").trim())) redirect(target + "?error=" + encodeURIComponent("Agregá un teléfono, email o WhatsApp antes de publicar la tarjeta."));
+  }
+  const { error } = await s.from("landings").update({ published: desired }).eq("id", id).eq("owner_id", user.id);
+  if (error) redirect(target + "?error=" + encodeURIComponent(error.message));
+  revalidatePath("/admin");
+  revalidatePath("/admin/landings/" + id);
+  if (landing.slug) revalidatePath("/" + landing.slug);
+  const label = landing.business_type === "contact" ? "Tarjeta" : "Landing";
+  redirect(target + "?saved=" + encodeURIComponent(`${label} ${desired ? "publicada" : "despublicada"}`));
+}
 export async function renameLanding(fd:FormData){const {s,user}=await auth();const id=String(fd.get("id")||"");const businessName=String(fd.get("business_name")||"").trim();if(!businessName)redirect("/admin?error="+encodeURIComponent("El nombre de la landing es obligatorio."));const slug=slugify(String(fd.get("slug")||""));if(!slug)redirect("/admin?error="+encodeURIComponent("El link de la landing es obligatorio."));const {data:landing,error:lookupError}=await s.from("landings").select("id,slug").eq("id",id).eq("owner_id",user.id).maybeSingle();if(lookupError)redirect("/admin?error="+encodeURIComponent(lookupError.message));if(!landing)redirect("/admin?error=Landing inexistente o sin permisos");const slugChanged=slug!==landing.slug;if(slugChanged){const {data:ex,error:slugError}=await s.from("landings").select("id").eq("slug",slug).maybeSingle();if(slugError)redirect("/admin?error="+encodeURIComponent(slugError.message));if(ex)redirect("/admin?error="+encodeURIComponent("Ese link ya está en uso por otra landing."))}const {error}=await s.from("landings").update({business_name:businessName,slug}).eq("id",id).eq("owner_id",user.id);if(error)redirect("/admin?error="+encodeURIComponent(error.message));revalidatePath("/admin");revalidatePath("/admin/landings/"+id+"/editor-v2");if(landing.slug)revalidatePath("/"+landing.slug);if(slugChanged)revalidatePath("/"+slug);redirect("/admin?saved="+encodeURIComponent(slugChanged?"Nombre y link actualizados":"Nombre actualizado"))}
-export async function deleteLanding(fd:FormData){const {s,user}=await auth();const id=String(fd.get("id")||"");const {data:landing,error:lookupError}=await s.from("landings").select("id,slug").eq("id",id).eq("owner_id",user.id).maybeSingle();if(lookupError)redirect("/admin?error="+encodeURIComponent(lookupError.message));if(!landing)redirect("/admin?error=Landing inexistente o sin permisos");const {error}=await s.from("landings").delete().eq("id",id).eq("owner_id",user.id);if(error)redirect("/admin?error="+encodeURIComponent(error.message));revalidatePath("/admin");if(landing.slug)revalidatePath("/"+landing.slug);redirect("/admin?saved=Landing eliminada correctamente")}
+export async function deleteLanding(fd: FormData) {
+  const { s, user } = await auth();
+  const id = String(fd.get("id") || "");
+  const { data: landing, error: lookupError } = await s.from("landings").select("id,slug,business_type").eq("id", id).eq("owner_id", user.id).maybeSingle();
+  if (lookupError) redirect("/admin?error=" + encodeURIComponent(lookupError.message));
+  if (!landing) redirect("/admin?error=Página inexistente o sin permisos");
+  const { error } = await s.from("landings").delete().eq("id", id).eq("owner_id", user.id);
+  if (error) redirect("/admin?error=" + encodeURIComponent(error.message));
+  revalidatePath("/admin");
+  if (landing.slug) revalidatePath("/" + landing.slug);
+  redirect("/admin?saved=" + encodeURIComponent(landing.business_type === "contact" ? "Tarjeta eliminada correctamente" : "Landing eliminada correctamente"));
+}

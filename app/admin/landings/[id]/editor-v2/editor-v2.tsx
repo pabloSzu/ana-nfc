@@ -4,7 +4,7 @@ import Link from "next/link";
 import LandingSeparator from "@/components/landing-separator";
 import { startTransition, useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent, type MouseEvent, type ReactNode } from "react";
 import { ActionTypeIcon, hasCustomActionIcon } from "@/components/action-icons";
-import { FiLink, FiZap, FiArrowUpRight } from "react-icons/fi";
+import { FiLink } from "react-icons/fi";
 import { IconEye, IconQrCode } from "@/components/icons";
 import DeleteLandingButton from "@/app/admin/delete-landing-button";
 import LandingRenderer, { LandingPhotoBackground, type LandingEditControls } from "@/components/landing-renderer";
@@ -149,7 +149,6 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
   const [deletedButton, setDeletedButton] = useState<{ button: ButtonItem; index: number } | null>(null);
   const restoreButtonRef = useRef<HTMLButtonElement>(null);
   const [leaveOpen, setLeaveOpen] = useState(false);
-  const [restoreDesignOpen, setRestoreDesignOpen] = useState(false);
   const [pendingContactLook, setPendingContactLook] = useState<{ id: ContactLook["id"]; hidesBackgroundPhoto: boolean } | null>(null);
   // Purely a personal viewing preference for the app's OWN chrome — nothing to do with the
   // landing being edited — shared with /admin via the same localStorage key (theme-scene.tsx),
@@ -394,7 +393,7 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
     requestAnimationFrame(() => buttonElements.current.get(restoredId)?.querySelector("a")?.focus());
   }
 
-  function applyPreset(id: string, restoreOverrides = false) {
+  function applyPreset(id: string) {
     const preset = DESIGN_PRESETS_V2.find((item) => item.id === id);
     if (!preset) return;
     commitDiscrete();
@@ -422,9 +421,9 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
       logoStyle: parseLogoStyle({ ...logoTreatmentPatch("template", id), ...preset.logo, zoom: draft.logoStyle.zoom, x: draft.logoStyle.x, y: draft.logoStyle.y }),
       coverStyle: draft.business_type === "contact" ? draft.coverStyle : { ...draft.coverStyle, enabled: false },
     });
-    // A template switch preserves deliberate per-button exceptions. Only the explicitly
-    // confirmed global restore clears them; both actions stay undoable as one history step.
-    if (restoreOverrides) patchButtons((current) => current.map((button) => ({ ...button, use_auto_color: true, icon_background_color: "" })));
+    // Every template card applies its complete visual design, including its button colors.
+    // Content and uploaded images stay intact; one undo restores the previous appearance.
+    patchButtons((current) => current.map((button) => ({ ...button, use_auto_color: true, icon_background_color: "" })));
   }
 
   function applyContactLook(id: (typeof CONTACT_LOOKS)[number]["id"]) {
@@ -763,7 +762,7 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
           </div>
           {draft.business_type === "contact" && panel === "templates" && <button type="button" className="v2-ghost v2-contact-return" onClick={() => setPanel("contact-design")}>← Volver a Diseño</button>}
           {draft.business_type === "contact" && (panel === "contact-name" || panel === "contact-role" || panel === "contact-company") && <button type="button" className="v2-ghost v2-contact-return" onClick={() => setPanel("contact")}>← Volver a Datos</button>}
-          {panel === "templates" && (draft.business_type === "contact" ? <ContactLooks selected={draft.buttonZone.contactTheme || "classic"} onApply={requestContactLook} /> : <Templates selected={draft.buttonZone.templateId} onApply={(id) => applyPreset(id)} onRestore={() => setRestoreDesignOpen(true)} />)}
+          {panel === "templates" && (draft.business_type === "contact" ? <ContactLooks selected={draft.buttonZone.contactTheme || "classic"} onApply={requestContactLook} /> : <Templates selected={draft.buttonZone.templateId} onApply={applyPreset} />)}
           {panel === "contact-design" && <ContactDesignControls draft={draft} buttons={buttons} onChange={change} onBackground={() => selectPanel("background")} onTemplates={() => selectPanel("templates")} />}
           {panel === "buttons" && <ButtonDesign draft={draft} buttons={buttons} backgroundImage={backgroundImage} onZone={changeZone} onFont={(button_font) => change({ button_font, buttonZone: { ...draft.buttonZone, fontWeight: resolveFontWeight(button_font, draft.buttonZone.fontWeight ?? recommendedButtonTypography(button_font).fontWeight), letterSpacing: draft.buttonZone.letterSpacing ?? recommendedButtonTypography(button_font).letterSpacing } })} onApplyButtonLook={applyButtonLook} onResetButtonOverrides={resetButtonOverrides} />}
           {panel === "background" && <BackgroundControls draft={draft} tab={bgTab} onTab={setBgTab} onChange={change} onFile={(file) => openImageEditor("background", file)} onAdjust={() => openImageEditor("background")} hasImage={Boolean(backgroundImage)} />}
@@ -799,7 +798,6 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
       </div>
 
       {imageEditor && <ImageAdjustDialog key={`${imageEditor.kind}-${imageEditor.src}`} kind={imageEditor.kind} src={imageEditor.src} shape={imageEditor.kind === "logo" ? draft.logoStyle.shape : undefined} coverMode={imageEditor.kind === "cover" && draft.business_type === "contact" ? "banner" : draft.coverStyle.mode} contactCoverSize={imageEditor.kind === "cover" && draft.business_type === "contact" ? draft.coverStyle.size : undefined} contactFrameWidth={imageEditor.contactFrameWidth || (draft.buttonZone.contactLayout === "document" ? 384 : 402)} contactCoverOverlay={imageEditor.kind === "cover" && draft.business_type === "contact" ? imageEditor.file && !coverImage ? 0 : draft.coverStyle.overlay : undefined} initial={imageEditor.initial} onApply={applyImageEditor} onCancel={cancelImageEditor} />}
-      {restoreDesignOpen && <div className="v2-modal-backdrop"><div className="v2-modal" role="dialog" aria-modal="true" aria-labelledby="v2-restore-title"><div className="v2-modal-icon">↩</div><h2 id="v2-restore-title">Restaurar diseño de {suggestedPreset(draft.buttonZone.templateId).name}</h2><p>Vuelve al fondo, encabezado, logo, textos y botones recomendados. Quita colores propios de cada botón. Conserva textos, enlaces, íconos elegidos e imágenes subidas; las fotos de fondo y portada quedan ocultas, no borradas.</p><button type="button" className="v2-save" onClick={() => { applyPreset(suggestedPreset(draft.buttonZone.templateId).id, true); setRestoreDesignOpen(false); }}>Restaurar diseño</button><button type="button" className="v2-ghost" onClick={() => setRestoreDesignOpen(false)}>Cancelar</button></div></div>}
       {pendingContactLook && <div className="v2-modal-backdrop"><div className="v2-modal v2-contact-template-confirm" role="dialog" aria-modal="true" aria-labelledby="v2-contact-template-title"><div className="v2-modal-icon">↩</div><h2 id="v2-contact-template-title">¿Aplicar {CONTACT_LOOKS.find((look) => look.id === pendingContactLook.id)?.name}?</h2><p>Se reemplazarán tus ajustes de diseño. Tus datos, enlaces y fotos se conservan.{pendingContactLook.hidesBackgroundPhoto ? " La foto del fondo exterior quedará guardada, pero dejará de mostrarse." : ""} Podés deshacer el cambio.</p><button type="button" className="v2-save" onClick={() => { applyContactLook(pendingContactLook.id); setPendingContactLook(null); }}>Aplicar plantilla</button><button type="button" className="v2-ghost" onClick={() => setPendingContactLook(null)}>Cancelar</button></div></div>}
       {deletedButton && <div className="v2-delete-notice"><span role="status">Botón eliminado: <b>{deletedButton.button.title}</b></span><button ref={restoreButtonRef} type="button" onClick={restoreDeletedButton}>Deshacer</button><button type="button" aria-label="Cerrar aviso" onClick={() => setDeletedButton(null)}>×</button></div>}
       {leaveOpen && <div className="v2-modal-backdrop"><div className="v2-modal"><div className="v2-modal-icon">!</div><h2>Tenés cambios sin guardar</h2><p>Si salís ahora, vas a perder los últimos cambios de diseño.</p><button className="v2-save" form="v2-save" name="return_to" value="/admin">Guardar y salir</button><Link href="/admin" className="v2-danger">Salir sin guardar</Link><button className="v2-ghost" onClick={() => { setLeaveOpen(false); setPreview(false); }}>Seguir editando</button></div></div>}
@@ -857,20 +855,10 @@ function TemplateSwatch({ preset }: { preset: DesignPreset }) {
   );
 }
 
-function Templates({ selected, onApply, onRestore }: { selected: string; onApply: (id: string) => void; onRestore: () => void }) {
-  const current = suggestedPreset(selected);
+function Templates({ selected, onApply }: { selected: string; onApply: (id: string) => void }) {
   return <div className="v2-fields">
-    <div className="v2-template-restore">
-      <span>Diseño actual: <strong>{current.name}</strong></span>
-      <button type="button" className="v2-recommended-styles" onClick={onRestore}>
-        <span className="v2-recommended-icon" aria-hidden="true"><FiZap /></span>
-        <span className="v2-recommended-copy"><strong>Restaurar diseño recomendado</strong><small>De {current.name}, para toda la landing</small></span>
-        <FiArrowUpRight className="v2-recommended-arrow" aria-hidden="true" />
-      </button>
-      <p className="v2-help">Restablece la apariencia completa sin borrar textos, enlaces ni imágenes. Podés deshacerlo.</p>
-    </div>
-    <p className="v2-help">Elegí una plantilla para aplicar su fondo, encabezado, logo, textos y botones. Se conservan los colores propios de botones individuales y las fotos subidas (aunque la plantilla muestre su fondo recomendado).</p>
-    <div className="v2-template-grid">{DESIGN_PRESETS_V2.map((preset) => <button key={preset.id} type="button" className={selected === preset.id ? "selected" : ""} onClick={() => selected === preset.id ? onRestore() : onApply(preset.id)} aria-pressed={selected === preset.id}><TemplateSwatch preset={preset} /><b>{preset.name}</b><small>{preset.description}</small></button>)}</div>
+    <p className="v2-help">Tocá una plantilla para aplicar su diseño completo. Tus textos, enlaces y fotos subidas se conservan. Podés deshacer el cambio.</p>
+    <div className="v2-template-grid">{DESIGN_PRESETS_V2.map((preset) => <button key={preset.id} type="button" className={selected === preset.id ? "selected" : ""} onClick={() => { if (selected !== preset.id) onApply(preset.id); }} aria-pressed={selected === preset.id} aria-label={selected === preset.id ? `Plantilla actual: ${preset.name}` : `Aplicar plantilla ${preset.name}`}><TemplateSwatch preset={preset} /><b>{preset.name}</b><small>{preset.description}</small></button>)}</div>
   </div>;
 }
 
@@ -1306,7 +1294,7 @@ function SettingsControls({ draft, buttons, dirty, onTypeChange, onBrandingChang
       <Choice active={draft.buttonZone.showBranding !== false} title="Mostrar firma de BioNFC" note="Aparece al final de la tarjeta." onClick={() => onBrandingChange(draft.buttonZone.showBranding === false)} />
       <p className="v2-help" style={{ margin: 0 }}>Cambiar a landing modifica la presentación, pero conserva tus datos y enlaces.</p>
       <button type="button" className="v2-ghost" onClick={() => onTypeChange("custom")}>Cambiar a landing de enlaces</button>
-      <DeleteLandingButton action={deleteLandingAction} landingId={draft.id} label="Eliminar tarjeta" />
+      <DeleteLandingButton action={deleteLandingAction} landingId={draft.id} label="Eliminar tarjeta" isContact />
     </div></details>
   </div>;
   return <div className="v2-fields">
@@ -1328,7 +1316,7 @@ function SettingsControls({ draft, buttons, dirty, onTypeChange, onBrandingChang
     {!isPublished && missingContact && <p className="v2-help" role="status">Agregá un teléfono, email o WhatsApp para poder publicar la tarjeta.</p>}
     <a className="v2-suggested" href={`/${draft.slug}`} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", gap: 8 }}><IconEye /> Ver {draft.business_type === "contact" ? "tarjeta" : "landing"} publicada</a>
     <Link className="v2-suggested" href={`/admin/landings/${draft.id}/qr`} style={{ display: "flex", alignItems: "center", gap: 8 }}><IconQrCode /> Código QR para el tag NFC</Link>
-</EditorSection>    <DeleteLandingButton action={deleteLandingAction} landingId={draft.id} label={draft.business_type === "contact" ? "Eliminar tarjeta" : "Eliminar landing"} />
+</EditorSection>    <DeleteLandingButton action={deleteLandingAction} landingId={draft.id} label={draft.business_type === "contact" ? "Eliminar tarjeta" : "Eliminar landing"} isContact={draft.business_type === "contact"} />
   </div>;
 }
 

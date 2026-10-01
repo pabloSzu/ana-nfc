@@ -3,7 +3,7 @@
 import { useRef, useState, type FormEvent } from "react";
 import { IconEdit } from "@/components/icons";
 
-export default function RenameLandingButton({ action, landingId, currentName, currentSlug }: { action: (formData: FormData) => void | Promise<void>; landingId: string; currentName: string; currentSlug: string }) {
+export default function RenameLandingButton({ action, landingId, currentName, currentSlug, isContact = false }: { action: (formData: FormData) => void | Promise<void>; landingId: string; currentName: string; currentSlug: string; isContact?: boolean }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const [name, setName] = useState(currentName);
@@ -42,13 +42,13 @@ export default function RenameLandingButton({ action, landingId, currentName, cu
 
           {step === "edit" ? (
             <>
-              <h2>Renombrar landing</h2>
-              <p className="muted">Cambiá el nombre visible y/o el link público de la landing.</p>
+              <h2>Renombrar {isContact ? "tarjeta" : "landing"}</h2>
+              <p className="muted">Cambiá el nombre visible y/o el link público de {isContact ? "la tarjeta" : "la landing"}.</p>
             </>
           ) : (
             <>
               <h2>Confirmá el cambio</h2>
-              <p className="muted">Revisá antes de guardar — esto va a actualizar la landing ya publicada.</p>
+              <p className="muted">Revisá antes de guardar: se actualizará {isContact ? "la tarjeta" : "la landing"}.</p>
             </>
           )}
 
@@ -56,7 +56,7 @@ export default function RenameLandingButton({ action, landingId, currentName, cu
             <input type="hidden" name="id" value={landingId} />
 
             <div style={{ display: step === "edit" ? "grid" : "none", gap: "var(--space-4)" }}>
-              <label className="label">Nombre del negocio
+              <label className="label">{isContact ? "Nombre de la persona" : "Nombre de la landing"}
                 <input name="business_name" value={name} onChange={(e) => setName(e.target.value)} required />
               </label>
               <label className="label">Link público

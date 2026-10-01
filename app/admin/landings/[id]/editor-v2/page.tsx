@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { parseBackgroundPosition, parseButtonZone, parseCoverStyle, parseLogoStyle, parseSubtitleStyle, parseTitleStyle } from "@/lib/landing-catalog";
 import { saveDesignStyle } from "./actions";
 import { publish, deleteLanding } from "@/app/admin/actions";
@@ -17,11 +17,11 @@ export default async function EditorV2Page({ params, searchParams }: { params: P
   const { id } = await params;
   const { saved } = await searchParams;
   const supabase = await createClient();
-  const [{ data: landing }, { data: actions }] = await Promise.all([
-    supabase.from("landings").select("*").eq("id", id).maybeSingle(),
-    supabase.from("actions").select("*").eq("landing_id", id).eq("enabled", true).order("position"),
-  ]);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/admin/login");
+  const { data: landing } = await supabase.from("landings").select("*").eq("id", id).eq("owner_id", user.id).maybeSingle();
   if (!landing) notFound();
+  const { data: actions } = await supabase.from("actions").select("*").eq("landing_id", id).eq("enabled", true).order("position");
 
   const buttonZone = parseButtonZone(landing.button_style);
   if (!landing.button_style || !Object.keys(landing.button_style).length) buttonZone.oneColor = landing.primary_color || "#1f2937";
@@ -29,7 +29,7 @@ export default async function EditorV2Page({ params, searchParams }: { params: P
   return (<>
     <Suspense fallback={null}><Toast /></Suspense>
     <EditorV2
-      newlyCreatedContact={landing.business_type === "contact" && saved === "Landing creada"}
+      newlyCreatedContact={landing.business_type === "contact" && (saved === "Tarjeta creada" || saved === "Landing creada")}
       landing={{
         ...landing,
         buttonZone,

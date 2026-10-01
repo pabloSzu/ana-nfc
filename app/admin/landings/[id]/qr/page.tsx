@@ -1,12 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { IconExternalLink, IconEye } from "@/components/icons";
 
 export default async function QR({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
-  const { data: landing } = await supabase.from("landings").select("*").eq("id", id).maybeSingle();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/admin/login");
+  const { data: landing } = await supabase.from("landings").select("*").eq("id", id).eq("owner_id", user.id).maybeSingle();
   if (!landing) notFound();
   // La URL física usa el ID estable, no el slug editable: una tarjeta o un QR ya entregado
   // deben seguir abriendo la landing aunque se cambie su nombre o enlace público.

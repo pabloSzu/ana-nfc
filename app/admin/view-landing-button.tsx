@@ -7,7 +7,7 @@ import { IconEye } from "@/components/icons";
 // A landing's public link only resolves once it's published (app/[slug]/page.tsx filters on
 // published:true), so "Ver" on a draft would just open a 404. Instead of a dead link, a draft
 // gets the same button that explains why and offers to publish it right there.
-export default function ViewLandingButton({ slug, landingId, published, publishAction, className = "" }: { slug: string; landingId: string; published: boolean; publishAction: (formData: FormData) => void | Promise<void>; className?: string }) {
+export default function ViewLandingButton({ slug, landingId, published, publishAction, className = "", isContact = false }: { slug: string; landingId: string; published: boolean; publishAction: (formData: FormData) => void | Promise<void>; className?: string; isContact?: boolean }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const classes = `icon-text-button accent ${className}`.trim();
 
@@ -24,7 +24,7 @@ export default function ViewLandingButton({ slug, landingId, published, publishA
         <div className="modal-content">
           <button type="button" className="modal-close" aria-label="Cerrar" onClick={() => dialogRef.current?.close()}>✕</button>
           <h2>Primero publicala</h2>
-          <p className="muted">Esta landing está en borrador, así que <strong>/{slug}</strong> todavía no abre nada. Publicala para poder verla.</p>
+          <p className="muted">Esta {isContact ? "tarjeta" : "landing"} está en borrador, así que <strong>/{slug}</strong> todavía no abre nada. Publicala para poder verla.</p>
           <form action={publishAction} className="stack">
             <input type="hidden" name="id" value={landingId} />
             <input type="hidden" name="published" value="true" />

@@ -110,6 +110,8 @@
   border-color: #c9c4f4;
   box-shadow: 0 9px 24px rgba(40, 35, 67, .08);
 }
+.v2-template-grid > button.selected { cursor: default; }
+.v2-template-grid > button.selected:hover { transform: none; }
 .v2-template-grid:not(.v2-template-grid-compact) > button {
   display: grid;
   grid-template-rows: auto auto 1fr;
