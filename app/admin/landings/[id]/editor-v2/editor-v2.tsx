@@ -28,7 +28,7 @@ type LandingDraft = {
   published?: boolean | null; buttonZone: ButtonZoneStyle; titleStyle: TitleStyle; subtitleStyle: SubtitleStyle; logoStyle: LogoStyle; bgPosition: BackgroundPosition;
   cover_image_url?: string | null; coverStyle: CoverStyle;
 };
-type Panel = "templates" | "buttons" | "background" | "cover" | "settings" | "contact" | "contact-links" | "contact-design" | "contact-name" | "contact-role" | "contact-company" | "socials" | "distribution" | "title" | "subtitle" | "logo" | "add" | { buttonId: string } | null;
+type Panel = "templates" | "buttons" | "background" | "cover" | "settings" | "contact" | "contact-design" | "contact-name" | "contact-role" | "contact-company" | "socials" | "distribution" | "title" | "subtitle" | "logo" | "add" | { buttonId: string } | null;
 type BackgroundTab = "color" | "gradient" | "image";
 type DeviceMode = "small" | "standard" | "large";
 type SaveAction = (formData: FormData) => void | Promise<void>;
@@ -346,7 +346,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
     commitDiscrete();
     setDeletedButton({ button: buttons[index], index });
     patchButtons((current) => current.filter((button) => button.id !== id));
-    if (typeof panel === "object" && panel?.buttonId === id) setPanel(draft.business_type === "contact" ? "contact-links" : null);
+    if (typeof panel === "object" && panel?.buttonId === id) setPanel(null);
     requestAnimationFrame(() => restoreButtonRef.current?.focus());
   }
 
@@ -621,7 +621,6 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
     onSelectTemplates: () => selectPanel("templates"),
     onSelectSettings: () => selectPanel("settings"),
     onSelectContact: () => selectPanel("contact"),
-    onSelectContactLinks: () => selectPanel("contact-links"),
     onSelectContactDesign: () => selectPanel("contact-design"),
     onSelectSocials: () => selectPanel("socials"),
     onSelectDistribution: () => selectPanel("distribution"),
@@ -731,8 +730,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
             <button className="v2-panel-close" type="button" onClick={() => setPanel(null)}>×</button>
           </div>
           {draft.business_type === "contact" && panel === "templates" && <button type="button" className="v2-ghost v2-contact-return" onClick={() => setPanel("contact-design")}>← Volver a Diseño</button>}
-          {draft.business_type === "contact" && (panel === "contact-name" || panel === "contact-role" || panel === "contact-company") && <button type="button" className="v2-ghost v2-contact-return" onClick={() => setPanel("contact")}>← Volver a Contenido</button>}
-          {draft.business_type === "contact" && (panel === "add" || typeof panel === "object") && <button type="button" className="v2-ghost v2-contact-return" onClick={() => setPanel("contact-links")}>← Volver a Enlaces</button>}
+          {draft.business_type === "contact" && (panel === "contact-name" || panel === "contact-role" || panel === "contact-company") && <button type="button" className="v2-ghost v2-contact-return" onClick={() => setPanel("contact")}>← Volver a Datos</button>}
           {panel === "templates" && (draft.business_type === "contact" ? <ContactLooks selected={draft.buttonZone.contactTheme || "classic"} onApply={applyContactLook} /> : <Templates selected={draft.buttonZone.templateId} onApply={(id) => applyPreset(id)} onRestore={() => setRestoreDesignOpen(true)} />)}
           {panel === "contact-design" && <ContactDesignControls draft={draft} buttons={buttons} onChange={change} onBackground={() => selectPanel("background")} onTemplates={() => selectPanel("templates")} />}
           {panel === "buttons" && <ButtonDesign draft={draft} buttons={buttons} backgroundImage={backgroundImage} onZone={changeZone} onFont={(button_font) => change({ button_font, buttonZone: { ...draft.buttonZone, fontWeight: resolveFontWeight(button_font, draft.buttonZone.fontWeight ?? recommendedButtonTypography(button_font).fontWeight), letterSpacing: draft.buttonZone.letterSpacing ?? recommendedButtonTypography(button_font).letterSpacing } })} onApplyButtonLook={applyButtonLook} onResetButtonOverrides={resetButtonOverrides} />}
@@ -742,7 +740,6 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
           {panel === "socials" && <SocialControls links={draft.buttonZone.quickSocials || []} onChange={(quickSocials) => changeZone({ quickSocials })} filled={draft.buttonZone.quickSocialsFilled !== false} onFilled={(quickSocialsFilled) => changeZone({ quickSocialsFilled })} />}
           {panel === "settings" && <SettingsControls draft={draft} buttons={buttons} dirty={dirty} onTypeChange={(business_type) => { if (draft.business_type !== business_type) { commitDiscrete(); patchDraft({ business_type }); } if (business_type === "contact") setPanel("contact"); }} onBrandingChange={(showBranding) => changeZone({ showBranding })} publishAction={publishAction} deleteLandingAction={deleteLandingAction} />}
           {panel === "contact" && <ContactControls {...contactControlsProps} />}
-          {panel === "contact-links" && <ContactLinksControls buttons={buttons} cvFileName={cvFileName} onAdd={() => selectPanel("add")} onEdit={(id) => selectPanel({ buttonId: id })} />}
           {(panel === "contact-name" || panel === "contact-role" || panel === "contact-company") && <ContactTextControls field={panel.slice(8) as "name" | "role" | "company"} draft={draft} onChange={change} />}
           {panel === "title" && <TitleControls draft={draft} onChange={change} />}
           {panel === "subtitle" && <SubtitleControls draft={draft} onChange={change} />}
@@ -777,7 +774,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
   );
 }
 
-function panelTitle(panel: Exclude<Panel, null>) { if (typeof panel === "object") return "Editar botón"; return ({ templates: "Elegí una plantilla", buttons: "Editar todos los botones", background: "Fondo de la página", cover: "Encabezado",settings: "Ajustes de la landing", contact: "Contenido de la tarjeta", "contact-links": "Enlaces de la tarjeta", "contact-design": "Diseño de la tarjeta", "contact-name": "Editar nombre", "contact-role": "Editar cargo", "contact-company": "Editar empresa", socials: "Redes rápidas", distribution: "Distribución", title: "Editar título", subtitle: "Editar subtítulo", logo: "Editar logo", add: "Agregar un botón" } as const)[panel]; }
+function panelTitle(panel: Exclude<Panel, null>) { if (typeof panel === "object") return "Editar botón"; return ({ templates: "Elegí una plantilla", buttons: "Editar todos los botones", background: "Fondo de la página", cover: "Encabezado",settings: "Ajustes de la landing", contact: "Datos de la tarjeta", "contact-design": "Diseño de la tarjeta", "contact-name": "Editar nombre", "contact-role": "Editar cargo", "contact-company": "Editar empresa", socials: "Redes rápidas", distribution: "Distribución", title: "Editar título", subtitle: "Editar subtítulo", logo: "Editar logo", add: "Agregar un botón" } as const)[panel]; }
 
 function TemplateSwatch({ preset }: { preset: DesignPreset }) {
   const iconAppearance = recommendedIconAppearance(preset.buttonZone.collection);
@@ -1268,7 +1265,7 @@ function SettingsControls({ draft, buttons, dirty, onTypeChange, onBrandingChang
         <button className="v2-save" style={{ width: "100%" }} type="submit" disabled={!isPublished && (dirty || missingContact)}>{isPublished ? "Despublicar tarjeta" : "Publicar tarjeta"}</button>
       </form>
       {!isPublished && dirty && <p className="v2-help" role="status">Primero guardá los cambios con el botón de arriba.</p>}
-      {!isPublished && missingContact && <p className="v2-help" role="status">Agregá un teléfono, email o WhatsApp en Contenido.</p>}
+      {!isPublished && missingContact && <p className="v2-help" role="status">Agregá un teléfono, email o WhatsApp en Datos.</p>}
       {isPublished && <a className="v2-suggested" href={`/${draft.slug}`} target="_blank" rel="noreferrer"><IconEye /> Abrir tarjeta publicada</a>}
       <Link className="v2-suggested" href={`/admin/landings/${draft.id}/qr`}><IconQrCode /> Ver código QR y NFC</Link>
     </EditorSection>
@@ -1325,7 +1322,7 @@ function ContactDesignControls({ draft, buttons, onChange, onBackground, onTempl
       <div className="v2-contact-mode-choices" role="group" aria-label="Presentación de los datos de contacto">
         {([{ id: "shortcuts", label: "Atajos", note: "Íconos destacados" }, { id: "details", label: "Lista", note: "Datos en filas" }] as const).map((option) => <button type="button" key={option.id} className={selectedActionStyle === option.id ? "active" : ""} aria-pressed={selectedActionStyle === option.id} onClick={() => onChange({ buttonZone: { ...draft.buttonZone, contactActionStyle: option.id } })}><span className={`v2-contact-mode-preview is-${option.id}`} aria-hidden="true"><i/><i/><i/></span><strong>{option.label}</strong><small>{option.id === recommendedActionStyle ? "Recomendado por la plantilla" : option.note}</small></button>)}
       </div>
-      <p className="v2-help" style={{ margin: 0 }}>{hasContactData ? "Atajos destaca teléfono, email y WhatsApp. Lista muestra los datos completos en filas." : "Agregá teléfono, email o WhatsApp en Contenido para ver el resultado en tu tarjeta."}</p>
+      <p className="v2-help" style={{ margin: 0 }}>{hasContactData ? "Atajos destaca teléfono, email y WhatsApp. Lista muestra los datos completos en filas." : "Agregá teléfono, email o WhatsApp en Datos para ver el resultado en tu tarjeta."}</p>
       {actionStyle && <button type="button" className="v2-contact-mode-reset" onClick={() => onChange({ buttonZone: { ...draft.buttonZone, contactActionStyle: undefined } })}>Volver al estilo recomendado de la plantilla</button>}
       <div className="v2-contact-heading-controls">
         <span>Título de la sección</span>
@@ -1459,21 +1456,6 @@ function ContactControls({ draft, buttons, onChange, onActionChange, onEditPhoto
       <p className="v2-help" style={{ margin: 0 }}>Si cargás teléfono y WhatsApp diferentes, el contacto guarda el teléfono; WhatsApp sigue como acceso rápido. El CV y los demás enlaces se abren desde la tarjeta, no se adjuntan a la agenda.</p>
     </div></details>
     </>}
-  </div>;
-}
-
-function ContactLinksControls({ buttons, cvFileName, onAdd, onEdit }: { buttons: ButtonItem[]; cvFileName: string; onAdd: () => void; onEdit: (id: string) => void }) {
-  const links = buttons.filter((button) => !["phone", "email", "whatsapp"].includes(button.type));
-  return <div className="v2-fields">
-    <p className="v2-help">Agregá tu sitio web, redes, proyectos o un documento PDF. Se muestran debajo de los datos de contacto.</p>
-    {links.length > 0 && <div className="v2-contact-profile-links">
-      {links.map((button) => <button key={button.id} type="button" onClick={() => onEdit(button.id)}>
-        <ActionTypeIcon type={button.type} icon={button.icon} />
-        <span><strong>{button.title || getAllActions().find((action) => action.type === button.type)?.label || "Enlace"}</strong><small>{button.type === "cv" ? cvFileName || (button.url ? "Documento listo" : "Adjuntá un PDF o pegá un enlace") : button.url || "Completá el enlace"}</small></span><b aria-hidden="true">→</b>
-      </button>)}
-    </div>}
-    <button type="button" className="v2-suggested" onClick={onAdd}>＋ Agregar enlace o documento PDF</button>
-    {links.length === 0 && <p className="v2-help">Todavía no agregaste enlaces. Podés empezar por tu sitio web o un PDF.</p>}
   </div>;
 }
 

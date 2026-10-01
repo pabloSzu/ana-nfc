@@ -1430,7 +1430,7 @@ input[type="color"] { padding: 5px; height: 46px; cursor: pointer; }
 }
 .editor-quick-tools button svg { width: 12px; height: 12px; flex: none; }
 .editor-quick-tools button.active { color: #fff; background: #6556df; border-color: #6556df; }
-.public.is-contact .editor-quick-tools { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.public.is-contact .editor-quick-tools { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
 .public.is-contact .editor-quick-tools button { min-width: 0; justify-content: center; gap: 5px; padding-inline: 8px; font-size: 10px; }
 
 @property --editor-ring-angle { syntax: '<angle>'; inherits: false; initial-value: 0deg; }

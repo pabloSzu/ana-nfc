@@ -74,7 +74,6 @@
 .is-contact-editor .v2-contact-profile-links button:last-child { border-bottom: 0; }
 .is-contact-editor .v2-contact-profile-links button:hover { background: #f8f7ff; }
 .is-contact-editor .v2-contact-profile-links button > span { display: grid; gap: 2px; min-width: 0; }
-.is-contact-editor .v2-contact-profile-links button > svg { width: 20px; height: 20px; flex: 0 0 20px; color: #6657e8; }
 .is-contact-editor .v2-contact-profile-links strong { color: #303241; font-size: 12px; }
 .is-contact-editor .v2-contact-profile-links small { overflow: hidden; color: #747887; font-size: 11px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
 .is-contact-editor .v2-contact-profile-links b { color: #6657e8; font-size: 17px; }
