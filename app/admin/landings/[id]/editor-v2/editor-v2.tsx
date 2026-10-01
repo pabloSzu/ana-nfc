@@ -106,10 +106,10 @@ function logoTreatmentPatch(treatment: LogoTreatment, templateId = "minimal"): P
   return { treatment, shape: "round", borderWidth: 3, borderColor: templateId === "glass" ? "#2c2c33" : "#ffffff", shadow: "soft", backgroundMode: "auto" };
 }
 
-export default function EditorV2({ landing, initialButtons, saveAction, publishAction, deleteLandingAction }: { landing: LandingDraft; initialButtons: ButtonItem[]; saveAction: SaveAction; publishAction: SaveAction; deleteLandingAction: SaveAction }) {
+export default function EditorV2({ landing, initialButtons, newlyCreatedContact = false, saveAction, publishAction, deleteLandingAction }: { landing: LandingDraft; initialButtons: ButtonItem[]; newlyCreatedContact?: boolean; saveAction: SaveAction; publishAction: SaveAction; deleteLandingAction: SaveAction }) {
   const [draft, setDraft] = useState(landing);
   const [buttons, setButtons] = useState(initialButtons);
-  const [panel, setPanel] = useState<Panel>(landing.business_type === "contact" ? null : "templates");
+  const [panel, setPanel] = useState<Panel>(landing.business_type === "contact" && !newlyCreatedContact ? null : "templates");
   const [bgTab, setBgTab] = useState<BackgroundTab>("color");
   const [preview, setPreview] = useState(false);
   const [device, setDevice] = useState<DeviceMode>("standard");
@@ -189,14 +189,11 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
     });
   }
 
-  // The default `panel` state is "templates" so desktop lands with the template picker already
-  // open next to the phone — a nice invitation there, since it's just a side popover that never
-  // hides anything. On mobile/tablet that same default now means a full-screen takeover (see
-  // .v2-workspace.has-panel in phone-first.css) covering the phone before the person has even
-  // seen it once. Runs only on mount (empty deps) — a later window resize shouldn't yank an
-  // open panel closed out from under someone mid-edit.
+  // Existing cards open on the preview. A newly created contact card starts in the template
+  // picker, which is a compact dock below the preview on mobile rather than a takeover.
+  // General landings keep their previous desktop behavior.
   useEffect(() => {
-    if (window.innerWidth <= 840) setPanel(null);
+    if (window.innerWidth <= 840 && !newlyCreatedContact) setPanel(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -1309,8 +1306,8 @@ function ContactDesignControls({ draft, buttons, onChange, onBackground, onTempl
   const selectedLook = CONTACT_LOOKS.find((look) => look.id === theme);
   const defaultSurface = theme === "essential" ? "#faf7ef" : theme === "editorial" ? "#f3efea" : theme === "professional" ? "#ffffff" : theme === "noir" ? "#242b36" : theme === "paper" ? "#f8f2e6" : theme === "linen" ? "#f3f0e5" : layout === "document" || contrastTextColor(draft.titleStyle.color) === "#ffffff" ? "#ffffff" : "#111422";
   return <div className="v2-fields">
-    <EditorSection title="Diseño de la tarjeta" tone="blue">
-      <button type="button" className="v2-contact-current-look" onClick={onTemplates}><span className={`v2-contact-look is-${theme} v2-contact-current-look-art`} aria-hidden="true"><span className="v2-contact-look-art"><i className="look-cover"/><i className="look-avatar"/><i className="look-name"/><i className="look-line"/><i className="look-action"/></span></span><span className="v2-contact-current-look-copy"><strong>{selectedLook?.name || "Diseño anterior"}</strong><small>{layout === "document" ? "Ficha profesional" : "Tarjeta visual"}</small></span><span className="v2-contact-look-change">Cambiar →</span></button>
+    <EditorSection title="Plantillas" tone="blue">
+      <button type="button" className="v2-contact-current-look" onClick={onTemplates}><span className={`v2-contact-look is-${theme} v2-contact-current-look-art`} aria-hidden="true"><span className="v2-contact-look-art"><i className="look-cover"/><i className="look-avatar"/><i className="look-name"/><i className="look-line"/><i className="look-action"/></span></span><span className="v2-contact-current-look-copy"><strong>Elegir plantilla</strong><small>Actual: {selectedLook?.name || "Diseño anterior"} · {layout === "document" ? "Ficha profesional" : "Tarjeta visual"}</small></span><span className="v2-contact-look-change" aria-hidden="true">→</span></button>
     </EditorSection>
     <EditorSection title="Colores" tone="purple">
       <ColorField label="Color principal" value={draft.primary_color || "#1f2937"} onChange={(primary_color) => onChange({ primary_color })} />

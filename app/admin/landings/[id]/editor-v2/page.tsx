@@ -13,8 +13,9 @@ import "./phone-first.css";
 import "./contact-editor.css";
 import "./image-adjust-dialog.css";
 
-export default async function EditorV2Page({ params }: { params: Promise<{ id: string }> }) {
+export default async function EditorV2Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ saved?: string | string[] }> }) {
   const { id } = await params;
+  const { saved } = await searchParams;
   const supabase = await createClient();
   const [{ data: landing }, { data: actions }] = await Promise.all([
     supabase.from("landings").select("*").eq("id", id).maybeSingle(),
@@ -28,6 +29,7 @@ export default async function EditorV2Page({ params }: { params: Promise<{ id: s
   return (<>
     <Suspense fallback={null}><Toast /></Suspense>
     <EditorV2
+      newlyCreatedContact={landing.business_type === "contact" && saved === "Landing creada"}
       landing={{
         ...landing,
         buttonZone,

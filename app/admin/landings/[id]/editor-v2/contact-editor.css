@@ -30,11 +30,13 @@
 .is-contact-editor .v2-contact-more-body { gap: 10px; padding: 12px; }
 .is-contact-editor .v2-contact-return { margin: 0 0 12px; padding: 7px 0; background: transparent; box-shadow: none; }
 .is-contact-editor .v2-contact-content-intro { padding: 9px 11px; border: 0; background: #f0eff8; }
-.is-contact-editor .v2-contact-current-look { width: 100%; gap: 10px; padding: 7px; font: inherit; text-align: left; cursor: pointer; }
+.is-contact-editor .v2-contact-current-look { width: 100%; gap: 10px; padding: 10px; border-color: #bcb3f2; background: linear-gradient(135deg, #fff, #f4f1ff); box-shadow: 0 5px 16px #5749d514; font: inherit; text-align: left; cursor: pointer; }
+.is-contact-editor .v2-contact-current-look:hover { border-color: #6657e8; background: #f1edff; }
+.is-contact-editor .v2-contact-current-look:focus-visible { outline: 2px solid #6657e8; outline-offset: 2px; }
 .is-contact-editor .v2-contact-current-look-art { position: relative; display: block; width: 42px; height: 46px; flex: 0 0 42px; padding: 0; overflow: hidden; border-radius: 7px; }
 .is-contact-editor .v2-contact-current-look-art .v2-contact-look-art { position: absolute; top: 0; left: 0; width: 92px; height: 108px; transform: scale(.44); }
 .is-contact-editor .v2-contact-current-look-copy { display: grid; gap: 3px; min-width: 0; }
-.is-contact-editor .v2-contact-current-look-copy strong { color: #2c3040; font-size: 13px; }
+.is-contact-editor .v2-contact-current-look-copy strong { color: #493dc4; font-size: 13px; }
 .is-contact-editor .v2-contact-current-look-copy small { color: #70778b; font-size: 11px; }
 .is-contact-editor .v2-contact-look-change { margin-left: auto; color: #5546c2; font-size: 11px; font-weight: 800; white-space: nowrap; }
 .is-contact-editor .v2-contact-mode-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
