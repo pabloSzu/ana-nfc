@@ -629,6 +629,7 @@ a.contact-detail-row:hover { background: color-mix(in srgb, var(--contact-accent
 .public.is-contact.contact-theme-professional .contact-hero-art span { display: none; }
 .public.is-contact.contact-theme-professional.contact-layout-document .landing-eyebrow { color: var(--contact-role-color) !important; }
 .public.is-contact.contact-theme-professional.contact-layout-document .landing-desc { color: var(--contact-company-color) !important; opacity: 1; }
+.public.is-contact.contact-theme-professional.contact-layout-document .contact-about { margin-bottom: 16px; padding-bottom: 0; border-bottom: 0; }
 .public.is-contact.contact-theme-essential .landing-identity-block .avatar,
 .public.is-contact.contact-theme-editorial .landing-identity-block .avatar { margin-top: -48px !important; }
 .public.is-contact.contact-theme-editorial .landing-identity-block { padding: 0 28px 22px !important; text-align: left !important; }
@@ -1429,7 +1430,7 @@ input[type="color"] { padding: 5px; height: 46px; cursor: pointer; }
 }
 .editor-quick-tools button svg { width: 12px; height: 12px; flex: none; }
 .editor-quick-tools button.active { color: #fff; background: #6556df; border-color: #6556df; }
-.public.is-contact .editor-quick-tools { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.public.is-contact .editor-quick-tools { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
 .public.is-contact .editor-quick-tools button { min-width: 0; justify-content: center; gap: 5px; padding-inline: 8px; font-size: 10px; }
 
 @property --editor-ring-angle { syntax: '<angle>'; inherits: false; initial-value: 0deg; }

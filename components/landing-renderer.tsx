@@ -1,5 +1,5 @@
 import LandingSeparator from "@/components/landing-separator";
-import { FiTrash2, FiSliders, FiArrowUpRight, FiUser, FiPhone, FiMapPin } from "react-icons/fi";
+import { FiTrash2, FiSliders, FiArrowUpRight, FiUser, FiPhone, FiMapPin, FiLink } from "react-icons/fi";
 import ContactSaveIcon from "@/components/contact-save-icon";
 import BioNFCLogo from "@/components/bionfc-logo";
 import {
@@ -73,7 +73,7 @@ export function LandingPhotoBackground({ landing }: { landing: Landing }) {
 // What's "selected" right now, for the highlight outline — mirrors editor-v2's own Panel
 // type structurally (kept independent here, not imported, to avoid a circular dependency
 // between the admin editor and this shared public-facing component).
-export type LandingEditSelection = "templates" | "buttons" | "background" | "cover" | "settings" | "contact" | "contact-design" | "contact-name" | "contact-role" | "contact-company" | "socials" | "distribution" | "title" | "subtitle" | "logo" | "add" | { buttonId: string } | null;
+export type LandingEditSelection = "templates" | "buttons" | "background" | "cover" | "settings" | "contact" | "contact-links" | "contact-design" | "contact-name" | "contact-role" | "contact-company" | "socials" | "distribution" | "title" | "subtitle" | "logo" | "add" | { buttonId: string } | null;
 
 // Everything the editor needs to turn this same real render into a live, click-to-edit
 // canvas — no separate mock. Every hook here only ever *adds* non-layout-affecting behavior
@@ -85,6 +85,7 @@ export type LandingEditControls = {
   onSelectTemplates: () => void;
   onSelectSettings: () => void;
   onSelectContact: () => void;
+  onSelectContactLinks: () => void;
   onSelectContactDesign: () => void;
   onSelectSocials: () => void;
   onSelectDistribution: () => void;
@@ -287,6 +288,7 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
             {isContact && <button type="button" className={edit.selected === "contact-design" || edit.selected === "templates" || edit.selected === "distribution" || edit.selected === "background" ? "active" : ""} onClick={edit.onSelectContactDesign}><FiSliders aria-hidden="true" /> Diseño</button>}
             {isContact && <button type="button" className={edit.selected === "cover" ? "active" : ""} onClick={edit.onSelectCover}><IconImage /> Portada</button>}
             {isContact && <button type="button" className={edit.selected === "contact" || edit.selected === "contact-name" || edit.selected === "contact-role" || edit.selected === "contact-company" ? "active" : ""} onClick={edit.onSelectContact}><FiUser aria-hidden="true" /> Contenido</button>}
+            {isContact && <button type="button" className={edit.selected === "contact-links" || edit.selected === "add" || typeof edit.selected === "object" && edit.selected !== null ? "active" : ""} onClick={edit.onSelectContactLinks}><FiLink aria-hidden="true" /> Enlaces</button>}
             {!isContact && <button type="button" className={edit.selected === "cover" ? "active" : ""} onClick={edit.onSelectCover}><IconImage /> Encabezado</button>}
             {!isContact && <button type="button" className={edit.selected === "distribution" ? "active" : ""} onClick={edit.onSelectDistribution}><FiSliders aria-hidden="true" /> Distribución</button>}
             {!isContact && <button type="button" className={edit.selected === "background" ? "active" : ""} onClick={edit.onSelectBackground}><IconImage /> Fondo</button>}
