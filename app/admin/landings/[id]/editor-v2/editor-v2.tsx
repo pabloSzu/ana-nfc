@@ -51,6 +51,38 @@ const CONTACT_LOOKS = [
   { id: "editorial", name: "Editorial", description: "Una presentación visual para marcas personales.", layout: "card", accent: "#46372f", backdrop: "#e9e3dc", font: "domine" },
   { id: "professional", name: "Profesional", description: "Ficha ordenada para trabajo y servicios.", layout: "document", accent: "#163b49", backdrop: "#e8eff0", font: "manrope" },
 ] as const;
+type ContactLook = (typeof CONTACT_LOOKS)[number];
+
+function contactLookPatch(draft: LandingDraft, look: ContactLook): Partial<LandingDraft> {
+  return {
+    primary_color: look.accent,
+    background_type: "color",
+    background_color: look.backdrop,
+    button_font: "minimal",
+    buttonZone: { ...draft.buttonZone, contactTheme: look.id, contactLayout: look.layout, contactDensity: "balanced", contactSurfaceColor: undefined, contactCoverColor: undefined },
+    titleStyle: { ...draft.titleStyle, font: look.font, italic: false, size: look.id === "editorial" ? 38 : 28, color: look.id === "editorial" ? "#433b35" : look.id === "professional" ? "#202637" : "#243028", weight: look.id === "editorial" ? 500 : 700, eyebrowFont: look.font, eyebrowItalic: false, eyebrowSize: 14, eyebrowColor: look.id === "editorial" ? "#665f59" : "#47505f", bgMode: "none" },
+    subtitleStyle: { ...draft.subtitleStyle, font: "minimal", italic: false, size: 14, color: look.id === "editorial" ? "#665f59" : "#47505f", bgMode: "none" },
+    logoStyle: { ...draft.logoStyle, shape: "round", borderWidth: 0, shadow: "none", size: look.id === "professional" ? 80 : 104 },
+    coverStyle: { ...draft.coverStyle, mode: "banner" },
+  };
+}
+
+function contactLookVisualParts(draft: LandingDraft) {
+  const { buttonZone, titleStyle, subtitleStyle, logoStyle, coverStyle } = draft;
+  return {
+    "Colores y fondo exterior": [draft.primary_color, draft.background_type, draft.background_color, buttonZone.contactSurfaceColor, buttonZone.contactCoverColor],
+    "Fuentes y estilos de texto": [draft.button_font, titleStyle.font, titleStyle.italic, titleStyle.size, titleStyle.color, titleStyle.weight, titleStyle.eyebrowFont, titleStyle.eyebrowItalic, titleStyle.eyebrowSize, titleStyle.eyebrowColor, titleStyle.bgMode, subtitleStyle.font, subtitleStyle.italic, subtitleStyle.size, subtitleStyle.color, subtitleStyle.bgMode],
+    "Forma y tamaño de la foto de perfil": [logoStyle.shape, logoStyle.borderWidth, logoStyle.shadow, logoStyle.size],
+    "Presentación de la tarjeta": [buttonZone.contactLayout, buttonZone.contactDensity],
+    "Presentación de la portada": [coverStyle.mode],
+  };
+}
+
+function changedContactLookParts(current: LandingDraft, reference: LandingDraft): string[] {
+  const currentParts = contactLookVisualParts(current);
+  const referenceParts = contactLookVisualParts(reference);
+  return Object.keys(currentParts).filter((part) => JSON.stringify(currentParts[part as keyof typeof currentParts]) !== JSON.stringify(referenceParts[part as keyof typeof referenceParts]));
+}
 const LOGO_SHAPE_OPTIONS: { id: LogoStyle["shape"]; label: string }[] = [
   { id: "round", label: "Circular" },
   { id: "square", label: "Cuadrado redondeado" },
@@ -118,6 +150,7 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
   const restoreButtonRef = useRef<HTMLButtonElement>(null);
   const [leaveOpen, setLeaveOpen] = useState(false);
   const [restoreDesignOpen, setRestoreDesignOpen] = useState(false);
+  const [pendingContactLook, setPendingContactLook] = useState<{ id: ContactLook["id"]; hidesBackgroundPhoto: boolean } | null>(null);
   // Purely a personal viewing preference for the app's OWN chrome — nothing to do with the
   // landing being edited — shared with /admin via the same localStorage key (theme-scene.tsx),
   // so switching it in either place keeps both in sync.
@@ -398,17 +431,19 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
     const look = CONTACT_LOOKS.find((item) => item.id === id);
     if (!look) return;
     commitDiscrete();
-    patchDraft({
-      primary_color: look.accent,
-      background_type: "color",
-      background_color: look.backdrop,
-      button_font: "minimal",
-      buttonZone: { ...draft.buttonZone, contactTheme: look.id, contactLayout: look.layout, contactDensity: "balanced", contactSurfaceColor: undefined, contactCoverColor: undefined },
-      titleStyle: { ...draft.titleStyle, font: look.font, italic: false, size: id === "editorial" ? 38 : 28, color: id === "editorial" ? "#433b35" : id === "professional" ? "#202637" : "#243028", weight: id === "editorial" ? 500 : 700, eyebrowFont: look.font, eyebrowItalic: false, eyebrowSize: 14, eyebrowColor: id === "editorial" ? "#665f59" : "#47505f", bgMode: "none" },
-      subtitleStyle: { ...draft.subtitleStyle, font: "minimal", italic: false, size: 14, color: id === "editorial" ? "#665f59" : "#47505f", bgMode: "none" },
-      logoStyle: { ...draft.logoStyle, shape: "round", borderWidth: 0, shadow: "none", size: id === "professional" ? 80 : 104 },
-      coverStyle: { ...draft.coverStyle, mode: "banner" },
-    });
+    patchDraft(contactLookPatch(draft, look));
+  }
+
+  function requestContactLook(id: ContactLook["id"]) {
+    const look = CONTACT_LOOKS.find((item) => item.id === id);
+    if (!look) return;
+    const currentLook = CONTACT_LOOKS.find((item) => item.id === draft.buttonZone.contactTheme);
+    const untouchedNewCard = newlyCreatedContact && changedContactLookParts(draft, landing).length === 0;
+    const reference = currentLook ? { ...draft, ...contactLookPatch(draft, currentLook) } as LandingDraft : { ...draft, ...contactLookPatch(draft, look) } as LandingDraft;
+    const affected = changedContactLookParts(draft, reference);
+    if (id === draft.buttonZone.contactTheme && affected.length === 0) return;
+    if (untouchedNewCard || affected.length === 0) { applyContactLook(id); return; }
+    setPendingContactLook({ id, hidesBackgroundPhoto: draft.background_type === "image" && Boolean(backgroundImage) });
   }
 
   function applyButtonLook(id: string) {
@@ -728,7 +763,7 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
           </div>
           {draft.business_type === "contact" && panel === "templates" && <button type="button" className="v2-ghost v2-contact-return" onClick={() => setPanel("contact-design")}>← Volver a Diseño</button>}
           {draft.business_type === "contact" && (panel === "contact-name" || panel === "contact-role" || panel === "contact-company") && <button type="button" className="v2-ghost v2-contact-return" onClick={() => setPanel("contact")}>← Volver a Datos</button>}
-          {panel === "templates" && (draft.business_type === "contact" ? <ContactLooks selected={draft.buttonZone.contactTheme || "classic"} onApply={applyContactLook} /> : <Templates selected={draft.buttonZone.templateId} onApply={(id) => applyPreset(id)} onRestore={() => setRestoreDesignOpen(true)} />)}
+          {panel === "templates" && (draft.business_type === "contact" ? <ContactLooks selected={draft.buttonZone.contactTheme || "classic"} onApply={requestContactLook} /> : <Templates selected={draft.buttonZone.templateId} onApply={(id) => applyPreset(id)} onRestore={() => setRestoreDesignOpen(true)} />)}
           {panel === "contact-design" && <ContactDesignControls draft={draft} buttons={buttons} onChange={change} onBackground={() => selectPanel("background")} onTemplates={() => selectPanel("templates")} />}
           {panel === "buttons" && <ButtonDesign draft={draft} buttons={buttons} backgroundImage={backgroundImage} onZone={changeZone} onFont={(button_font) => change({ button_font, buttonZone: { ...draft.buttonZone, fontWeight: resolveFontWeight(button_font, draft.buttonZone.fontWeight ?? recommendedButtonTypography(button_font).fontWeight), letterSpacing: draft.buttonZone.letterSpacing ?? recommendedButtonTypography(button_font).letterSpacing } })} onApplyButtonLook={applyButtonLook} onResetButtonOverrides={resetButtonOverrides} />}
           {panel === "background" && <BackgroundControls draft={draft} tab={bgTab} onTab={setBgTab} onChange={change} onFile={(file) => openImageEditor("background", file)} onAdjust={() => openImageEditor("background")} hasImage={Boolean(backgroundImage)} />}
@@ -765,6 +800,7 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
 
       {imageEditor && <ImageAdjustDialog key={`${imageEditor.kind}-${imageEditor.src}`} kind={imageEditor.kind} src={imageEditor.src} shape={imageEditor.kind === "logo" ? draft.logoStyle.shape : undefined} coverMode={imageEditor.kind === "cover" && draft.business_type === "contact" ? "banner" : draft.coverStyle.mode} contactCoverSize={imageEditor.kind === "cover" && draft.business_type === "contact" ? draft.coverStyle.size : undefined} contactFrameWidth={imageEditor.contactFrameWidth || (draft.buttonZone.contactLayout === "document" ? 384 : 402)} contactCoverOverlay={imageEditor.kind === "cover" && draft.business_type === "contact" ? imageEditor.file && !coverImage ? 0 : draft.coverStyle.overlay : undefined} initial={imageEditor.initial} onApply={applyImageEditor} onCancel={cancelImageEditor} />}
       {restoreDesignOpen && <div className="v2-modal-backdrop"><div className="v2-modal" role="dialog" aria-modal="true" aria-labelledby="v2-restore-title"><div className="v2-modal-icon">↩</div><h2 id="v2-restore-title">Restaurar diseño de {suggestedPreset(draft.buttonZone.templateId).name}</h2><p>Vuelve al fondo, encabezado, logo, textos y botones recomendados. Quita colores propios de cada botón. Conserva textos, enlaces, íconos elegidos e imágenes subidas; las fotos de fondo y portada quedan ocultas, no borradas.</p><button type="button" className="v2-save" onClick={() => { applyPreset(suggestedPreset(draft.buttonZone.templateId).id, true); setRestoreDesignOpen(false); }}>Restaurar diseño</button><button type="button" className="v2-ghost" onClick={() => setRestoreDesignOpen(false)}>Cancelar</button></div></div>}
+      {pendingContactLook && <div className="v2-modal-backdrop"><div className="v2-modal v2-contact-template-confirm" role="dialog" aria-modal="true" aria-labelledby="v2-contact-template-title"><div className="v2-modal-icon">↩</div><h2 id="v2-contact-template-title">¿Aplicar {CONTACT_LOOKS.find((look) => look.id === pendingContactLook.id)?.name}?</h2><p>Se reemplazarán tus ajustes de diseño. Tus datos, enlaces y fotos se conservan.{pendingContactLook.hidesBackgroundPhoto ? " La foto del fondo exterior quedará guardada, pero dejará de mostrarse." : ""} Podés deshacer el cambio.</p><button type="button" className="v2-save" onClick={() => { applyContactLook(pendingContactLook.id); setPendingContactLook(null); }}>Aplicar plantilla</button><button type="button" className="v2-ghost" onClick={() => setPendingContactLook(null)}>Cancelar</button></div></div>}
       {deletedButton && <div className="v2-delete-notice"><span role="status">Botón eliminado: <b>{deletedButton.button.title}</b></span><button ref={restoreButtonRef} type="button" onClick={restoreDeletedButton}>Deshacer</button><button type="button" aria-label="Cerrar aviso" onClick={() => setDeletedButton(null)}>×</button></div>}
       {leaveOpen && <div className="v2-modal-backdrop"><div className="v2-modal"><div className="v2-modal-icon">!</div><h2>Tenés cambios sin guardar</h2><p>Si salís ahora, vas a perder los últimos cambios de diseño.</p><button className="v2-save" form="v2-save" name="return_to" value="/admin">Guardar y salir</button><Link href="/admin" className="v2-danger">Salir sin guardar</Link><button className="v2-ghost" onClick={() => { setLeaveOpen(false); setPreview(false); }}>Seguir editando</button></div></div>}
     </main>

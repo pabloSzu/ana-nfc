@@ -360,6 +360,10 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; letter-spacing: -0.01e
 .public.is-contact .landing-identity-block h1 {
   display: block !important;
   margin: 0 !important;
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
   text-align: center !important;
   text-transform: none !important;
   line-height: 1.12;
@@ -460,7 +464,7 @@ a.contact-detail-row:hover { background: color-mix(in srgb, var(--contact-accent
 .public.contact-layout-document .landing-eyebrow {
   grid-column: 2;
   grid-row: 2;
-  margin: 2px 0 !important;
+  margin: 8px 0 2px !important;
   color: var(--contact-role-color) !important;
   text-align: left;
 }
@@ -637,9 +641,9 @@ a.contact-detail-row:hover { background: color-mix(in srgb, var(--contact-accent
 .public.is-contact.contact-theme-editorial .landing-identity-block h1,
 .public.is-contact.contact-theme-editorial .landing-eyebrow,
 .public.is-contact.contact-theme-editorial .landing-desc { text-align: left !important; }
-.public.is-contact.contact-theme-editorial .landing-identity-block h1 { letter-spacing: -.045em; line-height: .98; }
-.public.is-contact.contact-theme-editorial .landing-eyebrow { margin: 0 0 9px !important; letter-spacing: .13em; text-transform: uppercase; }
-.public.is-contact.contact-theme-editorial .landing-desc { max-width: 300px; margin: 10px 0 0 !important; }
+.public.is-contact.contact-theme-editorial .landing-identity-block h1 { letter-spacing: -.045em; line-height: 1.12; }
+.public.is-contact.contact-theme-editorial .landing-eyebrow { margin: 9px 0 2px !important; letter-spacing: .13em; text-transform: uppercase; }
+.public.is-contact.contact-theme-editorial .landing-desc { max-width: 300px; margin: 2px 0 0 !important; }
 .public.is-contact.contact-theme-editorial .contact-primary-actions,
 .public.is-contact.contact-theme-editorial .public-actions { padding-left: 24px; padding-right: 24px; }
 .public.is-contact.contact-theme-editorial.contact-presentation-shortcuts .contact-quick-actions a,

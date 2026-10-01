@@ -39,6 +39,7 @@
 .is-contact-editor .v2-contact-current-look-copy strong { color: #493dc4; font-size: 13px; }
 .is-contact-editor .v2-contact-current-look-copy small { color: #70778b; font-size: 11px; }
 .is-contact-editor .v2-contact-look-change { margin-left: auto; color: #5546c2; font-size: 11px; font-weight: 800; white-space: nowrap; }
+.v2-contact-template-confirm p { text-align: left; }
 .is-contact-editor .v2-contact-mode-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .is-contact-editor .v2-contact-mode-choices > button { display: grid; align-content: start; gap: 5px; min-width: 0; padding: 9px; border: 1px solid #e1e0e9; border-radius: 11px; background: #fff; color: #303241; text-align: left; cursor: pointer; }
 .is-contact-editor .v2-contact-mode-choices > button.active { border-color: #6657e8; background: #f6f4ff; box-shadow: inset 0 0 0 1px #6657e8; }
