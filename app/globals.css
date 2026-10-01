@@ -400,10 +400,15 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; letter-spacing: -0.01e
 .contact-quick-actions a svg { width: 20px; height: 20px; }
 .contact-quick-actions a b { font-size: 11px; font-weight: 750; }
 .contact-quick-actions a small { display: none; }
-.contact-extra-details { display: grid; gap: 7px; margin-top: 12px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--contact-ink) 13%, transparent); border-radius: 12px; color: var(--contact-ink); text-align: left; }
-.contact-extra-details > div { display: grid; gap: 2px; min-width: 0; }
-.contact-extra-details span { font-size: 10px; font-weight: 700; opacity: .65; }
-.contact-extra-details strong { font-size: 12px; font-weight: 600; overflow-wrap: anywhere; }
+.contact-extra-details { position: relative; display: grid; margin-top: 12px; overflow: hidden; border: 1px solid color-mix(in srgb, var(--contact-ink) 13%, transparent); border-radius: 14px; background: var(--contact-surface); color: var(--contact-ink); text-align: left; }
+.contact-detail-row { display: grid; grid-template-columns: 36px minmax(0, 1fr); align-items: center; gap: 12px; min-width: 0; min-height: 64px; padding: 10px 12px; color: inherit; text-decoration: none; }
+.contact-detail-row + .contact-detail-row { border-top: 1px solid color-mix(in srgb, var(--contact-ink) 12%, transparent); }
+a.contact-detail-row:hover { background: color-mix(in srgb, var(--contact-accent) 7%, var(--contact-surface)); }
+.contact-detail-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; background: color-mix(in srgb, var(--contact-accent) 12%, var(--contact-surface)); color: var(--contact-accent); }
+.contact-detail-icon svg { width: 18px; height: 18px; }
+.contact-detail-copy { display: grid; gap: 3px; min-width: 0; }
+.contact-detail-copy > span { font-size: 11px; font-weight: 750; opacity: .65; }
+.contact-detail-copy strong { font-size: 12px; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
 .contact-quick-empty { cursor: pointer; color: var(--contact-ink); font: 750 11px/1.35 Inter, sans-serif; }
 .contact-contact-heading { display: none; }
 .public.is-contact .public-actions { padding: 4px 12px 18px; }
@@ -481,7 +486,8 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; letter-spacing: -0.01e
   padding: 20px 0 0;
   border-top: 1px solid #e7e9ee;
 }
-.public.contact-layout-document .contact-contact-heading {
+.public.contact-layout-document .contact-contact-heading,
+.public.contact-presentation-details .contact-contact-heading {
   display: block;
   margin: 0 0 7px;
   color: var(--contact-ink);
@@ -489,12 +495,15 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; letter-spacing: -0.01e
   font-weight: 800;
   letter-spacing: -.02em;
 }
-.public.contact-layout-document .contact-quick-actions {
+.public.is-contact.contact-presentation-shortcuts .contact-contact-heading { display: block; margin: 0 0 9px; color: var(--contact-ink); font-size: 17px; font-weight: 800; letter-spacing: -.02em; text-align: center; }
+.public.is-contact.contact-presentation-shortcuts .contact-contact-heading + .contact-quick-actions,
+.public.is-contact.contact-presentation-shortcuts .contact-contact-heading + .contact-extra-details { margin-top: 0; }
+.public.contact-presentation-details .contact-quick-actions {
   flex-direction: column;
   gap: 0;
   margin: 0;
 }
-.public.contact-layout-document .contact-quick-actions a {
+.public.contact-presentation-details .contact-quick-actions a {
   min-height: 63px;
   display: grid;
   grid-template-columns: 36px minmax(0, 1fr);
@@ -511,33 +520,40 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; letter-spacing: -0.01e
   box-shadow: none;
   text-align: left;
 }
-.public.contact-layout-document .contact-quick-actions a span {
+.public.contact-presentation-details .contact-quick-actions a span {
   grid-column: 1;
   grid-row: 1 / 3;
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: color-mix(in srgb, var(--contact-accent) 12%, white);
+  background: color-mix(in srgb, var(--contact-accent) 12%, var(--contact-surface));
   color: var(--contact-accent);
 }
-.public.contact-layout-document .contact-quick-actions a b {
+.public.contact-presentation-details .contact-quick-actions a b {
   grid-column: 2;
   grid-row: 1;
   font-size: 12px;
 }
-.public.contact-layout-document .contact-quick-actions a small {
+.public.contact-presentation-details .contact-quick-actions a small {
   display: block;
   grid-column: 2;
   grid-row: 2;
   min-width: 0;
-  overflow: hidden;
+  overflow: visible;
   color: var(--contact-ink);
   opacity: .7;
   font-size: 12px;
   font-weight: 500;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
+.public.contact-presentation-details .contact-quick-actions a { flex: 0 0 auto; border-radius: 0; }
+.public.contact-presentation-details .contact-quick-actions a:hover { transform: none; background: color-mix(in srgb, var(--contact-accent) 6%, var(--contact-surface)); }
+.public.contact-presentation-details .contact-extra-details { margin: 0; border: 0; border-radius: 0; background: transparent; }
+.public.contact-presentation-details .contact-detail-row { padding: 9px 0; border-top: 0; border-bottom: 1px solid color-mix(in srgb, var(--contact-ink) 13%, transparent); border-radius: 0; }
+.public.contact-presentation-details .contact-detail-copy > span { font-size: 12px; opacity: 1; }
+.public.contact-presentation-details .contact-detail-copy strong { font-weight: 500; opacity: .7; }
 .public.contact-layout-document .contact-quick-empty { min-height: 58px; }
 .public.contact-layout-document .contact-primary-actions .landing-save-contact {
   min-height: 49px;
@@ -625,7 +641,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; letter-spacing: -0.01e
 .public.is-contact.contact-theme-editorial .landing-desc { max-width: 300px; margin: 10px 0 0 !important; }
 .public.is-contact.contact-theme-editorial .contact-primary-actions,
 .public.is-contact.contact-theme-editorial .public-actions { padding-left: 24px; padding-right: 24px; }
-.public.is-contact.contact-theme-editorial .contact-quick-actions a,
+.public.is-contact.contact-theme-editorial.contact-presentation-shortcuts .contact-quick-actions a,
 .public.is-contact.contact-theme-editorial .contact-feature-card { border-radius: 7px !important; box-shadow: none !important; }
 .public.is-contact.contact-theme-professional.contact-layout-document > .public-inner {
   padding: 0 22px 24px;
@@ -687,6 +703,7 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; letter-spacing: -0.01e
 .public.is-contact.contact-custom-surface.contact-theme-essential > .public-inner,
 .public.is-contact.contact-custom-surface.contact-theme-editorial > .public-inner,
 .public.is-contact.contact-custom-surface.contact-theme-professional > .public-inner { background: var(--contact-surface); }
+
 .landing-editor-icon { position: relative; z-index: 2; width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.42); border-radius: 12px; background: rgba(17,12,54,.27); box-shadow: inset 0 1px 0 rgba(255,255,255,.24); color: #fff6a8; font-size: 18px; }
 .landing-editor-copy { position: relative; z-index: 2; min-width: 0; display: grid; line-height: 1.15; text-shadow: 0 1px 2px rgba(20,12,60,.42); }
 .landing-editor-copy strong { color: #fff; font-size: 14px; font-weight: 900; letter-spacing: -.01em; }

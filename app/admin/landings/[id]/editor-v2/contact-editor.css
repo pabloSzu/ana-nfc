@@ -37,6 +37,23 @@
 .is-contact-editor .v2-contact-current-look-copy strong { color: #2c3040; font-size: 13px; }
 .is-contact-editor .v2-contact-current-look-copy small { color: #70778b; font-size: 11px; }
 .is-contact-editor .v2-contact-look-change { margin-left: auto; color: #5546c2; font-size: 11px; font-weight: 800; white-space: nowrap; }
+.is-contact-editor .v2-contact-mode-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.is-contact-editor .v2-contact-mode-choices > button { display: grid; align-content: start; gap: 5px; min-width: 0; padding: 9px; border: 1px solid #e1e0e9; border-radius: 11px; background: #fff; color: #303241; text-align: left; cursor: pointer; }
+.is-contact-editor .v2-contact-mode-choices > button.active { border-color: #6657e8; background: #f6f4ff; box-shadow: inset 0 0 0 1px #6657e8; }
+.is-contact-editor .v2-contact-mode-choices > button:hover { border-color: #9d92ed; }
+.is-contact-editor .v2-contact-mode-choices strong { font-size: 12px; }
+.is-contact-editor .v2-contact-mode-choices small { color: #747887; font-size: 10px; line-height: 1.25; }
+.is-contact-editor .v2-contact-mode-choices > button.active small { color: #5749d5; }
+.is-contact-editor .v2-contact-mode-preview { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; height: 48px; padding: 6px; border-radius: 7px; background: #f1f0f6; }
+.is-contact-editor .v2-contact-mode-preview.is-shortcuts i { position: relative; width: 32px; height: 32px; border: 1px solid #dbd8e7; border-radius: 7px; background: #fff; }
+.is-contact-editor .v2-contact-mode-preview.is-shortcuts i::before { content: ""; position: absolute; top: 6px; left: 11px; width: 8px; height: 8px; border-radius: 50%; background: #8f84d4; }
+.is-contact-editor .v2-contact-mode-preview.is-shortcuts i::after { content: ""; position: absolute; bottom: 6px; left: 7px; width: 16px; height: 3px; border-radius: 3px; background: #b9b4d5; }
+.is-contact-editor .v2-contact-mode-preview.is-details { display: grid; gap: 2px; }
+.is-contact-editor .v2-contact-mode-preview.is-details i { position: relative; width: 100%; height: 10px; border-bottom: 1px solid #d9d7e2; background: linear-gradient(90deg, transparent 18px, #b9b4d5 18px 72%, transparent 72%); }
+.is-contact-editor .v2-contact-mode-preview.is-details i::before { content: ""; position: absolute; top: 2px; left: 3px; width: 7px; height: 7px; border-radius: 2px; background: #8f84d4; }
+.is-contact-editor .v2-contact-mode-reset { align-self: start; padding: 0; border: 0; background: transparent; color: #5749d5; font: 750 11px Inter, sans-serif; text-align: left; cursor: pointer; }
+.is-contact-editor .v2-contact-heading-controls { display: grid; gap: 8px; margin-top: 4px; padding-top: 12px; border-top: 1px solid #e8e6ef; }
+.is-contact-editor .v2-contact-heading-controls > span { color: #303241; font-size: 12px; font-weight: 800; }
 .is-contact-editor .v2-contact-publish-status { display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid #e4e2ec; border-radius: 12px; background: #fff; }
 .is-contact-editor .v2-contact-publish-status > i { width: 10px; height: 10px; flex: 0 0 10px; border-radius: 50%; background: #b7bac4; }
 .is-contact-editor .v2-contact-publish-status > i.is-online { background: #32a871; }

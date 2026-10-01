@@ -719,7 +719,7 @@ export default function EditorV2({ landing, initialButtons, saveAction, publishA
           {draft.business_type === "contact" && panel === "templates" && <button type="button" className="v2-ghost v2-contact-return" onClick={() => setPanel("contact-design")}>← Volver a Diseño</button>}
           {draft.business_type === "contact" && (panel === "contact-name" || panel === "contact-role" || panel === "contact-company") && <button type="button" className="v2-ghost v2-contact-return" onClick={() => setPanel("contact")}>← Volver a Contenido</button>}
           {panel === "templates" && (draft.business_type === "contact" ? <ContactLooks selected={draft.buttonZone.contactTheme || "classic"} onApply={applyContactLook} /> : <Templates selected={draft.buttonZone.templateId} onApply={(id) => applyPreset(id)} onRestore={() => setRestoreDesignOpen(true)} />)}
-          {panel === "contact-design" && <ContactDesignControls draft={draft} onChange={change} onBackground={() => selectPanel("background")} onTemplates={() => selectPanel("templates")} />}
+          {panel === "contact-design" && <ContactDesignControls draft={draft} buttons={buttons} onChange={change} onBackground={() => selectPanel("background")} onTemplates={() => selectPanel("templates")} />}
           {panel === "buttons" && <ButtonDesign draft={draft} buttons={buttons} backgroundImage={backgroundImage} onZone={changeZone} onFont={(button_font) => change({ button_font, buttonZone: { ...draft.buttonZone, fontWeight: resolveFontWeight(button_font, draft.buttonZone.fontWeight ?? recommendedButtonTypography(button_font).fontWeight), letterSpacing: draft.buttonZone.letterSpacing ?? recommendedButtonTypography(button_font).letterSpacing } })} onApplyButtonLook={applyButtonLook} onResetButtonOverrides={resetButtonOverrides} />}
           {panel === "background" && <BackgroundControls draft={draft} tab={bgTab} onTab={setBgTab} onChange={change} onFile={(file) => openImageEditor("background", file)} onAdjust={() => openImageEditor("background")} hasImage={Boolean(backgroundImage)} />}
           {panel === "cover" && <CoverControls draft={draft} coverImage={coverImage} onChange={change} onCoverFile={(file) => openImageEditor("cover", file)} onAdjustCover={() => openImageEditor("cover")} onRemoveCover={removeContactCover} />}
@@ -1286,8 +1286,12 @@ function SettingsControls({ draft, buttons, dirty, onTypeChange, onBrandingChang
   </div>;
 }
 
-function ContactDesignControls({ draft, onChange, onBackground, onTemplates }: { draft: LandingDraft; onChange: (patch: Partial<LandingDraft>) => void; onBackground: () => void; onTemplates: () => void }) {
+function ContactDesignControls({ draft, buttons, onChange, onBackground, onTemplates }: { draft: LandingDraft; buttons: ButtonItem[]; onChange: (patch: Partial<LandingDraft>) => void; onBackground: () => void; onTemplates: () => void }) {
   const layout = draft.buttonZone.contactLayout === "document" ? "document" : "card";
+  const recommendedActionStyle = layout === "document" ? "details" : "shortcuts";
+  const actionStyle = draft.buttonZone.contactActionStyle;
+  const selectedActionStyle = actionStyle || recommendedActionStyle;
+  const hasContactData = buttons.some((button) => ["phone", "email", "whatsapp"].includes(button.type) && button.url.trim()) || Boolean(draft.buttonZone.contactSecondPhone || draft.buttonZone.contactAddress);
   const theme = draft.buttonZone.contactTheme || "classic";
   const selectedLook = CONTACT_LOOKS.find((look) => look.id === theme);
   const defaultSurface = theme === "essential" ? "#faf7ef" : theme === "editorial" ? "#f3efea" : theme === "professional" ? "#ffffff" : theme === "noir" ? "#242b36" : theme === "paper" ? "#f8f2e6" : theme === "linen" ? "#f3f0e5" : layout === "document" || contrastTextColor(draft.titleStyle.color) === "#ffffff" ? "#ffffff" : "#111422";
@@ -1300,6 +1304,19 @@ function ContactDesignControls({ draft, onChange, onBackground, onTemplates }: {
       <ColorField label="Tarjeta" value={draft.buttonZone.contactSurfaceColor || defaultSurface} onChange={(contactSurfaceColor) => onChange({ buttonZone: { ...draft.buttonZone, contactSurfaceColor } })} />
       <p className="v2-help" style={{ margin: 0 }}>El color de cada texto se cambia junto al campo Nombre, Cargo o Empresa.</p>
       {draft.buttonZone.contactSurfaceColor && <button type="button" className="v2-ghost" onClick={() => onChange({ buttonZone: { ...draft.buttonZone, contactSurfaceColor: undefined } })}>Usar color recomendado de la plantilla</button>}
+    </EditorSection>
+    <EditorSection title="Cómo mostrar el contacto" tone="blue">
+      <div className="v2-contact-mode-choices" role="group" aria-label="Presentación de los datos de contacto">
+        {([{ id: "shortcuts", label: "Atajos", note: "Íconos destacados" }, { id: "details", label: "Lista", note: "Datos en filas" }] as const).map((option) => <button type="button" key={option.id} className={selectedActionStyle === option.id ? "active" : ""} aria-pressed={selectedActionStyle === option.id} onClick={() => onChange({ buttonZone: { ...draft.buttonZone, contactActionStyle: option.id } })}><span className={`v2-contact-mode-preview is-${option.id}`} aria-hidden="true"><i/><i/><i/></span><strong>{option.label}</strong><small>{option.id === recommendedActionStyle ? "Recomendado por la plantilla" : option.note}</small></button>)}
+      </div>
+      <p className="v2-help" style={{ margin: 0 }}>{hasContactData ? "Atajos destaca teléfono, email y WhatsApp. Lista muestra los datos completos en filas." : "Agregá teléfono, email o WhatsApp en Contenido para ver el resultado en tu tarjeta."}</p>
+      {actionStyle && <button type="button" className="v2-contact-mode-reset" onClick={() => onChange({ buttonZone: { ...draft.buttonZone, contactActionStyle: undefined } })}>Volver al estilo recomendado de la plantilla</button>}
+      <div className="v2-contact-heading-controls">
+        <span>Título de la sección</span>
+        <div className="v2-segment" aria-label="Mostrar título de la sección"><button type="button" className={draft.buttonZone.contactSectionTitleVisible !== false ? "active" : ""} aria-pressed={draft.buttonZone.contactSectionTitleVisible !== false} onClick={() => onChange({ buttonZone: { ...draft.buttonZone, contactSectionTitleVisible: true } })}>Mostrar</button><button type="button" className={draft.buttonZone.contactSectionTitleVisible === false ? "active" : ""} aria-pressed={draft.buttonZone.contactSectionTitleVisible === false} onClick={() => onChange({ buttonZone: { ...draft.buttonZone, contactSectionTitleVisible: false } })}>Ocultar</button></div>
+        {draft.buttonZone.contactSectionTitleVisible !== false && <label>Texto del título<input value={draft.buttonZone.contactSectionTitle || ""} maxLength={50} placeholder="Contacto" onChange={(event) => onChange({ buttonZone: { ...draft.buttonZone, contactSectionTitle: event.target.value } })} /></label>}
+        {draft.buttonZone.contactSectionTitleVisible !== false && <p className="v2-help" style={{ margin: 0 }}>Si el texto queda vacío, se muestra “Contacto”.</p>}
+      </div>
     </EditorSection>
     <EditorSection title="Botón Guardar contacto" tone="green">
       <p className="v2-help" style={{ margin: 0 }}>Elegí cómo destaca la acción principal. La forma y la tipografía siguen el diseño de la tarjeta.</p>

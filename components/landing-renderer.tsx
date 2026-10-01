@@ -1,5 +1,5 @@
 import LandingSeparator from "@/components/landing-separator";
-import { FiTrash2, FiSliders, FiArrowUpRight, FiUser } from "react-icons/fi";
+import { FiTrash2, FiSliders, FiArrowUpRight, FiUser, FiPhone, FiMapPin } from "react-icons/fi";
 import ContactSaveIcon from "@/components/contact-save-icon";
 import BioNFCLogo from "@/components/bionfc-logo";
 import {
@@ -152,6 +152,7 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
   const contentActions = isContact ? shownActions.filter((action) => !contactQuickIds.has(action.id) && (!(["phone", "email", "whatsapp"].includes(action.type)) || Boolean(action.url))) : shownActions;
   const zone = parseButtonZone(landing.button_style);
   const isDocument = isContact && zone.contactLayout === "document";
+  const contactActionStyle = zone.contactActionStyle || (isDocument ? "details" : "shortcuts");
   // The document layout centers the name beside the avatar when there is no role/company.
   // Empty editor placeholders must not create extra grid rows that the published card lacks.
   const showEyebrow = Boolean(title.eyebrow) || Boolean(edit && !isDocument);
@@ -262,14 +263,20 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
     {saveContactContent}
   </a>);
   const quickContactActions = (contactQuickActions.length > 0 || edit) && <div className="contact-quick-actions" aria-label="Contactar">
-    {contactQuickActions.map((action) => <a key={action.id} href={actionHref(action)} className={edit ? "editor-hit" : undefined} data-tag={edit ? "Editar contacto" : undefined} onClick={edit ? (event) => { event.preventDefault(); edit.onSelectContact(); } : undefined} style={{ color: contactInk }}><span><ActionTypeIcon type={action.type} /></span><b>{action.type === "phone" ? isDocument ? "Teléfono" : "Llamar" : action.type === "email" ? "Email" : "WhatsApp"}</b><small>{action.url}</small></a>)}
+    {contactQuickActions.map((action) => <a key={action.id} href={actionHref(action)} className={edit ? "editor-hit" : undefined} data-tag={edit ? "Editar contacto" : undefined} onClick={edit ? (event) => { event.preventDefault(); edit.onSelectContact(); } : undefined} style={{ color: contactInk }}><span><ActionTypeIcon type={action.type} /></span><b>{action.type === "phone" ? contactActionStyle === "details" ? "Teléfono" : "Llamar" : action.type === "email" ? "Email" : "WhatsApp"}</b><small>{action.url}</small></a>)}
     {edit && contactQuickActions.length === 0 && <button type="button" className="contact-quick-empty" onClick={edit.onSelectContact}>＋ Agregar teléfono, email o WhatsApp</button>}
   </div>;
-  const hasExtraContactDetails = isContact && Boolean(zone.contactSecondPhone || zone.contactAddress);
+  const secondPhoneNumber = (zone.contactSecondPhone || "").replace(/[^\d+]/g, "");
+  const extraContactDetails = isContact ? [
+    ...(zone.contactSecondPhone ? [{ type: "phone", label: "Otro teléfono", value: zone.contactSecondPhone, href: secondPhoneNumber.replace(/\D/g, "").length >= 3 ? `tel:${secondPhoneNumber}` : "" }] : []),
+    ...(zone.contactAddress ? [{ type: "address", label: "Dirección", value: zone.contactAddress, href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(zone.contactAddress)}` }] : []),
+  ] : [];
+  const hasExtraContactDetails = extraContactDetails.length > 0;
+  const showContactHeading = zone.contactSectionTitleVisible !== false && (contactQuickActions.length > 0 || hasExtraContactDetails || Boolean(edit));
   const contactLinksMargin = contentActions.length > 0 ? "var(--contact-section-space)" : 8;
 
   return (
-    <main className={`public${isContact ? ` is-contact contact-theme-${contactTheme} contact-density-${zone.contactDensity || "balanced"}${zone.contactSurfaceColor ? " contact-custom-surface" : ""}${zone.contactCoverColor ? " contact-custom-cover" : ""}` : ""}${isDocument ? " contact-layout-document" : ""}${zone.showBranding !== false ? " has-branding" : ""}${landing.background_type === "image" && landing.background_image_url ? " public-bg-image" : ""}`} style={{ position: "relative", overflow: "clip", background: externalPhotoBackground && landing.background_type === "image" ? "transparent" : landing.background_color || "#f7f5f0", paddingTop: isContact ? 24 : distribution.top, "--landing-top": `${distribution.top}px`, "--landing-logo-gap": `${distribution.logoGap}px`, "--contact-avatar-size": `${avatarSize}px`, "--contact-accent": primary, "--contact-ink": contactInk, "--contact-surface": contactSurface, "--contact-cover-color": zone.contactCoverColor || primary, "--contact-role-color": title.eyebrowColor || title.color, "--contact-company-color": subtitle.color } as CSSProperties}>
+    <main className={`public${isContact ? ` is-contact contact-theme-${contactTheme} contact-density-${zone.contactDensity || "balanced"} contact-presentation-${contactActionStyle}${zone.contactSurfaceColor ? " contact-custom-surface" : ""}${zone.contactCoverColor ? " contact-custom-cover" : ""}` : ""}${isDocument ? " contact-layout-document" : ""}${zone.showBranding !== false ? " has-branding" : ""}${landing.background_type === "image" && landing.background_image_url ? " public-bg-image" : ""}`} style={{ position: "relative", overflow: "clip", background: externalPhotoBackground && landing.background_type === "image" ? "transparent" : landing.background_color || "#f7f5f0", paddingTop: isContact ? 24 : distribution.top, "--landing-top": `${distribution.top}px`, "--landing-logo-gap": `${distribution.logoGap}px`, "--contact-avatar-size": `${avatarSize}px`, "--contact-accent": primary, "--contact-ink": contactInk, "--contact-surface": contactSurface, "--contact-cover-color": zone.contactCoverColor || primary, "--contact-role-color": title.eyebrowColor || title.color, "--contact-company-color": subtitle.color } as CSSProperties}>
       <FontLinks ids={fontIds} />
       {landing.background_type === "image" ? !externalPhotoBackground && <div className="public-bg-layer public-photo-track" aria-hidden="true"><LandingPhotoBackground landing={landing} /></div> : <><div className="public-bg-layer" style={{ position: "absolute", inset: 0, zIndex: 0, ...bgLayerStyle }} /><div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none", backgroundImage: `linear-gradient(180deg, rgba(4,8,10,${(bgTint * 0.55).toFixed(3)}), rgba(5,8,11,${bgTint}))` }} /></>}
       {edit && (
@@ -330,11 +337,13 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
         </div>}
         {isContact && zone.contactBio && <section className={`contact-about${edit ? " editor-hit" : ""}`} aria-label="Sobre mí" data-tag={edit ? "Sobre mí" : undefined} onClick={edit?.onSelectContact}><span>SOBRE MÍ</span><p>{zone.contactBio}</p></section>}
         {isContact && <div className="contact-primary-actions">
-          {(contactQuickActions.length > 0 || hasExtraContactDetails || edit) && <h2 className="contact-contact-heading">Contacto</h2>}
+          {showContactHeading && <h2 className={`contact-contact-heading${edit ? " editor-hit" : ""}`} data-tag={edit ? "Título del contacto" : undefined} onClick={edit?.onSelectContactDesign}>{zone.contactSectionTitle || "Contacto"}</h2>}
           {quickContactActions}
           {hasExtraContactDetails && <div className={`contact-extra-details${edit ? " editor-hit" : ""}`} data-tag={edit ? "Más datos de contacto" : undefined} onClick={edit?.onSelectContact}>
-            {zone.contactSecondPhone && <div><span>Otro teléfono</span><strong>{zone.contactSecondPhone}</strong></div>}
-            {zone.contactAddress && <div><span>Dirección</span><strong>{zone.contactAddress}</strong></div>}
+            {extraContactDetails.map((detail) => {
+              const content = <><span className="contact-detail-icon" aria-hidden="true">{detail.type === "phone" ? <FiPhone /> : <FiMapPin />}</span><span className="contact-detail-copy"><span>{detail.label}</span><strong>{detail.value}</strong></span></>;
+              return detail.href ? <a className="contact-detail-row" key={detail.type} href={detail.href} target={detail.type === "address" ? "_blank" : undefined} rel={detail.type === "address" ? "noopener noreferrer" : undefined} onClick={edit ? (event) => event.preventDefault() : undefined}>{content}</a> : <div className="contact-detail-row" key={detail.type}>{content}</div>;
+            })}
           </div>}
           {saveContactAction}
         </div>}

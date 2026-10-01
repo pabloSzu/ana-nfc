@@ -206,6 +206,10 @@ export type ButtonZoneStyle = {
   contactCoverColor?: string;
   contactCoverPattern?: "original" | "solid" | "aura" | "cartoon" | "dots" | "grid";
   contactDensity?: "compact" | "balanced" | "airy";
+  // Absent means the contact template decides: visual card uses shortcuts, document uses details.
+  contactActionStyle?: "shortcuts" | "details";
+  contactSectionTitle?: string;
+  contactSectionTitleVisible?: boolean;
   contactBio?: string;
   contactSecondPhone?: string;
   contactAddress?: string;
@@ -275,6 +279,9 @@ export function parseButtonZone(raw: unknown): ButtonZoneStyle {
     contactCoverColor: typeof parsed.contactCoverColor === "string" && /^#[0-9a-f]{6}$/i.test(parsed.contactCoverColor) ? parsed.contactCoverColor : undefined,
     contactCoverPattern: parsed.contactCoverPattern === "solid" || parsed.contactCoverPattern === "aura" || parsed.contactCoverPattern === "cartoon" || parsed.contactCoverPattern === "dots" || parsed.contactCoverPattern === "grid" ? parsed.contactCoverPattern : "original",
     contactDensity: parsed.contactDensity === "compact" || parsed.contactDensity === "airy" ? parsed.contactDensity : "balanced",
+    contactActionStyle: parsed.contactActionStyle === "shortcuts" || parsed.contactActionStyle === "details" ? parsed.contactActionStyle : undefined,
+    contactSectionTitle: typeof parsed.contactSectionTitle === "string" ? parsed.contactSectionTitle.trim().slice(0, 50) : "",
+    contactSectionTitleVisible: parsed.contactSectionTitleVisible !== false,
     contactBio: typeof parsed.contactBio === "string" ? parsed.contactBio.trim().slice(0, 360) : "",
     contactSecondPhone: typeof parsed.contactSecondPhone === "string" ? parsed.contactSecondPhone.trim().slice(0, 50) : "",
     contactAddress: typeof parsed.contactAddress === "string" ? parsed.contactAddress.trim().slice(0, 200) : "",
