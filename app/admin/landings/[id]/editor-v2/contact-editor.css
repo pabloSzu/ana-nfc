@@ -108,6 +108,7 @@
 .is-contact-editor .v2-contact-cover-pattern-grid button.active { border-color: #6657e8; box-shadow: 0 0 0 2px #6657e82b; }
 .is-contact-editor .v2-contact-cover-pattern-grid button:focus-visible { outline: 2px solid #6657e8; outline-offset: 2px; }
 .is-contact-editor .v2-contact-cover-pattern-grid strong { padding-left: 4px; font-size: 12px; font-weight: 800; }
+.is-contact-editor .v2-contact-cover-pattern-grid .v2-contact-cover-recommended { justify-self: start; margin-left: 4px; padding: 3px 6px; border-radius: 999px; background: #f0edff; color: #5845c6; font-size: 10px; font-weight: 800; }
 .is-contact-editor .v2-contact-cover-pattern-swatch { position: relative; display: block; height: 72px; overflow: hidden; border-radius: 8px; }
 .is-contact-editor .v2-contact-cover-pattern-swatch::before { content: ""; position: absolute; inset: 0; pointer-events: none; }
 .is-contact-editor .v2-contact-cover-preview { position: relative; display: grid; place-items: center; overflow: hidden; border: 1px solid #e1dfeb; border-radius: 13px; background-color: var(--cover-preview-color); background-image: radial-gradient(circle at 20% 18%, #ffffff55, transparent 38%), linear-gradient(120deg, transparent 40%, #ffffff1c 40% 45%, transparent 45%); color: #fff; text-align: center; font-size: 12px; font-weight: 700; }
@@ -126,12 +127,12 @@
 .is-contact-editor .v2-contact-look .look-avatar { display: grid; place-items: center; color: #32291f; font: 700 16px/1 Inter, sans-serif; }
 .v2-contact-look .look-avatar[data-initials="two"] { font-size: 13px; letter-spacing: -.08em; }
 .v2-contact-look.is-essential .v2-contact-look-art { background: #faf7ef; }
-.v2-contact-look.is-essential .look-cover { background: #d8ddcd; }
+.v2-contact-look.is-essential .look-cover { background-color: #d8ddcd; background-image: linear-gradient(115deg, transparent 38%, #ffffff91 39% 45%, transparent 46% 65%, #3445341c 66% 69%, transparent 70%); }
 .v2-contact-look.is-essential .look-avatar { background: #343d31; border-color: #faf7ef; color: #fff; }
 .v2-contact-look.is-essential .look-name { background: #243028; }
 .v2-contact-look.is-essential .look-action { background: #343d31; }
 .v2-contact-look.is-editorial .v2-contact-look-art { background: #f3efea; }
-.v2-contact-look.is-editorial .look-cover { height: 42px; background: #585a50; }
+.v2-contact-look.is-editorial .look-cover { height: 42px; background-color: #e5ded7; background-image: linear-gradient(90deg, #433b3529 1px, transparent 1px), linear-gradient(0deg, #433b3529 1px, transparent 1px); background-size: 9px 9px; }
 .v2-contact-look.is-editorial .look-avatar { left: auto; right: 12px; top: 30px; background: #46372f; border-color: #f3efea; color: #fff; }
 .v2-contact-look.is-editorial .look-avatar { font-family: Georgia, serif; }
 .v2-contact-look.is-editorial .look-name { left: 11px; right: 40px; top: 64px; background: #433b35; }
@@ -151,14 +152,15 @@
 .v2-contact-look.is-studio .look-line { top: 73px; left: 10px; right: 35px; background: #697aa5; }
 .v2-contact-look.is-studio .look-action { top: 88px; left: 10px; right: 10px; height: 13px; border-radius: 2px; background: #153bb3; }
 .v2-contact-look.is-monogram .v2-contact-look-art { background: #f8f4e9; }
-.v2-contact-look.is-monogram .look-cover { height: 49px; background: #173c30; }
+.v2-contact-look.is-monogram .look-cover { height: 49px; background: linear-gradient(145deg, #173c30, #152d27); }
+.v2-contact-look.is-monogram .look-cover::after { content: ""; position: absolute; inset: 5px; border: 1px solid #8a998d; }
 .v2-contact-look.is-monogram .look-avatar { top: 7px; left: 28px; width: 36px; height: 36px; border: 1px solid #bda46f; border-radius: 0; background: #173c30; }
 .v2-contact-look.is-monogram .look-avatar { color: #e6c98e; font: 18px/1 Georgia, serif; letter-spacing: -.1em; }
 .v2-contact-look.is-monogram .look-name { top: 57px; left: 17px; right: 17px; height: 7px; background: #173c30; }
 .v2-contact-look.is-monogram .look-line { top: 70px; left: 29px; right: 29px; background: #9b855e; }
 .v2-contact-look.is-monogram .look-action { top: 86px; left: 12px; right: 12px; height: 14px; border-radius: 2px; background: #173c30; }
 .v2-contact-look.is-impact .v2-contact-look-art { background: #0d2037; }
-.v2-contact-look.is-impact .look-cover { height: 48px; background: linear-gradient(145deg, #244363, #0d2037); }
+.v2-contact-look.is-impact .look-cover { height: 48px; background-color: #0d2037; background-image: radial-gradient(circle, #c8f24466 1px, transparent 1.35px), linear-gradient(135deg, #ffffff0a, #00000018); background-size: 7px 7px, auto; }
 .v2-contact-look.is-impact .look-avatar { top: 11px; left: 11px; width: 32px; height: 32px; border: 2px solid #c8f244; border-radius: 6px; background: #c8f244; color: #071525; font-size: 13px; }
 .v2-contact-look.is-impact .look-name { top: 57px; left: 11px; right: 22px; height: 8px; background: #f6f8fb; }
 .v2-contact-look.is-impact .look-line { top: 70px; left: 11px; right: 35px; background: #b7c6da; }

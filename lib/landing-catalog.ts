@@ -197,6 +197,8 @@ export function parseDistribution(raw: unknown, layout = "center"): Distribution
     separatorWidth: n(p.separatorWidth, 15, 100, 100), separatorWeight: n(p.separatorWeight, 1, 5, 1), separatorSpace: n(p.separatorSpace, 0, 48, 12) };
 }
 
+export type ContactCoverPattern = "original" | "reflections" | "solid" | "aura" | "cartoon" | "dots" | "grid" | "composition" | "frame";
+
 export type ButtonZoneStyle = {
   distribution?: DistributionStyle;
   // Contact pages share their data and editor, but can present it as a compact card or a document.
@@ -204,7 +206,7 @@ export type ButtonZoneStyle = {
   contactTheme?: "classic" | "paper" | "linen" | "noir" | "photo" | "essential" | "editorial" | "professional" | "studio" | "monogram" | "impact";
   contactSurfaceColor?: string;
   contactCoverColor?: string;
-  contactCoverPattern?: "original" | "solid" | "aura" | "cartoon" | "dots" | "grid";
+  contactCoverPattern?: ContactCoverPattern;
   contactDensity?: "compact" | "balanced" | "airy";
   // Absent means the contact template decides: visual card uses shortcuts, document uses details.
   contactActionStyle?: "shortcuts" | "details";
@@ -260,6 +262,18 @@ export const DEFAULT_BUTTON_ZONE: ButtonZoneStyle = {
   colorModeManual: false,
 };
 
+export function recommendedContactCoverPattern(theme: ButtonZoneStyle["contactTheme"]): ContactCoverPattern {
+  switch (theme) {
+    case "essential": return "reflections";
+    case "editorial": return "grid";
+    case "professional": return "solid";
+    case "studio": return "composition";
+    case "monogram": return "frame";
+    case "impact": return "dots";
+    default: return "original"; // Older contact themes retain their existing cover.
+  }
+}
+
 export function parseButtonZone(raw: unknown): ButtonZoneStyle {
   if (!raw || typeof raw !== "object") return { ...DEFAULT_BUTTON_ZONE };
   const parsed = raw as Partial<ButtonZoneStyle>;
@@ -271,13 +285,15 @@ export function parseButtonZone(raw: unknown): ButtonZoneStyle {
   const shadows: ButtonZoneStyle["shadow"][] = ["none","soft","strong"];
   const layouts: ButtonZoneStyle["layout"][] = ["center","editorial","profile-card","compact","poster"];
   const contentAligns: ButtonZoneStyle["contentAlign"][] = ["center","left"];
+  const contactTheme = (["paper", "linen", "noir", "photo", "essential", "editorial", "professional", "studio", "monogram", "impact"].includes(String(parsed.contactTheme)) ? parsed.contactTheme : "classic") as ButtonZoneStyle["contactTheme"];
+  const contactCoverPattern = (["reflections", "solid", "aura", "cartoon", "dots", "grid", "composition", "frame"] as const).find((pattern) => pattern === parsed.contactCoverPattern) || recommendedContactCoverPattern(contactTheme);
   return {
     ...merged,
     contactLayout: parsed.contactLayout === "document" ? "document" : "card",
-    contactTheme: ["paper", "linen", "noir", "photo", "essential", "editorial", "professional", "studio", "monogram", "impact"].includes(String(parsed.contactTheme)) ? parsed.contactTheme : "classic",
+    contactTheme,
     contactSurfaceColor: typeof parsed.contactSurfaceColor === "string" && /^#[0-9a-f]{6}$/i.test(parsed.contactSurfaceColor) ? parsed.contactSurfaceColor : undefined,
     contactCoverColor: typeof parsed.contactCoverColor === "string" && /^#[0-9a-f]{6}$/i.test(parsed.contactCoverColor) ? parsed.contactCoverColor : undefined,
-    contactCoverPattern: parsed.contactCoverPattern === "solid" || parsed.contactCoverPattern === "aura" || parsed.contactCoverPattern === "cartoon" || parsed.contactCoverPattern === "dots" || parsed.contactCoverPattern === "grid" ? parsed.contactCoverPattern : "original",
+    contactCoverPattern,
     contactDensity: parsed.contactDensity === "compact" || parsed.contactDensity === "airy" ? parsed.contactDensity : "balanced",
     contactActionStyle: parsed.contactActionStyle === "shortcuts" || parsed.contactActionStyle === "details" ? parsed.contactActionStyle : undefined,
     contactSectionTitle: typeof parsed.contactSectionTitle === "string" ? parsed.contactSectionTitle.trim().slice(0, 50) : "",

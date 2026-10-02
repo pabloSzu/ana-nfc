@@ -11,7 +11,7 @@ import LandingRenderer, { LandingPhotoBackground, type LandingEditControls } fro
 import ContactSaveIcon from "@/components/contact-save-icon";
 import ScaledPhoneCanvas from "@/components/scaled-phone-canvas";
 import { compressImage } from "@/lib/compress-image";
-import { headerCardOn, parseDistribution, type DistributionStyle, QUICK_SOCIALS, quickSocialHref, type QuickSocial, AUTO_COLORS, contrastTextColor, getAllActions, parseCoverStyle, parseLogoStyle, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize, resolveTextFont, FONT_OPTIONS, type BackgroundPosition, type ButtonZoneStyle, type CoverStyle, type LogoStyle, type SubtitleStyle, type TitleStyle } from "@/lib/landing-catalog";
+import { headerCardOn, parseDistribution, recommendedContactCoverPattern, type DistributionStyle, QUICK_SOCIALS, quickSocialHref, type QuickSocial, AUTO_COLORS, contrastTextColor, getAllActions, parseCoverStyle, parseLogoStyle, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize, resolveTextFont, FONT_OPTIONS, type BackgroundPosition, type ButtonZoneStyle, type CoverStyle, type LogoStyle, type SubtitleStyle, type TitleStyle } from "@/lib/landing-catalog";
 import FontPicker from "../font-picker";
 import { FontLinks, getFontWeights, LogoInitials, recommendedButtonTypography, resolveFontWeight } from "@/lib/fonts";
 import IconPicker from "../icon-picker";
@@ -62,7 +62,7 @@ function contactLookPatch(draft: LandingDraft, look: ContactLook): Partial<Landi
     background_type: "color",
     background_color: look.backdrop,
     button_font: "minimal",
-    buttonZone: { ...draft.buttonZone, contactTheme: look.id, contactLayout: look.layout, contactDensity: "balanced", contactActionStyle: look.actions, contactSurfaceColor: undefined, contactCoverColor: undefined, contactCoverPattern: "original", contactSaveColor: undefined, contactSaveVariant: "solid" },
+    buttonZone: { ...draft.buttonZone, contactTheme: look.id, contactLayout: look.layout, contactDensity: "balanced", contactActionStyle: look.actions, contactSurfaceColor: undefined, contactCoverColor: undefined, contactCoverPattern: recommendedContactCoverPattern(look.id), contactSaveColor: undefined, contactSaveVariant: "solid" },
     titleStyle: { ...draft.titleStyle, font: look.font, italic: false, size: look.size, color: look.ink, weight: look.weight, letterSpacing: 0, eyebrowFont: look.font, eyebrowItalic: false, eyebrowSize: 14, eyebrowColor: look.secondary, bgMode: "none" },
     subtitleStyle: { ...draft.subtitleStyle, font: "minimal", italic: false, size: 14, color: look.secondary, bgMode: "none" },
     logoStyle: { ...draft.logoStyle, shape: look.shape, initials: look.initials, backgroundMode: "auto", borderWidth: look.id === "impact" ? 4 : 0, borderColor: look.id === "impact" ? look.accent : "#ffffff", shadow: "none", size: look.avatarSize },
@@ -1072,12 +1072,14 @@ const COVER_SIZES: { id: CoverStyle["size"]; label: string }[] = [
   { id: "large", label: "Grande" },
 ];
 const CONTACT_COVER_PATTERNS: { id: NonNullable<ButtonZoneStyle["contactCoverPattern"]>; label: string }[] = [
-  { id: "original", label: "Original" },
+  { id: "reflections", label: "Reflejos" },
   { id: "solid", label: "Liso" },
   { id: "aura", label: "Degradado" },
   { id: "cartoon", label: "Cartoon" },
   { id: "dots", label: "Puntos" },
   { id: "grid", label: "Cuadrícula" },
+  { id: "composition", label: "Composición" },
+  { id: "frame", label: "Marco" },
 ];
 
 type HeaderStyle = "none" | "card" | CoverStyle["mode"];
@@ -1095,8 +1097,12 @@ function CoverControls({ draft, coverImage, onChange, onCoverFile, onAdjustCover
     const hasPhoto = Boolean(coverImage);
     const photoVisible = hasPhoto && style.enabled;
     const customColor = draft.buttonZone.contactCoverColor;
-    const pattern = draft.buttonZone.contactCoverPattern || "original";
     const theme = draft.buttonZone.contactTheme || "classic";
+    const recommendedPattern = recommendedContactCoverPattern(theme);
+    const pattern = draft.buttonZone.contactCoverPattern && draft.buttonZone.contactCoverPattern !== "original" ? draft.buttonZone.contactCoverPattern : recommendedPattern;
+    const availablePatterns = recommendedPattern === "original"
+      ? [{ id: "original" as const, label: "Clásica" }, ...CONTACT_COVER_PATTERNS]
+      : [...CONTACT_COVER_PATTERNS].sort((a, b) => Number(b.id === recommendedPattern) - Number(a.id === recommendedPattern));
     const patternSurface = draft.buttonZone.contactSurfaceColor || CONTACT_LOOKS.find((look) => look.id === theme)?.surface || (theme === "noir" ? "#242b36" : theme === "paper" ? "#f8f2e6" : theme === "linen" ? "#f3f0e5" : "#ffffff");
     const patternPreviewStyle = { "--contact-cover-color": customColor || draft.primary_color || "#1f2937", "--contact-surface": patternSurface, "--contact-ink": contrastTextColor(patternSurface) } as CSSProperties;
     return <div className="v2-fields">
@@ -1113,9 +1119,9 @@ function CoverControls({ draft, coverImage, onChange, onCoverFile, onAdjustCover
         <button type="button" className="v2-ghost" onClick={onRemoveCover}>Quitar foto</button>
       </>}
       {!photoVisible && <EditorSection title="Portada sin foto" tone="blue">
-        <p className="v2-help" style={{ margin: 0 }}>Elegí un acabado. “Original” conserva el de la plantilla; los demás usan sus colores. La foto cargada no se modifica.</p>
+        <p className="v2-help" style={{ margin: 0 }}>Elegí la portada que más te guste. La recomendada combina con tu plantilla, pero podés usar cualquiera. La foto cargada no se modifica.</p>
         <div className="v2-contact-cover-pattern-grid" role="group" aria-label="Diseño de la portada sin foto">
-          {CONTACT_COVER_PATTERNS.map((option) => <button key={option.id} type="button" className={pattern === option.id ? "active" : ""} aria-pressed={pattern === option.id} onClick={() => onChange({ buttonZone: { ...draft.buttonZone, contactCoverPattern: option.id } })}><span className={`v2-contact-cover-pattern-swatch contact-cover-pattern-${option.id}`} style={patternPreviewStyle} aria-hidden="true" /><strong>{option.label}</strong></button>)}
+          {availablePatterns.map((option) => <button key={option.id} type="button" className={pattern === option.id ? "active" : ""} aria-pressed={pattern === option.id} onClick={() => onChange({ buttonZone: { ...draft.buttonZone, contactCoverPattern: option.id } })}><span className={`v2-contact-cover-pattern-swatch contact-cover-pattern-${option.id} contact-theme-${theme}`} style={option.id === "dots" && theme === "impact" && customColor ? { ...patternPreviewStyle, "--contact-surface": customColor } as CSSProperties : patternPreviewStyle} aria-hidden="true" /><strong>{option.label}</strong>{option.id === recommendedPattern && <small className="v2-contact-cover-recommended">✦ Recomendada</small>}</button>)}
         </div>
         {customColor ? <><ColorField label="Color de la portada" value={customColor} onChange={(contactCoverColor) => onChange({ buttonZone: { ...draft.buttonZone, contactCoverColor } })} /><button type="button" className="v2-ghost" onClick={() => onChange({ buttonZone: { ...draft.buttonZone, contactCoverColor: undefined } })}>Usar color del diseño</button></> : <button type="button" className="v2-suggested" onClick={() => onChange({ buttonZone: { ...draft.buttonZone, contactCoverColor: draft.primary_color || "#1f2937" } })}>Elegir color propio</button>}
       </EditorSection>}
