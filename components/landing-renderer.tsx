@@ -326,9 +326,13 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
           className={edit ? "avatar editor-hit" : "avatar"}
           data-tag={isContact ? "Foto de perfil" : "Logo"}
           onClick={edit?.onSelectLogo}
-          style={{ ...logoFrameStyle(logo, primary), width: avatarSize, height: avatarSize, borderRadius: logoBorderRadius(logo.shape, avatarSize), margin: `0 auto ${distribution.logoGap}px`, fontSize: logoLetterSize(avatarSize, logo.initials), position: edit ? "relative" : undefined }}
+          style={{ ...logoFrameStyle(logo, primary), ...(isContact && landing.logo_url && logo.borderWidth > 0 ? { background: logo.borderColor } : {}), width: avatarSize, height: avatarSize, borderRadius: logoBorderRadius(logo.shape, avatarSize), margin: `0 auto ${distribution.logoGap}px`, fontSize: logoLetterSize(avatarSize, logo.initials), position: edit ? "relative" : undefined }}
         >
-          {landing.logo_url ? (
+          {landing.logo_url && isContact ? (
+            <div style={{ position: "relative", width: "100%", height: "100%", borderRadius: "inherit", overflow: "hidden" }}>
+              <div style={{ position: "absolute", inset: 0, backgroundImage: `url(${JSON.stringify(landing.logo_url)})`, backgroundSize: "cover", backgroundPosition: `${logo.x}% ${logo.y}%`, backgroundRepeat: "no-repeat", transform: `scale(${logo.zoom})`, transformOrigin: `${logo.x}% ${logo.y}%` }} />
+            </div>
+          ) : landing.logo_url ? (
             <div style={{ width: "100%", height: "100%", borderRadius: "inherit", overflow: "hidden", backgroundImage: `url(${landing.logo_url})`, backgroundSize: `${logo.zoom * 100}%`, backgroundPosition: `${logo.x}% ${logo.y}%`, backgroundRepeat: "no-repeat" }} />
           ) : (
             <div style={{ width: "100%", height: "100%", borderRadius: "inherit", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: resolveTextFont(title.font) }}><LogoInitials font={title.font}>{logoInitials(landing.business_name, logo.initials)}</LogoInitials></div>

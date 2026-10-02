@@ -674,9 +674,6 @@ a.contact-detail-row:hover { background: color-mix(in srgb, var(--contact-accent
   position: relative !important;
   float: right;
   margin: -52px 0 5px 14px !important;
-  outline: 5px solid var(--contact-surface);
-  outline-offset: -1px;
-  box-shadow: 0 6px 16px color-mix(in srgb, var(--contact-ink) 15%, transparent);
 }
 .public.is-contact.contact-theme-editorial:not(.contact-layout-document) .landing-identity-block h1 {
   display: block !important;
@@ -814,7 +811,6 @@ a.contact-detail-row:hover { background: color-mix(in srgb, var(--contact-accent
 .public.is-contact.contact-theme-studio:not(.contact-layout-document) .landing-identity-block { padding: 0 27px 22px !important; text-align: left !important; }
 .public.is-contact.contact-theme-studio:not(.contact-layout-document) .landing-identity-block .avatar {
   margin: calc(12px - min(var(--contact-cover-height), 154px)) auto 27px 0 !important;
-  box-shadow: 0 0 0 5px var(--contact-surface), 0 12px 23px #0d23702e !important;
 }
 .public.is-contact.contact-theme-studio:not(.contact-layout-document) .landing-identity-block h1 { line-height: 1.01; text-align: left !important; }
 .public.is-contact.contact-theme-studio:not(.contact-layout-document) .landing-eyebrow,
@@ -846,9 +842,7 @@ a.contact-detail-row:hover { background: color-mix(in srgb, var(--contact-accent
 .public.is-contact.contact-theme-monogram:not(.contact-layout-document) .landing-identity-block { padding: 0 25px 27px !important; text-align: center !important; }
 .public.is-contact.contact-theme-monogram:not(.contact-layout-document) .landing-identity-block .avatar {
   margin: calc(12px - min(var(--contact-cover-height), 154px)) auto 27px !important;
-  box-shadow: 0 0 0 5px var(--contact-accent) !important;
 }
-.public.is-contact.contact-theme-monogram:not(.contact-layout-document) .landing-identity-block .avatar:has(.logo-initials) { background: transparent !important; color: #e6c98e !important; }
 .public.is-contact.contact-theme-monogram:not(.contact-layout-document) .landing-identity-block .avatar:has(.logo-initials) .logo-initials { font-size: calc(var(--contact-avatar-size) * .57); letter-spacing: -.1em; }
 .public.is-contact.contact-theme-monogram:not(.contact-layout-document) .landing-identity-block h1 { line-height: 1.06; text-align: center !important; }
 .public.is-contact.contact-theme-monogram:not(.contact-layout-document) .landing-eyebrow,
@@ -881,7 +875,6 @@ a.contact-detail-row:hover { background: color-mix(in srgb, var(--contact-accent
 .public.is-contact.contact-theme-impact:not(.contact-layout-document) .landing-identity-block { padding: 0 26px 23px !important; text-align: left !important; }
 .public.is-contact.contact-theme-impact:not(.contact-layout-document) .landing-identity-block .avatar {
   margin: calc(28px - min(var(--contact-cover-height), 154px)) auto 23px 0 !important;
-  box-shadow: 0 0 0 4px var(--contact-surface), 0 10px 23px #020812a6 !important;
 }
 .public.is-contact.contact-theme-impact:not(.contact-layout-document) .landing-identity-block h1 { line-height: 1.04; text-align: left !important; }
 .public.is-contact.contact-theme-impact:not(.contact-layout-document) .landing-eyebrow,
@@ -1599,7 +1592,14 @@ input[type="color"] { padding: 5px; height: 46px; cursor: pointer; }
    change how the real content is laid out — the editable canvas and the published page are
    now literally the same render, not two implementations kept in sync by hand. */
 .editor-hit { cursor: pointer; outline-offset: 4px; transition: outline-color .15s ease; }
-.editor-hit:hover, .editor-hit.is-selected { outline: 2px dashed rgba(255, 255, 255, .85); }
+.editor-hit:hover, .editor-hit.is-selected { outline: 2px dashed var(--editor-hit-outline, rgba(255, 255, 255, .85)); }
+.public.is-contact { --editor-hit-outline: #6752dc; }
+.public.is-contact.contact-theme-impact { --editor-hit-outline: #f6f8fb; }
+.public.is-contact.contact-theme-professional .contact-hero-art.editor-hit,
+.public.is-contact.contact-theme-monogram .contact-hero-art.editor-hit,
+.public.is-contact.contact-theme-studio .contact-hero-art.editor-hit { --editor-hit-outline: #ffffff; }
+.contact-extra-details.editor-hit { overflow: visible; z-index: 4; }
+.contact-extra-details.editor-hit::after { top: -12px; right: 8px; }
 .editor-hit::after {
   content: attr(data-tag);
   position: absolute;

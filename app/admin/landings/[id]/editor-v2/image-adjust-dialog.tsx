@@ -14,10 +14,11 @@ const titles: Record<ImageKind, string> = {
 
 const clamp = (value: number) => Math.max(0, Math.min(100, value));
 
-export default function ImageAdjustDialog({ kind, src, shape, coverMode, contactCoverSize, contactFrameWidth, contactCoverOverlay, initial, onApply, onCancel }: {
+export default function ImageAdjustDialog({ kind, src, shape, contactLogo = false, coverMode, contactCoverSize, contactFrameWidth, contactCoverOverlay, initial, onApply, onCancel }: {
   kind: ImageKind;
   src: string;
   shape?: "round" | "square" | "sharp";
+  contactLogo?: boolean;
   coverMode?: "fade" | "banner";
   contactCoverSize?: CoverStyle["size"];
   contactFrameWidth?: number;
@@ -35,6 +36,7 @@ export default function ImageAdjustDialog({ kind, src, shape, coverMode, contact
   const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null);
   const [previewSize, setPreviewSize] = useState<{ width: number; height: number } | null>(null);
   const maxZoom = kind === "background" ? 2.2 : 2.5;
+  const fillLogo = kind === "logo" && contactLogo;
   const contactCover = kind === "cover" && contactCoverSize !== undefined;
   const coverHeight = contactCover ? CONTACT_COVER_HEIGHT[contactCoverSize] : 0;
   const qualityScale = contactCover && imageSize ? Math.max((contactFrameWidth || 402) / imageSize.width, CONTACT_COVER_HEIGHT.large / imageSize.height) * placement.zoom : 0;
@@ -79,9 +81,7 @@ export default function ImageAdjustDialog({ kind, src, shape, coverMode, contact
 
   const canMove = (() => {
     if (!imageSize || !cropSize || !imageSize.width || !imageSize.height || !cropSize.width || !cropSize.height) return { x: true, y: true };
-    const scale = kind === "logo"
-      ? cropSize.width / imageSize.width * placement.zoom
-      : Math.max(cropSize.width / imageSize.width, cropSize.height / imageSize.height) * placement.zoom;
+    const scale = (kind === "logo" && !fillLogo ? cropSize.width / imageSize.width : Math.max(cropSize.width / imageSize.width, cropSize.height / imageSize.height)) * placement.zoom;
     return {
       x: imageSize.width * scale > cropSize.width + 0.5,
       y: imageSize.height * scale > cropSize.height + 0.5,
@@ -92,7 +92,7 @@ export default function ImageAdjustDialog({ kind, src, shape, coverMode, contact
     const drag = dragRef.current;
     if (!drag) return;
     const bounds = event.currentTarget.getBoundingClientRect();
-    const coverScale = imageSize && cropSize && kind !== "logo"
+    const coverScale = imageSize && cropSize && (kind !== "logo" || fillLogo)
       ? Math.max(cropSize.width / imageSize.width, cropSize.height / imageSize.height) * placement.zoom
       : null;
     const horizontalTravel = coverScale && imageSize && cropSize ? imageSize.width * coverScale - cropSize.width : bounds.width;
@@ -107,8 +107,8 @@ export default function ImageAdjustDialog({ kind, src, shape, coverMode, contact
   const imageStyle: CSSProperties = {
     backgroundImage: `url(${JSON.stringify(src)})`,
     backgroundPosition: `${placement.x}% ${placement.y}%`,
-    backgroundSize: kind === "logo" ? `${placement.zoom * 100}%` : "cover",
-    transform: kind === "logo" ? undefined : `scale(${placement.zoom})`,
+    backgroundSize: kind === "logo" && !fillLogo ? `${placement.zoom * 100}%` : "cover",
+    transform: kind === "logo" && !fillLogo ? undefined : `scale(${placement.zoom})`,
     transformOrigin: `${placement.x}% ${placement.y}%`,
   };
 
