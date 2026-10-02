@@ -266,7 +266,7 @@ export function recommendedContactCoverPattern(theme: ButtonZoneStyle["contactTh
   switch (theme) {
     case "essential": return "reflections";
     case "editorial": return "grid";
-    case "professional": return "solid";
+    case "professional": return "cartoon";
     case "studio": return "composition";
     case "monogram": return "frame";
     case "impact": return "dots";

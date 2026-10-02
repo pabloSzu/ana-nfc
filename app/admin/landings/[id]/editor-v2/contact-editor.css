@@ -139,7 +139,7 @@
 .v2-contact-look.is-editorial .look-line { left: 11px; right: 55px; top: 74px; }
 .v2-contact-look.is-editorial .look-action { left: 11px; right: 35px; top: 88px; height: 13px; background: #46372f; }
 .v2-contact-look.is-professional .v2-contact-look-art { background: #fff; }
-.v2-contact-look.is-professional .look-cover { height: 21px; background: #153c49; }
+.v2-contact-look.is-professional .look-cover { height: 21px; background-color: #153c49; background-image: radial-gradient(circle at 92% -12%, #66828b 0 11px, transparent 12px), radial-gradient(circle at -8% 115%, #102c36 0 13px, transparent 14px), linear-gradient(145deg, transparent 0 61%, #466875 61% 76%, transparent 76%); }
 .v2-contact-look.is-professional .look-avatar { left: 12px; top: 31px; width: 25px; height: 25px; border: 0; background: #163b49; color: #fff; font-size: 15px; }
 .v2-contact-look.is-professional .look-name { left: 44px; right: 10px; top: 34px; background: #202637; }
 .v2-contact-look.is-professional .look-line { left: 44px; right: 25px; top: 45px; }
