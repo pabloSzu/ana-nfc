@@ -66,5 +66,8 @@
   .bx-destination-grid { grid-template-columns: 1fr; max-width: 460px; margin-inline: auto; }
   .bx-destination-art { height: 285px; }
   .bx-destination-copy h3 { font-size: 26px; }
+  .bx-destination-copy > p { font-size: 14px; line-height: 1.65; }
+  .bx-destination-benefit { font-size: 12px; }
+  .bx-destination-copy > a { font-size: 14px; min-height: 48px; }
   .bx-destinations-footer { flex-direction: column; text-align: center; }
 }

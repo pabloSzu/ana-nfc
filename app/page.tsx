@@ -38,15 +38,7 @@ const NAV_LINKS = [
   { href: "#como-funciona", label: "Cómo funciona" },
   { href: "#tu-pagina", label: "Tu página" },
   { href: "#productos", label: "Formatos" },
-];
-
-// The three beats of what an NFC tag does — shown as a numbered list under the hero copy AND as
-// matching numbered badges on the product art, so the pictures read as one flow instead of loose
-// objects.
-const HERO_STEPS = [
-  { num: "1", title: "Escaneá o acercá", body: "QR o NFC, vos elegís" },
-  { num: "2", title: "Se abre", body: "el destino que elegiste" },
-  { num: "3", title: "Te contactan", body: "WhatsApp, reservas, reseñas" },
+  { href: "#para-talleres", label: "Para fabricantes" },
 ];
 
 const HERO_AUDIENCES = [
@@ -65,16 +57,12 @@ const TRUST = [
 
 const FAQS = [
   { q: "¿Qué es BioNFC?", a: "Creamos QR y productos NFC personalizados para conectar a tus clientes con tu negocio. Pueden llevar a tus reseñas de Google, a un enlace que ya tengas o a una página con todos tus accesos." },
-  { q: "¿Puedo pedir solo un QR para reseñas?", a: "Sí. Podés elegir un QR para que tus clientes lleguen directamente al enlace de reseñas de tu negocio en Google. No necesitás una página completa. También podés combinarlo con NFC." },
-  { q: "¿Necesitan instalar una app?", a: "No necesitás una app especial para leer el QR o el NFC. Tus clientes escanean el QR o acercan su celular desbloqueado y tocan el aviso para abrir el enlace. El servicio de destino puede pedirles iniciar sesión; por ejemplo, Google para publicar una reseña." },
-  { q: "¿Y si el celular de mi cliente no tiene NFC?", a: "Puede escanear el QR para abrir el mismo destino: tus reseñas, tu link o tu página." },
-  { q: "¿Puedo personalizar mi página?", a: "Sí. Colores, imágenes, botones, links y contenido, desde un panel simple." },
-  { q: "¿Puedo cambiar mis links después?", a: "Si elegís una página personalizada, podés actualizar sus links desde el panel sin cambiar tu NFC ni tu QR. Si elegís un enlace directo, consultanos cómo actualizarlo según el formato." },
-  { q: "¿Qué puedo poner en mi página?", a: "WhatsApp, Instagram, TikTok, Spotify, Maps, menú, catálogo, portfolio, pagos, turnos y mucho más." },
-  { q: "¿Sirve para cualquier negocio?", a: "Sí. Elegimos el destino y el formato según lo que necesites: recibir consultas, conseguir reseñas, compartir tu menú o reunir tus accesos en una página." },
+  { q: "¿Puedo pedir solo un QR o NFC, sin página?", a: "Sí. Puede abrir tus reseñas de Google o un enlace que ya tengas. También podés elegir una página personalizada; antes de avanzar te contamos qué incluye y cuánto cuesta." },
+  { q: "¿Necesitan una app o un celular con NFC?", a: "No hace falta una app especial. Tus clientes pueden escanear el QR; si su celular tiene NFC, también pueden acercarlo y tocar el aviso. El destino puede pedirles iniciar sesión, como Google para publicar una reseña." },
+  { q: "¿Puedo personalizar y actualizar mi página?", a: "Sí. Podés editar colores, imágenes, botones y contenido. Si elegís una página personalizada, actualizás sus enlaces desde el panel sin cambiar tu QR ni tu NFC. Para un enlace directo, consultanos cómo se actualiza según el formato." },
+  { q: "¿Qué puedo compartir en mi página?", a: "WhatsApp, redes sociales, ubicación, menú, catálogo, portfolio, turnos y otros enlaces útiles para tu negocio." },
   { q: "¿Los productos son iguales a las imágenes?", a: "Las imágenes son referencias de uso y diseño. Consultanos por materiales, medidas, terminaciones y disponibilidad. Confirmamos esos detalles con vos antes de avanzar." },
-  { q: "¿Necesito contratar una página?", a: "No. Podés elegir un QR o NFC a tus reseñas o a un enlace que ya tengas. Si querés una página, te detallamos qué incluye, su costo y las condiciones del servicio antes de contratar." },
-  { q: "¿Cuánto tarda en llegarme?", a: "Antes de confirmar tu pedido, te contamos las opciones disponibles, el precio, el plazo de preparación y cómo coordinar la entrega según tu ubicación." },
+  { q: "¿Cuánto cuesta y cuánto tarda?", a: "Depende del formato, la personalización y la entrega. Antes de confirmar tu pedido, te detallamos el precio, qué incluye, el plazo de preparación y cómo recibirlo." },
 ];
 
 export default function Home() {
@@ -94,18 +82,13 @@ export default function Home() {
       <header id="top" className="bx-hero">
         <div className="bx-hero-main">
           <div className="bx-hero-copy">
-            <span className="bx-pill">QR Y NFC · CON TU IDENTIDAD</span>
+            <span className="bx-pill">QR, NFC O AMBOS · CON TU IDENTIDAD</span>
             <h1 className="bx-h1">Tu negocio,<br /><span className="bx-grad">a un toque.</span></h1>
-            <p className="bx-hero-lead">QR y NFC personalizados para que tus clientes te escriban, vean lo que ofrecés o te dejen una reseña. Te ayudamos a elegir y lo dejamos listo.</p>
+            <p className="bx-hero-lead">Elegí un QR, un producto NFC o ambos. Tus clientes llegan a tus reseñas, un enlace directo o tu página. Te ayudamos a dejarlo listo.</p>
             <div className="bx-hero-cta">
               <a className="bx-btn bx-btn-hero" href={WA} target="_blank" rel="noreferrer">Quiero uno para mi negocio <span aria-hidden="true">→</span></a>
               <a className="bx-btn bx-btn-outline" href="#elegi-tu-uso"><FiArrowDown aria-hidden="true" />Explorar opciones</a>
             </div>
-            <ol className="bx-feats" aria-label="Cómo funciona">
-              {HERO_STEPS.map(({ num, title, body }) => (
-                <li key={num}><span className="bx-feat-ico" aria-hidden="true">{num}</span><span><b>{title}</b><small>{body}</small></span></li>
-              ))}
-            </ol>
           </div>
 
           {/* Moody, low-lit scene — dark almost everywhere in frame, so white copy stays readable
@@ -149,11 +132,11 @@ export default function Home() {
 
       <section className="bx-start" aria-labelledby="start-title"><div className="bx-section"><div className="bx-start-card">
         <div className="bx-start-copy"><p className="bx-section-kicker">DE TU IDEA AL PRIMER TOQUE</p><h2 id="start-title">Tu próximo<br />contacto empieza<br /><span>con vos.</span></h2><p>Contanos qué querés lograr. Te ayudamos a elegir el destino y el formato: QR, NFC o ambos.</p><a className="bx-btn" href={WA} target="_blank" rel="noreferrer"><FaWhatsapp aria-hidden="true" />Armemos mi BioNFC<FiArrowUpRight aria-hidden="true" /></a><span className="bx-start-note">Hablamos por WhatsApp, sin compromiso.</span></div>
-        <div className="bx-start-side"><div className="bx-start-message"><span>TODO EMPIEZA CON UN MENSAJE</span><p>“Hola, tengo un negocio<br />y quiero armar mi BioNFC.”</p><FiSend aria-hidden="true" /></div><ol><li><span>01</span><div><b>Elegís qué compartir</b><p>Reseñas, un enlace o tu página. Te ayudamos a elegir.</p></div></li><li><span>02</span><div><b>Personalizamos el diseño</b><p>Personalizamos el diseño y te mostramos cómo queda.</p></div></li><li><span>03</span><div><b>Lo configuramos</b><p>Preparamos el acceso al contenido que elegiste.</p></div></li><li><span>04</span><div><b>Recibís y compartís</b><p>Acordamos la entrega y te explicamos cómo usarlo.</p></div><FiCheck aria-hidden="true" /></li></ol></div>
+        <div className="bx-start-side"><div className="bx-start-message"><span>TODO EMPIEZA CON UN MENSAJE</span><p>“Hola, tengo un negocio<br />y quiero armar mi BioNFC.”</p><FiSend aria-hidden="true" /></div><ol><li><span>01</span><div><b>Elegís qué compartir</b><p>Reseñas, un enlace o tu página. Te ayudamos a elegir.</p></div></li><li><span>02</span><div><b>Personalizamos el diseño</b><p>Te mostramos una propuesta con tu marca antes de avanzar.</p></div></li><li><span>03</span><div><b>Lo configuramos</b><p>Preparamos el acceso al contenido que elegiste.</p></div></li><li><span>04</span><div><b>Recibís y compartís</b><p>Acordamos la entrega y te explicamos cómo usarlo.</p></div><FiCheck aria-hidden="true" /></li></ol></div>
       </div></div></section>
 
       <footer className="bx-footer bx-footer-redesign">
-        <div className="bx-footer-main"><div><a className="bx-brand" href="#top" aria-label="BioNFC, volver al inicio"><Logo /></a><p>Tu mundo, más cerca.<br />Una conexión a la vez.</p></div><nav aria-label="Explorá BioNFC"><span>EXPLORÁ</span><a href="#como-funciona">Cómo funciona</a><a href="#tu-pagina">Tu página</a><a href="#productos">Formatos NFC</a></nav><nav aria-label="Ayuda y contacto"><span>SEGUIMOS EN CONTACTO</span><a href={WA} target="_blank" rel="noreferrer">Hablemos por WhatsApp ↗</a><a href="#preguntas">Preguntas frecuentes</a><Link href="/admin/login">Ingresar a mi panel ↗</Link></nav></div>
+        <div className="bx-footer-main"><div><a className="bx-brand" href="#top" aria-label="BioNFC, volver al inicio"><Logo /></a><p>Tu mundo, más cerca.<br />Una conexión a la vez.</p></div><nav aria-label="Explorá BioNFC"><span>EXPLORÁ</span><a href="#como-funciona">Cómo funciona</a><a href="#tu-pagina">Tu página</a><a href="#productos">Formatos NFC</a><a href="#para-talleres">Para fabricantes</a></nav><nav aria-label="Ayuda y contacto"><span>SEGUIMOS EN CONTACTO</span><a href={WA} target="_blank" rel="noreferrer">Hablemos por WhatsApp ↗</a><a href="#preguntas">Preguntas frecuentes</a><Link href="/admin/login">Ingresar a mi panel ↗</Link></nav></div>
         <div className="bx-footer-bottom"><span>BioNFC · Hecho para conectar.</span><span>Entrega a coordinar <IconTruck /></span></div>
       </footer>
 

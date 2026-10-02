@@ -22,8 +22,8 @@ export default function Makers({ whatsappNumber }: { whatsappNumber: string }) {
           <p className="bx-makers-lead">De lo que fabricás a lo que querés compartir. Integramos un chip NFC para abrir tu página, tus reseñas o un sistema personalizado al acercar el celular.</p>
           <p className="bx-makers-promise"><FiCheck aria-hidden="true" />Tu diseño y tu marca. La parte digital, por nosotros.</p>
           <div className="bx-makers-actions">
-            <a className="bx-btn bx-makers-cta" href={wa("Hola BioNFC, tengo un taller y quiero sumar NFC a mis productos. ¿Podemos conversar?")} target="_blank" rel="noreferrer">Quiero sumarle NFC <FiArrowUpRight aria-hidden="true" /></a>
-            <p>Contanos qué fabricás. Lo pensamos con vos.</p>
+            <a className="bx-btn bx-makers-cta" href={wa("Hola BioNFC, tengo un taller y quiero sumar NFC a mis productos. ¿Podemos conversar?")} target="_blank" rel="noreferrer">Sumar NFC a mis productos <FiArrowUpRight aria-hidden="true" /></a>
+            <p>Contanos qué fabricás y vemos juntos cómo integrarlo.</p>
           </div>
         </div>
       </div>

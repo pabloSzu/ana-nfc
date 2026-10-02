@@ -19,7 +19,7 @@ export function HomeNav({ children, links }: { children: ReactNode; links: { hre
   return <nav className={`bx-nav${scrolled ? " is-scrolled" : ""}${menuOpen ? " has-menu" : ""}`} aria-label="Principal" onKeyDown={(event) => { if (event.key === "Escape") { setMenuOpen(false); document.getElementById("home-menu-toggle")?.focus(); } }}>
     {children}
     <button id="home-menu-toggle" className="bx-menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="home-mobile-menu" onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? "Cerrar" : "Menú"}<span aria-hidden="true">{menuOpen ? "×" : "+"}</span></button>
-    <div id="home-mobile-menu" className="bx-mobile-menu" hidden={!menuOpen}>{links.map((link, index) => <a key={link.href} href={link.href} onClick={() => setMenuOpen(false)}><span>0{index + 1}</span>{link.label}<span aria-hidden="true">↗</span></a>)}<a href="#preguntas" onClick={() => setMenuOpen(false)}><span>05</span>Preguntas frecuentes<span aria-hidden="true">↗</span></a></div>
+    <div id="home-mobile-menu" className="bx-mobile-menu" hidden={!menuOpen}>{links.map((link, index) => <a key={link.href} href={link.href} onClick={() => setMenuOpen(false)}><span>0{index + 1}</span>{link.label}<span aria-hidden="true">↗</span></a>)}<a href="#preguntas" onClick={() => setMenuOpen(false)}><span>0{links.length + 1}</span>Preguntas frecuentes<span aria-hidden="true">↗</span></a></div>
   </nav>;
 }
 

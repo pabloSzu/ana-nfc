@@ -62,7 +62,7 @@ function contactLookPatch(draft: LandingDraft, look: ContactLook): Partial<Landi
     buttonZone: { ...draft.buttonZone, contactTheme: look.id, contactLayout: look.layout, contactDensity: "balanced", contactSurfaceColor: undefined, contactCoverColor: undefined },
     titleStyle: { ...draft.titleStyle, font: look.font, italic: false, size: look.id === "editorial" ? 38 : 28, color: look.id === "editorial" ? "#433b35" : look.id === "professional" ? "#202637" : "#243028", weight: look.id === "editorial" ? 500 : 700, eyebrowFont: look.font, eyebrowItalic: false, eyebrowSize: 14, eyebrowColor: look.id === "editorial" ? "#665f59" : "#47505f", bgMode: "none" },
     subtitleStyle: { ...draft.subtitleStyle, font: "minimal", italic: false, size: 14, color: look.id === "editorial" ? "#665f59" : "#47505f", bgMode: "none" },
-    logoStyle: { ...draft.logoStyle, shape: "round", borderWidth: 0, shadow: "none", size: look.id === "professional" ? 80 : 104 },
+    logoStyle: { ...draft.logoStyle, shape: look.id === "editorial" ? "square" : "round", borderWidth: 0, shadow: "none", size: look.id === "professional" ? 80 : 104 },
     coverStyle: { ...draft.coverStyle, mode: "banner" },
   };
 }

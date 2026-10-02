@@ -1,19 +1,32 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
+import { useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react";
 import Image from "next/image";
-import { FiArrowUpRight, FiCalendar, FiCoffee, FiGrid, FiMapPin, FiScissors } from "react-icons/fi";
+import dynamic from "next/dynamic";
+import { FiArrowLeft, FiArrowRight, FiArrowUpRight, FiCalendar, FiCoffee, FiGrid, FiMapPin, FiScissors } from "react-icons/fi";
 import { FaInstagram, FaWhatsapp } from "react-icons/fa6";
 import { DESIGN_PRESETS_V2 } from "@/lib/design-presets";
 
-const EXAMPLES = [
-  { id: "cafe", category: "Cafetería", name: "Café Nube", line: "Un buen café. Un lindo momento.", monogram: "nube", preset: "glass", style: "Glass + fotografía", image: "/marketing/showcase/coffee.jpg", detail: "Una foto que invita a entrar. Botones de vidrio que dejan ver tu esencia.", actions: ["Explorá nuestro menú", "Reservá tu mesa", "Cómo llegar"], icons: [FiCoffee, FiCalendar, FiMapPin] },
-  { id: "beauty", category: "Belleza", name: "Blueberry Nails", line: "Un pequeño ritual para vos.", monogram: "b.", preset: "pastel", style: "Pastel + logo", detail: "Tonos suaves, un logo protagonista y todos tus turnos a un toque.", actions: ["Agendá tu próximo turno", "Nuestros trabajos", "Hablemos por WhatsApp"], icons: [FiCalendar, FaInstagram, FaWhatsapp] },
-  { id: "barber", category: "Barbería", name: "BARBER CLUB", line: "Tu estilo. Nuestro oficio.", monogram: "BC", preset: "brutalism", style: "Brutalismo + carácter", detail: "Tipografía con presencia, contraste y botones con personalidad.", actions: ["Reservá tu corte", "Conocé el estudio", "Cómo llegar"], icons: [FiScissors, FaInstagram, FiMapPin] },
-  { id: "architecture", category: "Arquitectura", name: "ana estudio", line: "Espacios para habitar distinto.", monogram: "a /", preset: "elegant", style: "Elegante + fotografía", image: "/marketing/showcase/interior.jpg", detail: "Una composición editorial, tonos cálidos y espacio para mostrar lo que hacés.", actions: ["Nuestros proyectos", "Hablemos de tu idea", "Instagram"], icons: [FiGrid, FaWhatsapp, FaInstagram] },
+const ContactPreview = dynamic(() => import("./contact-preview"), {
+  loading: () => <div className="bx-sample bx-contact-sample"><div className="bx-sample-screen" /></div>,
+});
+
+const LANDING_EXAMPLES = [
+  { kind: "landing", id: "cafe", category: "Cafetería", name: "Café Nube", line: "Un buen café. Un lindo momento.", monogram: "nube", preset: "glass", style: "Glass + fotografía", image: "/marketing/showcase/coffee.jpg", detail: "Una foto que invita a entrar. Botones de vidrio que dejan ver tu esencia.", actions: ["Explorá nuestro menú", "Reservá tu mesa", "Cómo llegar"], icons: [FiCoffee, FiCalendar, FiMapPin] },
+  { kind: "landing", id: "beauty", category: "Belleza", name: "Blueberry Nails", line: "Un pequeño ritual para vos.", monogram: "b.", preset: "pastel", style: "Pastel + logo", detail: "Tonos suaves, un logo protagonista y todos tus turnos a un toque.", actions: ["Agendá tu próximo turno", "Nuestros trabajos", "Hablemos por WhatsApp"], icons: [FiCalendar, FaInstagram, FaWhatsapp] },
+  { kind: "landing", id: "barber", category: "Barbería", name: "BARBER CLUB", line: "Tu estilo. Nuestro oficio.", monogram: "BC", preset: "brutalism", style: "Brutalismo + carácter", detail: "Tipografía con presencia, contraste y botones con personalidad.", actions: ["Reservá tu corte", "Conocé el estudio", "Cómo llegar"], icons: [FiScissors, FaInstagram, FiMapPin] },
+  { kind: "landing", id: "architecture", category: "Arquitectura", name: "ana estudio", line: "Espacios para habitar distinto.", monogram: "a /", preset: "elegant", style: "Elegante + fotografía", image: "/marketing/showcase/interior.jpg", detail: "Una composición editorial, tonos cálidos y espacio para mostrar lo que hacés.", actions: ["Nuestros proyectos", "Hablemos de tu idea", "Instagram"], icons: [FiGrid, FaWhatsapp, FaInstagram] },
 ] as const;
 
-function Preview({ example }: { example: typeof EXAMPLES[number] }) {
+const CONTACT_EXAMPLES = [
+  { kind: "contact", id: "essential", category: "Esencial", name: "Lucía Funes", role: "Diseñadora floral", company: "Estudio Savia", style: "Esencial + color", detail: "Una tarjeta cálida y directa, con tus datos y la opción de guardar el contacto.", accent: "#343d31", backdrop: "#e9eae2", font: "modern", layout: "card", pattern: "original" },
+  { kind: "contact", id: "editorial", category: "Editorial", name: "Ana Duarte", role: "Arquitecta", company: "Ana Duarte Estudio", style: "Editorial + retrato", detail: "Foto, tipografía con carácter y una presentación más personal.", accent: "#46372f", backdrop: "#e9e3dc", font: "domine", layout: "card", pattern: "original", photo: "/marketing/showcase/contact-editorial.webp" },
+  { kind: "contact", id: "professional", category: "Profesional", name: "Marcos Vidal", role: "Consultor de negocios", company: "Vidal Consultoría", style: "Profesional + ficha", detail: "Información ordenada en formato de ficha, ideal para compartir en reuniones.", accent: "#163b49", backdrop: "#e8eff0", font: "manrope", layout: "document", pattern: "grid" },
+] as const;
+
+type LandingExample = typeof LANDING_EXAMPLES[number];
+
+function Preview({ example }: { example: LandingExample }) {
   const preset = DESIGN_PRESETS_V2.find((item) => item.id === example.preset)!;
   return (
     <div className="bx-sample" data-design={example.id} style={{ "--sample-bg": preset.background, "--sample-ink": preset.foreground, "--sample-radius": `${preset.buttonZone.radius / 4}cqw` } as CSSProperties}>
@@ -38,32 +51,57 @@ function Preview({ example }: { example: typeof EXAMPLES[number] }) {
 }
 
 export function StyleShowcase({ waUrl }: { waUrl: string }) {
+  const [category, setCategory] = useState<"landing" | "contact">("landing");
   const [active, setActive] = useState(0);
-  const selected = EXAMPLES[active];
+  const pointerStart = useRef<{ x: number; y: number } | null>(null);
+  const examples = category === "landing" ? LANDING_EXAMPLES : CONTACT_EXAMPLES;
+  const selected = examples[active];
+  const changeCategory = (next: "landing" | "contact") => { setCategory(next); setActive(0); };
+  const move = (direction: number) => setActive((current) => (current + direction + examples.length) % examples.length);
+  const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return;
+    pointerStart.current = { x: event.clientX, y: event.clientY };
+  };
+  const handlePointerUp = (event: PointerEvent<HTMLDivElement>) => {
+    const start = pointerStart.current;
+    pointerStart.current = null;
+    if (!start) return;
+    const dx = event.clientX - start.x;
+    const dy = event.clientY - start.y;
+    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.25) move(dx < 0 ? 1 : -1);
+  };
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "ArrowRight" || event.key === "ArrowLeft") { event.preventDefault(); move(event.key === "ArrowRight" ? 1 : -1); }
+  };
   return (
     <div className="bx-showcase">
       <div className="bx-showcase-copy">
-        <p className="bx-showcase-kicker"><span /> TU IDENTIDAD, EN UNA PÁGINA</p>
-        <h2 className="bx-h2 bx-on-dark">¿Querés reunir todo en un lugar?<br /><span className="bx-soft">Creamos tu página.</span></h2>
-        <p className="bx-lead bx-on-dark-muted">Tu logo, tus fotos, tu estilo. Diseñamos una página que se sienta tan tuya como tu negocio.</p>
-        <div className="bx-showcase-picker" role="group" aria-label="Elegí un ejemplo de diseño">
-          {EXAMPLES.map((example, index) => <button type="button" key={example.id} aria-pressed={active === index} aria-controls="showcase-preview" onClick={() => setActive(index)}><span className={`bx-showcase-swatch is-${example.id}`} />{example.category}<FiArrowUpRight aria-hidden="true" /></button>)}
+        <p className="bx-showcase-kicker"><span /> UNA PRESENTACIÓN HECHA PARA VOS</p>
+        <h2 className="bx-h2 bx-on-dark">{category === "landing" ? "¿Querés reunir todo en un lugar?" : "¿Querés presentarte mejor?"}<br /><span className="bx-soft">{category === "landing" ? "Creamos tu página." : "Creamos tu tarjeta personal."}</span></h2>
+        <p className="bx-lead bx-on-dark-muted">{category === "landing" ? "Tu logo, tus fotos, tu estilo. Diseñamos una página que se sienta tan tuya como tu negocio." : "Tus datos, tu foto si querés y un diseño propio. Compartí tu presentación y hacé fácil que guarden tu contacto."}</p>
+        <div className="bx-showcase-categories" role="group" aria-label="Tipo de diseño">
+          <button type="button" aria-pressed={category === "landing"} onClick={() => changeCategory("landing")}>Landings</button>
+          <button type="button" aria-pressed={category === "contact"} onClick={() => changeCategory("contact")}>Tarjetas personales</button>
         </div>
-        <p className="bx-showcase-hint">Elegí un ejemplo y descubrí su estilo.</p>
-        <a className="bx-btn bx-btn-white" href={waUrl} target="_blank" rel="noreferrer">Quiero mi página así <FiArrowUpRight aria-hidden="true" /></a>
+        <div className="bx-showcase-picker" role="group" aria-label="Elegí un ejemplo de diseño">
+          {examples.map((example, index) => <button type="button" key={example.id} aria-pressed={active === index} aria-controls="showcase-preview" onClick={() => setActive(index)}><span className={`bx-showcase-swatch is-${example.id}`} />{example.category}<FiArrowUpRight aria-hidden="true" /></button>)}
+        </div>
+        <p className="bx-showcase-hint">Ejemplos visuales con marcas y datos ficticios.</p>
+        <a className="bx-btn bx-btn-white" href={waUrl} target="_blank" rel="noreferrer">Quiero algo así <FiArrowUpRight aria-hidden="true" /></a>
       </div>
       <div className="bx-showcase-gallery" id="showcase-preview" role="region" aria-label={`Vista de ejemplo: ${selected.name}`}>
         <div className="bx-showcase-orbit" aria-hidden="true" />
-        <div className="bx-showcase-stage">
-          {EXAMPLES.map((example, index) => {
-            const position = (index - active + EXAMPLES.length) % EXAMPLES.length;
-            return <div key={example.id} className="bx-showcase-device" data-position={position} aria-hidden={position !== 0}><Preview example={example} /></div>;
+        <div className="bx-showcase-stage" data-count={examples.length} role="group" tabIndex={0} onKeyDown={handleKeyDown} onPointerDown={handlePointerDown} onPointerUp={handlePointerUp} onPointerCancel={() => { pointerStart.current = null; }} aria-label="Deslizá o usá las flechas para ver otros ejemplos">
+          {examples.map((example, index) => {
+            const position = (index - active + examples.length) % examples.length;
+            return <div key={example.id} className="bx-showcase-device" data-position={position} aria-hidden={true}>{example.kind === "landing" ? <Preview example={example} /> : <ContactPreview example={example} />}</div>;
           })}
           <span className="bx-showcase-tag">Tu marca.<br /><b>Tu universo.</b></span>
         </div>
-        <div className="bx-showcase-caption" aria-live="polite" aria-atomic="true"><span>0{active + 1} / 04 · {selected.style}</span><p>{selected.detail}</p></div>
+        <div className="bx-showcase-caption" aria-live="polite" aria-atomic="true"><span>0{active + 1} / 0{examples.length} · {selected.style}</span><p>{selected.detail}</p></div>
+        <div className="bx-showcase-controls"><button type="button" onClick={() => move(-1)} aria-label="Ejemplo anterior"><FiArrowLeft aria-hidden="true" /></button><span aria-hidden="true">{examples.map((example, index) => <i key={example.id} className={active === index ? "is-active" : undefined} />)}</span><button type="button" onClick={() => move(1)} aria-label="Ejemplo siguiente"><FiArrowRight aria-hidden="true" /></button></div>
       </div>
-      <div className="bx-showcase-possibilities"><span className="bx-showcase-infinity" aria-hidden="true">∞</span><div><h3>Estos son solo algunos ejemplos.</h3><p>Tenemos muchísimos estilos más para adaptar tu página a tu gusto y a la identidad de tu negocio.</p></div><span className="bx-showcase-signature">Hecha para vos.<br /><b>Lista para compartir.</b></span></div>
+      <div className="bx-showcase-possibilities"><span className="bx-showcase-infinity" aria-hidden="true">∞</span><div><h3>Estos son solo algunos ejemplos.</h3><p>Podemos adaptar el diseño de tu página o tarjeta a tu identidad, con foto o sin ella.</p></div><span className="bx-showcase-signature">Hecha para vos.<br /><b>Lista para compartir.</b></span></div>
     </div>
   );
 }

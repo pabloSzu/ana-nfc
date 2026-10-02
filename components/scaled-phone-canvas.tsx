@@ -20,6 +20,7 @@ export default function ScaledPhoneCanvas({
   className,
   designWidth = DESIGN_WIDTH,
   fit = "width",
+  measureUntransformed = false,
   photoBackground,
   onScaleChange,
 }: {
@@ -32,6 +33,8 @@ export default function ScaledPhoneCanvas({
    *  "contain": scale so the WHOLE landing fits inside the container on both axes at once,
    *  centered, no scrolling. Used by "Vista previa" on mobile. */
   fit?: "width" | "contain";
+  /** Use layout dimensions inside a rotated/scaled carousel item. */
+  measureUntransformed?: boolean;
   photoBackground?: ReactNode;
   onScaleChange?: (scale: number) => void;
 }) {
@@ -85,23 +88,25 @@ export default function ScaledPhoneCanvas({
     // stale size, and no stale closure over an old scale.
     const apply = () => {
       const outerRect = outer.getBoundingClientRect();
-      if (outerRect.width <= 0) return;
-      const byWidth = outerRect.width / designWidth;
+      const outerWidth = measureUntransformed ? outer.clientWidth : outerRect.width;
+      const outerHeight = measureUntransformed ? outer.clientHeight : outerRect.height;
+      if (outerWidth <= 0) return;
+      const byWidth = outerWidth / designWidth;
       let scale = byWidth;
       const flow = getComputedStyle(outer).overflowY === "visible";
-      const screenHeight = flow ? (outer.closest(".v2-stage")?.clientHeight ?? window.innerHeight) : outerRect.height;
+      const screenHeight = flow ? (outer.closest(".v2-stage")?.clientHeight ?? window.innerHeight) : outerHeight;
 
       if (fit === "contain") {
         // offsetHeight is the layout-box height: CSS transform never affects it, so it's always
         // the true unscaled height regardless of the transform applied on the previous run.
         content.style.width = `${designWidth}px`;
         const naturalHeight = content.offsetHeight;
-        if (outerRect.height > 0 && naturalHeight > 0) scale = Math.min(byWidth, outerRect.height / naturalHeight);
+        if (outerHeight > 0 && naturalHeight > 0) scale = Math.min(byWidth, outerHeight / naturalHeight);
         // Shrunk to fit the height, the landing would end up narrower than the screen and leave
         // bare frame showing down both sides. Laying it out at the width that exactly fills the
         // screen at this scale makes its background run edge to edge; the content itself stays
         // centered and capped by the landing's own max width, so nothing else moves.
-        content.style.width = `${Math.max(designWidth, outerRect.width / scale)}px`;
+        content.style.width = `${Math.max(designWidth, outerWidth / scale)}px`;
       } else if (spacer) {
         // The landing's OWN height, measured with the stretch we impose (below) lifted — otherwise
         // we'd be measuring our own previous min-height and could never shrink again after
@@ -112,7 +117,7 @@ export default function ScaledPhoneCanvas({
         // full-bleed mobile layout the canvas isn't a scroll container (its height just follows
         // the spacer), so the room to fill is the stage that page-scrolls around it instead.
         const flow = getComputedStyle(outer).overflowY === "visible";
-        const available = flow ? (outer.closest(".v2-stage")?.clientHeight ?? window.innerHeight) : outerRect.height;
+        const available = flow ? (outer.closest(".v2-stage")?.clientHeight ?? window.innerHeight) : outerHeight;
         // Fill the phone when the landing is shorter than its screen (min-height in the SAME
         // pre-scale units as the content: after `scale()` shrinks it, it paints out to exactly the
         // screen height) — the equivalent of `.public { min-height: 100vh }` on a real page.
@@ -171,7 +176,7 @@ export default function ScaledPhoneCanvas({
       cancelAnimationFrame(raf);
       clearTimeout(fadeTimer);
     };
-  }, [designWidth, fit]);
+  }, [designWidth, fit, measureUntransformed]);
 
   if (fit === "contain") {
     return (

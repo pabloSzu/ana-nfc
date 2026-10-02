@@ -648,6 +648,85 @@ a.contact-detail-row:hover { background: color-mix(in srgb, var(--contact-accent
 .public.is-contact.contact-theme-editorial .public-actions { padding-left: 24px; padding-right: 24px; }
 .public.is-contact.contact-theme-editorial.contact-presentation-shortcuts .contact-quick-actions a,
 .public.is-contact.contact-theme-editorial .contact-feature-card { border-radius: 7px !important; box-shadow: none !important; }
+/* Editorial is composed like a personal print piece, not a recolored Essential card. */
+.public.is-contact.contact-theme-editorial:not(.contact-layout-document) > .public-inner {
+  border-color: color-mix(in srgb, var(--contact-ink) 20%, transparent);
+  box-shadow: 0 18px 42px color-mix(in srgb, var(--contact-ink) 14%, transparent);
+}
+.public.is-contact.contact-theme-editorial:not(.contact-layout-document) .contact-hero-art.contact-cover-pattern-original:not(:has(.contact-hero-photo-mask)) {
+  background-color: color-mix(in srgb, var(--contact-accent) 13%, var(--contact-surface));
+  background-image: linear-gradient(90deg, color-mix(in srgb, var(--contact-ink) 9%, transparent) 1px, transparent 1px);
+  background-size: 33.333% 100%;
+  border-bottom: 1px solid color-mix(in srgb, var(--contact-ink) 18%, transparent);
+}
+.public.is-contact.contact-theme-editorial:not(.contact-layout-document) .contact-hero-art.contact-cover-pattern-original:not(:has(.contact-hero-photo-mask))::before {
+  inset: 18px 24px;
+  border-top: 1px solid color-mix(in srgb, var(--contact-ink) 26%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--contact-ink) 26%, transparent);
+  background: none;
+}
+.public.is-contact.contact-theme-editorial:not(.contact-layout-document) .contact-hero-art.contact-cover-pattern-original:not(:has(.contact-hero-photo-mask))::after {
+  content: "";
+  position: absolute;
+  width: 132px;
+  height: 132px;
+  right: 12%;
+  top: -50px;
+  border: 1px solid color-mix(in srgb, var(--contact-ink) 22%, transparent);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.public.is-contact.contact-theme-editorial:not(.contact-layout-document) .landing-identity-block {
+  min-height: calc(var(--contact-avatar-size) - 24px);
+  padding: 14px 28px 19px !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--contact-ink) 18%, transparent) !important;
+}
+.public.is-contact.contact-theme-editorial:not(.contact-layout-document) .landing-identity-block .avatar {
+  position: relative !important;
+  float: right;
+  margin: -52px 0 5px 14px !important;
+  outline: 5px solid var(--contact-surface);
+  outline-offset: -1px;
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--contact-ink) 15%, transparent);
+}
+.public.is-contact.contact-theme-editorial:not(.contact-layout-document) .landing-identity-block h1 {
+  display: block !important;
+  max-width: 100%;
+  margin-bottom: 9px !important;
+  line-height: 1.06;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+.public.is-contact.contact-theme-editorial:not(.contact-layout-document) .landing-eyebrow {
+  margin-top: 0 !important;
+  letter-spacing: .12em;
+}
+.public.is-contact.contact-theme-editorial:not(.contact-layout-document) .landing-desc { margin-top: 4px !important; }
+.public.is-contact.contact-theme-editorial:not(.contact-layout-document) .contact-primary-actions { padding-top: 17px; }
+.public.is-contact.contact-theme-editorial:not(.contact-layout-document) .contact-contact-heading {
+  margin-bottom: 12px;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .13em;
+  text-align: left;
+  text-transform: uppercase;
+}
+.public.is-contact.contact-theme-editorial:not(.contact-layout-document) .contact-quick-actions a {
+  min-height: 72px;
+  border-radius: 5px;
+  box-shadow: none;
+}
+.public.is-contact.contact-theme-editorial:not(.contact-layout-document) .landing-save-contact {
+  min-height: 52px;
+  border-radius: 5px;
+  box-shadow: none;
+}
+.public.is-contact.contact-theme-editorial:not(.contact-layout-document) .contact-about {
+  margin-top: 16px;
+  border-radius: 5px;
+  box-shadow: none;
+}
+.public.is-contact.contact-theme-editorial:not(.contact-layout-document) .contact-feature-card { border-radius: 5px !important; }
 .public.is-contact.contact-theme-professional.contact-layout-document > .public-inner {
   padding: 0 22px 24px;
   border-radius: 9px;
