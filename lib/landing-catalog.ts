@@ -201,7 +201,7 @@ export type ButtonZoneStyle = {
   distribution?: DistributionStyle;
   // Contact pages share their data and editor, but can present it as a compact card or a document.
   contactLayout?: "card" | "document";
-  contactTheme?: "classic" | "paper" | "linen" | "noir" | "photo" | "essential" | "editorial" | "professional";
+  contactTheme?: "classic" | "paper" | "linen" | "noir" | "photo" | "essential" | "editorial" | "professional" | "studio" | "monogram" | "impact";
   contactSurfaceColor?: string;
   contactCoverColor?: string;
   contactCoverPattern?: "original" | "solid" | "aura" | "cartoon" | "dots" | "grid";
@@ -274,7 +274,7 @@ export function parseButtonZone(raw: unknown): ButtonZoneStyle {
   return {
     ...merged,
     contactLayout: parsed.contactLayout === "document" ? "document" : "card",
-    contactTheme: ["paper", "linen", "noir", "photo", "essential", "editorial", "professional"].includes(String(parsed.contactTheme)) ? parsed.contactTheme : "classic",
+    contactTheme: ["paper", "linen", "noir", "photo", "essential", "editorial", "professional", "studio", "monogram", "impact"].includes(String(parsed.contactTheme)) ? parsed.contactTheme : "classic",
     contactSurfaceColor: typeof parsed.contactSurfaceColor === "string" && /^#[0-9a-f]{6}$/i.test(parsed.contactSurfaceColor) ? parsed.contactSurfaceColor : undefined,
     contactCoverColor: typeof parsed.contactCoverColor === "string" && /^#[0-9a-f]{6}$/i.test(parsed.contactCoverColor) ? parsed.contactCoverColor : undefined,
     contactCoverPattern: parsed.contactCoverPattern === "solid" || parsed.contactCoverPattern === "aura" || parsed.contactCoverPattern === "cartoon" || parsed.contactCoverPattern === "dots" || parsed.contactCoverPattern === "grid" ? parsed.contactCoverPattern : "original",

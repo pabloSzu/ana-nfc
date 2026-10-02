@@ -52,6 +52,15 @@ type Landing = {
   cover_style?: unknown;
 };
 
+const CONTACT_THEME_PALETTE: Record<string, { ink: string; surface: string }> = {
+  essential: { ink: "#243028", surface: "#faf7ef" },
+  editorial: { ink: "#433b35", surface: "#f3efea" },
+  professional: { ink: "#202637", surface: "#ffffff" },
+  studio: { ink: "#102f94", surface: "#fbf8f2" },
+  monogram: { ink: "#173c30", surface: "#f8f4e9" },
+  impact: { ink: "#f6f8fb", surface: "#0d2037" },
+};
+
 export function LandingPhotoBackground({ landing }: { landing: Landing }) {
   const position = parseBackgroundPosition(landing.background_style);
   const tint = resolveBackgroundTint(landing.background_type, position.tint);
@@ -158,8 +167,9 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
   const showEyebrow = Boolean(title.eyebrow) || Boolean(edit && !isDocument);
   const contactTheme = isContact ? zone.contactTheme || "classic" : "classic";
   const editableContactTypography = isContact;
-  const contactInk = zone.contactSurfaceColor ? contrastTextColor(zone.contactSurfaceColor) : contactTheme === "essential" ? "#243028" : contactTheme === "editorial" ? "#433b35" : contactTheme === "professional" ? "#202637" : contactTheme === "noir" ? "#f6f1e8" : contactTheme === "paper" ? "#31271f" : contactTheme === "linen" ? "#26352b" : isDocument ? "#202637" : title.color;
-  const contactSurface = zone.contactSurfaceColor || (contactTheme === "essential" ? "#faf7ef" : contactTheme === "editorial" ? "#f3efea" : contactTheme === "professional" ? "#ffffff" : contactTheme === "noir" ? "#242b36" : contactTheme === "paper" ? "#f8f2e6" : contactTheme === "linen" ? "#f3f0e5" : isDocument ? "#ffffff" : contrastTextColor(title.color) === "#ffffff" ? "rgba(255,255,255,.91)" : "rgba(17,20,34,.83)");
+  const palette = CONTACT_THEME_PALETTE[contactTheme];
+  const contactInk = zone.contactSurfaceColor ? contrastTextColor(zone.contactSurfaceColor) : palette?.ink || (contactTheme === "noir" ? "#f6f1e8" : contactTheme === "paper" ? "#31271f" : contactTheme === "linen" ? "#26352b" : isDocument ? "#202637" : title.color);
+  const contactSurface = zone.contactSurfaceColor || palette?.surface || (contactTheme === "noir" ? "#242b36" : contactTheme === "paper" ? "#f8f2e6" : contactTheme === "linen" ? "#f3f0e5" : isDocument ? "#ffffff" : contrastTextColor(title.color) === "#ffffff" ? "rgba(255,255,255,.91)" : "rgba(17,20,34,.83)");
   const avatarSize = isDocument ? Math.min(112, Math.max(64, logo.size)) : logo.size;
   const isBanner = showCover && cover.mode === "banner";
   // Card and photo are exclusive choices in the editor; a photo wins if an older page has both.
@@ -276,7 +286,7 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
   const contactLinksMargin = contentActions.length > 0 ? "var(--contact-section-space)" : 8;
 
   return (
-    <main className={`public${isContact ? ` is-contact contact-theme-${contactTheme} contact-density-${zone.contactDensity || "balanced"} contact-presentation-${contactActionStyle}${zone.contactSurfaceColor ? " contact-custom-surface" : ""}${zone.contactCoverColor ? " contact-custom-cover" : ""}` : ""}${isDocument ? " contact-layout-document" : ""}${zone.showBranding !== false ? " has-branding" : ""}${landing.background_type === "image" && landing.background_image_url ? " public-bg-image" : ""}`} style={{ position: "relative", overflow: "clip", background: externalPhotoBackground && landing.background_type === "image" ? "transparent" : landing.background_color || "#f7f5f0", paddingTop: isContact ? 24 : distribution.top, "--landing-top": `${distribution.top}px`, "--landing-logo-gap": `${distribution.logoGap}px`, "--contact-avatar-size": `${avatarSize}px`, "--contact-accent": primary, "--contact-ink": contactInk, "--contact-surface": contactSurface, "--contact-cover-color": zone.contactCoverColor || primary, "--contact-role-color": title.eyebrowColor || title.color, "--contact-company-color": subtitle.color } as CSSProperties}>
+    <main className={`public${isContact ? ` is-contact contact-theme-${contactTheme} contact-density-${zone.contactDensity || "balanced"} contact-presentation-${contactActionStyle}${zone.contactSurfaceColor ? " contact-custom-surface" : ""}${zone.contactCoverColor ? " contact-custom-cover" : ""}` : ""}${isDocument ? " contact-layout-document" : ""}${zone.showBranding !== false ? " has-branding" : ""}${landing.background_type === "image" && landing.background_image_url ? " public-bg-image" : ""}`} style={{ position: "relative", overflow: "clip", background: externalPhotoBackground && landing.background_type === "image" ? "transparent" : landing.background_color || "#f7f5f0", paddingTop: isContact ? 24 : distribution.top, "--landing-top": `${distribution.top}px`, "--landing-logo-gap": `${distribution.logoGap}px`, "--contact-avatar-size": `${avatarSize}px`, "--contact-cover-height": `${CONTACT_COVER_HEIGHT[cover.size]}px`, "--contact-accent": primary, "--contact-ink": contactInk, "--contact-surface": contactSurface, "--contact-cover-color": zone.contactCoverColor || primary, "--contact-role-color": title.eyebrowColor || title.color, "--contact-company-color": subtitle.color } as CSSProperties}>
       <FontLinks ids={fontIds} />
       {landing.background_type === "image" ? !externalPhotoBackground && <div className="public-bg-layer public-photo-track" aria-hidden="true"><LandingPhotoBackground landing={landing} /></div> : <><div className="public-bg-layer" style={{ position: "absolute", inset: 0, zIndex: 0, ...bgLayerStyle }} /><div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none", backgroundImage: `linear-gradient(180deg, rgba(4,8,10,${(bgTint * 0.55).toFixed(3)}), rgba(5,8,11,${bgTint}))` }} /></>}
       {edit && (

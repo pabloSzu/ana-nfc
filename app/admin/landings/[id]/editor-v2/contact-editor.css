@@ -140,6 +140,26 @@
 .v2-contact-look.is-professional .look-name { left: 44px; right: 10px; top: 34px; background: #202637; }
 .v2-contact-look.is-professional .look-line { left: 44px; right: 25px; top: 45px; }
 .v2-contact-look.is-professional .look-action { left: 12px; right: 12px; top: 81px; height: 5px; background: #163b49; border-radius: 0; box-shadow: 0 12px 0 #dae4e6; }
+.v2-contact-look.is-studio .v2-contact-look-art { background: #fbf8f2; }
+.v2-contact-look.is-studio .look-cover { height: 51px; background: linear-gradient(90deg, #fbf8f2 0 52%, #153bb3 52%); }
+.v2-contact-look.is-studio .look-cover::after { content: ""; position: absolute; right: -13px; top: -5px; width: 40px; height: 40px; border-radius: 50%; background: #fbf8f2; }
+.v2-contact-look.is-studio .look-avatar { top: 9px; left: 9px; width: 34px; height: 39px; border: 2px solid #fbf8f2; border-radius: 1px; background: #9c7c6f; }
+.v2-contact-look.is-studio .look-name { top: 59px; left: 10px; right: 21px; height: 9px; background: #102f94; }
+.v2-contact-look.is-studio .look-line { top: 73px; left: 10px; right: 35px; background: #697aa5; }
+.v2-contact-look.is-studio .look-action { top: 88px; left: 10px; right: 10px; height: 13px; border-radius: 2px; background: #153bb3; }
+.v2-contact-look.is-monogram .v2-contact-look-art { background: #f8f4e9; }
+.v2-contact-look.is-monogram .look-cover { height: 49px; background: #173c30; }
+.v2-contact-look.is-monogram .look-avatar { top: 7px; left: 28px; width: 36px; height: 36px; border: 1px solid #bda46f; border-radius: 0; background: #173c30; }
+.v2-contact-look.is-monogram .look-avatar::after { content: "CM"; display: grid; place-items: center; height: 100%; color: #e6c98e; font: 18px Georgia, serif; letter-spacing: -.1em; }
+.v2-contact-look.is-monogram .look-name { top: 57px; left: 17px; right: 17px; height: 7px; background: #173c30; }
+.v2-contact-look.is-monogram .look-line { top: 70px; left: 29px; right: 29px; background: #9b855e; }
+.v2-contact-look.is-monogram .look-action { top: 86px; left: 12px; right: 12px; height: 14px; border-radius: 2px; background: #173c30; }
+.v2-contact-look.is-impact .v2-contact-look-art { background: #0d2037; }
+.v2-contact-look.is-impact .look-cover { height: 48px; background: linear-gradient(145deg, #244363, #0d2037); }
+.v2-contact-look.is-impact .look-avatar { top: 11px; left: 11px; width: 32px; height: 32px; border: 2px solid #0d2037; border-radius: 6px; background: #668194; }
+.v2-contact-look.is-impact .look-name { top: 57px; left: 11px; right: 22px; height: 8px; background: #f6f8fb; }
+.v2-contact-look.is-impact .look-line { top: 70px; left: 11px; right: 35px; background: #b7c6da; }
+.v2-contact-look.is-impact .look-action { top: 84px; left: 11px; right: 11px; height: 16px; border-radius: 4px; background: #c8f244; }
 @media (min-width: 841px) and (max-width: 1000px) {
   .is-contact-editor .v2-panel { width: 370px; }
 }

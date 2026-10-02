@@ -665,17 +665,6 @@ a.contact-detail-row:hover { background: color-mix(in srgb, var(--contact-accent
   border-bottom: 1px solid color-mix(in srgb, var(--contact-ink) 26%, transparent);
   background: none;
 }
-.public.is-contact.contact-theme-editorial:not(.contact-layout-document) .contact-hero-art.contact-cover-pattern-original:not(:has(.contact-hero-photo-mask))::after {
-  content: "";
-  position: absolute;
-  width: 132px;
-  height: 132px;
-  right: 12%;
-  top: -50px;
-  border: 1px solid color-mix(in srgb, var(--contact-ink) 22%, transparent);
-  border-radius: 50%;
-  pointer-events: none;
-}
 .public.is-contact.contact-theme-editorial:not(.contact-layout-document) .landing-identity-block {
   min-height: calc(var(--contact-avatar-size) - 24px);
   padding: 14px 28px 19px !important;
@@ -787,6 +776,149 @@ a.contact-detail-row:hover { background: color-mix(in srgb, var(--contact-accent
 .public.is-contact.contact-custom-surface.contact-theme-essential > .public-inner,
 .public.is-contact.contact-custom-surface.contact-theme-editorial > .public-inner,
 .public.is-contact.contact-custom-surface.contact-theme-professional > .public-inner { background: var(--contact-surface); }
+
+/* Three distinct contact compositions; all reuse the same content and editor controls. */
+.public.is-contact:is(.contact-theme-studio, .contact-theme-monogram, .contact-theme-impact):not(.contact-layout-document) > .public-inner {
+  width: min(calc(100% - 24px), 430px);
+  padding: 0 0 20px;
+  overflow: hidden;
+  background: var(--contact-surface);
+  color: var(--contact-ink);
+}
+.public.is-contact:is(.contact-theme-studio, .contact-theme-monogram, .contact-theme-impact):not(.contact-layout-document) .contact-hero {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.public.is-contact:is(.contact-theme-studio, .contact-theme-monogram, .contact-theme-impact):not(.contact-layout-document) .contact-hero-art {
+  border-radius: 0;
+}
+.public.is-contact:is(.contact-theme-studio, .contact-theme-monogram, .contact-theme-impact):not(.contact-layout-document) .contact-hero-art > span { display: none; }
+.public.is-contact:is(.contact-theme-studio, .contact-theme-monogram, .contact-theme-impact):not(.contact-layout-document) .landing-identity-block h1,
+.public.is-contact:is(.contact-theme-studio, .contact-theme-monogram, .contact-theme-impact):not(.contact-layout-document) .landing-eyebrow,
+.public.is-contact:is(.contact-theme-studio, .contact-theme-monogram, .contact-theme-impact):not(.contact-layout-document) .landing-desc { overflow-wrap: anywhere; }
+.public.is-contact:is(.contact-theme-studio, .contact-theme-monogram, .contact-theme-impact):not(.contact-layout-document) .contact-feature-card { box-shadow: none !important; }
+
+/* Estudio: portrait and graphic cover lead into oversized, left-aligned typography. */
+.public.is-contact.contact-theme-studio:not(.contact-layout-document) > .public-inner {
+  border: 1px solid color-mix(in srgb, var(--contact-ink) 22%, transparent);
+  border-radius: 6px;
+  box-shadow: 0 18px 40px #0b267324;
+}
+.public.is-contact.contact-theme-studio:not(.contact-layout-document) .contact-hero-art.contact-cover-pattern-original:not(:has(.contact-hero-photo-mask)) {
+  background-color: var(--contact-accent);
+  background-image: radial-gradient(circle at 106% 36%, var(--contact-surface) 0 79px, transparent 80px), linear-gradient(90deg, var(--contact-surface) 0 52%, var(--contact-accent) 52%);
+}
+.public.is-contact.contact-theme-studio:not(.contact-layout-document) .contact-hero-art.contact-cover-pattern-original:not(:has(.contact-hero-photo-mask))::before { background: none; }
+.public.is-contact.contact-theme-studio:not(.contact-layout-document) .landing-identity-block { padding: 0 27px 22px !important; text-align: left !important; }
+.public.is-contact.contact-theme-studio:not(.contact-layout-document) .landing-identity-block .avatar {
+  margin: calc(12px - min(var(--contact-cover-height), 154px)) auto 27px 0 !important;
+  box-shadow: 0 0 0 5px var(--contact-surface), 0 12px 23px #0d23702e !important;
+}
+.public.is-contact.contact-theme-studio:not(.contact-layout-document) .landing-identity-block h1 { line-height: 1.01; text-align: left !important; }
+.public.is-contact.contact-theme-studio:not(.contact-layout-document) .landing-eyebrow,
+.public.is-contact.contact-theme-studio:not(.contact-layout-document) .landing-desc { text-align: left !important; }
+.public.is-contact.contact-theme-studio:not(.contact-layout-document) .landing-eyebrow { margin-top: 14px; }
+.public.is-contact.contact-theme-studio:not(.contact-layout-document) .contact-primary-actions,
+.public.is-contact.contact-theme-studio:not(.contact-layout-document) .public-actions { padding-left: 27px; padding-right: 27px; }
+.public.is-contact.contact-theme-studio:not(.contact-layout-document) .contact-contact-heading { text-align: left; text-transform: uppercase; letter-spacing: .12em; font-size: 11px; }
+.public.is-contact.contact-theme-studio:not(.contact-layout-document) .contact-quick-actions a { border-color: color-mix(in srgb, var(--contact-accent) 38%, transparent); border-radius: 7px; box-shadow: none; }
+.public.is-contact.contact-theme-studio:not(.contact-layout-document) .landing-save-contact { border-radius: 7px; box-shadow: none; }
+.public.is-contact.contact-theme-studio:not(.contact-layout-document) .contact-feature-card { border-radius: 7px !important; }
+
+/* Monograma: the real initials are the cover's visual anchor when no photo is uploaded. */
+.public.is-contact.contact-theme-monogram:not(.contact-layout-document) > .public-inner {
+  border: 1px solid #98815d66;
+  border-radius: 4px;
+  background-image: repeating-linear-gradient(0deg, #173c3005 0 1px, transparent 1px 5px);
+  box-shadow: 0 18px 42px #1835262b;
+}
+.public.is-contact.contact-theme-monogram:not(.contact-layout-document) .contact-hero-art.contact-cover-pattern-original:not(:has(.contact-hero-photo-mask)) {
+  background-color: var(--contact-accent);
+  background-image: radial-gradient(circle at 84% -25%, transparent 0 85px, #c6a77766 86px 87px, transparent 88px), linear-gradient(145deg, var(--contact-accent), color-mix(in srgb, var(--contact-accent) 80%, #071912));
+}
+.public.is-contact.contact-theme-monogram:not(.contact-layout-document) .contact-hero-art.contact-cover-pattern-original:not(:has(.contact-hero-photo-mask))::before {
+  inset: 14px 18px;
+  border: 1px solid #d4b57a61;
+  background: none;
+}
+.public.is-contact.contact-theme-monogram:not(.contact-layout-document) .landing-identity-block { padding: 0 25px 27px !important; text-align: center !important; }
+.public.is-contact.contact-theme-monogram:not(.contact-layout-document) .landing-identity-block .avatar {
+  margin: calc(12px - min(var(--contact-cover-height), 154px)) auto 27px !important;
+  box-shadow: 0 0 0 5px var(--contact-accent) !important;
+}
+.public.is-contact.contact-theme-monogram:not(.contact-layout-document) .landing-identity-block .avatar:has(.logo-initials) { background: transparent !important; color: #e6c98e !important; }
+.public.is-contact.contact-theme-monogram:not(.contact-layout-document) .landing-identity-block .avatar:has(.logo-initials) .logo-initials { font-size: calc(var(--contact-avatar-size) * .57); letter-spacing: -.1em; }
+.public.is-contact.contact-theme-monogram:not(.contact-layout-document) .landing-identity-block h1 { line-height: 1.06; text-align: center !important; }
+.public.is-contact.contact-theme-monogram:not(.contact-layout-document) .landing-eyebrow,
+.public.is-contact.contact-theme-monogram:not(.contact-layout-document) .landing-desc { text-align: center !important; }
+.public.is-contact.contact-theme-monogram:not(.contact-layout-document) .landing-eyebrow { margin-top: 12px; }
+.public.is-contact.contact-theme-monogram:not(.contact-layout-document) .contact-primary-actions,
+.public.is-contact.contact-theme-monogram:not(.contact-layout-document) .public-actions { padding-left: 25px; padding-right: 25px; }
+.public.is-contact.contact-theme-monogram:not(.contact-layout-document) .contact-contact-heading { text-align: center; font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 500; }
+.public.is-contact.contact-theme-monogram:not(.contact-layout-document) .contact-quick-actions a { border-color: #a28c6980; border-radius: 6px; box-shadow: none; }
+.public.is-contact.contact-theme-monogram:not(.contact-layout-document) .landing-save-contact { border-radius: 6px; box-shadow: none; }
+.public.is-contact.contact-theme-monogram:not(.contact-layout-document) .contact-feature-card { border-radius: 6px !important; }
+
+/* Impacto: dark presentation with bright functional accents and contact rows. */
+.public.is-contact.contact-theme-impact:not(.contact-layout-document) > .public-inner {
+  border: 1px solid #d1e4ff2e;
+  border-radius: 13px;
+  box-shadow: 0 20px 48px #020b18a8;
+}
+.public.is-contact.contact-theme-impact:not(.contact-layout-document) .contact-hero-art.contact-cover-pattern-original:not(:has(.contact-hero-photo-mask)) {
+  background-color: var(--contact-surface);
+  background-image: radial-gradient(ellipse at 30% 80%, #35506a 0, transparent 58%), linear-gradient(135deg, #142e4c, var(--contact-surface));
+}
+.public.is-contact.contact-theme-impact:not(.contact-layout-document) .contact-hero-art.contact-cover-pattern-original:not(:has(.contact-hero-photo-mask))::before {
+  inset: 15px 16px;
+  border-right: 3px solid var(--contact-accent);
+  border-bottom: 3px solid var(--contact-accent);
+  border-radius: 0 0 56px 0;
+  background: none;
+}
+.public.is-contact.contact-theme-impact:not(.contact-layout-document) .landing-identity-block { padding: 0 26px 23px !important; text-align: left !important; }
+.public.is-contact.contact-theme-impact:not(.contact-layout-document) .landing-identity-block .avatar {
+  margin: calc(28px - min(var(--contact-cover-height), 154px)) auto 23px 0 !important;
+  box-shadow: 0 0 0 4px var(--contact-surface), 0 10px 23px #020812a6 !important;
+}
+.public.is-contact.contact-theme-impact:not(.contact-layout-document) .landing-identity-block h1 { line-height: 1.04; text-align: left !important; }
+.public.is-contact.contact-theme-impact:not(.contact-layout-document) .landing-eyebrow,
+.public.is-contact.contact-theme-impact:not(.contact-layout-document) .landing-desc { text-align: left !important; }
+.public.is-contact.contact-theme-impact:not(.contact-layout-document) .landing-eyebrow { margin-top: 11px; }
+.public.is-contact.contact-theme-impact:not(.contact-layout-document) .contact-primary-actions,
+.public.is-contact.contact-theme-impact:not(.contact-layout-document) .public-actions { padding-left: 26px; padding-right: 26px; }
+.public.is-contact.contact-theme-impact:not(.contact-layout-document) .contact-contact-heading { margin-bottom: 13px; color: var(--contact-ink); text-align: left; }
+.public.is-contact.contact-theme-impact:not(.contact-layout-document) .contact-quick-actions { gap: 9px; }
+.public.is-contact.contact-theme-impact.contact-presentation-details:not(.contact-layout-document) .contact-quick-actions a {
+  padding: 11px 13px;
+  border: 1px solid #d1e4ff2b;
+  border-radius: 11px;
+  background: #ffffff09;
+  box-shadow: none;
+}
+.public.is-contact.contact-theme-impact:not(.contact-layout-document) .contact-quick-actions a:hover { background: #ffffff16; }
+.public.is-contact.contact-theme-impact.contact-presentation-details:not(.contact-layout-document) .contact-extra-details {
+  gap: 9px;
+  margin-top: 9px;
+  overflow: visible;
+  border: 0;
+  background: transparent;
+}
+.public.is-contact.contact-theme-impact.contact-presentation-details:not(.contact-layout-document) .contact-detail-row {
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 12px;
+  padding: 11px 13px;
+  border: 1px solid #d1e4ff2b;
+  border-radius: 11px;
+  background: #ffffff09;
+}
+.public.is-contact.contact-theme-impact.contact-presentation-details:not(.contact-layout-document) a.contact-detail-row:hover { background: #ffffff16; }
+.public.is-contact.contact-theme-impact:not(.contact-layout-document) .landing-save-contact { border-radius: 11px; box-shadow: none; }
+.public.is-contact.contact-theme-impact:not(.contact-layout-document) .contact-feature-card { border-color: #d1e4ff2b !important; border-radius: 11px !important; }
+.public.is-contact.contact-theme-impact:not(.contact-layout-document) .contact-about { border-color: #d1e4ff2b; background: #ffffff09; color: var(--contact-ink); }
+.public.is-contact.contact-custom-surface:is(.contact-theme-studio, .contact-theme-monogram, .contact-theme-impact) > .public-inner { background: var(--contact-surface); background-image: none; }
 
 .landing-editor-icon { position: relative; z-index: 2; width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.42); border-radius: 12px; background: rgba(17,12,54,.27); box-shadow: inset 0 1px 0 rgba(255,255,255,.24); color: #fff6a8; font-size: 18px; }
 .landing-editor-copy { position: relative; z-index: 2; min-width: 0; display: grid; line-height: 1.15; text-shadow: 0 1px 2px rgba(20,12,60,.42); }

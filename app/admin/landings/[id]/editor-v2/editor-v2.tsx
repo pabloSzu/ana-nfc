@@ -47,9 +47,12 @@ const DEVICE_OPTIONS: { id: DeviceMode; label: string; size: string; width: numb
   { id: "large", label: "Grande", size: "430 px", width: 430 },
 ];
 const CONTACT_LOOKS = [
-  { id: "essential", name: "Esencial", description: "Cálida y directa; tus datos son protagonistas.", layout: "card", accent: "#343d31", backdrop: "#e9eae2", font: "modern" },
-  { id: "editorial", name: "Editorial", description: "Una presentación visual para marcas personales.", layout: "card", accent: "#46372f", backdrop: "#e9e3dc", font: "domine" },
-  { id: "professional", name: "Profesional", description: "Ficha ordenada para trabajo y servicios.", layout: "document", accent: "#163b49", backdrop: "#e8eff0", font: "manrope" },
+  { id: "essential", name: "Esencial", description: "Cálida y directa; tus datos son protagonistas.", layout: "card", accent: "#343d31", backdrop: "#e9eae2", surface: "#faf7ef", ink: "#243028", secondary: "#47505f", font: "modern", size: 28, weight: 700, avatarSize: 104, shape: "round", initials: "one", actions: "shortcuts" },
+  { id: "editorial", name: "Editorial", description: "Tipografía con carácter y retrato integrado.", layout: "card", accent: "#46372f", backdrop: "#e9e3dc", surface: "#f3efea", ink: "#433b35", secondary: "#665f59", font: "domine", size: 38, weight: 500, avatarSize: 104, shape: "square", initials: "one", actions: "shortcuts" },
+  { id: "professional", name: "Profesional", description: "Ficha ordenada para trabajo y servicios.", layout: "document", accent: "#163b49", backdrop: "#e8eff0", surface: "#ffffff", ink: "#202637", secondary: "#47505f", font: "manrope", size: 28, weight: 700, avatarSize: 80, shape: "round", initials: "one", actions: "details" },
+  { id: "studio", name: "Estudio", description: "Azul intenso, retrato y composición creativa.", layout: "card", accent: "#153bb3", backdrop: "#e8e5df", surface: "#fbf8f2", ink: "#102f94", secondary: "#30416c", font: "manrope", size: 40, weight: 800, avatarSize: 136, shape: "sharp", initials: "two", actions: "shortcuts" },
+  { id: "monogram", name: "Monograma", description: "Verde profundo y presencia, incluso sin foto.", layout: "card", accent: "#173c30", backdrop: "#e5dfd0", surface: "#f8f4e9", ink: "#173c30", secondary: "#756345", font: "classic", size: 37, weight: 500, avatarSize: 136, shape: "sharp", initials: "two", actions: "shortcuts" },
+  { id: "impact", name: "Impacto", description: "Oscura, moderna y con acentos vibrantes.", layout: "card", accent: "#c8f244", backdrop: "#06111f", surface: "#0d2037", ink: "#f6f8fb", secondary: "#b7c6da", font: "manrope", size: 38, weight: 800, avatarSize: 136, shape: "square", initials: "two", actions: "details" },
 ] as const;
 type ContactLook = (typeof CONTACT_LOOKS)[number];
 
@@ -59,22 +62,22 @@ function contactLookPatch(draft: LandingDraft, look: ContactLook): Partial<Landi
     background_type: "color",
     background_color: look.backdrop,
     button_font: "minimal",
-    buttonZone: { ...draft.buttonZone, contactTheme: look.id, contactLayout: look.layout, contactDensity: "balanced", contactSurfaceColor: undefined, contactCoverColor: undefined },
-    titleStyle: { ...draft.titleStyle, font: look.font, italic: false, size: look.id === "editorial" ? 38 : 28, color: look.id === "editorial" ? "#433b35" : look.id === "professional" ? "#202637" : "#243028", weight: look.id === "editorial" ? 500 : 700, eyebrowFont: look.font, eyebrowItalic: false, eyebrowSize: 14, eyebrowColor: look.id === "editorial" ? "#665f59" : "#47505f", bgMode: "none" },
-    subtitleStyle: { ...draft.subtitleStyle, font: "minimal", italic: false, size: 14, color: look.id === "editorial" ? "#665f59" : "#47505f", bgMode: "none" },
-    logoStyle: { ...draft.logoStyle, shape: look.id === "editorial" ? "square" : "round", borderWidth: 0, shadow: "none", size: look.id === "professional" ? 80 : 104 },
-    coverStyle: { ...draft.coverStyle, mode: "banner" },
+    buttonZone: { ...draft.buttonZone, contactTheme: look.id, contactLayout: look.layout, contactDensity: "balanced", contactActionStyle: look.actions, contactSurfaceColor: undefined, contactCoverColor: undefined, contactCoverPattern: "original", contactSaveColor: undefined, contactSaveVariant: "solid" },
+    titleStyle: { ...draft.titleStyle, font: look.font, italic: false, size: look.size, color: look.ink, weight: look.weight, letterSpacing: 0, eyebrowFont: look.font, eyebrowItalic: false, eyebrowSize: 14, eyebrowColor: look.secondary, bgMode: "none" },
+    subtitleStyle: { ...draft.subtitleStyle, font: "minimal", italic: false, size: 14, color: look.secondary, bgMode: "none" },
+    logoStyle: { ...draft.logoStyle, shape: look.shape, initials: look.initials, backgroundMode: "auto", borderWidth: 0, shadow: "none", size: look.avatarSize },
+    coverStyle: { ...draft.coverStyle, mode: "banner", size: "medium" },
   };
 }
 
 function contactLookVisualParts(draft: LandingDraft) {
   const { buttonZone, titleStyle, subtitleStyle, logoStyle, coverStyle } = draft;
   return {
-    "Colores y fondo exterior": [draft.primary_color, draft.background_type, draft.background_color, buttonZone.contactSurfaceColor, buttonZone.contactCoverColor],
+    "Colores y fondo exterior": [draft.primary_color, draft.background_type, draft.background_color, buttonZone.contactSurfaceColor, buttonZone.contactCoverColor, buttonZone.contactCoverPattern, buttonZone.contactSaveColor, buttonZone.contactSaveVariant],
     "Fuentes y estilos de texto": [draft.button_font, titleStyle.font, titleStyle.italic, titleStyle.size, titleStyle.color, titleStyle.weight, titleStyle.eyebrowFont, titleStyle.eyebrowItalic, titleStyle.eyebrowSize, titleStyle.eyebrowColor, titleStyle.bgMode, subtitleStyle.font, subtitleStyle.italic, subtitleStyle.size, subtitleStyle.color, subtitleStyle.bgMode],
-    "Forma y tamaño de la foto de perfil": [logoStyle.shape, logoStyle.borderWidth, logoStyle.shadow, logoStyle.size],
-    "Presentación de la tarjeta": [buttonZone.contactLayout, buttonZone.contactDensity],
-    "Presentación de la portada": [coverStyle.mode],
+    "Forma y tamaño de la foto de perfil": [logoStyle.shape, logoStyle.initials, logoStyle.borderWidth, logoStyle.shadow, logoStyle.size],
+    "Presentación de la tarjeta": [buttonZone.contactLayout, buttonZone.contactDensity, buttonZone.contactActionStyle],
+    "Presentación de la portada": [coverStyle.mode, coverStyle.size],
   };
 }
 
@@ -865,7 +868,7 @@ function Templates({ selected, onApply }: { selected: string; onApply: (id: stri
 function ContactLooks({ selected, onApply }: { selected: string; onApply: (id: (typeof CONTACT_LOOKS)[number]["id"]) => void }) {
   return <div className="v2-fields">
     <p className="v2-help">Elegí una presentación completa. Tus datos y fotos se conservan; la portada siempre ocupa el mismo espacio, con imagen o sin ella.</p>
-    {!CONTACT_LOOKS.some((look) => look.id === selected) && <p className="v2-help">Tu tarjeta usa un diseño anterior. No cambiará hasta que elijas uno de estos tres.</p>}
+    {!CONTACT_LOOKS.some((look) => look.id === selected) && <p className="v2-help">Tu tarjeta usa un diseño anterior. No cambiará hasta que elijas una plantilla.</p>}
     <div className="v2-contact-look-grid">{CONTACT_LOOKS.map((look) => <button type="button" key={look.id} className={`v2-contact-look is-${look.id}${selected === look.id ? " is-selected" : ""}`} aria-pressed={selected === look.id} onClick={() => onApply(look.id)}>
       <span className="v2-contact-look-art" aria-hidden="true"><i className="look-cover"/><i className="look-avatar"/><i className="look-name"/><i className="look-line"/><i className="look-action"/></span>
       <strong>{look.name}</strong><small>{look.description}</small>
@@ -1094,7 +1097,7 @@ function CoverControls({ draft, coverImage, onChange, onCoverFile, onAdjustCover
     const customColor = draft.buttonZone.contactCoverColor;
     const pattern = draft.buttonZone.contactCoverPattern || "original";
     const theme = draft.buttonZone.contactTheme || "classic";
-    const patternSurface = draft.buttonZone.contactSurfaceColor || (theme === "noir" ? "#242b36" : theme === "paper" ? "#f8f2e6" : theme === "linen" ? "#f3f0e5" : theme === "essential" ? "#faf7ef" : theme === "editorial" ? "#f3efea" : "#ffffff");
+    const patternSurface = draft.buttonZone.contactSurfaceColor || CONTACT_LOOKS.find((look) => look.id === theme)?.surface || (theme === "noir" ? "#242b36" : theme === "paper" ? "#f8f2e6" : theme === "linen" ? "#f3f0e5" : "#ffffff");
     const patternPreviewStyle = { "--contact-cover-color": customColor || draft.primary_color || "#1f2937", "--contact-surface": patternSurface, "--contact-ink": contrastTextColor(patternSurface) } as CSSProperties;
     return <div className="v2-fields">
       <div className="v2-contact-cover-status" role="status"><strong>{photoVisible ? "Foto visible" : hasPhoto ? "Foto cargada, pero oculta" : "Sin foto"}</strong><span>{photoVisible ? "La tarjeta muestra la foto con este tamaño y encuadre." : hasPhoto ? "La foto está guardada, pero ahora se ve el diseño sin foto." : customColor ? "Se muestra tu color personalizado." : "Se muestra el color y detalle del diseño elegido."} Mirá la tarjeta para ver el resultado exacto.</span></div>
@@ -1328,7 +1331,7 @@ function ContactDesignControls({ draft, buttons, onChange, onBackground, onTempl
   const hasContactData = buttons.some((button) => ["phone", "email", "whatsapp"].includes(button.type) && button.url.trim()) || Boolean(draft.buttonZone.contactSecondPhone || draft.buttonZone.contactAddress);
   const theme = draft.buttonZone.contactTheme || "classic";
   const selectedLook = CONTACT_LOOKS.find((look) => look.id === theme);
-  const defaultSurface = theme === "essential" ? "#faf7ef" : theme === "editorial" ? "#f3efea" : theme === "professional" ? "#ffffff" : theme === "noir" ? "#242b36" : theme === "paper" ? "#f8f2e6" : theme === "linen" ? "#f3f0e5" : layout === "document" || contrastTextColor(draft.titleStyle.color) === "#ffffff" ? "#ffffff" : "#111422";
+  const defaultSurface = selectedLook?.surface || (theme === "noir" ? "#242b36" : theme === "paper" ? "#f8f2e6" : theme === "linen" ? "#f3f0e5" : layout === "document" || contrastTextColor(draft.titleStyle.color) === "#ffffff" ? "#ffffff" : "#111422");
   return <div className="v2-fields">
     <EditorSection title="Plantillas" tone="blue">
       <button type="button" className="v2-contact-current-look" onClick={onTemplates}><span className={`v2-contact-look is-${theme} v2-contact-current-look-art`} aria-hidden="true"><span className="v2-contact-look-art"><i className="look-cover"/><i className="look-avatar"/><i className="look-name"/><i className="look-line"/><i className="look-action"/></span></span><span className="v2-contact-current-look-copy"><strong>Elegir plantilla</strong><small>Actual: {selectedLook?.name || "Diseño anterior"} · {layout === "document" ? "Ficha profesional" : "Tarjeta visual"}</small></span><span className="v2-contact-look-change" aria-hidden="true">→</span></button>
