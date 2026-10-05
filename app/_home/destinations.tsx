@@ -6,12 +6,13 @@ import { FiArrowDown, FiArrowLeft, FiArrowRight, FiArrowUpRight, FiPause, FiPlay
 import "./destinations.css";
 
 const EXPERIENCES = [
-  { id: "reviews", brand: "Tu Marca", productName: "Mostrador chico", product: "/marketing/interactive/chico-v3.webp", screen: "/marketing/interactive/screen-resenas-v3.webp", eyebrow: "RESEÑAS DE GOOGLE", inquiry: "Hola BioNFC, quiero un QR o NFC que lleve directo a las reseñas de Google de mi negocio." },
+  { id: "reviews", brand: "Tu Marca", productName: "Mostrador chico", product: "/marketing/interactive/chico-qr-nfc-v2.webp", screen: "/marketing/interactive/screen-resenas-v3.webp", eyebrow: "RESEÑAS DE GOOGLE", inquiry: "Hola BioNFC, quiero un QR o NFC que lleve directo a las reseñas de Google de mi negocio." },
   { id: "contact", brand: "Ana Duarte", productName: "Tarjeta NFC", product: "/marketing/interactive/tarjeta-v3.webp", screen: "/marketing/interactive/screen-contacto-v3.webp", eyebrow: "CONTACTO PROFESIONAL", inquiry: "Hola BioNFC, quiero una tarjeta NFC para compartir mi contacto profesional." },
   { id: "barber", brand: "Barber Club", productName: "Llavero NFC", product: "/marketing/interactive/llavero-v3.webp", screen: "/marketing/interactive/screen-barber-v3.webp", eyebrow: "PÁGINA DE NEGOCIO", inquiry: "Hola BioNFC, quiero un llavero NFC con una página para mi negocio." },
-  { id: "cafe", brand: "Café Nube", productName: "Mostrador grande", product: "/marketing/interactive/grande-v3.webp", screen: "/marketing/interactive/screen-cafe-v3.webp", eyebrow: "MENÚ Y RESERVAS", inquiry: "Hola BioNFC, quiero un soporte NFC para compartir el menú de mi negocio." },
-  { id: "beauty", brand: "Luna Studio", productName: "Mostrador chico", product: "/marketing/interactive/belleza-v3.webp", screen: "/marketing/interactive/screen-belleza-v3.webp", eyebrow: "TURNOS Y SERVICIOS", inquiry: "Hola BioNFC, quiero un soporte NFC para mostrar los servicios de mi estudio." },
+  { id: "cafe", brand: "Café Nube", productName: "Mostrador grande", product: "/marketing/interactive/grande-qr-nfc-v2.webp", screen: "/marketing/interactive/screen-cafe-v3.webp", eyebrow: "MENÚ Y RESERVAS", inquiry: "Hola BioNFC, quiero un soporte NFC para compartir el menú de mi negocio." },
+  { id: "beauty", brand: "Luna Studio", productName: "Mostrador chico", product: "/marketing/interactive/belleza-nfc-v2.webp", screen: "/marketing/interactive/screen-belleza-v3.webp", eyebrow: "TURNOS Y SERVICIOS", inquiry: "Hola BioNFC, quiero un soporte NFC para mostrar los servicios de mi estudio." },
   { id: "shop", brand: "Casa Objeto", productName: "Tarjeta NFC", product: "/marketing/interactive/tienda-v3.webp", screen: "/marketing/interactive/screen-tienda-v3.webp", eyebrow: "TIENDA Y CATÁLOGO", inquiry: "Hola BioNFC, quiero una tarjeta NFC que lleve a mi tienda o catálogo." },
+  { id: "custom", brand: "Tu idea", productName: "Objetos a medida", product: "/marketing/interactive/custom-objects-v1.webp", screen: null, eyebrow: "SOLUCIÓN NFC A MEDIDA", inquiry: "Hola BioNFC, tengo una idea para integrar NFC en un producto o desarrollar una experiencia personalizada." },
 ] as const;
 
 export default function Destinations({ whatsappNumber }: { whatsappNumber: string }) {
@@ -74,7 +75,7 @@ export default function Destinations({ whatsappNumber }: { whatsappNumber: strin
       <div className="bx-hero-copy">
         <span className="bx-pill">QR, NFC O AMBOS · CON TU IDENTIDAD</span>
         <h1 className="bx-h1" id="hero-title">Mirá lo que pasa<br /><span className="bx-grad">con un solo toque.</span></h1>
-        <p className="bx-hero-lead">Acercás el celular y el producto abre tus reseñas, tu contacto, tu menú o una página completa de tu negocio.</p>
+        <p className="bx-hero-lead">Personalizamos el producto y lo que sucede al acercar el celular: abrir reseñas, compartir tu contacto, mostrar un menú o iniciar una solución a medida.</p>
 
         <div className="bx-hero-cta">
           <a className="bx-btn bx-btn-hero" href={waUrl} target="_blank" rel="noreferrer">Quiero algo así <FiArrowUpRight aria-hidden="true" /></a>
@@ -85,7 +86,7 @@ export default function Destinations({ whatsappNumber }: { whatsappNumber: strin
       <div className="bx-hero-demo-visual">
         <div className={`bx-experience-scene is-${phase}`} role="group" tabIndex={0} onKeyDown={handleKeyDown} onPointerDown={handlePointerDown} onPointerUp={handlePointerUp} onPointerCancel={() => { pointerStart.current = null; }} aria-label={`Carrusel: ${experience.productName} de ${experience.brand}. Deslizá o usá las flechas para cambiar.`}>
           <div className="bx-experience-halo" aria-hidden="true" />
-          <div className="bx-demo-visual-label"><span>{experience.eyebrow}</span><b>{experience.brand}</b></div>
+          <div className="bx-demo-visual-label"><em><FiRadio aria-hidden="true" />PRODUCTO + EXPERIENCIA PERSONALIZADOS</em><span>{experience.eyebrow}</span><b>{experience.brand}</b></div>
           <div className="bx-product-carousel">
             {EXPERIENCES.map((item, index) => {
               const rawPosition = (index - active + EXPERIENCES.length) % EXPERIENCES.length;
@@ -100,7 +101,15 @@ export default function Destinations({ whatsappNumber }: { whatsappNumber: strin
           <div className="bx-experience-phone">
             <div className="bx-experience-screen">
               <Image className="bx-screen-home" src="/marketing/interactive/screen-home-v3.webp" alt="" fill sizes="(max-width: 760px) 145px, 198px" />
-              <Image className="bx-screen-result" src={experience.screen} alt={`Pantalla digital de ${experience.brand}`} fill sizes="(max-width: 760px) 145px, 198px" />
+              {experience.screen
+                ? <Image className="bx-screen-result" src={experience.screen} alt={`Pantalla digital de ${experience.brand}`} fill sizes="(max-width: 760px) 145px, 198px" />
+                : <div className="bx-screen-result bx-screen-custom" aria-label="Ejemplo de solución NFC a medida">
+                    <span>DE TU IDEA A UNA ACCIÓN</span>
+                    <FiRadio aria-hidden="true" />
+                    <strong>Una solución<br />a medida.</strong>
+                    <p>Producto, diseño y experiencia pensados para tu negocio.</p>
+                    <div><i>Accesos</i><i>Registros</i><i>Identidad</i><i>Procesos</i></div>
+                  </div>}
             </div>
           </div>
           <div className="bx-experience-controls">
