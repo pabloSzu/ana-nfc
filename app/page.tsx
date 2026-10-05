@@ -91,11 +91,10 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Moody, low-lit scene — dark almost everywhere in frame, so white copy stays readable
-              over it without needing a synthetic scrim to fake contrast. */}
+          {/* The scene leaves intentional white space on the left for the headline and CTAs. */}
           <div className="bx-scene">
             <div className="bx-scene-art">
-              <Image className="bx-scene-img" src="/marketing/hero/scene-night.webp" alt="Página personalizada en un celular junto a un soporte, una tarjeta y un llavero NFC con la identidad TU MARCA, sobre una mesa oscura" fill priority sizes="(max-width: 640px) 150vw, 100vw" />
+              <Image className="bx-scene-img" src="/marketing/hero/scene-premium-light.webp" alt="Celulares con experiencias digitales para reseñas, una página de negocio y gestión, junto a productos NFC personalizados" fill priority sizes="100vw" />
             </div>
           </div>
         </div>

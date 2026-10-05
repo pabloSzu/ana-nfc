@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import Image from "next/image";
-import { FiArrowUpRight, FiCheck, FiPause, FiPlay, FiRadio } from "react-icons/fi";
+import { FiArrowLeft, FiArrowRight, FiArrowUpRight, FiCheck, FiPause, FiPlay, FiRadio } from "react-icons/fi";
 import "./destinations.css";
 
 const EXPERIENCES = [
@@ -17,9 +17,9 @@ const EXPERIENCES = [
 export default function Destinations({ whatsappNumber }: { whatsappNumber: string }) {
   const [active, setActive] = useState(0);
   const [cycle, setCycle] = useState(0);
-  const [phase, setPhase] = useState<"approach" | "open">("approach");
+  const [phase, setPhase] = useState<"settle" | "approach" | "open">("settle");
   const [paused, setPaused] = useState(false);
-  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const pointerStart = useRef<number | null>(null);
   const experience = EXPERIENCES[active];
 
   useEffect(() => {
@@ -27,27 +27,42 @@ export default function Destinations({ whatsappNumber }: { whatsappNumber: strin
       setPhase("open");
       return;
     }
-    setPhase("approach");
-    const openTimer = window.setTimeout(() => setPhase("open"), 1350);
+    setPhase("settle");
+    const approachTimer = window.setTimeout(() => setPhase("approach"), 750);
+    const openTimer = window.setTimeout(() => setPhase("open"), 1950);
     const nextTimer = window.setTimeout(() => {
       setActive((current) => (current + 1) % EXPERIENCES.length);
       setCycle((current) => current + 1);
-    }, 6200);
+    }, 6500);
     return () => {
+      window.clearTimeout(approachTimer);
       window.clearTimeout(openTimer);
       window.clearTimeout(nextTimer);
     };
   }, [active, cycle, paused]);
 
-  useEffect(() => {
-    if (window.matchMedia("(max-width: 760px)").matches) {
-      tabRefs.current[active]?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-    }
-  }, [active]);
-
   const selectExperience = (index: number) => {
     setActive(index);
     setCycle((current) => current + 1);
+  };
+  const move = (direction: number) => {
+    setActive((current) => (current + direction + EXPERIENCES.length) % EXPERIENCES.length);
+    setCycle((current) => current + 1);
+  };
+  const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return;
+    pointerStart.current = event.clientX;
+  };
+  const handlePointerUp = (event: PointerEvent<HTMLDivElement>) => {
+    if (pointerStart.current === null) return;
+    const distance = event.clientX - pointerStart.current;
+    pointerStart.current = null;
+    if (Math.abs(distance) > 42) move(distance < 0 ? 1 : -1);
+  };
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+    event.preventDefault();
+    move(event.key === "ArrowRight" ? 1 : -1);
   };
   const waUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(experience.inquiry)}`;
 
@@ -60,35 +75,33 @@ export default function Destinations({ whatsappNumber }: { whatsappNumber: strin
           <p>Elegí un ejemplo. El producto se conecta con el celular y abre la experiencia que vos quieras compartir.</p>
         </div>
 
-        <div className="bx-experience-tabs" role="tablist" aria-label="Elegí un producto y su experiencia">
-          {EXPERIENCES.map((item, index) => (
-            <button ref={(node) => { tabRefs.current[index] = node; }} type="button" role="tab" key={item.id} aria-selected={active === index} aria-controls="experience-demo" onClick={() => selectExperience(index)}>
-              <span><Image src={item.product} alt="" width={960} height={720} sizes="100px" /></span>
-              <b>{item.brand}</b>
-              <small>{item.productName}</small>
-            </button>
-          ))}
-        </div>
-
         <div className="bx-experience-panel" id="experience-demo" role="tabpanel" aria-live="polite">
           <div className="bx-experience-copy">
-            <div className={`bx-experience-status is-${phase}`}><i /><span>{phase === "open" ? "Experiencia abierta" : "Acercando el celular"}</span></div>
+            <div className={`bx-experience-status is-${phase}`}><i /><span>{phase === "open" ? "Experiencia abierta" : phase === "approach" ? "Acercando el celular" : "Producto seleccionado"}</span></div>
             <p className="bx-experience-eyebrow">{experience.eyebrow}</p>
             <h3>{experience.title}</h3>
             <p>{experience.description}</p>
             <span className="bx-experience-benefit"><FiCheck aria-hidden="true" />{experience.benefit}</span>
             <a href={waUrl} target="_blank" rel="noreferrer">Quiero algo así <FiArrowUpRight aria-hidden="true" /></a>
             <div className="bx-experience-controls">
+              <button className="bx-experience-arrow" type="button" onClick={() => move(-1)} aria-label="Producto anterior"><FiArrowLeft /></button>
               <div aria-hidden="true">{EXPERIENCES.map((item, index) => <i key={item.id} className={active === index ? "is-active" : undefined} />)}</div>
+              <button className="bx-experience-arrow" type="button" onClick={() => move(1)} aria-label="Producto siguiente"><FiArrowRight /></button>
               <button type="button" onClick={() => setPaused((current) => !current)} aria-label={paused ? "Reanudar demostración" : "Pausar demostración"}>{paused ? <FiPlay /> : <FiPause />}{paused ? "Reanudar" : "Pausar"}</button>
             </div>
           </div>
 
-          <div className={`bx-experience-scene is-${phase}`} key={`${experience.id}-${cycle}`} aria-label={`${experience.productName} de ${experience.brand} conectado con un celular`}>
+          <div className={`bx-experience-scene is-${phase}`} role="group" tabIndex={0} onKeyDown={handleKeyDown} onPointerDown={handlePointerDown} onPointerUp={handlePointerUp} onPointerCancel={() => { pointerStart.current = null; }} aria-label={`Carrusel: ${experience.productName} de ${experience.brand}. Deslizá o usá las flechas para cambiar.`}>
             <div className="bx-experience-halo" aria-hidden="true" />
-            <div className="bx-experience-product">
-              <span>{experience.brand}</span>
-              <Image src={experience.product} alt={`${experience.productName} personalizado para ${experience.brand}`} width={960} height={720} sizes="(max-width: 760px) 220px, 360px" />
+            <div className="bx-product-carousel">
+              {EXPERIENCES.map((item, index) => {
+                const rawPosition = (index - active + EXPERIENCES.length) % EXPERIENCES.length;
+                const position = rawPosition > EXPERIENCES.length / 2 ? rawPosition - EXPERIENCES.length : rawPosition;
+                return <button type="button" key={item.id} data-position={position} aria-pressed={position === 0} aria-hidden={Math.abs(position) > 1} tabIndex={Math.abs(position) <= 1 ? 0 : -1} onClick={() => selectExperience(index)} aria-label={`${item.brand}, ${item.productName}`}>
+                  <Image src={item.product} alt="" width={960} height={720} sizes="(max-width: 760px) 230px, 330px" />
+                  <span><b>{item.brand}</b><small>{item.productName}</small></span>
+                </button>;
+              })}
             </div>
             <div className="bx-experience-signal" aria-hidden="true"><i /><i /><FiRadio /></div>
             <div className="bx-experience-phone">
@@ -98,7 +111,7 @@ export default function Destinations({ whatsappNumber }: { whatsappNumber: strin
               </div>
               <span className="bx-experience-phone-notch" aria-hidden="true" />
             </div>
-            <span className="bx-experience-scene-note">QR + NFC · SIN APP</span>
+            <span className="bx-experience-scene-note">DESLIZÁ PARA EXPLORAR · QR + NFC</span>
           </div>
         </div>
         <p className="bx-experience-disclaimer">Ejemplos visuales con marcas ficticias. Adaptamos el producto y el destino a cada negocio.</p>
