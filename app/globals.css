@@ -2551,12 +2551,22 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
    editor previews that stretch plain spans/icons to fill the logo frame. */
 .logo-initials { width: auto !important; height: auto !important; }
 
-/* Columna "Escaneos" del panel: el total manda y el dato de los 30 días va abajo, más chico —
+/* Columna "Visitas" del panel: el total manda y el dato de los 30 días va abajo, más chico —
    el primero dice si la tarjeta sirvió alguna vez, el segundo si sigue en uso, que es el que
    importa cuando toca renovar. */
-.scan-count { display: flex; flex-direction: column; line-height: 1.25; }
-.scan-count strong { font-size: 0.9375rem; font-variant-numeric: tabular-nums; }
-.scan-count small { font-size: 0.6875rem; }
+.scan-count { display: grid; gap: 7px; min-width: 156px; line-height: 1.25; }
+.scan-count-summary { display: flex; align-items: baseline; gap: 7px; }
+.scan-count-summary strong { font-size: 1rem; font-variant-numeric: tabular-nums; }
+.scan-count-summary small { font-size: 0.6875rem; white-space: nowrap; }
+.scan-sources { display: flex; flex-wrap: wrap; gap: 4px; }
+.scan-sources span { display: inline-flex; align-items: center; gap: 4px; padding: 3px 6px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text-muted); font-size: 0.625rem; font-weight: 750; white-space: nowrap; }
+.scan-sources span[data-source="qr"] { border-color: color-mix(in srgb, var(--accent) 28%, var(--border)); color: var(--accent); }
+.scan-sources span[data-source="nfc"] { border-color: color-mix(in srgb, var(--accent-3) 32%, var(--border)); color: var(--accent-3); }
+.scan-sources b { color: currentColor; font-size: inherit; font-variant-numeric: tabular-nums; }
+.admin-analytics-note { display: flex; align-items: flex-start; gap: 10px; margin: 0 0 14px; padding: 11px 13px; border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border)); border-radius: var(--radius-md); background: color-mix(in srgb, var(--accent-subtle) 50%, var(--surface)); color: var(--text-muted); }
+.admin-analytics-note > svg { flex: 0 0 auto; width: 18px; height: 18px; margin-top: 1px; color: var(--accent); }
+.admin-analytics-note p { display: grid; gap: 2px; margin: 0; font-size: 0.75rem; line-height: 1.4; }
+.admin-analytics-note strong { color: var(--text); font-size: 0.8125rem; }
 
 /* Aviso de QR no imprimible. Deliberadamente fuerte: el error que previene no se ve en pantalla
    (el código sale perfecto), solo aparece cuando ya está impreso y pegado en la pared. */
@@ -2569,3 +2579,12 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
 .qr-local-warning p { margin: 0 0 4px; font-size: 0.75rem; line-height: 1.45; opacity: .85; }
 .qr-local-warning p:last-child { margin-bottom: 0; }
 .qr-local-warning code { font-size: 0.7188rem; padding: 1px 4px; border-radius: 4px; background: rgba(0,0,0,.18); }
+.qr-addresses { display: grid; gap: 10px; margin-top: var(--space-4); text-align: left; }
+.qr-addresses > div { display: grid; gap: 4px; padding: 11px 12px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-2); }
+.qr-addresses span, .qr-nfc-instructions > strong { color: var(--text); font-size: 0.75rem; font-weight: 850; }
+.qr-addresses strong, .qr-nfc-instructions > code { color: var(--accent); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.7188rem; line-height: 1.5; overflow-wrap: anywhere; }
+.qr-addresses small { color: var(--text-muted); font-size: 0.6875rem; line-height: 1.4; }
+.qr-nfc-instructions { display: grid; gap: 7px; margin-top: var(--space-5); padding: 12px 14px; border: 1px solid color-mix(in srgb, var(--accent-3) 28%, var(--border)); border-radius: var(--radius-md); background: color-mix(in srgb, var(--accent-3-subtle) 45%, var(--surface)); text-align: left; }
+.qr-nfc-instructions p { margin: 0; color: var(--text-muted); font-size: 0.75rem; line-height: 1.45; }
+.qr-nfc-instructions p code { font-size: inherit; }
+.btn.is-disabled { cursor: not-allowed; opacity: .52; filter: grayscale(.25); }

@@ -46,9 +46,10 @@ export async function trackLandingView(landingId: string, source: ViewSource, ow
 
   after(async () => {
     try {
-      await supabase.from("landing_views").insert({ landing_id: landingId, source });
-    } catch {
-      // Intencionalmente en silencio.
+      const { error } = await supabase.from("landing_views").insert({ landing_id: landingId, source });
+      if (error) console.error("No se pudo registrar la visita de la landing", { landingId, source, code: error.code, message: error.message });
+    } catch (error) {
+      console.error("Falló el registro de la visita de la landing", { landingId, source, error });
     }
   });
 }

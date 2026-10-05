@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import { FiArrowLeft, FiArrowRight, FiArrowUpRight, FiCalendar, FiCoffee, FiGrid, FiMapPin, FiScissors } from "react-icons/fi";
 import { FaInstagram, FaWhatsapp } from "react-icons/fa6";
 import { DESIGN_PRESETS_V2 } from "@/lib/design-presets";
+import DirectLinkPreview from "./direct-link-preview";
 
 const ContactPreview = dynamic(() => import("./contact-preview"), {
   loading: () => <div className="bx-sample bx-contact-sample"><div className="bx-sample-screen" /></div>,
@@ -22,6 +23,12 @@ const CONTACT_EXAMPLES = [
   { kind: "contact", id: "essential", category: "Esencial", name: "Lucía Funes", role: "Diseñadora floral", company: "Estudio Savia", style: "Esencial + color", detail: "Una tarjeta cálida y directa, con tus datos y la opción de guardar el contacto.", accent: "#343d31", backdrop: "#e9eae2", font: "modern", layout: "card", pattern: "original" },
   { kind: "contact", id: "editorial", category: "Editorial", name: "Ana Duarte", role: "Arquitecta", company: "Ana Duarte Estudio", style: "Editorial + retrato", detail: "Foto, tipografía con carácter y una presentación más personal.", accent: "#46372f", backdrop: "#e9e3dc", font: "domine", layout: "card", pattern: "original", photo: "/marketing/showcase/contact-editorial.webp" },
   { kind: "contact", id: "professional", category: "Profesional", name: "Marcos Vidal", role: "Consultor de negocios", company: "Vidal Consultoría", style: "Profesional + ficha", detail: "Información ordenada en formato de ficha, ideal para compartir en reuniones.", accent: "#163b49", backdrop: "#e8eff0", font: "manrope", layout: "document", pattern: "grid" },
+] as const;
+
+const DIRECT_LINK_EXAMPLES = [
+  { kind: "direct", id: "reviews", category: "Reseñas de Google", name: "Café Jacarandá", style: "Reseñas + confianza", detail: "Llevá a tus clientes directo a calificarte y convertí una buena experiencia en reputación para tu negocio." },
+  { kind: "direct", id: "instagram", category: "Instagram", name: "Línea Negra Tattoo", style: "Instagram + comunidad", detail: "Abrí tu perfil social con un toque para mostrar trabajos, novedades y todo lo que pasa en tu marca." },
+  { kind: "direct", id: "website", category: "Sitio web", name: "Clara Méndez", style: "Web + portfolio", detail: "Conectá directamente con tu web, portfolio, tienda o cualquier página que ya tengas online." },
 ] as const;
 
 type LandingExample = typeof LANDING_EXAMPLES[number];
@@ -51,12 +58,12 @@ function Preview({ example }: { example: LandingExample }) {
 }
 
 export function StyleShowcase({ waUrl }: { waUrl: string }) {
-  const [category, setCategory] = useState<"landing" | "contact">("landing");
+  const [category, setCategory] = useState<"landing" | "contact" | "direct">("landing");
   const [active, setActive] = useState(0);
   const pointerStart = useRef<{ x: number; y: number } | null>(null);
-  const examples = category === "landing" ? LANDING_EXAMPLES : CONTACT_EXAMPLES;
+  const examples = category === "landing" ? LANDING_EXAMPLES : category === "contact" ? CONTACT_EXAMPLES : DIRECT_LINK_EXAMPLES;
   const selected = examples[active];
-  const changeCategory = (next: "landing" | "contact") => { setCategory(next); setActive(0); };
+  const changeCategory = (next: "landing" | "contact" | "direct") => { setCategory(next); setActive(0); };
   const move = (direction: number) => setActive((current) => (current + direction + examples.length) % examples.length);
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (event.button !== 0) return;
@@ -77,11 +84,12 @@ export function StyleShowcase({ waUrl }: { waUrl: string }) {
     <div className="bx-showcase">
       <div className="bx-showcase-copy">
         <p className="bx-showcase-kicker"><span /> UNA PRESENTACIÓN HECHA PARA VOS</p>
-        <h2 className="bx-h2 bx-on-dark">{category === "landing" ? "¿Querés reunir todo en un lugar?" : "¿Querés presentarte mejor?"}<br /><span className="bx-soft">{category === "landing" ? "Creamos tu página." : "Creamos tu tarjeta personal."}</span></h2>
-        <p className="bx-lead bx-on-dark-muted">{category === "landing" ? "Tu logo, tus fotos, tu estilo. Diseñamos una página que se sienta tan tuya como tu negocio." : "Tus datos, tu foto si querés y un diseño propio. Compartí tu presentación y hacé fácil que guarden tu contacto."}</p>
+        <h2 className="bx-h2 bx-on-dark">{category === "landing" ? "¿Querés reunir todo en un lugar?" : category === "contact" ? "¿Querés presentarte mejor?" : "¿Querés llevarlos justo adonde importa?"}<br /><span className="bx-soft">{category === "landing" ? "Creamos tu página." : category === "contact" ? "Creamos tu tarjeta personal." : "Conectamos tu link directo."}</span></h2>
+        <p className="bx-lead bx-on-dark-muted">{category === "landing" ? "Tu logo, tus fotos, tu estilo. Diseñamos una página que se sienta tan tuya como tu negocio." : category === "contact" ? "Tus datos, tu foto si querés y un diseño propio. Compartí tu presentación y hacé fácil que guarden tu contacto." : "Un toque puede abrir tus reseñas, tu Instagram, tu tienda o cualquier sitio que quieras compartir, sin pasos de más."}</p>
         <div className="bx-showcase-categories" role="group" aria-label="Tipo de diseño">
           <button type="button" aria-pressed={category === "landing"} onClick={() => changeCategory("landing")}>Landings</button>
           <button type="button" aria-pressed={category === "contact"} onClick={() => changeCategory("contact")}>Tarjetas personales</button>
+          <button type="button" aria-pressed={category === "direct"} onClick={() => changeCategory("direct")}>Links directos</button>
         </div>
         <div className="bx-showcase-picker" role="group" aria-label="Elegí un ejemplo de diseño">
           {examples.map((example, index) => <button type="button" key={example.id} aria-pressed={active === index} aria-controls="showcase-preview" onClick={() => setActive(index)}><span className={`bx-showcase-swatch is-${example.id}`} />{example.category}<FiArrowUpRight aria-hidden="true" /></button>)}
@@ -94,14 +102,14 @@ export function StyleShowcase({ waUrl }: { waUrl: string }) {
         <div className="bx-showcase-stage" data-count={examples.length} role="group" tabIndex={0} onKeyDown={handleKeyDown} onPointerDown={handlePointerDown} onPointerUp={handlePointerUp} onPointerCancel={() => { pointerStart.current = null; }} aria-label="Deslizá o usá las flechas para ver otros ejemplos">
           {examples.map((example, index) => {
             const position = (index - active + examples.length) % examples.length;
-            return <div key={example.id} className="bx-showcase-device" data-position={position} aria-hidden={true}>{example.kind === "landing" ? <Preview example={example} /> : <ContactPreview example={example} />}</div>;
+            return <div key={example.id} className="bx-showcase-device" data-position={position} aria-hidden={true}>{example.kind === "landing" ? <Preview example={example} /> : example.kind === "contact" ? <ContactPreview example={example} /> : <DirectLinkPreview example={example} />}</div>;
           })}
           <span className="bx-showcase-tag">Tu marca.<br /><b>Tu universo.</b></span>
         </div>
         <div className="bx-showcase-caption" aria-live="polite" aria-atomic="true"><span>0{active + 1} / 0{examples.length} · {selected.style}</span><p>{selected.detail}</p></div>
         <div className="bx-showcase-controls"><button type="button" onClick={() => move(-1)} aria-label="Ejemplo anterior"><FiArrowLeft aria-hidden="true" /></button><span aria-hidden="true">{examples.map((example, index) => <i key={example.id} className={active === index ? "is-active" : undefined} />)}</span><button type="button" onClick={() => move(1)} aria-label="Ejemplo siguiente"><FiArrowRight aria-hidden="true" /></button></div>
       </div>
-      <div className="bx-showcase-possibilities"><span className="bx-showcase-infinity" aria-hidden="true">∞</span><div><h3>Estos son solo algunos ejemplos.</h3><p>Podemos adaptar el diseño de tu página o tarjeta a tu identidad, con foto o sin ella.</p></div><span className="bx-showcase-signature">Hecha para vos.<br /><b>Lista para compartir.</b></span></div>
+      <div className="bx-showcase-possibilities"><span className="bx-showcase-infinity" aria-hidden="true">∞</span><div><h3>Estos son solo algunos ejemplos.</h3><p>Podemos crear tu página o tarjeta, o conectar directamente con el destino que más le sirva a tu negocio.</p></div><span className="bx-showcase-signature">Hecha para vos.<br /><b>Lista para compartir.</b></span></div>
     </div>
   );
 }

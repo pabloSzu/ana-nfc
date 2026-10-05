@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { getSiteOrigin } from "@/lib/site-url";
 
 // metadataBase turns every relative URL in metadata (the OG/Twitter image this app serves from
 // app/opengraph-image.tsx, mainly) into an absolute one — without it, link previews on WhatsApp,
 // iMessage, Slack, etc. silently fail to resolve the image. Same env var the QR codes already use
 // for their target URL (see README), so both stay in sync with whatever domain is actually live.
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+const siteUrl = getSiteOrigin();
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

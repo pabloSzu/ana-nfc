@@ -20,6 +20,24 @@ const dateTimeFormatter = new Intl.DateTimeFormat("es-AR", { dateStyle: "short",
 const sortOptions = ["created_desc", "created_asc", "updated_desc", "updated_asc", "name_asc", "name_desc"] as const;
 type SortOption = typeof sortOptions[number];
 const timestamp = (value: string | null | undefined) => value ? Date.parse(value) || 0 : 0;
+type ViewCount = { landing_id: string; total?: number | string | null; last_30_days?: number | string | null; qr?: number | string | null; nfc?: number | string | null; direct?: number | string | null };
+const countValue = (value: number | string | null | undefined) => Number(value) || 0;
+
+function VisitCount({ views }: { views?: ViewCount }) {
+  const total = countValue(views?.total);
+  const recent = countValue(views?.last_30_days);
+  const qr = countValue(views?.qr);
+  const nfc = countValue(views?.nfc);
+  const direct = countValue(views?.direct);
+  return <div className="scan-count">
+    <div className="scan-count-summary"><strong>{total}</strong><small className="muted">{total ? `${recent} en 30 días` : "Sin visitas externas"}</small></div>
+    <div className="scan-sources" aria-label={`Origen de las visitas: ${qr} por QR, ${nfc} por NFC y ${direct} directas`}>
+      <span data-source="qr" title="Entradas desde el código QR">QR <b>{qr}</b></span>
+      <span data-source="nfc" title="Entradas desde el chip NFC">NFC <b>{nfc}</b></span>
+      <span data-source="direct" title="Enlace compartido, escrito o abierto directamente">Directo <b>{direct}</b></span>
+    </div>
+  </div>;
+}
 
 export default async function Admin({ searchParams }: { searchParams: AdminSearchParams }) {
   const params = await searchParams;
@@ -52,11 +70,11 @@ export default async function Admin({ searchParams }: { searchParams: AdminSearc
     supabase.from("clients").select("*").eq("owner_id", user.id).order("created_at", { ascending: false }),
     supabase.from("landings").select("*").eq("owner_id", user.id).order("created_at", { ascending: false }),
     // Una vista agregada y no las filas crudas: una landing que anda bien va a tener miles de
-    // visitas y acá solo se necesitan dos números. Si la migración todavía no se corrió, esto
+    // visitas y acá solo se necesitan los totales. Si la migración todavía no se corrió, esto
     // devuelve error en vez de tirar, y la columna queda en blanco en lugar de romper el panel.
-    supabase.from("landing_view_counts").select("landing_id,total,last_30_days"),
+    supabase.from("landing_view_counts").select("*"),
   ]);
-  const viewsByLanding = new Map((viewCounts || []).map((row) => [row.landing_id as string, row]));
+  const viewsByLanding = new Map<string, ViewCount>((viewCounts || []).map((row) => [String(row.landing_id), row as ViewCount]));
   const totalClients = clients?.length || 0;
   const totalPages = landings?.length || 0;
   const totalCards = landings?.filter((landing) => landing.business_type === "contact").length || 0;
@@ -138,11 +156,12 @@ export default async function Admin({ searchParams }: { searchParams: AdminSearc
         {hasFilters && <Link className="btn secondary" href="/admin">Limpiar</Link>}
       </form>}
       {!!landings?.length && <p className="admin-library-count">{filteredLandings.length} de {totalPages} {totalPages === 1 ? "página" : "páginas"}</p>}
+      {!!landings?.length && <aside className="admin-analytics-note"><IconQrCode /><p><strong>Visitas reales, sin inflar números.</strong><span>Se cuentan aperturas de personas externas. Tus propias visitas mientras estás logueado y las previsualizaciones automáticas no suman. Recargá el panel para ver ingresos nuevos.</span></p></aside>}
       {!landings?.length ? <div className="empty-state"><IconFileText /><strong>Todavía no creaste ninguna página</strong><p className="muted">Empezá con “Nueva landing” o “Nueva tarjeta personal”.</p></div> : (
         !filteredLandings.length ? <div className="empty-state"><IconFileText /><strong>No hay páginas con esos filtros</strong><p className="muted">Probá otra búsqueda o limpiá los filtros.</p><Link className="btn secondary" href="/admin">Ver todas</Link></div> :
         <div className="table-wrap">
           <table className="data-table admin-pages-table">
-            <thead><tr><th aria-sort={sort.startsWith("name_") ? sort === "name_asc" ? "ascending" : "descending" : undefined}>{sortLink("Página", "name")}</th><th>Cliente</th><th>Estado</th><th aria-sort={sort.startsWith("created_") ? sort === "created_asc" ? "ascending" : "descending" : undefined}>{sortLink("Creada", "created")}</th><th aria-sort={sort.startsWith("updated_") ? sort === "updated_asc" ? "ascending" : "descending" : undefined}>{sortLink("Editada", "updated")}</th><th>Escaneos</th><th></th></tr></thead>
+            <thead><tr><th aria-sort={sort.startsWith("name_") ? sort === "name_asc" ? "ascending" : "descending" : undefined}>{sortLink("Página", "name")}</th><th>Cliente</th><th>Estado</th><th aria-sort={sort.startsWith("created_") ? sort === "created_asc" ? "ascending" : "descending" : undefined}>{sortLink("Creada", "created")}</th><th aria-sort={sort.startsWith("updated_") ? sort === "updated_asc" ? "ascending" : "descending" : undefined}>{sortLink("Editada", "updated")}</th><th>Visitas</th><th></th></tr></thead>
             <tbody>
               {filteredLandings.map((landing) => { const client = landing.client_id ? clientById.get(landing.client_id) : null; return (
                 <tr key={landing.id} className={`admin-page-row ${landing.business_type === "contact" ? "is-contact" : "is-landing"}`}>
@@ -151,7 +170,7 @@ export default async function Admin({ searchParams }: { searchParams: AdminSearc
                   <td><span className={landing.published ? "status published" : "status"}>{landing.published ? "Publicada" : "Borrador"}</span></td>
                   <td className="admin-date-cell"><span className="admin-mobile-cell-label">Creada</span>{landing.created_at ? <time dateTime={landing.created_at} title={dateTimeFormatter.format(new Date(landing.created_at))}>{dateFormatter.format(new Date(landing.created_at))}</time> : <span className="muted">—</span>}</td>
                   <td className="admin-date-cell"><span className="admin-mobile-cell-label">Editada</span>{landing.updated_at || landing.created_at ? <time dateTime={landing.updated_at || landing.created_at} title={dateTimeFormatter.format(new Date(landing.updated_at || landing.created_at))}>{dateFormatter.format(new Date(landing.updated_at || landing.created_at))}</time> : <span className="muted">—</span>}</td>
-                  <td>{(() => { const views = viewsByLanding.get(landing.id); if (!views?.total) return <span className="muted">—</span>; return <div className="scan-count"><strong>{views.total}</strong>{views.last_30_days ? <small className="muted">{views.last_30_days} en 30 días</small> : null}</div>; })()}</td>
+                  <td><VisitCount views={viewsByLanding.get(landing.id)} /></td>
                   <td>
                     <div className="table-actions">
                       <Link className="icon-text-button accent slot-edit" href={`/admin/landings/${landing.id}/editor-v2`}><IconEdit /> Editar</Link>

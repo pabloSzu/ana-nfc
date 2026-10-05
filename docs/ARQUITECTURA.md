@@ -80,6 +80,10 @@ cuenta son **aperturas de la página**, en `app/[slug]/page.tsx`.
 - El origen (`nfc` / `qr` / `direct`) sale del parámetro `?s=`. **Solo se distingue si el
   tag se grabó con `?s=nfc`.** El QR ya lo lleva. Sobre tarjetas ya entregadas no hay
   forma de saberlo: cuentan como `direct`.
+- El Admin muestra el total, los últimos 30 días y el desglose por origen. Las aperturas
+  hechas por el dueño mientras conserva su sesión de Admin no se registran.
+- Un error de inserción no rompe la landing, pero sí queda registrado en los logs del servidor
+  para que una falla de estadísticas no vuelva a pasar inadvertida.
 
 ## Migraciones
 

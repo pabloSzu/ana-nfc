@@ -2,9 +2,9 @@ import Image from "next/image";
 import { FiArrowUpRight, FiCheck, FiLayers } from "react-icons/fi";
 
 const PRODUCTS = [
-  { id: "keychain", name: "Llavero NFC", context: "PARA LLEVAR CON VOS", line: "Tu negocio sale con vos.", description: "En tus llaves, siempre a mano. Compartí tu link o tu página donde aparezca una oportunidad.", use: "Emprendedores · eventos · contactos", image: "/marketing/hero/keychain.webp", width: 475, height: 760 },
-  { id: "card", name: "Tarjeta NFC", context: "PARA PRESENTARTE", line: "Una presentación que queda.", description: "Acercala al celular y compartí tu perfil profesional. La tarjeta vuelve a tu bolsillo.", use: "Profesionales · equipos · reuniones", image: "/marketing/hero/card.webp", width: 980, height: 603 },
-  { id: "stand", name: "Soporte de mostrador", context: "PARA TU LOCAL", line: "Tu mejor punto de encuentro.", description: "En la mesa o el mostrador. Tu menú, tus redes y tus reseñas, justo donde está tu cliente.", use: "Cafés · locales · consultorios", image: "/marketing/hero/stand.webp", width: 676, height: 1000 },
+  { id: "keychain", name: "Llavero NFC", context: "PARA LLEVAR CON VOS", line: "Tu negocio sale con vos.", description: "En tus llaves, siempre a mano. Compartí tu link o tu página donde aparezca una oportunidad.", use: "Emprendedores · eventos · contactos", image: "/marketing/hero/bionfc-keychain.webp", width: 1024, height: 1536 },
+  { id: "card", name: "Tarjeta NFC", context: "PARA PRESENTARTE", line: "Una presentación que queda.", description: "Acercala al celular y compartí tu perfil profesional. La tarjeta vuelve a tu bolsillo.", use: "Profesionales · equipos · reuniones", image: "/marketing/hero/bionfc-card.webp", width: 1536, height: 1024 },
+  { id: "stand", name: "Soporte de mostrador", context: "PARA TU LOCAL", line: "Tu mejor punto de encuentro.", description: "En la mesa o el mostrador. Tu menú, tus redes y tus reseñas, justo donde está tu cliente.", use: "Cafés · locales · consultorios", image: "/marketing/hero/bionfc-stand.webp", width: 1322, height: 1190 },
 ];
 
 export default function Products({ whatsappNumber }: { whatsappNumber: string }) {
