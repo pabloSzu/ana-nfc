@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
 import "./marketing.css";
 import "./_home/sections.css";
 import { IconMessageCircle, IconZap, IconShieldCheck, IconTruck, IconChefHat, IconShoppingBag, IconBriefcase, IconPartyPopper, IconUserRound } from "@/components/icons";
-import { FiArrowUpRight, FiArrowDown, FiCheck, FiSend } from "react-icons/fi";
+import { FiArrowUpRight, FiCheck, FiSend } from "react-icons/fi";
 import { FaWhatsapp } from "react-icons/fa6";
 import { body, display, hand } from "./_home/fonts";
 import Logo from "./_home/logo";
@@ -79,24 +78,9 @@ export default function Home() {
         </div>
       </HomeNav>
 
-      <header id="top" className="bx-hero">
+      <header id="top" className="bx-hero" aria-labelledby="hero-title">
         <div className="bx-hero-main">
-          <div className="bx-hero-copy">
-            <span className="bx-pill">QR, NFC O AMBOS · CON TU IDENTIDAD</span>
-            <h1 className="bx-h1">Tu negocio,<br /><span className="bx-grad">a un toque.</span></h1>
-            <p className="bx-hero-lead">Elegí un QR, un producto NFC o ambos. Tus clientes llegan a tus reseñas, un enlace directo o tu página. Te ayudamos a dejarlo listo.</p>
-            <div className="bx-hero-cta">
-              <a className="bx-btn bx-btn-hero" href={WA} target="_blank" rel="noreferrer">Quiero uno para mi negocio <span aria-hidden="true">→</span></a>
-              <a className="bx-btn bx-btn-outline" href="#elegi-tu-uso"><FiArrowDown aria-hidden="true" />Explorar opciones</a>
-            </div>
-          </div>
-
-          {/* The scene leaves intentional white space on the left for the headline and CTAs. */}
-          <div className="bx-scene">
-            <div className="bx-scene-art">
-              <Image className="bx-scene-img" src="/marketing/hero/scene-premium-light.webp" alt="Celulares con experiencias digitales para reseñas, una página de negocio y gestión, junto a productos NFC personalizados" fill priority sizes="100vw" />
-            </div>
-          </div>
+          <Destinations whatsappNumber={WHATSAPP_NUMBER} />
         </div>
 
         <div className="bx-hero-bar">
@@ -112,7 +96,6 @@ export default function Home() {
         {TRUST.map(({ icon: Icon, text }) => <span key={text}><Icon />{text}</span>)}
       </div>
 
-      <Destinations whatsappNumber={WHATSAPP_NUMBER} />
       <HowItWorks />
 
       <section id="tu-pagina" className="bx-dark">

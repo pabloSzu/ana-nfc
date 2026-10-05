@@ -22,7 +22,6 @@ export default function Phone({ brand, handle, slug, tagline, hue, mode, buttons
       <div className="bx-phone-frame">
         <div className="bx-phone-screen">
           <div className="bx-phone-cover" />
-          <div className="bx-phone-notch" />
           <div className="bx-phone-status">
             <span>14:32</span>
             <span className="bx-phone-signal"><b /><b /><b /></span>
