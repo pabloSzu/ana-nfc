@@ -1,9 +1,16 @@
 import type { ReactNode } from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { logout } from "./login/actions";
 import { AdminThemeButton } from "@/components/admin-theme";
 import { IconLogOut, IconRocket } from "@/components/icons";
+import "../globals.css";
+
+export const metadata: Metadata = {
+  title: "Panel de BioNFC",
+  robots: { index: false, follow: false, nocache: true },
+};
 
 // Wraps every /admin/* route (the dashboard, the editor, QR, clientes, login) — deliberately
 // NOT the root layout, which also covers the public /[slug] landing pages. Those are the

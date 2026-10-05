@@ -1,7 +1,8 @@
 "use client";
 
-import LandingRenderer from "@/components/landing-renderer";
-import ScaledPhoneCanvas from "@/components/scaled-phone-canvas";
+import Image from "next/image";
+import type { CSSProperties } from "react";
+import { FiArrowUpRight, FiDownload, FiGlobe, FiMail, FiPhone } from "react-icons/fi";
 
 export type ContactPreviewExample = {
   id: "essential" | "editorial" | "professional";
@@ -17,47 +18,32 @@ export type ContactPreviewExample = {
 };
 
 export default function ContactPreview({ example }: { example: ContactPreviewExample }) {
-  const isEditorial = example.id === "editorial";
-  const isProfessional = example.id === "professional";
-  const ink = isEditorial ? "#433b35" : isProfessional ? "#202637" : "#243028";
-  const secondaryInk = isEditorial ? "#665f59" : "#47505f";
-  const landing = {
-    slug: "ejemplo-visual",
-    business_type: "contact",
-    business_name: example.name,
-    description: example.company,
-    logo_url: example.photo,
-    primary_color: example.accent,
-    background_type: "color",
-    background_color: example.backdrop,
-    button_font: "minimal",
-    button_style: {
-      contactTheme: example.id,
-      contactLayout: example.layout,
-      contactDensity: "balanced",
-      contactCoverPattern: example.pattern,
-      contactSaveLabel: "Guardar contacto",
-      showBranding: true,
-    },
-    title_style: { font: example.font, size: isEditorial ? 38 : 28, color: ink, weight: isEditorial ? 500 : 700, eyebrow: example.role, eyebrowFont: example.font, eyebrowSize: 14, eyebrowColor: secondaryInk },
-    subtitle_style: { font: "minimal", size: 14, color: secondaryInk },
-    logo_style: { shape: isEditorial ? "square" : "round", borderWidth: 0, shadow: "none", size: isProfessional ? 80 : 104 },
-    cover_style: { mode: "banner" },
-  };
-  const actions = [
-    { id: `${example.id}-phone`, type: "phone", title: "Teléfono", url: "+54 351 000 0000" },
-    { id: `${example.id}-email`, type: "email", title: "Email", url: "hola@example.com" },
-    { id: `${example.id}-site`, type: "custom", title: "Sitio web", url: "" },
-  ];
+  const initials = example.name.split(" ").map((part) => part[0]).join("");
 
   return (
-    <div className="bx-sample bx-contact-sample">
+    <div className="bx-sample bx-contact-sample" data-contact-design={example.id} style={{ "--contact-accent": example.accent, "--contact-bg": example.backdrop } as CSSProperties}>
       <div className="bx-sample-screen">
-        <div className="bx-contact-sample-interior" inert aria-hidden="true">
-          <ScaledPhoneCanvas className="scaled-phone-canvas bx-contact-sample-canvas" designWidth={390} measureUntransformed>
-            <LandingRenderer landing={landing} actions={actions} editorPreview />
-          </ScaledPhoneCanvas>
+        <div className="bx-contact-status" aria-hidden="true"><span>9:41</span><span>••• ▰</span></div>
+        <div className="bx-contact-card">
+          <div className="bx-contact-cover">
+            {example.photo && example.id !== "essential" ? <Image src={example.photo} alt="" fill sizes="280px" /> : <span aria-hidden="true">{initials}</span>}
+          </div>
+          <div className="bx-contact-identity">
+            <div className="bx-contact-avatar">{example.photo ? <Image src={example.photo} alt="" fill sizes="90px" /> : initials}</div>
+            <p>{example.role}</p><h3>{example.name}</h3><span>{example.company}</span>
+          </div>
+          <div className="bx-contact-actions">
+            <div className="bx-contact-save"><FiDownload aria-hidden="true" /> Guardar contacto</div>
+            <div className="bx-contact-quick">
+              <div><span><FiPhone /></span><b>Llamar</b></div><div><span><FiMail /></span><b>Email</b></div><div><span><FiGlobe /></span><b>Web</b></div>
+            </div>
+          </div>
+          <div className="bx-contact-details">
+            <div><FiPhone /><span><small>Teléfono</small><b>+54 351 000 0000</b></span><FiArrowUpRight /></div>
+            <div><FiMail /><span><small>Email</small><b>hola@ejemplo.com</b></span><FiArrowUpRight /></div>
+          </div>
         </div>
+        <div className="bx-contact-brand">HECHO CON <b>BIONFC</b></div>
       </div>
     </div>
   );

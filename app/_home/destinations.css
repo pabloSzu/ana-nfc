@@ -61,11 +61,17 @@
 @keyframes bx-phone-touch { 0% { transform: translateX(18px) rotate(1.5deg); } 44%,65% { transform: translateX(-72px) rotate(-4deg) scale(.98); } 100% { transform: translateX(18px) rotate(1.5deg); } }
 @keyframes bx-signal { 0%,22% { opacity: 0; transform: scale(.55); } 45% { opacity: 1; transform: scale(1); } 78%,100% { opacity: 0; transform: scale(1.7); } }
 @media (max-width: 1180px) {
-  .bx-hero-demo { grid-template-columns: minmax(330px,.72fr) minmax(540px,1.28fr); gap: 28px; }
+  .bx-hero-demo { grid-template-columns: minmax(300px,.72fr) minmax(500px,1.28fr); gap: 24px; }
   .bx-hero-demo .bx-h1 { font-size: clamp(47px,4.5vw,62px); }
-  .bx-product-carousel button { left: 30%; width: 300px; margin-left: -150px; }
-  .bx-product-carousel button[data-position="-1"] { transform: translateX(-160px) scale(.58) rotate(-6deg); }
-  .bx-product-carousel button[data-position="1"] { transform: translateX(160px) scale(.58) rotate(6deg); }
+  .bx-product-carousel button { left: 30%; width: 286px; margin-left: -143px; }
+  .bx-product-carousel button[data-position="-1"] { transform: translateX(-150px) scale(.58) rotate(-6deg); }
+  .bx-product-carousel button[data-position="1"] { transform: translateX(150px) scale(.58) rotate(6deg); }
+  .bx-experience-phone { right: 4%; width: 210px; height: 441px; }
+}
+@media (max-width: 1099px) {
+  .bx-hero-demo .bx-hero-copy { align-items: center; margin-inline: auto; text-align: center; }
+  .bx-hero-demo .bx-hero-lead { margin-inline: auto; }
+  .bx-hero-demo .bx-hero-cta { justify-content: center; }
 }
 @media (max-width: 980px) {
   .bx-hero-demo { display: flex; flex-direction: column; align-items: stretch; gap: 30px; }
@@ -78,15 +84,15 @@
   .bx-hero-demo { gap: 24px; }
   .bx-hero-demo .bx-h1 { font-size: clamp(42px,11.2vw,57px); }
   .bx-hero-demo .bx-hero-lead { font-size: 15px; line-height: 1.6; }
-  .bx-experience-scene { min-height: 445px; border-radius: 24px; }
+  .bx-experience-scene { min-height: 455px; border-radius: 24px; }
   .bx-demo-visual-label { top: 17px; left: 21px; }
   .bx-demo-visual-label em { max-width: 185px; font-size: 6px; }
-  .bx-product-carousel button { top: 82px; left: 29%; width: 238px; height: 285px; margin-left: -119px; }
-  .bx-product-carousel button img { height: 225px; }
+  .bx-product-carousel button { top: 88px; left: 32%; width: 220px; height: 275px; margin-left: -110px; }
+  .bx-product-carousel button img { height: 212px; }
   .bx-product-carousel button[data-position="-1"] { transform: translateX(-135px) scale(.56) rotate(-7deg); }
   .bx-product-carousel button[data-position="1"] { transform: translateX(135px) scale(.56) rotate(7deg); }
   .bx-product-carousel button > span { padding: 7px 11px; }
-  .bx-experience-phone { top: 54px; right: 1%; width: 146px; height: 304px; border-radius: 30px; transform: translateX(12px) rotate(1.5deg); }
+  .bx-experience-phone { top: 58px; right: 14px; width: 142px; height: 296px; border-radius: 30px; transform: rotate(1.5deg); }
   .bx-experience-phone::before { top: 63px; height: 41px; box-shadow: 0 51px 0 #7d7f87; }
   .bx-experience-phone::after { top: 86px; height: 53px; }
   .bx-experience-screen { inset: 5px; border-radius: 26px; }
@@ -103,11 +109,11 @@
   .bx-experience-controls button:last-child svg { width: 14px; height: 14px; }
   .bx-experience-scene-note { right: 16px; bottom: 25px; font-size: 6px; }
   .bx-experience-disclaimer { margin-top: 8px; font-size: 8px; text-align: center; }
-  @keyframes bx-phone-touch { 0% { transform: translateX(12px) rotate(1.5deg); } 44%,65% { transform: translateX(-45px) rotate(-4deg) scale(.98); } 100% { transform: translateX(12px) rotate(1.5deg); } }
+  @keyframes bx-phone-touch { 0% { transform: rotate(1.5deg); } 44%,65% { transform: translateX(-45px) rotate(-4deg) scale(.98); } 100% { transform: rotate(1.5deg); } }
 }
 @media (max-width: 390px) {
-  .bx-product-carousel button { left: 28%; }
-  .bx-experience-phone { right: 0; }
+  .bx-product-carousel button { left: 33%; width: 210px; margin-left: -105px; }
+  .bx-experience-phone { right: 10px; width: 136px; height: 284px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .bx-experience-phone,.bx-experience-signal { animation: none !important; }

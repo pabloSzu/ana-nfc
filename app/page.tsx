@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import "./marketing.css";
 import "./_home/sections.css";
-import { IconMessageCircle, IconZap, IconShieldCheck, IconTruck, IconChefHat, IconShoppingBag, IconBriefcase, IconPartyPopper, IconUserRound } from "@/components/icons";
-import { FiArrowUpRight, FiCheck, FiSend } from "react-icons/fi";
+import { IconMessageCircle, IconZap, IconShieldCheck, IconTruck } from "@/components/icons";
+import { FiArrowUpRight, FiBookOpen, FiCalendar, FiCheck, FiLink, FiMessageCircle, FiSend, FiStar } from "react-icons/fi";
 import { FaWhatsapp } from "react-icons/fa6";
 import { body, display, hand } from "./_home/fonts";
 import Logo from "./_home/logo";
@@ -14,16 +14,18 @@ import Products from "./_home/products";
 import Makers from "./_home/makers";
 import "./_home/makers.css";
 import Destinations from "./_home/destinations";
+import { getSiteOrigin } from "@/lib/site-url";
 
-const title = "BioNFC — tu negocio, a un toque";
-const description = "QR y NFC personalizados para tu negocio. Conectá a tus clientes con tus reseñas de Google, un link directo o una página con todos tus accesos.";
+const title = "Productos QR y NFC personalizados | BioNFC";
+const description = "Productos QR y NFC personalizados para conectar tu negocio con reseñas de Google, contacto, menús, páginas y experiencias digitales a medida.";
 
 export const metadata: Metadata = {
   title,
   description,
+  alternates: { canonical: "/" },
   // The image itself comes from app/opengraph-image.tsx (Next wires it up by file convention);
   // this just fills in the surrounding card fields link previews read.
-  openGraph: { title, description, type: "website", locale: "es_AR", siteName: "BioNFC" },
+  openGraph: { title, description, type: "website", locale: "es_AR", siteName: "BioNFC", url: "/" },
   twitter: { card: "summary_large_image", title, description },
 };
 
@@ -40,12 +42,12 @@ const NAV_LINKS = [
   { href: "#para-talleres", label: "Para fabricantes" },
 ];
 
-const HERO_AUDIENCES = [
-  { icon: IconChefHat, label: "Gastronomía" },
-  { icon: IconUserRound, label: "Belleza" },
-  { icon: IconShoppingBag, label: "Tiendas" },
-  { icon: IconBriefcase, label: "Profesionales" },
-  { icon: IconPartyPopper, label: "Eventos" },
+const HERO_DESTINATIONS = [
+  { icon: FiStar, label: "Reseñas" },
+  { icon: FiBookOpen, label: "Menús" },
+  { icon: FiMessageCircle, label: "WhatsApp" },
+  { icon: FiCalendar, label: "Turnos" },
+  { icon: FiLink, label: "Tu página" },
 ];
 
 const TRUST = [
@@ -64,9 +66,59 @@ const FAQS = [
   { q: "¿Cuánto cuesta y cuánto tarda?", a: "Depende del formato, la personalización y la entrega. Antes de confirmar tu pedido, te detallamos el precio, qué incluye, el plazo de preparación y cómo recibirlo." },
 ];
 
+const siteUrl = getSiteOrigin();
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${siteUrl}/#organization`,
+      name: "BioNFC",
+      url: siteUrl,
+      logo: `${siteUrl}/icon.svg`,
+      contactPoint: {
+        "@type": "ContactPoint",
+        telephone: "+54 9 351 787 3628",
+        contactType: "sales",
+        availableLanguage: "Spanish",
+      },
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${siteUrl}/#website`,
+      name: "BioNFC",
+      url: siteUrl,
+      publisher: { "@id": `${siteUrl}/#organization` },
+      inLanguage: "es-AR",
+    },
+    {
+      "@type": "Service",
+      "@id": `${siteUrl}/#service`,
+      name: "Productos QR y NFC personalizados",
+      description,
+      provider: { "@id": `${siteUrl}/#organization` },
+      url: siteUrl,
+      serviceType: ["Productos NFC personalizados", "Códigos QR personalizados", "Páginas digitales para negocios"],
+    },
+    {
+      "@type": "FAQPage",
+      "@id": `${siteUrl}/#preguntas-frecuentes`,
+      mainEntity: FAQS.map((item) => ({
+        "@type": "Question",
+        name: item.q,
+        acceptedAnswer: { "@type": "Answer", text: item.a },
+      })),
+    },
+  ],
+};
+
 export default function Home() {
   return (
     <div className={`bx ${display.variable} ${body.variable} ${hand.variable}`}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }}
+      />
       <HomeNav links={NAV_LINKS}>
         <a href="#top" className="bx-brand" aria-label="BIONFC, inicio"><Logo /></a>
         <ul className="bx-nav-links">
@@ -85,8 +137,8 @@ export default function Home() {
 
         <div className="bx-hero-bar">
           <div className="bx-hero-bar-inner">
-            <span className="bx-bar-kicker">IDEAL PARA</span>
-            <ul>{HERO_AUDIENCES.map(({ icon: Icon, label }) => <li key={label}><Icon />{label}</li>)}</ul>
+            <span className="bx-bar-kicker">UN TOQUE PARA</span>
+            <ul>{HERO_DESTINATIONS.map(({ icon: Icon, label }) => <li key={label}><Icon />{label}</li>)}</ul>
             <span className="bx-bar-end">Un toque. Muchas oportunidades.</span>
           </div>
         </div>

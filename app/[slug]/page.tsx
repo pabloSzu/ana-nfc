@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
 import LandingRenderer from "@/components/landing-renderer";
 import { normalizeSource, trackLandingView } from "@/lib/track-view";
+import "../globals.css";
 
 const getLanding = cache(async (slug: string) => {
   const supabase = await createClient();
@@ -22,7 +23,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return {
     title,
     description,
-    openGraph: { title, description, images },
+    alternates: { canonical: `/${slug}` },
+    openGraph: { title, description, images, url: `/${slug}`, type: "website", locale: "es_AR" },
     twitter: { card: "summary", title, description, images },
   };
 }

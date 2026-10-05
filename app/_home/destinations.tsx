@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import Image from "next/image";
-import { FiArrowDown, FiArrowLeft, FiArrowRight, FiArrowUpRight, FiPause, FiPlay, FiRadio } from "react-icons/fi";
+import { FiArrowDown, FiArrowLeft, FiArrowRight, FiMessageCircle, FiPause, FiPlay, FiRadio } from "react-icons/fi";
 import "./destinations.css";
 
 const EXPERIENCES = [
@@ -24,6 +24,10 @@ export default function Destinations({ whatsappNumber }: { whatsappNumber: strin
   const experience = EXPERIENCES[active];
 
   useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) setPaused(true);
+  }, []);
+
+  useEffect(() => {
     if (paused) {
       setPhase("open");
       return;
@@ -35,7 +39,7 @@ export default function Destinations({ whatsappNumber }: { whatsappNumber: strin
       setPhase("settle");
       setActive((current) => (current + 1) % EXPERIENCES.length);
       setCycle((current) => current + 1);
-    }, 6500);
+    }, 5200);
     return () => {
       window.clearTimeout(approachTimer);
       window.clearTimeout(openTimer);
@@ -73,13 +77,13 @@ export default function Destinations({ whatsappNumber }: { whatsappNumber: strin
   return (
     <div id="elegi-tu-uso" className="bx-hero-demo">
       <div className="bx-hero-copy">
-        <span className="bx-pill">QR, NFC O AMBOS · CON TU IDENTIDAD</span>
-        <h1 className="bx-h1" id="hero-title">Mirá lo que pasa<br /><span className="bx-grad">con un solo toque.</span></h1>
-        <p className="bx-hero-lead">Personalizamos el producto y lo que sucede al acercar el celular: abrir reseñas, compartir tu contacto, mostrar un menú o iniciar una solución a medida.</p>
+        <span className="bx-pill">QR + NFC PERSONALIZADOS</span>
+        <h1 className="bx-h1" id="hero-title">Tu negocio,<br /><span className="bx-grad">a un toque.</span></h1>
+        <p className="bx-hero-lead">Acercá el celular o escaneá el QR. Tus clientes llegan directo a tus reseñas, contacto, menú, página o la experiencia que necesites.</p>
 
         <div className="bx-hero-cta">
-          <a className="bx-btn bx-btn-hero" href={waUrl} target="_blank" rel="noreferrer">Quiero algo así <FiArrowUpRight aria-hidden="true" /></a>
-          <a className="bx-btn bx-btn-outline" href="#como-funciona"><FiArrowDown aria-hidden="true" />Cómo funciona</a>
+          <a className="bx-btn bx-btn-hero" href={waUrl} target="_blank" rel="noreferrer"><FiMessageCircle aria-hidden="true" />Escribinos por WhatsApp</a>
+          <a className="bx-btn bx-btn-outline" href="#como-funciona"><FiArrowDown aria-hidden="true" />Ver cómo funciona</a>
         </div>
       </div>
 
@@ -92,7 +96,7 @@ export default function Destinations({ whatsappNumber }: { whatsappNumber: strin
               const rawPosition = (index - active + EXPERIENCES.length) % EXPERIENCES.length;
               const position = rawPosition > EXPERIENCES.length / 2 ? rawPosition - EXPERIENCES.length : rawPosition;
               return <button type="button" key={item.id} data-position={position} aria-pressed={position === 0} aria-hidden={Math.abs(position) > 1} tabIndex={Math.abs(position) <= 1 ? 0 : -1} onClick={() => selectExperience(index)} aria-label={`${item.brand}, ${item.productName}`}>
-                <Image src={item.product} alt="" width={960} height={720} sizes="(max-width: 760px) 230px, 330px" />
+                <Image src={item.product} alt="" width={960} height={720} sizes="(max-width: 760px) 230px, 330px" priority={index === 0} loading={index === 0 ? undefined : "lazy"} fetchPriority={index === 0 ? "high" : "low"} />
                 <span><b>{item.brand}</b><small>{item.productName}</small></span>
               </button>;
             })}
@@ -100,7 +104,7 @@ export default function Destinations({ whatsappNumber }: { whatsappNumber: strin
           <div className="bx-experience-signal" aria-hidden="true"><i /><i /><FiRadio /></div>
           <div className="bx-experience-phone">
             <div className="bx-experience-screen">
-              <Image className="bx-screen-home" src="/marketing/interactive/screen-home-v3.webp" alt="" fill sizes="(max-width: 760px) 145px, 198px" />
+              <Image className="bx-screen-home" src="/marketing/interactive/screen-home-v3.webp" alt="" fill sizes="(max-width: 760px) 145px, 198px" priority />
               {experience.screen
                 ? <Image className="bx-screen-result" src={experience.screen} alt={`Pantalla digital de ${experience.brand}`} fill sizes="(max-width: 760px) 145px, 198px" />
                 : <div className="bx-screen-result bx-screen-custom" aria-label="Ejemplo de solución NFC a medida">

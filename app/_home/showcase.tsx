@@ -2,15 +2,11 @@
 
 import { useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react";
 import Image from "next/image";
-import dynamic from "next/dynamic";
 import { FiArrowLeft, FiArrowRight, FiArrowUpRight, FiCalendar, FiCoffee, FiGrid, FiMapPin, FiScissors } from "react-icons/fi";
 import { FaInstagram, FaWhatsapp } from "react-icons/fa6";
 import { DESIGN_PRESETS_V2 } from "@/lib/design-presets";
 import DirectLinkPreview from "./direct-link-preview";
-
-const ContactPreview = dynamic(() => import("./contact-preview"), {
-  loading: () => <div className="bx-sample bx-contact-sample"><div className="bx-sample-screen" /></div>,
-});
+import ContactPreview from "./contact-preview";
 
 const LANDING_EXAMPLES = [
   { kind: "landing", id: "cafe", category: "Cafetería", name: "Café Nube", line: "Un buen café. Un lindo momento.", monogram: "nube", preset: "glass", style: "Glass + fotografía", image: "/marketing/showcase/coffee.jpg", detail: "Una foto que invita a entrar. Botones de vidrio que dejan ver tu esencia.", actions: ["Explorá nuestro menú", "Reservá tu mesa", "Cómo llegar"], icons: [FiCoffee, FiCalendar, FiMapPin] },
@@ -20,7 +16,7 @@ const LANDING_EXAMPLES = [
 ] as const;
 
 const CONTACT_EXAMPLES = [
-  { kind: "contact", id: "essential", category: "Esencial", name: "Lucía Funes", role: "Diseñadora floral", company: "Estudio Savia", style: "Esencial + color", detail: "Una tarjeta cálida y directa, con tus datos y la opción de guardar el contacto.", accent: "#343d31", backdrop: "#e9eae2", font: "modern", layout: "card", pattern: "original" },
+  { kind: "contact", id: "essential", category: "Ejecutivo", name: "Ricardo Ferrer", role: "Fundador & Director", company: "Ferrer & Asociados", style: "Ejecutivo + retrato", detail: "Un perfil sobrio y cercano, con una imagen profesional y toda la información importante bien ordenada.", accent: "#24334f", backdrop: "#e9edf2", font: "modern", layout: "card", pattern: "original", photo: "/marketing/showcase/contact-executive.webp" },
   { kind: "contact", id: "editorial", category: "Editorial", name: "Ana Duarte", role: "Arquitecta", company: "Ana Duarte Estudio", style: "Editorial + retrato", detail: "Foto, tipografía con carácter y una presentación más personal.", accent: "#46372f", backdrop: "#e9e3dc", font: "domine", layout: "card", pattern: "original", photo: "/marketing/showcase/contact-editorial.webp" },
   { kind: "contact", id: "professional", category: "Profesional", name: "Marcos Vidal", role: "Consultor de negocios", company: "Vidal Consultoría", style: "Profesional + ficha", detail: "Información ordenada en formato de ficha, ideal para compartir en reuniones.", accent: "#163b49", backdrop: "#e8eff0", font: "manrope", layout: "document", pattern: "grid" },
 ] as const;
@@ -94,7 +90,7 @@ export function StyleShowcase({ waUrl }: { waUrl: string }) {
         <div className="bx-showcase-picker" role="group" aria-label="Elegí un ejemplo de diseño">
           {examples.map((example, index) => <button type="button" key={example.id} aria-pressed={active === index} aria-controls="showcase-preview" onClick={() => setActive(index)}><span className={`bx-showcase-swatch is-${example.id}`} />{example.category}<FiArrowUpRight aria-hidden="true" /></button>)}
         </div>
-        <p className="bx-showcase-hint">Ejemplos visuales con marcas y datos ficticios.</p>
+        <p className="bx-showcase-hint">{category === "contact" ? "Son solo tres ejemplos. Tenemos muchísimos diseños más." : category === "landing" ? "Algunos estilos de muestra. Podemos crear muchísimos diseños más." : "Ejemplos visuales con marcas y datos ficticios."}</p>
         <a className="bx-btn bx-btn-white" href={waUrl} target="_blank" rel="noreferrer">Quiero algo así <FiArrowUpRight aria-hidden="true" /></a>
       </div>
       <div className="bx-showcase-gallery" id="showcase-preview" role="region" aria-label={`Vista de ejemplo: ${selected.name}`}>
@@ -109,7 +105,7 @@ export function StyleShowcase({ waUrl }: { waUrl: string }) {
         <div className="bx-showcase-caption" aria-live="polite" aria-atomic="true"><span>0{active + 1} / 0{examples.length} · {selected.style}</span><p>{selected.detail}</p></div>
         <div className="bx-showcase-controls"><button type="button" onClick={() => move(-1)} aria-label="Ejemplo anterior"><FiArrowLeft aria-hidden="true" /></button><span aria-hidden="true">{examples.map((example, index) => <i key={example.id} className={active === index ? "is-active" : undefined} />)}</span><button type="button" onClick={() => move(1)} aria-label="Ejemplo siguiente"><FiArrowRight aria-hidden="true" /></button></div>
       </div>
-      <div className="bx-showcase-possibilities"><span className="bx-showcase-infinity" aria-hidden="true">∞</span><div><h3>Estos son solo algunos ejemplos.</h3><p>Podemos crear tu página o tarjeta, o conectar directamente con el destino que más le sirva a tu negocio.</p></div><span className="bx-showcase-signature">Hecha para vos.<br /><b>Lista para compartir.</b></span></div>
+      <div className="bx-showcase-possibilities"><span className="bx-showcase-infinity" aria-hidden="true">∞</span><div><h3>Y hay muchísimos diseños más.</h3><p>Creamos una propuesta para tu marca, o conectamos directamente con el destino que más le sirva a tu negocio.</p></div><span className="bx-showcase-signature">Hecha para vos.<br /><b>Lista para compartir.</b></span></div>
     </div>
   );
 }
