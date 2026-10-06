@@ -1,17 +1,17 @@
 import Image from "next/image";
-import { FiArrowUpRight, FiCheck, FiLayers } from "react-icons/fi";
+import { FiArrowUpRight, FiCheck, FiLayers, FiZap } from "react-icons/fi";
 
 const PRODUCTS = [
-  { id: "keychain", name: "Llavero NFC", context: "PARA LLEVAR CON VOS", line: "Tu negocio sale con vos.", description: "En tus llaves, siempre a mano. Compartí tu link o tu página donde aparezca una oportunidad.", use: "Emprendedores · eventos · contactos", image: "/marketing/hero/bionfc-keychain.webp", width: 1024, height: 1536 },
-  { id: "card", name: "Tarjeta NFC", context: "PARA PRESENTARTE", line: "Una presentación que queda.", description: "Acercala al celular y compartí tu perfil profesional. La tarjeta vuelve a tu bolsillo.", use: "Profesionales · equipos · reuniones", image: "/marketing/hero/bionfc-card.webp", width: 1536, height: 1024 },
-  { id: "stand", name: "Soporte de mostrador", context: "PARA TU LOCAL", line: "Tu mejor punto de encuentro.", description: "En la mesa o el mostrador. Tu menú, tus redes y tus reseñas, justo donde está tu cliente.", use: "Cafés · locales · consultorios", image: "/marketing/hero/bionfc-stand.webp", width: 1322, height: 1190 },
+  { id: "keychain", name: "Llavero NFC", context: "PARA LLEVAR CON VOS", line: "Tu negocio, siempre a mano.", description: "En tus llaves o mochila. Compartí tu contacto, tu página o el enlace que elijas donde aparezca una oportunidad.", use: "Emprendedores · eventos · contactos", image: "/marketing/products/keychain-tu-marca-v1.webp", width: 900, height: 1350 },
+  { id: "card", name: "Tarjeta NFC", context: "PARA PRESENTARTE", line: "Tu presentación, en un toque.", description: "Acercala al celular y compartí tu perfil profesional. Toda tu información, sin entregar una tarjeta de papel.", use: "Profesionales · equipos · reuniones", image: "/marketing/products/card-tu-marca-v1.webp", width: 1200, height: 800 },
+  { id: "stand", name: "Soporte de mostrador", context: "PARA TU LOCAL", line: "Tu punto de contacto.", description: "En la mesa o el mostrador. Tus clientes escanean o acercan el celular para abrir tu menú, redes o reseñas.", use: "Cafés · locales · consultorios", image: "/marketing/products/stand-tu-marca-v1.webp", width: 900, height: 1080 },
 ];
 
 export default function Products({ whatsappNumber }: { whatsappNumber: string }) {
   const inquiry = (name: string) => `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Hola BioNFC, me interesa ${name}. Quiero conocer las opciones para mi negocio.`)}`;
   return <section id="productos" className="bx-shop">
     <div className="bx-section">
-      <div className="bx-editorial-head"><div><p className="bx-section-kicker">ELEGÍ TU FORMATO</p><h2 className="bx-h2">En tu local.<br /><span>O siempre con vos.</span></h2></div><p>Explorá estos formatos de referencia. Consultanos por materiales, personalización y disponibilidad.</p></div>
+      <div className="bx-editorial-head"><div><p className="bx-section-kicker">FORMATOS PARA CADA IDEA</p><h2 className="bx-h2">En tu local. En tu bolsillo.<br /><span>O donde lo imagines.</span></h2></div><p>Elegí un formato o contanos tu idea. Personalizamos el producto, la tecnología y la experiencia que se abre.</p></div>
       <div className="bx-shop-grid">
         {PRODUCTS.map((product, index) => <article key={product.id} className={`bx-shop-card bx-shop-format-${product.id}`}>
           <div className="bx-shop-art"><span className="bx-shop-context">{product.context}</span><span className="bx-shop-index" aria-hidden="true">0{index + 1}</span><Image src={product.image} alt={`Referencia de diseño: ${product.name}`} width={product.width} height={product.height} sizes="(max-width: 760px) 300px, 340px" /><span className="bx-shop-art-label" >IMAGEN DE REFERENCIA</span></div>
@@ -20,6 +20,16 @@ export default function Products({ whatsappNumber }: { whatsappNumber: string })
       </div>
       <p className="bx-shop-note">Las imágenes ilustran posibles diseños. Confirmamos formato, terminación, precio y entrega antes de avanzar con tu pedido.</p>
       <div className="bx-shop-included"><span><FiLayers aria-hidden="true" /> Lo armamos con vos</span><ul><li><FiCheck aria-hidden="true" /> Tu identidad de marca</li><li><FiCheck aria-hidden="true" /> QR, NFC o ambos</li><li><FiCheck aria-hidden="true" /> El destino que vos elijas</li></ul></div>
+      <article className="bx-shop-custom">
+        <div className="bx-shop-custom-copy">
+          <p className="bx-partners-eyebrow"><FiZap aria-hidden="true" /> OPCIÓN PERSONALIZADA</p>
+          <h3>¿Tenés otra idea?<br />La hacemos posible.</h3>
+          <p>Podemos integrar NFC en otros objetos y desarrollar accesos, validaciones, registros o experiencias pensadas para tu negocio.</p>
+          <ul><li>Identificación</li><li>Accesos</li><li>Eventos</li><li>Productos a medida</li></ul>
+          <a href={inquiry("una solución NFC personalizada")} target="_blank" rel="noreferrer">Contanos tu idea<FiArrowUpRight aria-hidden="true" /></a>
+        </div>
+        <div className="bx-shop-custom-art"><Image src="/marketing/products/custom-solutions-v1.webp" alt="Ejemplos de soluciones NFC personalizadas: identificación, acceso, pulsera y placa para mascotas" width={1400} height={933} sizes="(max-width: 760px) 92vw, 540px" /></div>
+      </article>
     </div>
   </section>;
 }
