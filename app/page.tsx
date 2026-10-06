@@ -3,7 +3,7 @@ import Link from "next/link";
 import "./marketing.css";
 import "./_home/sections.css";
 import { IconMessageCircle, IconTruck } from "@/components/icons";
-import { FiArrowUpRight, FiCheck, FiMessageCircle, FiSend } from "react-icons/fi";
+import { FiArrowUpRight } from "react-icons/fi";
 import { FaWhatsapp } from "react-icons/fa6";
 import { body, display, hand } from "./_home/fonts";
 import Logo from "./_home/logo";
@@ -140,8 +140,15 @@ export default function Home() {
       </section>
 
       <section className="bx-start" aria-labelledby="start-title"><div className="bx-section"><div className="bx-start-card">
-        <div className="bx-start-copy"><p className="bx-section-kicker">DE TU IDEA AL PRIMER TOQUE</p><h2 id="start-title">Tu próximo<br />contacto empieza<br /><span>con vos.</span></h2><p>Contanos qué querés lograr. Te ayudamos a elegir el destino y el formato: QR, NFC o ambos.</p><a className="bx-btn" href={WA} target="_blank" rel="noreferrer"><FaWhatsapp aria-hidden="true" />Armemos mi BioNFC<FiArrowUpRight aria-hidden="true" /></a><span className="bx-start-note">Hablamos por WhatsApp, sin compromiso.</span></div>
-        <div className="bx-start-side"><div className="bx-start-message"><span>TODO EMPIEZA CON UN MENSAJE</span><p>“Hola, tengo un negocio<br />y quiero armar mi BioNFC.”</p><FiSend aria-hidden="true" /></div><ol><li><span>01</span><div><b>Elegís qué compartir</b><p>Reseñas, un enlace o tu página. Te ayudamos a elegir.</p></div></li><li><span>02</span><div><b>Personalizamos el diseño</b><p>Te mostramos una propuesta con tu marca antes de avanzar.</p></div></li><li><span>03</span><div><b>Lo configuramos</b><p>Preparamos el acceso al contenido que elegiste.</p></div></li><li><span>04</span><div><b>Recibís y compartís</b><p>Acordamos la entrega y te explicamos cómo usarlo.</p></div><FiCheck aria-hidden="true" /></li></ol></div>
+        <div className="bx-start-copy">
+          <p className="bx-section-kicker">HABLEMOS DE TU IDEA</p>
+          <h2 id="start-title">Contanos qué querés lograr.<span>Nosotros te ayudamos a hacerlo realidad.</span></h2>
+          <p>No necesitás saber qué formato elegir. Te asesoramos y preparamos la solución con QR, NFC o ambos.</p>
+        </div>
+        <div className="bx-start-action">
+          <a className="bx-btn" href={WA} target="_blank" rel="noreferrer"><FaWhatsapp aria-hidden="true" />Escribinos por WhatsApp<FiArrowUpRight aria-hidden="true" /></a>
+          <span>Sin compromiso. Te ayudamos a encontrar la opción indicada.</span>
+        </div>
       </div></div></section>
 
       <footer className="bx-footer bx-footer-redesign">

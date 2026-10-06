@@ -87,7 +87,7 @@ export function StyleShowcase({ waUrl }: { waUrl: string }) {
           <button type="button" aria-pressed={category === "contact"} onClick={() => changeCategory("contact")}>Tarjetas personales</button>
           <button type="button" aria-pressed={category === "direct"} onClick={() => changeCategory("direct")}>Links directos</button>
         </div>
-        <div className="bx-showcase-picker" role="group" aria-label="Elegí un ejemplo de diseño">
+        <div className="bx-showcase-picker" data-count={examples.length} role="group" aria-label="Elegí un ejemplo de diseño">
           {examples.map((example, index) => <button type="button" key={example.id} aria-pressed={active === index} aria-controls="showcase-preview" onClick={() => setActive(index)}><span className={`bx-showcase-swatch is-${example.id}`} />{example.category}<FiArrowUpRight aria-hidden="true" /></button>)}
         </div>
         <p className="bx-showcase-hint">{category === "contact" ? "Son solo tres ejemplos. Tenemos muchísimos diseños más." : category === "landing" ? "Algunos estilos de muestra. Podemos crear muchísimos diseños más." : "Ejemplos visuales con marcas y datos ficticios."}</p>

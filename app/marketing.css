@@ -549,10 +549,11 @@ html:has(.bx) { scroll-behavior: smooth; }
   .bx-showcase .bx-lead { margin-top: 13px; font-size: 14.5px; line-height: 1.55; }
   .bx-showcase-categories { width: 100%; margin-top: 18px; }
   .bx-showcase-categories button { flex: 1 1 0; min-width: 0; min-height: 36px; padding: 8px 5px; font-size: 10px; }
-  .bx-showcase-picker { display: flex; gap: 7px; margin-top: 11px; padding: 1px 1px 6px; overflow-x: auto; scrollbar-width: none; }
-  .bx-showcase-picker::-webkit-scrollbar { display: none; }
-  .bx-showcase-picker button { flex: 0 0 auto; min-height: 42px; padding: 9px 11px; font-size: 12px; }
-  .bx-showcase-swatch { width: 19px; height: 19px; }
+  .bx-showcase-picker { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; margin-top: 11px; width: 100%; max-width: 390px; overflow: visible; }
+  .bx-showcase-picker[data-count="3"] { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .bx-showcase-picker button { justify-content: center; min-width: 0; min-height: 42px; padding: 9px 8px; gap: 7px; font-size: 11px; line-height: 1.25; text-align: center; }
+  .bx-showcase-picker button > svg { display: none; }
+  .bx-showcase-swatch { width: 17px; height: 17px; }
   .bx-showcase-hint { margin: 4px 0 14px; font-size: 11px; }
   .bx-showcase-copy > .bx-btn { width: 100%; max-width: 300px; padding-block: 14px; }
   .bx-showcase-stage { height: 402px; }
@@ -567,5 +568,16 @@ html:has(.bx) { scroll-behavior: smooth; }
   .bx-showcase-possibilities h3 { font-size: 17px; }
   .bx-showcase-possibilities p { margin-top: 5px; font-size: 12.5px; line-height: 1.5; }
   .bx-showcase-infinity { height: 35px; font-size: 42px; }
+}
+@media (max-width: 350px) {
+  .bx-section-dark { padding-block: 46px; }
+  .bx-showcase .bx-h2 { font-size: 31px; }
+  .bx-showcase-categories button { padding-inline: 3px; font-size: 9px; }
+  .bx-showcase-picker button { min-height: 40px; padding-inline: 5px; gap: 5px; font-size: 10px; }
+  .bx-showcase-swatch { width: 15px; height: 15px; }
+  .bx-showcase-stage { height: 382px; }
+  .bx-showcase-device { width: 188px; height: 374px; margin-left: -94px; }
+  .bx-showcase-device[data-position="1"] { transform: translate(54px,6px) rotate(7deg) scale(.68); }
+  .bx-showcase-device[data-position="3"],.bx-showcase-stage[data-count="3"] .bx-showcase-device[data-position="2"] { transform: translate(-54px,6px) rotate(-7deg) scale(.68); }
 }
 @media (prefers-reduced-motion: reduce) { .bx-showcase-device, .bx-showcase-picker button { transition: none; } }

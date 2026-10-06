@@ -13,24 +13,15 @@ export default function Makers({ whatsappNumber }: { whatsappNumber: string }) {
 
   return <section id="para-talleres" className="bx-makers" aria-labelledby="makers-title">
     <div className="bx-section bx-makers-inner">
-      <div className="bx-makers-copy">
-        <div>
-          <p className="bx-section-kicker">PARA TALLERES, IMPRENTAS Y FABRICANTES</p>
-          <h2 id="makers-title">Vos hacés el producto.<span>Nosotros le sumamos <em>NFC</em><br className="bx-makers-title-break" /> y una experiencia digital.</span></h2>
-        </div>
-        <div className="bx-makers-intro">
-          <p className="bx-makers-lead">De lo que fabricás a lo que querés compartir. Integramos un chip NFC para abrir tu página, tus reseñas o un sistema personalizado al acercar el celular.</p>
-          <p className="bx-makers-promise"><FiCheck aria-hidden="true" />Tu diseño y tu marca. La parte digital, por nosotros.</p>
-          <div className="bx-makers-actions">
-            <a className="bx-btn bx-makers-cta" href={wa("Hola BioNFC, tengo un taller y quiero sumar NFC a mis productos. ¿Podemos conversar?")} target="_blank" rel="noreferrer">Sumar NFC a mis productos <FiArrowUpRight aria-hidden="true" /></a>
-            <p>Contanos qué fabricás y vemos juntos cómo integrarlo.</p>
-          </div>
-        </div>
+      <div className="bx-makers-heading">
+        <p className="bx-section-kicker">PARA QUIENES FABRICAN Y PERSONALIZAN</p>
+        <h2 id="makers-title">Vos hacés el producto.<span>Nosotros le sumamos NFC o QR y una experiencia digital.</span></h2>
+        <p className="bx-makers-lead">Puede abrir un link, una tarjeta digital, una landing o una solución a medida. Te entregamos todo configurado y <strong>listo para que lo vendas con tu marca.</strong></p>
+        <p className="bx-makers-pack-label">PACKS PARA REVENDEDORES</p>
       </div>
-
       <div className="bx-makers-flow" aria-label="Del producto físico a la experiencia digital">
         <div className="bx-makers-physical">
-          <h3 className="bx-makers-stage-title"><span>01</span> Tu producto</h3>
+          <h3 className="bx-makers-stage-title"><span>01</span> Vos lo creás</h3>
           <ul className="bx-makers-products" aria-label="Ideas para sumar NFC a tus productos">
             {PRODUCTS.map((product) => <li key={product.id}>
               <a href={wa(`Hola BioNFC, hago ${product.craft} y me interesa sumarles NFC. ¿Podemos conversar?`)} target="_blank" rel="noreferrer" aria-label={`${product.name}: consultar por NFC en WhatsApp`}>
@@ -39,11 +30,11 @@ export default function Makers({ whatsappNumber }: { whatsappNumber: string }) {
               </a>
             </li>)}
           </ul>
-          <p className="bx-makers-stage-note">Lo que vos creás, con tu identidad.</p>
+          <p className="bx-makers-stage-note">Lo fabricás, imprimís o personalizás para tu cliente.</p>
         </div>
 
         <div className="bx-makers-connection">
-          <h3 className="bx-makers-stage-title"><span>02</span> Le sumamos NFC</h3>
+          <h3 className="bx-makers-stage-title"><span>02</span> Sumamos NFC o QR</h3>
           <div className="bx-makers-tap-art" aria-hidden="true">
             <FiArrowRight className="bx-makers-flow-arrow bx-makers-arrow-in" />
             <div className="bx-makers-rings"><div className="bx-makers-chip">
@@ -53,13 +44,19 @@ export default function Makers({ whatsappNumber }: { whatsappNumber: string }) {
             <div className="bx-makers-tap-phone"><FiSmartphone /><span>Acercá<br />tu celular</span></div>
             <FiArrowRight className="bx-makers-flow-arrow bx-makers-arrow-out" />
           </div>
-          <p className="bx-makers-tap-caption">Un pequeño chip.<br /><strong>Una nueva posibilidad.</strong></p>
-          <p className="bx-makers-tap-help">Acercás el celular y tocás el aviso para abrir el contenido.</p>
+          <p className="bx-makers-tap-caption">NFC, QR<br /><strong>o ambos.</strong></p>
+          <p className="bx-makers-tap-help">Lo configuramos para abrir la opción elegida.</p>
           <FiArrowDown className="bx-makers-mobile-arrow" aria-hidden="true" />
         </div>
 
         <div className="bx-makers-digital">
-          <h3 className="bx-makers-stage-title"><span>03</span> Se abre la experiencia</h3>
+          <h3 className="bx-makers-stage-title"><span>03</span> Preparamos lo que se abre</h3>
+          <ul className="bx-makers-pack-list" aria-label="Packs disponibles">
+            <li>Link directo</li>
+            <li>Tarjeta digital</li>
+            <li>Landing</li>
+            <li>A medida</li>
+          </ul>
           <div className="bx-makers-phones">
             <figure>
               <div className="bx-makers-phone-art"><Image src="/marketing/makers/phone-brand.webp" alt="Página de Tu Marca en un celular, con productos, Instagram y contacto" width={1086} height={1448} sizes="(max-width: 760px) 65vw, 240px" /></div>
@@ -74,10 +71,12 @@ export default function Makers({ whatsappNumber }: { whatsappNumber: string }) {
               <figcaption><strong>Página o sistema a medida</strong><span>Tu idea, hecha realidad</span></figcaption>
             </figure>
           </div>
-          <p className="bx-makers-custom-note"><strong>¿Tenés otra idea? La desarrollamos con vos.</strong> Creamos páginas y sistemas personalizados: turnos, catálogos, registro de visitantes y más.</p>
         </div>
       </div>
-      <p className="bx-makers-footer-note"><FiCheck aria-hidden="true" />También podés sumar un QR para abrir el mismo contenido.</p>
+      <div className="bx-makers-closing">
+        <p><FiCheck aria-hidden="true" /><span><strong>Listo para incorporar y vender.</strong> Te asesoramos y acompañamos en cada pedido.</span></p>
+        <a className="bx-btn bx-makers-cta" href={wa("Hola BioNFC, tengo un taller y quiero conocer los packs para revendedores. ¿Podemos conversar?")} target="_blank" rel="noreferrer">Conocer los packs <FiArrowUpRight aria-hidden="true" /></a>
+      </div>
     </div>
   </section>;
 }
