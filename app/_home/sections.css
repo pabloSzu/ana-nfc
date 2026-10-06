@@ -108,7 +108,7 @@
 .bx-start-action > span { display: block; max-width: 260px; margin: 12px auto 0; color: #a293ac; font-size: 10px; line-height: 1.55; }
 
 .bx-footer-redesign { border-top: 1px solid #e6e0ea; background: #f0edf4; }
-.bx-footer-main, .bx-footer-bottom { max-width: 1240px; margin: auto; padding-inline: var(--pad-x); }
+.bx-footer-main,.bx-footer-bottom { width:min(var(--content-max),calc(100% - var(--pad-x) - var(--pad-x))); margin:auto; }
 .bx-footer-main { padding-block: 51px 40px; display: grid; grid-template-columns: 1.6fr 1fr 1fr; gap: 40px; }
 .bx-footer-main .bx-brand { display: inline-flex; }
 .bx-footer-main > div p { color: #8b7e94; font-size: 13px; line-height: 1.8; margin-top: 18px; }

@@ -15,7 +15,8 @@ html:has(.bx) { scroll-behavior: smooth; }
   --muted-2: #5C6270;
   --faint: #8A90A0;
   --line: rgba(17, 19, 26, .07);
-  --pad-x: clamp(20px, 5vw, 56px);
+  --content-max: 1400px;
+  --pad-x: clamp(20px, 4vw, 64px);
 
   position: relative;
   background: var(--bg);
@@ -85,7 +86,7 @@ html:has(.bx) { scroll-behavior: smooth; }
    nor contrast depends on an overlay. */
 .bx-hero { position: relative; isolation: isolate; overflow: hidden; border-bottom:1px solid rgba(27,66,111,.1); color: #16263a; background: radial-gradient(55% 80% at 84% 38%,rgba(119,104,247,.2),transparent 68%),radial-gradient(38% 62% at 68% 70%,rgba(34,199,224,.16),transparent 72%),linear-gradient(118deg,#f8fbfd 0%,#f5f8fc 41%,#eef0ff 72%,#f7f4ff 100%); }
 .bx-hero::before { content:""; position:absolute; z-index:0; inset:0; pointer-events:none; background:linear-gradient(90deg,rgba(248,251,253,.98) 0%,rgba(248,251,253,.88) 30%,rgba(248,251,253,.18) 53%,transparent 72%); }
-.bx-hero-main { position: relative; z-index:1; display: grid; grid-template-columns: minmax(0, 1fr); padding: 88px var(--pad-x) 8px; }
+.bx-hero-main { position: relative; z-index:1; display: grid; grid-template-columns: minmax(0, 1fr); width:min(var(--content-max),calc(100% - var(--pad-x) - var(--pad-x))); margin-inline:auto; padding:88px 0 8px; }
 .bx-hero-copy { display: contents; }
 .bx-hero-copy > .bx-pill { justify-self: start; order: 1; }
 .bx-hero-copy > .bx-h1 { order: 2; }
@@ -123,7 +124,7 @@ html:has(.bx) { scroll-behavior: smooth; }
 @media (min-width: 1100px) {
   /* 56.28vw matches the source image's 1672x941 proportion, preserving the whole composition at
      normal desktop widths. The clamp bounds keep the hero usable on unusually short/wide screens. */
-  .bx-hero-main { display: flex; align-items: center; min-height: clamp(680px,52vw,820px); padding: 72px max(var(--pad-x),calc((100vw - 1328px) / 2)) 12px; }
+  .bx-hero-main { display: flex; align-items: center; min-height: clamp(680px,52vw,820px); padding:72px 0 12px; }
   .bx-hero-copy { display: flex; position: relative; z-index: 2; flex-direction: column; align-items: flex-start; width: 46%; max-width: 555px; animation: bx-up .7s ease both; }
   .bx-hero-copy > * { order: 0; }
   .bx-hero .bx-h1 { font-size: clamp(56px, 5vw, 78px); }
@@ -133,8 +134,8 @@ html:has(.bx) { scroll-behavior: smooth; }
 }
 
 /* ---------------------------------------------------------------- sections */
-.bx-section { position: relative; max-width: 1240px; margin: 0 auto; padding: clamp(72px, 9vw, 130px) var(--pad-x); }
-.bx-section-narrow { max-width: 900px; padding-block: clamp(72px, 9vw, 120px); }
+.bx-section { position:relative; width:min(var(--content-max),calc(100% - var(--pad-x) - var(--pad-x))); margin:0 auto; padding:clamp(72px,9vw,130px) 0; }
+.bx-section-narrow { width:min(900px,calc(100% - var(--pad-x) - var(--pad-x))); padding-block:clamp(72px,9vw,120px); }
 .bx-section-dark { padding-block: clamp(76px, 9vw, 140px); }
 .bx-center { display: flex; flex-direction: column; align-items: center; text-align: center; }
 
@@ -581,3 +582,28 @@ html:has(.bx) { scroll-behavior: smooth; }
   .bx-showcase-device[data-position="3"],.bx-showcase-stage[data-count="3"] .bx-showcase-device[data-position="2"] { transform: translate(-54px,6px) rotate(-7deg) scale(.68); }
 }
 @media (prefers-reduced-motion: reduce) { .bx-showcase-device, .bx-showcase-picker button { transition: none; } }
+
+/* Desktop presence: slightly larger type and controls without browser-style zooming. */
+@media (min-width: 1100px) {
+  .bx-h2 { font-size: clamp(36px,4.8vw,65px); }
+  .bx-h2-sm { font-size: 46px; }
+  .bx-h3 { font-size: 27px; }
+  .bx-lead { font-size: 20px; }
+  .bx-body { font-size: 16.25px; }
+  .bx-section-kicker { font-size: 11.5px; }
+  .bx-btn { font-size: 16.5px; }
+  .bx-btn-primary,.bx-btn-white { padding: 17px 28px; }
+  .bx-btn-ghost,.bx-btn-glass { padding: 17px 26px; }
+  .bx-nav-links { font-size: 15px; }
+  .bx-nav-login { font-size: 14.5px; }
+  .bx-btn-nav { padding: 12px 19px; font-size: 14.5px; }
+  .bx-showcase { grid-template-columns: .97fr 1.15fr; gap:34px 54px; }
+  .bx-showcase .bx-h2 { font-size: 54px; }
+  .bx-showcase .bx-lead { font-size: 17px; }
+  .bx-showcase-categories button { min-height: 41px; padding: 10px 16px; font-size: 12.5px; }
+  .bx-showcase-picker { max-width: 430px; }
+  .bx-showcase-picker button { padding: 14px 13px; font-size: 13.5px; }
+  .bx-showcase-stage { height: 592px; }
+  .bx-showcase-device { top: 15px; width: 278px; height: 554px; margin-left: -139px; }
+  .bx-showcase-caption p { font-size: 13.5px; }
+}
