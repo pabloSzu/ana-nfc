@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import "./marketing.css";
 import "./_home/sections.css";
 import { IconMessageCircle, IconTruck } from "@/components/icons";
@@ -111,7 +110,6 @@ export default function Home() {
           {NAV_LINKS.map((link) => <li key={link.href}><a href={link.href}>{link.label}</a></li>)}
         </ul>
         <div className="bx-nav-end">
-          <Link className="bx-nav-login" href="/admin/login">Ingresar</Link>
           <a className="bx-btn bx-btn-nav" href={WA} target="_blank" rel="noreferrer">Quiero el mío</a>
         </div>
       </HomeNav>
@@ -152,7 +150,7 @@ export default function Home() {
       </div></div></section>
 
       <footer className="bx-footer bx-footer-redesign">
-        <div className="bx-footer-main"><div><a className="bx-brand" href="#top" aria-label="BioNFC, volver al inicio"><Logo /></a><p>Tu mundo, más cerca.<br />Una conexión a la vez.</p></div><nav aria-label="Explorá BioNFC"><span>EXPLORÁ</span><a href="#como-funciona">Cómo funciona</a><a href="#tu-pagina">Tu página</a><a href="#productos">Formatos NFC</a><a href="#para-talleres">Para fabricantes</a></nav><nav aria-label="Ayuda y contacto"><span>SEGUIMOS EN CONTACTO</span><a href={WA} target="_blank" rel="noreferrer">Hablemos por WhatsApp ↗</a><a href="#preguntas">Preguntas frecuentes</a><Link href="/admin/login">Ingresar a mi panel ↗</Link></nav></div>
+        <div className="bx-footer-main"><div><a className="bx-brand" href="#top" aria-label="BioNFC, volver al inicio"><Logo /></a><p>Tu mundo, más cerca.<br />Una conexión a la vez.</p></div><nav aria-label="Explorá BioNFC"><span>EXPLORÁ</span><a href="#como-funciona">Cómo funciona</a><a href="#tu-pagina">Tu página</a><a href="#productos">Formatos NFC</a><a href="#para-talleres">Para fabricantes</a></nav><nav aria-label="Ayuda y contacto"><span>SEGUIMOS EN CONTACTO</span><a href={WA} target="_blank" rel="noreferrer">Hablemos por WhatsApp ↗</a><a href="#preguntas">Preguntas frecuentes</a></nav></div>
         <div className="bx-footer-bottom"><span>BioNFC · Hecho para conectar.</span><span>Entrega a coordinar <IconTruck /></span></div>
       </footer>
 
