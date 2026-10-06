@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react";
 import Image from "next/image";
 import { FiArrowLeft, FiArrowRight, FiArrowUpRight, FiCalendar, FiCoffee, FiGrid, FiMapPin, FiScissors } from "react-icons/fi";
 import { FaInstagram, FaWhatsapp } from "react-icons/fa6";
@@ -25,6 +25,17 @@ const DIRECT_LINK_EXAMPLES = [
   { kind: "direct", id: "reviews", category: "Reseñas de Google", name: "Café Jacarandá", style: "Reseñas + confianza", detail: "Llevá a tus clientes directo a calificarte y convertí una buena experiencia en reputación para tu negocio." },
   { kind: "direct", id: "instagram", category: "Instagram", name: "Línea Negra Tattoo", style: "Instagram + comunidad", detail: "Abrí tu perfil social con un toque para mostrar trabajos, novedades y todo lo que pasa en tu marca." },
   { kind: "direct", id: "website", category: "Sitio web", name: "Clara Méndez", style: "Web + portfolio", detail: "Conectá directamente con tu web, portfolio, tienda o cualquier página que ya tengas online." },
+] as const;
+
+const SHOWCASE_IMAGE_PRELOADS = [
+  { src: "/marketing/showcase/coffee.jpg", sizes: "(max-width: 600px) 280px, 340px" },
+  { src: "/marketing/showcase/interior.jpg", sizes: "(max-width: 600px) 280px, 340px" },
+  { src: "/marketing/showcase/contact-executive.webp", sizes: "90px" },
+  { src: "/marketing/showcase/contact-editorial.webp", sizes: "280px" },
+  { src: "/marketing/showcase/contact-editorial.webp", sizes: "90px" },
+  { src: "/marketing/showcase/direct-reviews-cafe.webp", sizes: "(max-width: 600px) 244px, 266px" },
+  { src: "/marketing/showcase/direct-instagram-tattoo.webp", sizes: "90px" },
+  { src: "/marketing/showcase/direct-portfolio-designer.webp", sizes: "(max-width: 600px) 244px, 266px" },
 ] as const;
 
 type LandingExample = typeof LANDING_EXAMPLES[number];
@@ -56,6 +67,8 @@ function Preview({ example }: { example: LandingExample }) {
 export function StyleShowcase({ waUrl }: { waUrl: string }) {
   const [category, setCategory] = useState<"landing" | "contact" | "direct">("landing");
   const [active, setActive] = useState(0);
+  const [shouldPreloadImages, setShouldPreloadImages] = useState(false);
+  const showcaseRef = useRef<HTMLDivElement>(null);
   const pointerStart = useRef<{ x: number; y: number } | null>(null);
   const examples = category === "landing" ? LANDING_EXAMPLES : category === "contact" ? CONTACT_EXAMPLES : DIRECT_LINK_EXAMPLES;
   const selected = examples[active];
@@ -76,8 +89,25 @@ export function StyleShowcase({ waUrl }: { waUrl: string }) {
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "ArrowRight" || event.key === "ArrowLeft") { event.preventDefault(); move(event.key === "ArrowRight" ? 1 : -1); }
   };
+  useEffect(() => {
+    const showcase = showcaseRef.current;
+    if (!showcase || typeof IntersectionObserver === "undefined") {
+      setShouldPreloadImages(true);
+      return;
+    }
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      setShouldPreloadImages(true);
+      observer.disconnect();
+    }, { rootMargin: "700px 0px" });
+    observer.observe(showcase);
+    return () => observer.disconnect();
+  }, []);
   return (
-    <div className="bx-showcase">
+    <div className="bx-showcase" ref={showcaseRef}>
+      {shouldPreloadImages && <div className="bx-showcase-preloads" aria-hidden="true">
+        {SHOWCASE_IMAGE_PRELOADS.map((image) => <Image key={`${image.src}-${image.sizes}`} src={image.src} alt="" width={340} height={680} sizes={image.sizes} loading="eager" fetchPriority="low" />)}
+      </div>}
       <div className="bx-showcase-copy">
         <p className="bx-showcase-kicker"><span /> UNA PRESENTACIÓN HECHA PARA VOS</p>
         <h2 className="bx-h2 bx-on-dark">{category === "landing" ? "¿Querés reunir todo en un lugar?" : category === "contact" ? "¿Querés presentarte mejor?" : "¿Querés llevarlos justo adonde importa?"}<br /><span className="bx-soft">{category === "landing" ? "Creamos tu página." : category === "contact" ? "Creamos tu tarjeta personal." : "Conectamos tu link directo."}</span></h2>
