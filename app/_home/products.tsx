@@ -4,7 +4,7 @@ import { FiArrowUpRight, FiCheck, FiLayers, FiZap } from "react-icons/fi";
 const PRODUCTS = [
   { id: "keychain", name: "Llavero NFC", context: "PARA LLEVAR CON VOS", line: "Tu negocio, siempre a mano.", description: "En tus llaves o mochila. Compartí tu contacto, tu página o el enlace que elijas donde aparezca una oportunidad.", use: "Emprendedores · eventos · contactos", image: "/marketing/products/keychain-tu-marca-v1.webp", width: 900, height: 1350 },
   { id: "card", name: "Tarjeta NFC", context: "PARA PRESENTARTE", line: "Tu presentación, en un toque.", description: "Acercala al celular y compartí tu perfil profesional. Toda tu información, sin entregar una tarjeta de papel.", use: "Profesionales · equipos · reuniones", image: "/marketing/products/card-tu-marca-v1.webp", width: 1200, height: 800 },
-  { id: "stand", name: "Soporte de mostrador", context: "PARA TU LOCAL", line: "Tu punto de contacto.", description: "En la mesa o el mostrador. Tus clientes escanean o acercan el celular para abrir tu menú, redes o reseñas.", use: "Cafés · locales · consultorios", image: "/marketing/products/stand-tu-marca-v1.webp", width: 900, height: 1080 },
+  { id: "stand", name: "Soporte de mostrador", context: "PARA TU LOCAL", line: "Tu punto de contacto.", description: "En la mesa o el mostrador. Tus clientes escanean o acercan el celular para abrir tu menú, redes o reseñas.", use: "Cafés · locales · consultorios", image: "/marketing/products/stand-tu-marca-v2.webp", width: 900, height: 1080 },
 ];
 
 export default function Products({ whatsappNumber }: { whatsappNumber: string }) {
