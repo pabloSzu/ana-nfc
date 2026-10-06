@@ -123,7 +123,7 @@ export default function Home() {
 
       </header>
 
-      <HowItWorks />
+      <HowItWorks whatsappNumber={WHATSAPP_NUMBER} />
 
       <section id="tu-pagina" className="bx-dark">
         <div className="bx-dark-glow bx-dark-glow-a" />

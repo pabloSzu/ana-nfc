@@ -1,79 +1,72 @@
-"use client";
-
-import { useEffect, useRef, type CSSProperties } from "react";
 import Image from "next/image";
-import { FiArrowRight } from "react-icons/fi";
+import { FiArrowUpRight, FiCheck, FiMessageCircle } from "react-icons/fi";
 import "./how-it-works.css";
 
 const STEPS = [
-  { number: "1", title: "Elegís el formato",
-    description: "QR, tarjeta, llavero o mostrador: elegís cómo compartir tu negocio.",
-    image: "/marketing/how-it-works/01-formatos.webp",
-    alt: "Tarjeta, llavero y soporte NFC de mostrador personalizados con TU MARCA" },
-  { number: "2", title: "Escaneás o acercás",
-    description: "Tu cliente escanea el QR o acerca su celular al NFC y toca el aviso para abrir el enlace.",
-    image: "/marketing/how-it-works/02-acercar.webp",
-    alt: "Un celular junto a una tarjeta TU MARCA muestra el aviso de etiqueta NFC detectada" },
-  { number: "3", title: "Se abre tu contenido",
-    description: "Tus reseñas, un enlace directo o tu página completa. Vos elegís a dónde llevarlo.",
-    image: "/marketing/how-it-works/03-pagina.webp",
-    alt: "Página personalizada TU MARCA con accesos a WhatsApp, turnos, servicios, ubicación e Instagram" },
-  { number: "4", title: "La conexión sucede",
-    description: "Tus clientes pueden escribirte, reservar, ver cómo llegar o seguir tus redes.",
-    image: "/marketing/how-it-works/04-conexion.webp",
-    alt: "Ejemplos de una consulta por WhatsApp, un turno reservado, indicaciones y un nuevo seguidor" },
-];
+  {
+    number: "01",
+    title: "Contanos qué querés lograr",
+    description: "No necesitás saber qué formato elegir. Te escuchamos y te asesoramos según tu negocio.",
+  },
+  {
+    number: "02",
+    title: "Elegimos qué se va a abrir",
+    description: "Una landing hecha por nosotros, una tarjeta personal, un enlace que ya tengas o una experiencia a medida.",
+    options: ["Landing", "Tarjeta personal", "Tu enlace", "A medida"],
+  },
+  {
+    number: "03",
+    title: "Lo llevamos al producto ideal",
+    description: "Personalizamos una tarjeta, un llavero, un mostrador u otro objeto con NFC, QR o ambos.",
+    options: ["NFC", "QR", "O ambos"],
+  },
+  {
+    number: "04",
+    title: "Lo recibís listo para usar",
+    description: "Lo colocás en tu negocio o lo llevás con vos. Tus clientes acercan, escanean y encuentran todo al instante.",
+  },
+] as const;
 
-export default function HowItWorks() {
-  const listRef = useRef<HTMLOListElement>(null);
-
-  useEffect(() => {
-    if (!listRef.current || !window.IntersectionObserver || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const cards = Array.from(listRef.current.children) as HTMLElement[];
-    // Progressive enhancement: server HTML remains visible without JavaScript.
-    const observer = new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        (entry.target as HTMLElement).dataset.reveal = "visible";
-        observer.unobserve(entry.target);
-      }
-    }, { threshold: 0.08 });
-    for (const card of cards) {
-      card.dataset.reveal = "pending";
-      observer.observe(card);
-    }
-    return () => {
-      observer.disconnect();
-      for (const card of cards) delete card.dataset.reveal;
-    };
-  }, []);
+export default function HowItWorks({ whatsappNumber }: { whatsappNumber: string }) {
+  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Hola BioNFC, tengo una idea y quiero saber qué solución me conviene.")}`;
 
   return (
-    <section id="como-funciona" className="bx-process" aria-labelledby="how-title">
-      <div className="bx-process-container">
-        <header className="bx-process-heading">
-          <p className="bx-process-eyebrow">TECNOLOGÍA QUE CONECTA</p>
-          <h2 id="how-title">Así funciona <span>BIONFC</span></h2>
-          <p className="bx-process-subtitle">Una vez listo, usarlo es simple: tus clientes escanean el QR o acercan el celular al NFC. Estas imágenes muestran ejemplos de uso.</p>
-        </header>
-        <ol className="bx-process-steps" ref={listRef}>
-          {STEPS.map((step, index) => (
-            <li className="bx-process-step" key={step.number} style={{ "--step-index": index } as CSSProperties}>
-              <article className="bx-process-card" aria-labelledby={`how-step-${step.number}`}>
-                <div className="bx-process-image">
-                  <Image src={step.image} alt={step.alt} fill sizes="(max-width: 600px) calc(100vw - 40px), (max-width: 1099px) calc((100vw - 96px) / 2), (max-width: 1439px) calc((100vw - 160px) / 4), 312px" />
-                  <span className="bx-process-number" aria-hidden="true">{step.number}</span>
-                </div>
-                <div className="bx-process-copy">
-                  <span className="bx-process-step-label">PASO {step.number} DE 4</span>
-                  <h3 id={`how-step-${step.number}`}>{step.title}</h3>
+    <section id="como-funciona" className="bx-journey" aria-labelledby="how-title">
+      <div className="bx-journey-container">
+        <div className="bx-journey-intro">
+          <p className="bx-journey-eyebrow">DE TU IDEA AL PRIMER TOQUE</p>
+          <h2 id="how-title">Lo pensamos con vos.<br /><span>Te lo entregamos listo.</span></h2>
+          <p className="bx-journey-lead">Podés venir con un enlace, elegir una página o simplemente contarnos tu idea. Nosotros te ayudamos a convertirla en una experiencia lista para compartir.</p>
+
+          <figure className="bx-journey-visual">
+            <div className="bx-journey-image">
+              <Image src="/marketing/how-it-works/qr-nfc-unified-v1.webp" alt="Un código QR y un llavero NFC conectan con la misma experiencia en un celular" width={1280} height={853} sizes="(max-width: 760px) 88vw, 430px" />
+            </div>
+            <figcaption><b>Un producto. Tu identidad.</b><span>NFC, QR o ambos, según lo que necesites.</span></figcaption>
+          </figure>
+        </div>
+
+        <div className="bx-journey-flow">
+          <ol>
+            {STEPS.map((step) => (
+              <li key={step.number}>
+                <span className="bx-journey-number">{step.number}</span>
+                <div>
+                  <h3>{step.title}</h3>
                   <p>{step.description}</p>
+                  {"options" in step && <ul>{step.options.map((option) => <li key={option}>{option}</li>)}</ul>}
                 </div>
-              </article>
-              {index < STEPS.length - 1 && <span className="bx-process-arrow" aria-hidden="true"><FiArrowRight /></span>}
-            </li>
-          ))}
-        </ol>
+              </li>
+            ))}
+          </ol>
+
+          <div className="bx-journey-support">
+            <span><FiMessageCircle aria-hidden="true" /></span>
+            <div><b>Te acompañamos en todo.</b><p>Antes, durante y después de elegir tu BioNFC.</p></div>
+            <a href={whatsappUrl} target="_blank" rel="noreferrer">Contanos tu idea <FiArrowUpRight aria-hidden="true" /></a>
+          </div>
+          <p className="bx-journey-ready"><FiCheck aria-hidden="true" />Configurado y listo para empezar a compartir.</p>
+        </div>
       </div>
     </section>
   );
