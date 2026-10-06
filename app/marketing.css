@@ -83,8 +83,9 @@ html:has(.bx) { scroll-behavior: smooth; }
 /* The image deliberately leaves clean negative space on the left for copy. On desktop it is the
    full-bleed canvas; on smaller screens the product scene moves below the copy so neither content
    nor contrast depends on an overlay. */
-.bx-hero { position: relative; isolation: isolate; overflow: hidden; color: #16263a; background: #f7fafc; }
-.bx-hero-main { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); padding: 88px var(--pad-x) 22px; }
+.bx-hero { position: relative; isolation: isolate; overflow: hidden; color: #16263a; background: radial-gradient(55% 80% at 84% 38%,rgba(119,104,247,.2),transparent 68%),radial-gradient(38% 62% at 68% 70%,rgba(34,199,224,.16),transparent 72%),linear-gradient(118deg,#f8fbfd 0%,#f5f8fc 41%,#eef0ff 72%,#f7f4ff 100%); }
+.bx-hero::before { content:""; position:absolute; z-index:0; inset:0; pointer-events:none; background:linear-gradient(90deg,rgba(248,251,253,.98) 0%,rgba(248,251,253,.88) 30%,rgba(248,251,253,.18) 53%,transparent 72%); }
+.bx-hero-main { position: relative; z-index:1; display: grid; grid-template-columns: minmax(0, 1fr); padding: 88px var(--pad-x) 8px; }
 .bx-hero-copy { display: contents; }
 .bx-hero-copy > .bx-pill { justify-self: start; order: 1; }
 .bx-hero-copy > .bx-h1 { order: 2; }
@@ -105,7 +106,7 @@ html:has(.bx) { scroll-behavior: smooth; }
 .bx-scene-art { position: absolute; inset: 0; }
 .bx-scene-img { object-fit: cover; object-position: right center; }
 .bx-scene::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, #f7fafc 0%, rgba(247, 250, 252, 0) 9%); }
-.bx-hero-bar { position: relative; z-index: 2; border-top: 1px solid rgba(27, 66, 111, .1); border-bottom: 1px solid rgba(27, 66, 111, .08); background: rgba(248, 251, 253, .9); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+.bx-hero-bar { position: relative; z-index: 2; border-top: 1px solid rgba(27,66,111,.1); border-bottom: 1px solid rgba(27,66,111,.08); background: linear-gradient(90deg,rgba(255,255,255,.7),rgba(242,243,255,.62)); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); }
 .bx-hero-bar-inner { max-width: 1440px; margin: auto; padding: 21px var(--pad-x); display: flex; flex-wrap: wrap; align-items: center; gap: 16px 30px; }
 .bx-bar-kicker { font: 800 9px / 1.4 var(--bx-body), sans-serif; letter-spacing: .16em; color: #4576ae; }
 .bx-hero-bar ul { display: flex; flex-wrap: wrap; gap: 14px 24px; }
@@ -136,7 +137,7 @@ html:has(.bx) { scroll-behavior: smooth; }
 @media (min-width: 1100px) {
   /* 56.28vw matches the source image's 1672x941 proportion, preserving the whole composition at
      normal desktop widths. The clamp bounds keep the hero usable on unusually short/wide screens. */
-  .bx-hero-main { display: flex; align-items: center; min-height: clamp(640px, 56.28vw, 940px); padding: 72px max(var(--pad-x), calc((100vw - 1328px) / 2)) 34px; }
+  .bx-hero-main { display: flex; align-items: center; min-height: clamp(680px,52vw,820px); padding: 72px max(var(--pad-x),calc((100vw - 1328px) / 2)) 12px; }
   .bx-hero-copy { display: flex; position: relative; z-index: 2; flex-direction: column; align-items: flex-start; width: 46%; max-width: 555px; animation: bx-up .7s ease both; }
   .bx-hero-copy > * { order: 0; }
   .bx-hero .bx-h1 { font-size: clamp(56px, 5vw, 78px); }
