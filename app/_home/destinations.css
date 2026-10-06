@@ -4,7 +4,7 @@
 .bx-hero-demo .bx-h1 { font-size:clamp(51px,4.65vw,74px); line-height:.98; }
 .bx-hero-demo .bx-hero-lead { max-width:43ch; }
 .bx-hero-demo-visual { position:relative; z-index:2; min-width:0; margin-left:-34px; }
-.bx-experience-scene { --bx-product-anchor:31%; position:relative; min-width:0; min-height:620px; isolation:isolate; overflow:visible; touch-action:pan-y; user-select:none; border:0; border-radius:0; background:transparent; box-shadow:none; color:#172c47; }
+.bx-experience-scene { --bx-product-anchor:31%; --bx-phone-touch-x:-112px; --bx-signal-left:49%; position:relative; min-width:0; min-height:620px; isolation:isolate; overflow:visible; touch-action:pan-y; user-select:none; border:0; border-radius:0; background:transparent; box-shadow:none; color:#172c47; }
 .bx-experience-scene::before { content:""; position:absolute; z-index:-2; inset:3% -12% 1% -24%; border-radius:50%; background:radial-gradient(circle at 66% 44%,rgba(120,102,245,.22),transparent 36%),radial-gradient(circle at 38% 62%,rgba(45,190,218,.15),transparent 44%),linear-gradient(120deg,transparent 18%,rgba(255,255,255,.48) 58%,rgba(137,118,246,.08)); filter:blur(4px); }
 .bx-experience-scene:focus-visible { outline: 2px solid #9d8cf7; outline-offset: 4px; }
 .bx-experience-halo { position:absolute; inset:2% -14% 2% -26%; border:1px solid #6857dc24; border-radius:50%; background:radial-gradient(circle at 63% 47%,#8770f31f,transparent 54%); transform:rotate(-12deg); }
@@ -18,6 +18,7 @@
 .bx-product-hit { position:absolute; z-index:5; display:block; pointer-events:none; cursor:pointer; }
 .bx-product-carousel button[data-position="-1"] .bx-product-hit,.bx-product-carousel button[data-position="1"] .bx-product-hit { pointer-events:auto; }
 .bx-product-carousel button img { width: 100%; height: 285px; object-fit: contain; filter: drop-shadow(0 25px 22px #0008); }
+.bx-product-carousel button[data-item="barber"] img { width:115%; max-width:none; }
 .bx-product-carousel button > .bx-product-caption { display:flex; flex-direction:column; align-items:center; gap:3px; padding:8px 13px; border:1px solid #49617b20; border-radius:99px; background:#ffffffe3; color:#1d3048; box-shadow:0 10px 30px -18px #21324c66; backdrop-filter:blur(10px); transition:opacity .35s; }
 .bx-product-carousel button b { font-size:10px; }
 .bx-product-carousel button small { color:#6c7b8d; font-size:8px; }
@@ -29,14 +30,15 @@
 .bx-product-carousel button[data-position="2"],.bx-product-carousel button[data-position="3"] { opacity: 0; transform: translateX(310px) scale(.42); pointer-events: none; }
 .bx-product-carousel button:not([data-position="0"]) > .bx-product-caption { opacity:0; }
 .bx-product-carousel button:focus-visible { outline: 2px solid #a997ff; outline-offset: 3px; border-radius: 24px; }
-.bx-experience-signal { position:absolute; z-index:7; top:270px; left:54%; display:grid; place-items:center; width:55px; height:55px; color:#ac9aff; opacity:0; pointer-events:none; }
-.bx-experience-signal i { position: absolute; inset: 0; border: 1px solid currentColor; border-radius: 50%; }
-.bx-experience-signal i:nth-child(2) { inset: 10px; opacity: .7; }
-.bx-experience-signal svg { width: 19px; height: 19px; }
-.bx-experience-phone { position:absolute; z-index:6; top:68px; right:5%; width:220px; height:462px; border:2px solid #a9abb3; border-radius:43px; background:linear-gradient(145deg,#eceef4 0%,#565963 28%,#d8d9df 53%,#494b54 78%,#b8bac2 100%); box-shadow:inset 0 0 0 1px #ffffffa6,inset 0 0 0 5px #09090b,20px 28px 25px #0008; pointer-events:none; transform:translateX(18px) rotate(1.5deg); }
+.bx-experience-signal { position:absolute; z-index:7; top:251px; left:var(--bx-signal-left); display:grid; place-items:center; width:88px; height:88px; color:#ac9aff; opacity:0; pointer-events:none; }
+.bx-experience-signal::before { content:""; position:absolute; inset:-10px; border-radius:50%; background:radial-gradient(circle,#ffffffc7 0%,#ffffff75 17%,#806cf566 38%,#64cfdf38 56%,transparent 74%); filter:blur(5px); }
+.bx-experience-signal i { position:absolute; inset:0; z-index:0; border:1.5px solid #fffffff0; border-radius:50%; box-shadow:0 0 18px #765fe866,inset 0 0 14px #806cf529; }
+.bx-experience-signal i:nth-child(2) { inset:16px; border-color:#72d5e6f2; opacity:.96; }
+.bx-experience-signal svg { position:relative; z-index:2; width:27px; height:27px; color:#624bd8; filter:drop-shadow(0 0 5px #fff) drop-shadow(0 0 10px #705ae5c2); }
+.bx-experience-phone { position:absolute; z-index:6; top:86px; right:8%; width:202px; height:424px; border:2px solid #a9abb3; border-radius:40px; background:linear-gradient(145deg,#eceef4 0%,#565963 28%,#d8d9df 53%,#494b54 78%,#b8bac2 100%); box-shadow:inset 0 0 0 1px #ffffffa6,inset 0 0 0 5px #09090b,18px 25px 23px #0008; pointer-events:none; transform:translateX(12px) rotate(1.5deg); }
 .bx-experience-phone::before { content: ''; position: absolute; top: 84px; left: -4px; width: 3px; height: 55px; border-radius: 3px 0 0 3px; background: #7d7f87; box-shadow: 0 70px 0 #7d7f87; }
 .bx-experience-phone::after { content: ''; position: absolute; top: 116px; right: -4px; width: 3px; height: 72px; border-radius: 0 3px 3px 0; background: #7d7f87; }
-.bx-experience-screen { position: absolute; z-index: 1; inset: 7px; overflow: hidden; border: 1px solid #25252a; border-radius: 35px; background: #8baaff; }
+.bx-experience-screen { position:absolute; z-index:1; inset:7px; overflow:hidden; border:1px solid #25252a; border-radius:32px; background:#8baaff; }
 .bx-experience-screen > img { object-fit: fill; }
 .bx-screen-home,.bx-screen-result { opacity: 1; transform: scale(1); transition: opacity .5s ease,transform .6s cubic-bezier(.22,1,.36,1); }
 .bx-screen-result { opacity: 0; transform: scale(1.025); }
@@ -66,8 +68,24 @@
 .bx-experience-scene-note i { font-style:normal; }
 .bx-experience-scene-note .is-mobile { display:none; }
 .bx-experience-disclaimer { margin: 11px 6px 0; color: #7d8fa3; font-size: 9px; text-align: right; }
-@keyframes bx-phone-touch { 0% { transform: translateX(18px) rotate(1.5deg); } 44%,65% { transform: translateX(-72px) rotate(-4deg) scale(.98); } 100% { transform: translateX(18px) rotate(1.5deg); } }
-@keyframes bx-signal { 0%,22% { opacity: 0; transform: scale(.55); } 45% { opacity: 1; transform: scale(1); } 78%,100% { opacity: 0; transform: scale(1.7); } }
+@keyframes bx-phone-touch { 0% { transform:translateX(12px) rotate(1.5deg); } 44%,65% { transform:translateX(var(--bx-phone-touch-x)) rotate(-4deg) scale(.98); } 100% { transform:translateX(12px) rotate(1.5deg); } }
+@keyframes bx-signal { 0%,22% { opacity: 0; transform: scale(.55); } 45% { opacity: 1; transform: scale(1); } 78%,100% { opacity: 0; transform: scale(1.5); } }
+@media (min-width: 1280px) {
+  .bx-experience-scene[data-experience="reviews"] { --bx-phone-touch-x:-207px; --bx-signal-left:38%; }
+  .bx-experience-scene[data-experience="contact"] { --bx-phone-touch-x:-166px; --bx-signal-left:43%; }
+  .bx-experience-scene[data-experience="barber"] { --bx-phone-touch-x:-253px; --bx-signal-left:33%; }
+  .bx-experience-scene[data-experience="cafe"] { --bx-phone-touch-x:-235px; --bx-signal-left:35%; }
+  .bx-experience-scene[data-experience="beauty"] { --bx-phone-touch-x:-220px; --bx-signal-left:37%; }
+  .bx-experience-scene[data-experience="shop"],.bx-experience-scene[data-experience="custom"] { --bx-phone-touch-x:-173px; --bx-signal-left:42%; }
+}
+@media (min-width: 981px) and (max-width: 1279px) {
+  .bx-experience-scene[data-experience="reviews"] { --bx-phone-touch-x:-142px; --bx-signal-left:37%; }
+  .bx-experience-scene[data-experience="contact"] { --bx-phone-touch-x:-106px; --bx-signal-left:42%; }
+  .bx-experience-scene[data-experience="barber"] { --bx-phone-touch-x:-182px; --bx-signal-left:31%; }
+  .bx-experience-scene[data-experience="cafe"] { --bx-phone-touch-x:-166px; --bx-signal-left:33%; }
+  .bx-experience-scene[data-experience="beauty"] { --bx-phone-touch-x:-153px; --bx-signal-left:35%; }
+  .bx-experience-scene[data-experience="shop"],.bx-experience-scene[data-experience="custom"] { --bx-phone-touch-x:-113px; --bx-signal-left:41%; }
+}
 @media (max-width: 1180px) {
   .bx-hero-demo { grid-template-columns:minmax(320px,.76fr) minmax(500px,1.24fr); gap:0; }
   .bx-hero-demo .bx-h1 { font-size: clamp(47px,4.5vw,62px); }
@@ -75,7 +93,7 @@
   .bx-product-carousel button { width:286px; margin-left:-143px; }
   .bx-product-carousel button[data-position="-1"] { transform: translateX(-150px) scale(.58) rotate(-6deg); }
   .bx-product-carousel button[data-position="1"] { transform: translateX(150px) scale(.58) rotate(6deg); }
-  .bx-experience-phone { right: 4%; width: 210px; height: 441px; }
+  .bx-experience-phone { top:94px; right:7%; width:194px; height:407px; border-radius:38px; }
 }
 @media (max-width: 1099px) {
   .bx-hero-demo .bx-hero-copy { align-items: center; margin-inline: auto; text-align: center; }
@@ -99,6 +117,7 @@
   .bx-demo-visual-label em { justify-content:center; max-width:100%; font-size:6px; text-align:center; }
   .bx-product-carousel button { top:88px; width:220px; height:275px; margin-left:-110px; }
   .bx-product-carousel button img { height: 212px; }
+  .bx-product-carousel button[data-item="barber"] img { width:100%; }
   .bx-product-carousel button[data-position="-1"] { transform: translateX(-135px) scale(.56) rotate(-7deg); }
   .bx-product-carousel button[data-position="1"] { transform: translateX(135px) scale(.56) rotate(7deg); }
   .bx-product-carousel button > .bx-product-caption { padding:7px 11px; }
@@ -113,7 +132,9 @@
   .bx-screen-custom > p { margin-top: 9px; font-size: 7px; }
   .bx-screen-custom > div { gap: 5px; margin-top: 13px; }
   .bx-screen-custom i { padding: 6px 2px; border-radius: 6px; font-size: 6px; }
-  .bx-experience-signal { top: 183px; left: 51%; width: 45px; height: 45px; }
+  .bx-experience-signal { top:174px; left:39%; width:56px; height:56px; }
+  .bx-experience-signal i:nth-child(2) { inset:10px; }
+  .bx-experience-signal svg { width:18px; height:18px; }
   .bx-product-carousel button[data-position="-1"] .bx-product-hit,.bx-product-carousel button[data-position="1"] .bx-product-hit { pointer-events:none; }
   .bx-experience-controls { bottom:16px; }
   .bx-experience-pagination { gap:8px; }

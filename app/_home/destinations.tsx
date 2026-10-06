@@ -90,14 +90,14 @@ export default function Destinations({ whatsappNumber }: { whatsappNumber: strin
       </div>
 
       <div className="bx-hero-demo-visual">
-        <div className={`bx-experience-scene is-${phase}`} role="group" tabIndex={0} onKeyDown={handleKeyDown} onPointerDown={handlePointerDown} onPointerUp={handlePointerUp} onPointerCancel={() => { pointerStart.current = null; }} aria-label={`Carrusel: ${experience.productName} de ${experience.brand}. Elegí un objeto lateral, deslizá o usá las flechas para cambiar.`}>
+        <div className={`bx-experience-scene is-${phase}`} data-experience={experience.id} role="group" tabIndex={0} onKeyDown={handleKeyDown} onPointerDown={handlePointerDown} onPointerUp={handlePointerUp} onPointerCancel={() => { pointerStart.current = null; }} aria-label={`Carrusel: ${experience.productName} de ${experience.brand}. Elegí un objeto lateral, deslizá o usá las flechas para cambiar.`}>
           <div className="bx-experience-halo" aria-hidden="true" />
           <div className="bx-demo-visual-label"><em><FiRadio aria-hidden="true" />PRODUCTO + EXPERIENCIA PERSONALIZADOS</em><span>{experience.eyebrow}</span><b>{experience.brand}</b></div>
           <div className="bx-product-carousel">
             {EXPERIENCES.map((item, index) => {
               const rawPosition = (index - active + EXPERIENCES.length) % EXPERIENCES.length;
               const position = rawPosition > EXPERIENCES.length / 2 ? rawPosition - EXPERIENCES.length : rawPosition;
-              return <button type="button" key={item.id} data-position={position} aria-pressed={position === 0} aria-disabled={position === 0} aria-hidden={Math.abs(position) > 1} tabIndex={position === 0 || Math.abs(position) > 1 ? -1 : 0} onClick={(event) => { event.stopPropagation(); if (position !== 0) selectExperience(index); }} aria-label={`${item.brand}, ${item.productName}`}>
+              return <button type="button" key={item.id} data-item={item.id} data-position={position} aria-pressed={position === 0} aria-disabled={position === 0} aria-hidden={Math.abs(position) > 1} tabIndex={position === 0 || Math.abs(position) > 1 ? -1 : 0} onClick={(event) => { event.stopPropagation(); if (position !== 0) selectExperience(index); }} aria-label={`${item.brand}, ${item.productName}`}>
                 <span className="bx-product-hit" style={{ inset: item.hitInset }} aria-hidden="true" />
                 <Image src={item.product} alt="" width={960} height={720} sizes="(max-width: 760px) 230px, 330px" priority={index === 0} loading={index === 0 ? undefined : Math.abs(position) <= 1 ? "eager" : "lazy"} fetchPriority={position === 0 ? "high" : Math.abs(position) === 1 ? "auto" : "low"} />
                 <span className="bx-product-caption"><b>{item.brand}</b><small>{item.productName}</small></span>
