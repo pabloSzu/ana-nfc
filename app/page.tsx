@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import "./marketing.css";
 import "./_home/sections.css";
-import { IconMessageCircle, IconZap, IconShieldCheck, IconTruck } from "@/components/icons";
-import { FiArrowUpRight, FiBookOpen, FiCalendar, FiCheck, FiLink, FiMessageCircle, FiSend, FiStar } from "react-icons/fi";
+import { IconMessageCircle, IconTruck } from "@/components/icons";
+import { FiArrowUpRight, FiCheck, FiMessageCircle, FiSend } from "react-icons/fi";
 import { FaWhatsapp } from "react-icons/fa6";
 import { body, display, hand } from "./_home/fonts";
 import Logo from "./_home/logo";
@@ -40,20 +40,6 @@ const NAV_LINKS = [
   { href: "#tu-pagina", label: "Tu página" },
   { href: "#productos", label: "Formatos" },
   { href: "#para-talleres", label: "Para fabricantes" },
-];
-
-const HERO_DESTINATIONS = [
-  { icon: FiStar, label: "Reseñas" },
-  { icon: FiBookOpen, label: "Menús" },
-  { icon: FiMessageCircle, label: "WhatsApp" },
-  { icon: FiCalendar, label: "Turnos" },
-  { icon: FiLink, label: "Tu página" },
-];
-
-const TRUST = [
-  { icon: IconShieldCheck, text: "Tu logo, tu identidad, tu estilo" },
-  { icon: IconMessageCircle, text: "Te ayudamos a elegir" },
-  { icon: IconZap, text: "QR o NFC, según lo que necesites" },
 ];
 
 const FAQS = [
@@ -135,18 +121,7 @@ export default function Home() {
           <Destinations whatsappNumber={WHATSAPP_NUMBER} />
         </div>
 
-        <div className="bx-hero-bar">
-          <div className="bx-hero-bar-inner">
-            <span className="bx-bar-kicker">UN TOQUE PARA</span>
-            <ul>{HERO_DESTINATIONS.map(({ icon: Icon, label }) => <li key={label}><Icon />{label}</li>)}</ul>
-            <span className="bx-bar-end">Un toque. Muchas oportunidades.</span>
-          </div>
-        </div>
       </header>
-
-      <div className="bx-trust">
-        {TRUST.map(({ icon: Icon, text }) => <span key={text}><Icon />{text}</span>)}
-      </div>
 
       <HowItWorks />
 

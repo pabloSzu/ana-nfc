@@ -20,8 +20,6 @@
   .bx-mobile-menu a > span:first-child { font-size: 9px; color: #a390b3; }
   .bx-mobile-menu a > span:last-child { margin-left: auto; color: #967aac; }
 }
-.bx-trust { background: #fff; gap: 18px 55px; font-size: 12px; padding-block: 23px; }
-
 /* Product objects are the focus; purpose comes before specifications. */
 .bx-shop { background: #faf9f6; }
 .bx-shop .bx-section { padding-bottom: 85px; }

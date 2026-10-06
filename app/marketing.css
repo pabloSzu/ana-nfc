@@ -83,7 +83,7 @@ html:has(.bx) { scroll-behavior: smooth; }
 /* The image deliberately leaves clean negative space on the left for copy. On desktop it is the
    full-bleed canvas; on smaller screens the product scene moves below the copy so neither content
    nor contrast depends on an overlay. */
-.bx-hero { position: relative; isolation: isolate; overflow: hidden; color: #16263a; background: radial-gradient(55% 80% at 84% 38%,rgba(119,104,247,.2),transparent 68%),radial-gradient(38% 62% at 68% 70%,rgba(34,199,224,.16),transparent 72%),linear-gradient(118deg,#f8fbfd 0%,#f5f8fc 41%,#eef0ff 72%,#f7f4ff 100%); }
+.bx-hero { position: relative; isolation: isolate; overflow: hidden; border-bottom:1px solid rgba(27,66,111,.1); color: #16263a; background: radial-gradient(55% 80% at 84% 38%,rgba(119,104,247,.2),transparent 68%),radial-gradient(38% 62% at 68% 70%,rgba(34,199,224,.16),transparent 72%),linear-gradient(118deg,#f8fbfd 0%,#f5f8fc 41%,#eef0ff 72%,#f7f4ff 100%); }
 .bx-hero::before { content:""; position:absolute; z-index:0; inset:0; pointer-events:none; background:linear-gradient(90deg,rgba(248,251,253,.98) 0%,rgba(248,251,253,.88) 30%,rgba(248,251,253,.18) 53%,transparent 72%); }
 .bx-hero-main { position: relative; z-index:1; display: grid; grid-template-columns: minmax(0, 1fr); padding: 88px var(--pad-x) 8px; }
 .bx-hero-copy { display: contents; }
@@ -106,21 +106,11 @@ html:has(.bx) { scroll-behavior: smooth; }
 .bx-scene-art { position: absolute; inset: 0; }
 .bx-scene-img { object-fit: cover; object-position: right center; }
 .bx-scene::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, #f7fafc 0%, rgba(247, 250, 252, 0) 9%); }
-.bx-hero-bar { position: relative; z-index: 2; border-top: 1px solid rgba(27,66,111,.1); border-bottom: 1px solid rgba(27,66,111,.08); background: linear-gradient(90deg,rgba(255,255,255,.7),rgba(242,243,255,.62)); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); }
-.bx-hero-bar-inner { max-width: 1440px; margin: auto; padding: 21px var(--pad-x); display: flex; flex-wrap: wrap; align-items: center; gap: 16px 30px; }
-.bx-bar-kicker { font: 800 9px / 1.4 var(--bx-body), sans-serif; letter-spacing: .16em; color: #4576ae; }
-.bx-hero-bar ul { display: flex; flex-wrap: wrap; gap: 14px 24px; }
-.bx-hero-bar li { display: inline-flex; align-items: center; gap: 8px; font: 600 12px / 1.3 var(--bx-body), sans-serif; color: #425b75; }
-.bx-hero-bar li svg { width: 17px; height: 17px; color: #517fba; }
-.bx-bar-end { margin-left: auto; font: 500 11px / 1.5 var(--bx-body), sans-serif; color: #718297; }
 @media (min-width: 641px) and (max-width: 1099px) {
   .bx-hero-copy > .bx-h1 { font-size: clamp(58px, 8vw, 76px); }
   .bx-hero-lead { max-width: 47ch; }
   .bx-scene { aspect-ratio: 16 / 9; }
   .bx-scene-img { object-position: right center; }
-}
-@media (max-width: 1099px) {
-  .bx-bar-end { display: none; }
 }
 @media (max-width: 640px) {
   .bx-hero-main { padding-top: 84px; padding-bottom: 18px; }
@@ -129,10 +119,6 @@ html:has(.bx) { scroll-behavior: smooth; }
   .bx-hero-cta { gap: 10px; margin-top: 20px; }
   .bx-hero-cta .bx-btn { width: 100%; }
   .bx-scene { aspect-ratio: 4 / 3; }
-  .bx-hero-bar-inner { gap: 14px; }
-  .bx-bar-kicker { width: 100%; }
-  .bx-hero-bar ul { gap: 13px 18px; }
-  .bx-hero-bar li { font-size: 11px; }
 }
 @media (min-width: 1100px) {
   /* 56.28vw matches the source image's 1672x941 proportion, preserving the whole composition at
@@ -145,11 +131,6 @@ html:has(.bx) { scroll-behavior: smooth; }
   .bx-scene::after { background: linear-gradient(90deg, rgba(248, 251, 253, .35) 0%, rgba(248, 251, 253, .08) 36%, transparent 52%); }
   .bx-scene-img { object-position: right center; }
 }
-
-/* trust strip */
-.bx-trust { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 36px; padding: 20px var(--pad-x); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: rgba(255, 255, 255, .6); font: 600 14px / 1.3 var(--bx-body), sans-serif; color: var(--muted); }
-.bx-trust span { display: inline-flex; align-items: center; gap: 9px; }
-.bx-trust svg { width: 18px; height: 18px; color: var(--violet); }
 
 /* ---------------------------------------------------------------- sections */
 .bx-section { position: relative; max-width: 1240px; margin: 0 auto; padding: clamp(72px, 9vw, 130px) var(--pad-x); }

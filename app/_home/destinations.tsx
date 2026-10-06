@@ -127,9 +127,8 @@ export default function Destinations({ whatsappNumber }: { whatsappNumber: strin
             </div>
             <button className="bx-experience-pause" type="button" onClick={() => setPaused((current) => !current)} aria-label={paused ? "Reanudar demostración" : "Pausar demostración"}>{paused ? <FiPlay /> : <FiPause />}{paused ? "Reanudar" : "Pausar"}</button>
           </div>
-          <span className="bx-experience-scene-note"><i className="is-desktop">ELEGÍ UN OBJETO · USÁ LAS FLECHAS</i><i className="is-mobile">DESLIZÁ PARA EXPLORAR</i> · QR + NFC</span>
         </div>
-        <p className="bx-experience-disclaimer">Ejemplos visuales con marcas ficticias. Cada experiencia se adapta a tu negocio.</p>
+        <p className="bx-experience-disclaimer"><span className="is-desktop">Elegí un objeto o usá las flechas</span><span className="is-mobile">Deslizá para explorar</span><i aria-hidden="true">·</i> Ejemplos ilustrativos, personalizados para tu marca.</p>
       </div>
     </div>
   );
