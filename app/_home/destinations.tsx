@@ -92,7 +92,7 @@ export default function Destinations({ whatsappNumber }: { whatsappNumber: strin
       <div className="bx-hero-demo-visual">
         <div className={`bx-experience-scene is-${phase}`} data-experience={experience.id} role="group" tabIndex={0} onKeyDown={handleKeyDown} onPointerDown={handlePointerDown} onPointerUp={handlePointerUp} onPointerCancel={() => { pointerStart.current = null; }} aria-label={`Carrusel: ${experience.productName} de ${experience.brand}. Elegí un objeto lateral, deslizá o usá las flechas para cambiar.`}>
           <div className="bx-experience-halo" aria-hidden="true" />
-          <div className="bx-demo-visual-label"><em><FiRadio aria-hidden="true" />PRODUCTO + EXPERIENCIA PERSONALIZADOS</em><span>{experience.eyebrow}</span><b>{experience.brand}</b></div>
+          <div className="bx-demo-visual-label"><em><FiRadio aria-hidden="true" />SOLO ACERCÁ TU CELULAR</em><span>{experience.eyebrow}</span><b>{experience.brand}</b></div>
           <div className="bx-product-carousel">
             {EXPERIENCES.map((item, index) => {
               const rawPosition = (index - active + EXPERIENCES.length) % EXPERIENCES.length;

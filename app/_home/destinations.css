@@ -9,7 +9,7 @@
 .bx-experience-scene:focus-visible { outline: 2px solid #9d8cf7; outline-offset: 4px; }
 .bx-experience-halo { position:absolute; inset:2% -14% 2% -26%; border:1px solid #6857dc24; border-radius:50%; background:radial-gradient(circle at 63% 47%,#8770f31f,transparent 54%); transform:rotate(-12deg); }
 .bx-demo-visual-label { position:absolute; z-index:8; top:26px; left:var(--bx-product-anchor); display:flex; flex-direction:column; align-items:center; gap:5px; width:max-content; max-width:260px; text-align:center; transform:translateX(-50%); }
-.bx-demo-visual-label em { display:inline-flex; align-items:center; gap:7px; margin-bottom:5px; padding:7px 11px; border:1px solid #6857dc3d; border-radius:99px; background:#ffffffbd; color:#5143ad; font-size:9px; font-style:normal; font-weight:800; letter-spacing:.07em; backdrop-filter:blur(10px); }
+.bx-demo-visual-label em { display:inline-flex; align-items:center; gap:7px; margin-bottom:5px; padding:8px 14px; border:1px solid #6857dc4a; border-radius:99px; background:#ffffffe8; color:#5143ad; font-size:10.5px; font-style:normal; font-weight:850; letter-spacing:.055em; box-shadow:0 10px 24px -16px #4f3fc799; backdrop-filter:blur(10px); }
 .bx-demo-visual-label em svg { width:11px; height:11px; }
 .bx-demo-visual-label span { color:#6250c7; font-size:8px; font-weight:800; letter-spacing:.14em; }
 .bx-demo-visual-label b { color:#172c47; font:750 18px/1 var(--bx-display),sans-serif; letter-spacing:-.025em; }
@@ -77,13 +77,29 @@
   .bx-experience-scene[data-experience="beauty"] { --bx-phone-touch-x:-220px; --bx-signal-left:37%; }
   .bx-experience-scene[data-experience="shop"],.bx-experience-scene[data-experience="custom"] { --bx-phone-touch-x:-173px; --bx-signal-left:42%; }
 }
-@media (min-width: 981px) and (max-width: 1279px) {
+@media (min-width: 1181px) and (max-width: 1279px) {
   .bx-experience-scene[data-experience="reviews"] { --bx-phone-touch-x:-142px; --bx-signal-left:37%; }
   .bx-experience-scene[data-experience="contact"] { --bx-phone-touch-x:-106px; --bx-signal-left:42%; }
   .bx-experience-scene[data-experience="barber"] { --bx-phone-touch-x:-182px; --bx-signal-left:31%; }
   .bx-experience-scene[data-experience="cafe"] { --bx-phone-touch-x:-166px; --bx-signal-left:33%; }
   .bx-experience-scene[data-experience="beauty"] { --bx-phone-touch-x:-153px; --bx-signal-left:35%; }
   .bx-experience-scene[data-experience="shop"],.bx-experience-scene[data-experience="custom"] { --bx-phone-touch-x:-113px; --bx-signal-left:41%; }
+}
+@media (min-width: 1100px) and (max-width: 1180px) {
+  .bx-experience-scene[data-experience="reviews"] { --bx-phone-touch-x:-108px; --bx-signal-left:37%; }
+  .bx-experience-scene[data-experience="contact"] { --bx-phone-touch-x:-78px; --bx-signal-left:42%; }
+  .bx-experience-scene[data-experience="barber"] { --bx-phone-touch-x:-138px; --bx-signal-left:31%; }
+  .bx-experience-scene[data-experience="cafe"] { --bx-phone-touch-x:-124px; --bx-signal-left:33%; }
+  .bx-experience-scene[data-experience="beauty"] { --bx-phone-touch-x:-114px; --bx-signal-left:35%; }
+  .bx-experience-scene[data-experience="shop"],.bx-experience-scene[data-experience="custom"] { --bx-phone-touch-x:-84px; --bx-signal-left:41%; }
+}
+@media (min-width: 981px) and (max-width: 1099px) {
+  .bx-experience-scene[data-experience="reviews"] { --bx-phone-touch-x:-88px; --bx-signal-left:37%; }
+  .bx-experience-scene[data-experience="contact"] { --bx-phone-touch-x:-58px; --bx-signal-left:42%; }
+  .bx-experience-scene[data-experience="barber"] { --bx-phone-touch-x:-108px; --bx-signal-left:31%; }
+  .bx-experience-scene[data-experience="cafe"] { --bx-phone-touch-x:-104px; --bx-signal-left:33%; }
+  .bx-experience-scene[data-experience="beauty"] { --bx-phone-touch-x:-84px; --bx-signal-left:35%; }
+  .bx-experience-scene[data-experience="shop"],.bx-experience-scene[data-experience="custom"] { --bx-phone-touch-x:-64px; --bx-signal-left:41%; }
 }
 @media (min-width: 981px) {
   .bx-experience-scene { min-height:560px; }
@@ -116,19 +132,19 @@
   .bx-experience-phone { top:78px; right:auto; left:min(calc(100% - 214px),calc(var(--bx-product-anchor) + clamp(220px,26vw,255px))); width:202px; height:424px; border-radius:40px; }
 }
 @media (min-width: 761px) and (max-width: 980px) {
-  .bx-experience-scene { min-height:clamp(500px,61vw,560px); }
+  .bx-experience-scene { --bx-touch-fluid:clamp(0px,calc(9vw - 68.4px),20px); min-height:clamp(500px,61vw,560px); }
   .bx-product-carousel button { width:clamp(242px,29.2vw,286px); height:clamp(300px,36.7vw,360px); margin-left:clamp(-143px,-14.6vw,-121px); }
   .bx-product-carousel button img { height:clamp(232px,29vw,285px); }
   .bx-experience-phone { top:clamp(62px,7.95vw,78px); left:min(calc(100% - clamp(168px,21vw,202px) - 8px),calc(var(--bx-product-anchor) + clamp(205px,26vw,255px))); width:clamp(168px,21vw,202px); height:clamp(352px,44.1vw,424px); border-radius:clamp(34px,4.1vw,40px); }
   .bx-experience-phone::before { top:clamp(69px,8.6vw,84px); height:clamp(45px,5.6vw,55px); box-shadow:0 clamp(58px,7.15vw,70px) 0 #7d7f87; }
   .bx-experience-phone::after { top:clamp(95px,11.85vw,116px); height:clamp(59px,7.35vw,72px); }
   .bx-experience-screen { inset:clamp(5px,.7vw,7px); border-radius:clamp(27px,3.3vw,32px); }
-  .bx-experience-scene[data-experience="reviews"] { --bx-phone-touch-x:-112px; --bx-signal-left:calc(var(--bx-product-anchor) + 90px); }
-  .bx-experience-scene[data-experience="contact"] { --bx-phone-touch-x:-90px; --bx-signal-left:calc(var(--bx-product-anchor) + 112px); }
-  .bx-experience-scene[data-experience="barber"] { --bx-phone-touch-x:-145px; --bx-signal-left:calc(var(--bx-product-anchor) + 58px); }
-  .bx-experience-scene[data-experience="cafe"] { --bx-phone-touch-x:-135px; --bx-signal-left:calc(var(--bx-product-anchor) + 68px); }
-  .bx-experience-scene[data-experience="beauty"] { --bx-phone-touch-x:-125px; --bx-signal-left:calc(var(--bx-product-anchor) + 76px); }
-  .bx-experience-scene[data-experience="shop"],.bx-experience-scene[data-experience="custom"] { --bx-phone-touch-x:-96px; --bx-signal-left:calc(var(--bx-product-anchor) + 106px); }
+  .bx-experience-scene[data-experience="reviews"] { --bx-phone-touch-x:calc(-116px - var(--bx-touch-fluid)); --bx-signal-left:calc(var(--bx-product-anchor) + 90px); }
+  .bx-experience-scene[data-experience="contact"] { --bx-phone-touch-x:calc(-98px - var(--bx-touch-fluid)); --bx-signal-left:calc(var(--bx-product-anchor) + 112px); }
+  .bx-experience-scene[data-experience="barber"] { --bx-phone-touch-x:calc(-153px - var(--bx-touch-fluid)); --bx-signal-left:calc(var(--bx-product-anchor) + 58px); }
+  .bx-experience-scene[data-experience="cafe"] { --bx-phone-touch-x:calc(-143px - var(--bx-touch-fluid)); --bx-signal-left:calc(var(--bx-product-anchor) + 68px); }
+  .bx-experience-scene[data-experience="beauty"] { --bx-phone-touch-x:calc(-133px - var(--bx-touch-fluid)); --bx-signal-left:calc(var(--bx-product-anchor) + 76px); }
+  .bx-experience-scene[data-experience="shop"],.bx-experience-scene[data-experience="custom"] { --bx-phone-touch-x:calc(-104px - var(--bx-touch-fluid)); --bx-signal-left:calc(var(--bx-product-anchor) + 106px); }
 }
 @media (min-width: 641px) and (max-width: 760px) {
   .bx-experience-scene { min-height:clamp(460px,66vw,500px); }
@@ -160,7 +176,7 @@
   .bx-experience-scene { --bx-product-anchor:32%; min-height:440px; border-radius:0; }
   .bx-experience-scene::before { inset:0 -22% -2%; }
   .bx-demo-visual-label { top:17px; left:var(--bx-product-anchor); width:210px; max-width:calc(100% - 24px); }
-  .bx-demo-visual-label em { justify-content:center; max-width:100%; padding:6px 9px; font-size:7px; letter-spacing:.055em; text-align:center; }
+  .bx-demo-visual-label em { justify-content:center; max-width:100%; padding:7px 10px; font-size:8px; letter-spacing:.045em; text-align:center; }
   .bx-product-carousel button { top:88px; width:220px; height:275px; margin-left:-110px; }
   .bx-product-carousel button img { height: 212px; }
   .bx-product-carousel button[data-item="barber"] img { width:100%; }
@@ -195,6 +211,14 @@
   .bx-experience-scene[data-experience="beauty"] { --bx-phone-touch-x:-50px; --bx-signal-left:calc(var(--bx-product-anchor) + 52px); }
   .bx-experience-scene[data-experience="shop"],.bx-experience-scene[data-experience="custom"] { --bx-phone-touch-x:-36px; --bx-signal-left:calc(var(--bx-product-anchor) + 67px); }
   @keyframes bx-phone-touch { 0% { transform:rotate(1.5deg); } 44%,65% { transform:translateX(var(--bx-phone-touch-x)) rotate(-4deg) scale(.98); } 100% { transform:rotate(1.5deg); } }
+}
+@media (min-width: 500px) and (max-width: 640px) {
+  .bx-experience-scene[data-experience="reviews"] { --bx-phone-touch-x:-53px; }
+  .bx-experience-scene[data-experience="contact"] { --bx-phone-touch-x:-42px; }
+  .bx-experience-scene[data-experience="barber"] { --bx-phone-touch-x:-78px; }
+  .bx-experience-scene[data-experience="cafe"] { --bx-phone-touch-x:-68px; }
+  .bx-experience-scene[data-experience="beauty"] { --bx-phone-touch-x:-64px; }
+  .bx-experience-scene[data-experience="shop"],.bx-experience-scene[data-experience="custom"] { --bx-phone-touch-x:-44px; }
 }
 @media (max-width: 420px) {
   .bx-experience-scene { --bx-product-anchor:33%; }
