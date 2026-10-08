@@ -35,11 +35,17 @@ export default async function PagesPage({ searchParams }: { searchParams: Search
   const userId = String(authData?.claims?.sub || "");
   if (!userId) redirect("/admin/login");
 
-  const [{ data: clients }, { data: pages }, { data: viewCounts }] = await Promise.all([
+  const [{ data: clients }, { data: pages }, { data: viewCounts, error: viewCountsError }] = await Promise.all([
     supabase.from("clients").select("id,name").eq("owner_id", userId).order("name"),
     supabase.from("landings").select("*").eq("owner_id", userId).order("created_at", { ascending: false }),
     supabase.from("landing_view_counts").select("*"),
   ]);
+  if (viewCountsError) {
+    console.error("No se pudieron cargar las estadísticas de visitas", {
+      code: viewCountsError.code,
+      message: viewCountsError.message,
+    });
+  }
   const clientsById = new Map((clients || []).map((client) => [client.id, client]));
   const viewsById = new Map<string, ViewCount>((viewCounts || []).map((row) => [String(row.landing_id), row as ViewCount]));
   const normalized = searchable(query);
@@ -64,6 +70,7 @@ export default async function PagesPage({ searchParams }: { searchParams: Search
     </header>
 
     {orphanCount > 0 && <aside className="admin-assignment-warning"><IconUsers /><p><strong>{orphanCount} {orphanCount === 1 ? "página necesita" : "páginas necesitan"} un cliente.</strong><span>Son páginas anteriores al nuevo sistema. Podés editarlas, pero las nuevas siempre se crean dentro de un cliente.</span></p><Link href="/admin/paginas?type=unassigned">Ver pendientes</Link></aside>}
+    {viewCountsError && <aside className="admin-assignment-warning"><IconFileText /><p><strong>No se pudieron cargar las visitas.</strong><span>Las páginas siguen funcionando, pero las estadísticas no están disponibles en este momento.</span></p></aside>}
 
     <section className="elevated-section">
       {!!pages?.length && <form action="/admin/paginas" method="get" className="admin-library-filters" role="search"><label className="admin-filter-search">Buscar<input name="q" type="search" defaultValue={query} placeholder="Nombre, cliente o URL" /></label><label>Tipo<select name="type" defaultValue={type}><option value="all">Todas</option><option value="landing">Landings</option><option value="contact">Tarjetas personales</option>{orphanCount > 0 && <option value="unassigned">Sin cliente</option>}</select></label><label>Estado<select name="status" defaultValue={status}><option value="all">Todos</option><option value="published">Publicadas</option><option value="draft">Borradores</option></select></label><PendingSubmitButton className="btn" pendingText="Filtrando…">Filtrar</PendingSubmitButton>{(query || type !== "all" || status !== "all") && <Link className="btn secondary" href="/admin/paginas">Limpiar</Link>}</form>}
