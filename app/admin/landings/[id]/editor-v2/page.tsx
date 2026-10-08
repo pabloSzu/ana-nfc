@@ -17,11 +17,14 @@ export default async function EditorV2Page({ params, searchParams }: { params: P
   const { id } = await params;
   const { saved } = await searchParams;
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/admin/login");
-  const { data: landing } = await supabase.from("landings").select("*").eq("id", id).eq("owner_id", user.id).maybeSingle();
+  const { data: authData } = await supabase.auth.getClaims();
+  const userId = String(authData?.claims?.sub || "");
+  if (!userId) redirect("/admin/login");
+  const [{ data: landing }, { data: actions }] = await Promise.all([
+    supabase.from("landings").select("*").eq("id", id).eq("owner_id", userId).maybeSingle(),
+    supabase.from("actions").select("*").eq("landing_id", id).eq("enabled", true).order("position"),
+  ]);
   if (!landing) notFound();
-  const { data: actions } = await supabase.from("actions").select("*").eq("landing_id", id).eq("enabled", true).order("position");
 
   const buttonZone = parseButtonZone(landing.button_style);
   if (!landing.button_style || !Object.keys(landing.button_style).length) buttonZone.oneColor = landing.primary_color || "#1f2937";

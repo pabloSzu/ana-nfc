@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { logout } from "./login/actions";
 import { AdminThemeButton } from "@/components/admin-theme";
 import { IconLogOut, IconRocket } from "@/components/icons";
+import AdminNavLinks from "./admin-nav-links";
 import "../globals.css";
 
 export const metadata: Metadata = {
@@ -23,7 +24,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   return (
     <div className="admin-shell-frame">
       <nav className="global-nav">
-        <Link href="/admin" className="global-nav-brand"><span className="global-nav-mark"><IconRocket /></span> Mi Landing Web Fácil</Link>
+        <Link href="/admin" className="global-nav-brand"><span className="global-nav-mark"><IconRocket /></span><span className="global-nav-brand-name">Mi Landing Web Fácil</span></Link>
+        {email && <AdminNavLinks />}
         <div className="global-nav-right">
           <AdminThemeButton />
           {email && <span className="global-nav-user">{email}</span>}

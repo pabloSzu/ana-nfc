@@ -13,9 +13,10 @@ function color(value: FormDataEntryValue | null, fallback: string) {
 
 async function auth() {
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.getUser();
-  if (error || !data.user) redirect("/admin/login");
-  return { supabase, user: data.user };
+  const { data, error } = await supabase.auth.getClaims();
+  const userId = String(data?.claims?.sub || "");
+  if (error || !userId) redirect("/admin/login");
+  return { supabase, user: { id: userId } };
 }
 
 async function ownedLanding(landingId: string, userId: string) {

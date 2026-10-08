@@ -19,6 +19,7 @@ import { DESIGN_PRESETS_V2, buttonCollectionStyle, buttonIconStyle, instagramAss
 import { ThemeSceneLayer, useSharedTheme } from "@/components/theme-scene";
 import ImageAdjustDialog, { type ImageKind, type ImagePlacement } from "./image-adjust-dialog";
 import { createClient as createBrowserClient } from "@/lib/supabase/client";
+import PendingSubmitButton from "@/components/pending-submit-button";
 
 type ButtonItem = { id: string; type: string; title: string; subtitle: string; url: string; message: string; icon: string; icon_background_color: string; background_color: string; text_color: string; use_auto_color: boolean; position: number };
 type LandingDraft = {
@@ -169,6 +170,7 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
   const [cvPreviewUrl, setCvPreviewUrl] = useState("");
   const cvPreviewUrlRef = useRef("");
   const [cvUploading, setCvUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [imageEditor, setImageEditor] = useState<ImageEditorDraft | null>(null);
   const activeButton = typeof panel === "object" && panel ? buttons.find((button) => button.id === panel.buttonId) : null;
   const actionDefs = useMemo(() => getAllActions(), []);
@@ -676,12 +678,17 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
     const form = event.currentTarget;
     const cvInput = form.querySelector<HTMLInputElement>("#v2-cv-file");
     const file = cvInput?.files?.[0];
-    if (!file) return;
+    if (!file) {
+      if (saving) event.preventDefault();
+      else setSaving(true);
+      return;
+    }
     event.preventDefault();
-    if (cvUploading) return;
+    if (cvUploading || saving) return;
     if (!buttons.some((button) => button.type === "cv")) { setCvFileError("Agregá el botón de CV antes de guardar el archivo."); return; }
     const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
     setCvUploading(true);
+    setSaving(true);
     let publicUrl: string;
     try {
       if (file.size > 10 * 1024 * 1024 || !/\.pdf$/i.test(file.name) || (file.type && file.type !== "application/pdf")) throw new Error("Elegí un PDF de hasta 10 MB.");
@@ -696,6 +703,7 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
     } catch (error) {
       setCvFileError(error instanceof Error ? error.message : "No se pudo subir el PDF.");
       setCvUploading(false);
+      setSaving(false);
       return;
     }
     const formData = new FormData(form);
@@ -704,7 +712,7 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
     formData.set("return_to", submitter?.name === "return_to" ? submitter.value : `/admin/landings/${draft.id}/editor-v2`);
     startTransition(async () => {
       try { await saveAction(formData); }
-      finally { setCvUploading(false); }
+      finally { setCvUploading(false); setSaving(false); }
     });
   }
 
@@ -754,7 +762,7 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
         </div>
         <button className="v2-ghost" type="button" onClick={() => { setPanel(draft.business_type === "contact" ? "settings" : panel === "settings" ? null : "settings"); setPreview(false); }}>{draft.business_type === "contact" ? "Publicar" : "Ajustes"}</button>
         <button className="v2-ghost" type="button" onClick={() => { setPreview(!preview); setPanel(preview ? (window.innerWidth <= 840 || draft.business_type === "contact" ? null : "templates") : null); }}>{preview ? "Seguir editando" : "Vista previa"}</button>
-        <button className="v2-save" form="v2-save" type="submit" name="return_to" value={`/admin/landings/${draft.id}/editor-v2`} disabled={!dirty || cvUploading}>{cvUploading ? "Subiendo PDF…" : "Guardar cambios"}</button>
+        <button className="v2-save" form="v2-save" type="submit" name="return_to" value={`/admin/landings/${draft.id}/editor-v2`} disabled={!dirty || cvUploading || saving} aria-busy={saving}>{cvUploading ? "Subiendo PDF…" : saving ? "Guardando…" : "Guardar cambios"}</button>
       </header>
 
       <div className={`v2-workspace ${preview ? "is-preview" : ""} ${panel ? "has-panel" : ""}`}>
@@ -1292,7 +1300,7 @@ function SettingsControls({ draft, buttons, dirty, onTypeChange, onBrandingChang
         <input type="hidden" name="id" value={draft.id} />
         <input type="hidden" name="published" value={String(!isPublished)} />
         <input type="hidden" name="return_to" value={`/admin/landings/${draft.id}/editor-v2`} />
-        <button className="v2-save" style={{ width: "100%" }} type="submit" disabled={!isPublished && (dirty || missingContact)}>{isPublished ? "Despublicar tarjeta" : "Publicar tarjeta"}</button>
+        <PendingSubmitButton className="v2-save" style={{ width: "100%" }} pendingText={isPublished ? "Despublicando…" : "Publicando…"} disabled={!isPublished && (dirty || missingContact)}>{isPublished ? "Despublicar tarjeta" : "Publicar tarjeta"}</PendingSubmitButton>
       </form>
       {!isPublished && dirty && <p className="v2-help" role="status">Primero guardá los cambios con el botón de arriba.</p>}
       {!isPublished && missingContact && <p className="v2-help" role="status">Agregá un teléfono, email o WhatsApp en Datos.</p>}
@@ -1319,7 +1327,7 @@ function SettingsControls({ draft, buttons, dirty, onTypeChange, onBrandingChang
       <input type="hidden" name="id" value={draft.id} />
       <input type="hidden" name="published" value={String(!isPublished)} />
       <input type="hidden" name="return_to" value={`/admin/landings/${draft.id}/editor-v2`} />
-      <button className="v2-save" style={{ width: "100%" }} type="submit" disabled={!isPublished && (dirty || missingContact)}>{isPublished ? "Despublicar" : draft.business_type === "contact" ? "Publicar tarjeta" : "Publicar landing"}</button>
+      <PendingSubmitButton className="v2-save" style={{ width: "100%" }} pendingText={isPublished ? "Despublicando…" : "Publicando…"} disabled={!isPublished && (dirty || missingContact)}>{isPublished ? "Despublicar" : draft.business_type === "contact" ? "Publicar tarjeta" : "Publicar landing"}</PendingSubmitButton>
     </form>
     {!isPublished && dirty && <p className="v2-help" role="status">Guardá los cambios antes de publicar.</p>}
     {!isPublished && missingContact && <p className="v2-help" role="status">Agregá un teléfono, email o WhatsApp para poder publicar la tarjeta.</p>}

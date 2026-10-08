@@ -1,6 +1,7 @@
 import { login } from "./actions";
 import Toast from "@/components/toast";
 import { Suspense } from "react";
+import PendingSubmitButton from "@/components/pending-submit-button";
 
 export default async function Page() {
   return (
@@ -19,7 +20,7 @@ export default async function Page() {
             Contraseña
             <input name="password" type="password" required autoComplete="current-password" />
           </label>
-          <button className="btn full" type="submit">Entrar</button>
+          <PendingSubmitButton className="btn full" pendingText="Ingresando…">Entrar</PendingSubmitButton>
         </form>
       </div>
     </main>

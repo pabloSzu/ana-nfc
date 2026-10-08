@@ -7,9 +7,10 @@ import { getSiteOrigin, isLocalSite } from "@/lib/site-url";
 export default async function QR({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/admin/login");
-  const { data: landing } = await supabase.from("landings").select("*").eq("id", id).eq("owner_id", user.id).maybeSingle();
+  const { data: authData } = await supabase.auth.getClaims();
+  const userId = String(authData?.claims?.sub || "");
+  if (!userId) redirect("/admin/login");
+  const { data: landing } = await supabase.from("landings").select("*").eq("id", id).eq("owner_id", userId).maybeSingle();
   if (!landing) notFound();
   // La URL física usa el ID estable, no el slug editable: una tarjeta o un QR ya entregado
   // deben seguir abriendo la landing aunque se cambie su nombre o enlace público.

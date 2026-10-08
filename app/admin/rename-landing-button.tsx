@@ -2,8 +2,9 @@
 
 import { useRef, useState, type FormEvent } from "react";
 import { IconEdit } from "@/components/icons";
+import PendingSubmitButton from "@/components/pending-submit-button";
 
-export default function RenameLandingButton({ action, landingId, currentName, currentSlug, isContact = false }: { action: (formData: FormData) => void | Promise<void>; landingId: string; currentName: string; currentSlug: string; isContact?: boolean }) {
+export default function RenameLandingButton({ action, landingId, currentName, currentSlug, isContact = false, returnTo = "/admin" }: { action: (formData: FormData) => void | Promise<void>; landingId: string; currentName: string; currentSlug: string; isContact?: boolean; returnTo?: string }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const [name, setName] = useState(currentName);
@@ -54,6 +55,7 @@ export default function RenameLandingButton({ action, landingId, currentName, cu
 
           <form ref={formRef} action={action} onSubmit={handleSubmit} className="stack">
             <input type="hidden" name="id" value={landingId} />
+            <input type="hidden" name="return_to" value={returnTo} />
 
             <div style={{ display: step === "edit" ? "grid" : "none", gap: "var(--space-4)" }}>
               <label className="label">{isContact ? "Nombre de la persona" : "Nombre de la landing"}
@@ -86,7 +88,7 @@ export default function RenameLandingButton({ action, landingId, currentName, cu
               )}
               <div className="rename-confirm-actions">
                 <button type="button" className="btn secondary" onClick={() => setStep("edit")}>Volver</button>
-                <button className="btn full" type="submit">Sí, guardar cambios</button>
+                <PendingSubmitButton className="btn full" pendingText="Guardando…">Sí, guardar cambios</PendingSubmitButton>
               </div>
             </div>
           </form>

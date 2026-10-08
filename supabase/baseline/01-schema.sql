@@ -58,7 +58,8 @@ CREATE TABLE public.clients (
     notes text DEFAULT ''::text,
     created_at timestamp with time zone DEFAULT now(),
     primary_color text DEFAULT '#1f2937'::text,
-    background_color text DEFAULT '#f7f5f0'::text
+    background_color text DEFAULT '#f7f5f0'::text,
+    request_key text
 );
 --
 -- Name: landing_views; Type: TABLE; Schema: public; Owner: -
@@ -128,7 +129,8 @@ CREATE TABLE public.landings (
     background_style jsonb DEFAULT '{}'::jsonb,
     cover_image_url text,
     cover_style jsonb,
-    qr_style jsonb
+    qr_style jsonb,
+    request_key text
 );
 --
 -- Name: actions actions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
@@ -141,6 +143,11 @@ ALTER TABLE ONLY public.actions
 ALTER TABLE ONLY public.clients
     ADD CONSTRAINT clients_pkey PRIMARY KEY (id);
 --
+-- Name: clients clients_owner_request_key_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+ALTER TABLE ONLY public.clients
+    ADD CONSTRAINT clients_owner_request_key_key UNIQUE (owner_id, request_key);
+--
 -- Name: landing_views landing_views_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 ALTER TABLE ONLY public.landing_views
@@ -150,6 +157,11 @@ ALTER TABLE ONLY public.landing_views
 --
 ALTER TABLE ONLY public.landings
     ADD CONSTRAINT landings_pkey PRIMARY KEY (id);
+--
+-- Name: landings landings_owner_request_key_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+ALTER TABLE ONLY public.landings
+    ADD CONSTRAINT landings_owner_request_key_key UNIQUE (owner_id, request_key);
 --
 -- Name: landings landings_slug_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
