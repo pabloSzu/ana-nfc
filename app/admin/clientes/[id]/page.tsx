@@ -8,6 +8,7 @@ import { IconEdit, IconFileText, IconPlus, IconUser } from "@/components/icons";
 import Toast from "@/components/toast";
 import { Suspense } from "react";
 import PendingSubmitButton from "@/components/pending-submit-button";
+import AdminPageAvatar from "@/components/admin-page-avatar";
 
 type Landing = {
   id: string;
@@ -15,6 +16,9 @@ type Landing = {
   business_type: string | null;
   slug: string;
   published: boolean | null;
+  logo_url: string | null;
+  logo_style: unknown;
+  primary_color: string | null;
 };
 
 function PageList({ items, kind }: { items: Landing[]; kind: "landing" | "contact" }) {
@@ -24,7 +28,7 @@ function PageList({ items, kind }: { items: Landing[]; kind: "landing" | "contac
     <div><strong>Todavía no hay {singular}</strong><p>Creá la primera con el botón de arriba.</p></div>
   </div>;
   return <div className="client-page-list">{items.map((landing) => <article className="client-page-item" key={landing.id}>
-    <div className={`client-page-icon${kind === "contact" ? " is-contact" : ""}`}>{kind === "contact" ? <IconUser /> : <IconFileText />}</div>
+    <AdminPageAvatar page={landing} />
     <div className="client-page-copy">
       <strong>{landing.business_name}</strong>
       <small>/{landing.slug}</small>
@@ -42,7 +46,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   if (!userId) redirect("/admin/login");
   const [{ data: client }, { data }] = await Promise.all([
     supabase.from("clients").select("*").eq("id", id).eq("owner_id", userId).maybeSingle(),
-    supabase.from("landings").select("id,business_name,business_type,slug,published").eq("client_id", id).eq("owner_id", userId).order("created_at", { ascending: false }),
+    supabase.from("landings").select("id,business_name,business_type,slug,published,logo_url,logo_style,primary_color").eq("client_id", id).eq("owner_id", userId).order("created_at", { ascending: false }),
   ]);
   if (!client) notFound();
   const landings = (data || []) as Landing[];

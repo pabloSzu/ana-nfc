@@ -14,11 +14,12 @@ const titles: Record<ImageKind, string> = {
 
 const clamp = (value: number) => Math.max(0, Math.min(100, value));
 
-export default function ImageAdjustDialog({ kind, src, shape, contactLogo = false, coverMode, contactCoverSize, contactFrameWidth, contactCoverOverlay, initial, onApply, onCancel }: {
+export default function ImageAdjustDialog({ kind, src, shape, contactLogo = false, logoBackground, coverMode, contactCoverSize, contactFrameWidth, contactCoverOverlay, initial, onApply, onCancel }: {
   kind: ImageKind;
   src: string;
   shape?: "round" | "square" | "sharp";
   contactLogo?: boolean;
+  logoBackground?: string;
   coverMode?: "fade" | "banner";
   contactCoverSize?: CoverStyle["size"];
   contactFrameWidth?: number;
@@ -36,6 +37,7 @@ export default function ImageAdjustDialog({ kind, src, shape, contactLogo = fals
   const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null);
   const [previewSize, setPreviewSize] = useState<{ width: number; height: number } | null>(null);
   const maxZoom = kind === "background" ? 2.2 : 2.5;
+  const minZoom = kind === "logo" ? .5 : 1;
   const fillLogo = kind === "logo" && contactLogo;
   const contactCover = kind === "cover" && contactCoverSize !== undefined;
   const coverHeight = contactCover ? CONTACT_COVER_HEIGHT[contactCoverSize] : 0;
@@ -121,7 +123,7 @@ export default function ImageAdjustDialog({ kind, src, shape, contactLogo = fals
       <div
         ref={previewRef}
         className={`image-adjust-preview image-adjust-preview-${kind} image-adjust-shape-${shape || "square"} ${kind === "cover" && coverMode === "banner" ? "image-adjust-preview-banner" : ""}${contactCover ? " is-contact-cover" : ""}`}
-        style={contactCover ? { aspectRatio: `${contactFrameWidth || 402} / ${coverHeight}` } : undefined}
+        style={contactCover ? { aspectRatio: `${contactFrameWidth || 402} / ${coverHeight}` } : kind === "logo" ? { background: logoBackground || "#e7e8ed" } : undefined}
         role="img"
         aria-label={`Vista del encuadre de ${kind === "logo" ? "logo" : kind === "cover" ? "portada" : "fondo"}`}
         onPointerDown={(event) => {
@@ -133,9 +135,10 @@ export default function ImageAdjustDialog({ kind, src, shape, contactLogo = fals
         onPointerCancel={() => { dragRef.current = null; }}
       >{contactCover ? <div className="image-adjust-contact-canvas" style={{ aspectRatio: `${contactFrameWidth || 402} / ${CONTACT_COVER_HEIGHT.large}` }}><div className="image-adjust-photo" style={imageStyle} /></div> : <div className="image-adjust-photo" style={imageStyle} />}{contactCover && <><span className="image-adjust-cover-veil" style={{ background: `rgba(0,0,0,${contactCoverOverlay || 0})` }} /><span className="image-adjust-visible-label">Área visible en tu tarjeta</span></>}</div>
       {contactCover && <p className="image-adjust-note">El borde punteado muestra exactamente qué parte se verá en la portada {contactCoverSize === "small" ? "chica" : contactCoverSize === "medium" ? "mediana" : "grande"}. El tamaño cambia el área visible, no la escala de la foto.</p>}
+      {kind === "logo" && <p className="image-adjust-note">Bajá de 100% para alejar la imagen y dejar espacio alrededor. El espacio usa el color de fondo elegido para el logo.</p>}
       {qualityScale > .5 && <p className="image-adjust-quality" role="status">{qualityScale > 1 ? "La foto es demasiado pequeña para este zoom: puede verse pixelada." : "En pantallas de alta resolución esta foto podría verse poco nítida con este zoom."} Probá una imagen de mayor resolución o reducí el zoom.</p>}
       <label className="image-adjust-slider">Zoom <span>{Math.round(placement.zoom * 100)}%</span>
-        <input type="range" min={1} max={maxZoom} step={.01} value={placement.zoom} onChange={(event) => setPlacement((current) => ({ ...current, zoom: Number(event.target.value) }))} />
+        <input type="range" min={minZoom} max={maxZoom} step={.01} value={placement.zoom} onChange={(event) => setPlacement((current) => ({ ...current, zoom: Number(event.target.value) }))} />
       </label>
       <div className="image-adjust-position">
         <label>Horizontal<input type="range" min={0} max={100} value={placement.x} disabled={!canMove.x} onChange={(event) => setPlacement((current) => ({ ...current, x: Number(event.target.value) }))} /></label>

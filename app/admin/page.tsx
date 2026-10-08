@@ -8,6 +8,7 @@ import Toast from "@/components/toast";
 import Link from "next/link";
 import { Suspense } from "react";
 import { AdminThemeBackdrop } from "@/components/admin-theme";
+import AdminPageAvatar from "@/components/admin-page-avatar";
 
 export default async function Admin() {
   const supabase = await createClient();
@@ -70,7 +71,7 @@ export default async function Admin() {
     <div className="dashboard-overview-grid">
       <section className="elevated-section dashboard-overview-card">
         <div className="section-heading rich-heading"><span className="step"><IconFileText /></span><div><p className="eyebrow">Actividad reciente</p><h2>Últimas páginas</h2></div><Link className="text-button" href="/admin/paginas">Ver todas →</Link></div>
-        {!landings?.length ? <div className="empty-state compact"><IconFileText /><strong>Todavía no hay páginas</strong><p className="muted">Primero creá un cliente y agregale una.</p></div> : <div className="dashboard-recent-list">{landings.slice(0, 5).map((landing) => <Link key={landing.id} href={`/admin/landings/${landing.id}/editor-v2`}><div className="avatar small colorful" style={{ background: landing.primary_color || "#1f2937" }}>{landing.business_name.slice(0, 1)}</div><span><strong>{landing.business_name}</strong><small>{landing.business_type === "contact" ? "Tarjeta personal" : "Landing"}</small></span><em className={landing.published ? "is-live" : ""}>{landing.published ? "Publicada" : "Borrador"}</em></Link>)}</div>}
+        {!landings?.length ? <div className="empty-state compact"><IconFileText /><strong>Todavía no hay páginas</strong><p className="muted">Primero creá un cliente y agregale una.</p></div> : <div className="dashboard-recent-list">{landings.slice(0, 5).map((landing) => <Link key={landing.id} href={`/admin/landings/${landing.id}/editor-v2`}><AdminPageAvatar page={landing} /><span><strong>{landing.business_name}</strong><small>{landing.business_type === "contact" ? "Tarjeta personal" : "Landing"}</small></span><em className={landing.published ? "is-live" : ""}>{landing.published ? "Publicada" : "Borrador"}</em></Link>)}</div>}
       </section>
       <section className="elevated-section dashboard-overview-card">
         <div className="section-heading rich-heading"><span className="step warm"><IconUsers /></span><div><p className="eyebrow warm-text">Organización</p><h2>Clientes recientes</h2></div><Link className="text-button" href="/admin/clientes">Ver todos →</Link></div>

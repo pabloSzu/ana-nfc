@@ -13,6 +13,7 @@ import Toast from "@/components/toast";
 import { AdminThemeBackdrop } from "@/components/admin-theme";
 import { IconEdit, IconFileText, IconPause, IconPlay, IconPlus, IconQrCode, IconUsers } from "@/components/icons";
 import AssignClientButton from "../assign-client-button";
+import AdminPageAvatar from "@/components/admin-page-avatar";
 
 type SearchParams = Promise<{ q?: string | string[]; type?: string | string[]; status?: string | string[] }>;
 type ViewCount = { landing_id: string; total?: number | string | null; last_30_days?: number | string | null; qr?: number | string | null; nfc?: number | string | null; direct?: number | string | null };
@@ -70,7 +71,7 @@ export default async function PagesPage({ searchParams }: { searchParams: Search
       {!pages?.length ? <div className="empty-state"><IconFileText /><strong>Todavía no hay páginas</strong><p className="muted">Creá un cliente y después agregale su primera landing o tarjeta.</p></div> : !filtered.length ? <div className="empty-state"><IconFileText /><strong>No hay páginas con esos filtros</strong><p className="muted">Probá otra búsqueda o limpiá los filtros.</p></div> : <div className="table-wrap"><table className="data-table admin-pages-table"><thead><tr><th>Página</th><th>Cliente</th><th>Estado</th><th>Visitas</th><th></th></tr></thead><tbody>{filtered.map((page) => {
         const client = page.client_id ? clientsById.get(page.client_id) : null;
         return <tr key={page.id} className={`admin-page-row ${page.business_type === "contact" ? "is-contact" : "is-landing"}`}>
-          <td><div className="table-entity"><div className="avatar small colorful" style={{ background: page.primary_color || "#1f2937" }}>{page.logo_url ? <img src={page.logo_url} alt="" /> : page.business_name.slice(0, 1)}</div><div><strong>{page.business_name}</strong><span className={`admin-page-kind${page.business_type === "contact" ? " is-contact" : ""}`}>{page.business_type === "contact" ? "Tarjeta personal" : "Landing"}</span><small>/{page.slug}</small></div></div></td>
+          <td><div className="table-entity"><AdminPageAvatar page={page} /><div><strong>{page.business_name}</strong><span className={`admin-page-kind${page.business_type === "contact" ? " is-contact" : ""}`}>{page.business_type === "contact" ? "Tarjeta personal" : "Landing"}</span><small>/{page.slug}</small></div></div></td>
           <td>{client ? <Link className="client-table-link" href={`/admin/clientes/${client.id}`}>{client.name}</Link> : <div className="missing-client-cell"><span className="status needs-client">Falta asignar</span>{clients?.length ? <AssignClientButton action={assignLandingClient} landingId={page.id} clients={clients} /> : <Link href="/admin/clientes">Crear cliente</Link>}</div>}</td>
           <td><span className={page.published ? "status published" : "status"}>{page.published ? "Publicada" : "Borrador"}</span></td>
           <td><VisitCount views={viewsById.get(page.id)} /></td>

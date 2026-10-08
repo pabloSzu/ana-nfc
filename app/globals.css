@@ -1384,6 +1384,8 @@ button[aria-busy="true"] { cursor: wait; }
 .avatar.small { width: 44px; height: 44px; border-radius: var(--radius-sm); margin: 0; font-size: 1rem; box-shadow: none; flex: none; }
 .avatar.small.colorful { box-shadow: inset 0 0 0 1px oklch(100% 0 0 / 0.32), var(--shadow-sm); }
 .avatar img { width: 100%; height: 100%; object-fit: cover; }
+.admin-page-avatar { position: relative; overflow: hidden; }
+.admin-page-avatar-image { position: absolute; inset: 0; display: block; }
 
 /* ---------- Template / profile pickers ---------- */
 .profile-picker { border: 0; padding: 0; margin: 0; }
