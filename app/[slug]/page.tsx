@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
 import LandingRenderer from "@/components/landing-renderer";
+import { parseTitleStyle } from "@/lib/landing-catalog";
 import { normalizeSource, trackLandingView } from "@/lib/track-view";
 import "../globals.css";
 
@@ -17,7 +18,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const landing = await getLanding(slug);
   if (!landing) return { title: "Mi Landing Web Fácil" };
-  const title = landing.business_name || "Mi Landing Web Fácil";
+  const titleStyle = parseTitleStyle(landing);
+  const title = ((landing.business_type === "contact" ? landing.business_name : titleStyle.headline || landing.business_name) || "Mi Landing Web Fácil").replace(/\s+/g, " ").trim();
   const description = landing.description || "Mirá todos mis links y contactos en un solo lugar.";
   const images = landing.logo_url ? [landing.logo_url] : undefined;
   return {

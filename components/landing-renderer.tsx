@@ -63,7 +63,13 @@ const CONTACT_THEME_PALETTE: Record<string, { ink: string; surface: string }> = 
 
 export function LandingPhotoBackground({ landing }: { landing: Landing }) {
   const position = parseBackgroundPosition(landing.background_style);
-  const tint = resolveBackgroundTint(landing.background_type, position.tint);
+  const legacyLighten = landing.background_type === "image" ? position.lighten : 0;
+  const tint = landing.background_type === "image" ? legacyLighten > 0 ? legacyLighten : resolveBackgroundTint(landing.background_type, position.tint) : 0;
+  const tintColor = position.tintColor || (legacyLighten > 0 ? "#ffffff" : "#000000");
+  const darkFilter = tintColor.toLowerCase() === "#000000";
+  const legacyDarkFilter = !position.tintColor && legacyLighten === 0;
+  const blurScale = position.blur > 0 ? 1 + Math.min(.07, position.blur / 220) : 1;
+  const filters = [darkFilter && tint > 0 ? `brightness(${(1 - tint * 0.72).toFixed(3)})` : "", position.blur > 0 ? `blur(${position.blur}px)` : ""].filter(Boolean).join(" ") || undefined;
   return <div className="public-photo-viewport">
     <div className="public-photo-image" style={{
       backgroundColor: landing.background_color || "#f7f5f0",
@@ -71,11 +77,11 @@ export function LandingPhotoBackground({ landing }: { landing: Landing }) {
       backgroundSize: "cover",
       backgroundPosition: `${position.x}% ${position.y}%`,
       backgroundRepeat: "no-repeat",
-      transform: `scale(${position.zoom})`,
+      transform: `scale(${position.zoom * blurScale})`,
       transformOrigin: `${position.x}% ${position.y}%`,
-      filter: tint > 0 ? `brightness(${(1 - tint * 0.72).toFixed(3)})` : undefined,
+      filter: filters,
     }} />
-    <div className="public-photo-tint" style={{ backgroundImage: `linear-gradient(180deg, rgba(4,8,10,${(tint * 0.55).toFixed(3)}), rgba(5,8,11,${tint}))` }} />
+    <div className="public-photo-tint" style={{ backgroundImage: legacyDarkFilter ? `linear-gradient(180deg, rgba(4,8,10,${(tint * 0.55).toFixed(3)}), rgba(5,8,11,${tint}))` : `linear-gradient(180deg, ${hexToRgba(tintColor, tint * .42)}, ${hexToRgba(tintColor, tint * .82)})` }} />
   </div>;
 }
 
@@ -164,12 +170,14 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
   const contactActionStyle = zone.contactActionStyle || (isDocument ? "details" : "shortcuts");
   // The document layout centers the name beside the avatar when there is no role/company.
   // Empty editor placeholders must not create extra grid rows that the published card lacks.
-  const showEyebrow = Boolean(title.eyebrow) || Boolean(edit && !isDocument);
+  // Empty editor prompts must not reserve space that the published page does not have. Keeping
+  // this geometry identical is especially important when the current cover height is captured.
+  const showEyebrow = Boolean(title.eyebrow);
   const contactTheme = isContact ? zone.contactTheme || "classic" : "classic";
   const editableContactTypography = isContact;
   const palette = CONTACT_THEME_PALETTE[contactTheme];
-  const contactInk = zone.contactSurfaceColor ? contrastTextColor(zone.contactSurfaceColor) : palette?.ink || (contactTheme === "noir" ? "#f6f1e8" : contactTheme === "paper" ? "#31271f" : contactTheme === "linen" ? "#26352b" : isDocument ? "#202637" : title.color);
-  const contactSurface = zone.contactSurfaceColor || palette?.surface || (contactTheme === "noir" ? "#242b36" : contactTheme === "paper" ? "#f8f2e6" : contactTheme === "linen" ? "#f3f0e5" : isDocument ? "#ffffff" : contrastTextColor(title.color) === "#ffffff" ? "rgba(255,255,255,.91)" : "rgba(17,20,34,.83)");
+  const contactInk = zone.contactSurfaceColor ? contrastTextColor(zone.contactSurfaceColor) : zone.contactResolvedInk || palette?.ink || (contactTheme === "noir" ? "#f6f1e8" : contactTheme === "paper" ? "#31271f" : contactTheme === "linen" ? "#26352b" : isDocument ? "#202637" : title.color);
+  const contactSurface = zone.contactSurfaceColor || zone.contactResolvedSurface || palette?.surface || (contactTheme === "noir" ? "#242b36" : contactTheme === "paper" ? "#f8f2e6" : contactTheme === "linen" ? "#f3f0e5" : isDocument ? "#ffffff" : contrastTextColor(title.color) === "#ffffff" ? "rgba(255,255,255,.91)" : "rgba(17,20,34,.83)");
   const avatarSize = isDocument ? Math.min(112, Math.max(64, logo.size)) : logo.size;
   const isBanner = showCover && cover.mode === "banner";
   // Card and photo are exclusive choices in the editor; a photo wins if an older page has both.
@@ -177,6 +185,9 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
   // "profile-card" is the old way the card was stored — it's otherwise the plain centered layout.
   const layoutClass = zone.layout === "profile-card" ? "center" : zone.layout;
   const distribution = parseDistribution(zone.distribution, zone.layout);
+  const stableCoverCanvasHeight = !isContact && cover.stableSizing && distribution.coverHeight !== undefined
+    ? distribution.coverHeight + COVER_SIZE_EXTRA.large - COVER_SIZE_EXTRA[cover.size]
+    : undefined;
   const iconAppearance = zone.iconAppearance;
   const socialLinks = (zone.quickSocials || []).flatMap(link => { const href = quickSocialHref(link); return href ? [{ ...link, href }] : []; });
   const hasSavedButtonStyle = Boolean(landing.button_style && typeof landing.button_style === "object" && Object.keys(landing.button_style).length);
@@ -233,14 +244,15 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
   // black page and disappears on a bright one. Photo backgrounds can be any color at any point,
   // so those stay on plain white plus the halo the stylesheet adds.
   const brandingInk = landing.background_type === "image" ? "rgba(255, 255, 255, .92)" : readableInk(bottomBackdrop);
+  const publicTitle = isContact ? landing.business_name : title.headline || landing.business_name;
   const heading = (
     <h1
       className={edit ? "editor-hit" : undefined}
       data-tag={isContact ? "Nombre" : "Título"}
       onClick={edit?.onSelectTitle}
-      style={{ fontFamily: resolveTextFont(title.font), letterSpacing: title.letterSpacing === undefined ? undefined : `${title.letterSpacing}em`, fontWeight: editableContactTypography ? title.weight : resolveFontWeight(title.font, title.weight), fontStyle: title.italic ? "italic" : "normal", fontSynthesis: editableContactTypography ? "style weight" : "none", fontSize: title.size, color: title.color, background: isDocument ? "transparent" : title.bgMode === "solid" ? hexToRgba(title.bg, 0.55) : "transparent", textAlign: isDocument ? "left" : title.align, borderRadius: 12, padding: isDocument ? 0 : title.bgMode === "solid" ? "4px 10px" : 0, margin: "0 0 7px", display: "inline-block", position: edit ? "relative" : undefined }}
+      style={{ fontFamily: resolveTextFont(title.font), letterSpacing: title.letterSpacing === undefined ? undefined : `${title.letterSpacing}em`, lineHeight: title.lineHeight, maxWidth: isContact ? undefined : title.maxWidth, textTransform: isContact ? undefined : title.transform, whiteSpace: "pre-line", overflowWrap: "anywhere", fontWeight: editableContactTypography ? title.weight : resolveFontWeight(title.font, title.weight), fontStyle: title.italic ? "italic" : "normal", fontSynthesis: editableContactTypography ? "style weight" : "none", fontSize: title.size, color: title.color, backgroundColor: isDocument ? "transparent" : title.bgMode === "solid" ? hexToRgba(title.bg, 0.55) : "transparent", textAlign: isDocument ? "left" : title.align, borderRadius: 12, padding: isDocument ? 0 : title.bgMode === "solid" ? "4px 10px" : 0, margin: "0 0 7px", display: "inline-block", position: edit ? "relative" : undefined }}
     >
-      {landing.business_name}
+      {publicTitle}
     </h1>
   );
   const description = showDescription && (
@@ -248,13 +260,13 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
       className={`landing-desc${edit ? " editor-hit" : ""}${edit?.selected === "subtitle" ? " is-selected" : ""}`}
       data-tag={isContact ? "Empresa" : "Subtítulo"}
       onClick={edit?.onSelectSubtitle}
-      style={{ fontFamily: resolveTextFont(subtitle.font), letterSpacing: subtitle.letterSpacing === undefined ? undefined : `${subtitle.letterSpacing}em`, fontWeight: editableContactTypography ? subtitle.weight : resolveFontWeight(subtitle.font, subtitle.weight), fontStyle: subtitle.italic ? "italic" : "normal", fontSynthesis: editableContactTypography ? "style weight" : "none", fontSize: subtitle.size, color: subtitle.color, background: isDocument ? "transparent" : subtitle.bgMode === "solid" ? hexToRgba(subtitle.bg, 0.55) : "transparent", borderRadius: 10, padding: isDocument ? 0 : subtitle.bgMode === "solid" ? "4px 9px" : 0, display: "inline-block", position: edit ? "relative" : undefined }}
+      style={{ fontFamily: resolveTextFont(subtitle.font), letterSpacing: subtitle.letterSpacing === undefined ? undefined : `${subtitle.letterSpacing}em`, lineHeight: subtitle.lineHeight, maxWidth: isContact ? undefined : subtitle.maxWidth, textAlign: isDocument ? "left" : subtitle.align, fontWeight: editableContactTypography ? subtitle.weight : resolveFontWeight(subtitle.font, subtitle.weight), fontStyle: subtitle.italic ? "italic" : "normal", fontSynthesis: editableContactTypography ? "style weight" : "none", fontSize: subtitle.size, color: subtitle.color, backgroundColor: isDocument ? "transparent" : subtitle.bgMode === "solid" ? hexToRgba(subtitle.bg, 0.55) : "transparent", borderRadius: 10, padding: isDocument ? 0 : subtitle.bgMode === "solid" ? "4px 9px" : 0, display: "inline-block", position: edit ? "relative" : undefined }}
     >
       {landing.description || (edit ? <span className="editor-placeholder-text">{isContact ? "Tocá para agregar tu empresa" : "Tocá para agregar una descripción"}</span> : "")}
     </p>
   );
   const roleFont = editableContactTypography ? title.eyebrowFont || title.font : title.font;
-  const role = showEyebrow && <p className={`landing-eyebrow${edit ? " editor-hit" : ""}`} data-tag={isContact ? "Cargo" : "Rubro o frase breve"} onClick={isContact ? edit?.onSelectRole : edit?.onSelectTitle} style={{ color: title.eyebrowColor || title.color, fontFamily: resolveTextFont(roleFont), fontStyle: title.eyebrowItalic ? "italic" : "normal", fontSize: title.eyebrowSize, fontWeight: editableContactTypography ? title.eyebrowWeight : resolveFontWeight(roleFont, title.eyebrowWeight), fontSynthesis: editableContactTypography ? "style weight" : "none" }}>{title.eyebrow || <span className="editor-placeholder-text">{isContact ? "Tocá para agregar tu cargo" : "Tocá para agregar tu rubro"}</span>}</p>;
+  const role = showEyebrow && <p className={`landing-eyebrow${edit ? " editor-hit" : ""}`} data-tag={isContact ? "Cargo" : "Rubro o frase breve"} onClick={isContact ? edit?.onSelectRole : edit?.onSelectTitle} style={{ color: title.eyebrowColor || title.color, fontFamily: resolveTextFont(roleFont), fontStyle: title.eyebrowItalic ? "italic" : "normal", letterSpacing: title.eyebrowLetterSpacing === undefined ? undefined : `${title.eyebrowLetterSpacing}em`, textTransform: title.eyebrowTransform, textAlign: isContact ? undefined : title.align, fontSize: title.eyebrowSize, fontWeight: editableContactTypography ? title.eyebrowWeight : resolveFontWeight(roleFont, title.eyebrowWeight), fontSynthesis: editableContactTypography ? "style weight" : "none" }}>{title.eyebrow || <span className="editor-placeholder-text">{isContact ? "Tocá para agregar tu cargo" : "Tocá para agregar tu rubro"}</span>}</p>;
   const saveColor = zone.contactSaveColor || primary;
   const saveVariant = zone.contactSaveVariant || "solid";
   const saveContactStyle: CSSProperties = {
@@ -313,15 +325,15 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
         {showCover && (
           // The banner runs from the very top of the page down to the middle of the logo, with a
           // hard edge, so the logo sits half on the photo and half on the page.
-          <div className={`landing-cover-bg${isBanner ? " is-banner" : ""}${isSampleCover ? " is-sample" : ""}`} aria-hidden="true" style={isBanner ? { height: `calc(var(--landing-top) + ${logo.size / 2}px)` } : { maskImage: coverFadeGradient(cover.fade) }}>
-            <div className="landing-cover-photo" style={{ backgroundImage: `url(${JSON.stringify(coverImageUrl)})`, backgroundPosition: `${cover.x}% ${cover.y}%`, transform: `scale(${cover.zoom})`, transformOrigin: `${cover.x}% ${cover.y}%` }} />
+          <div data-landing-cover className={`landing-cover-bg${isBanner ? " is-banner" : ""}${isSampleCover ? " is-sample" : ""}`} aria-hidden="true" style={isBanner ? { height: distribution.coverHeight ? `${distribution.coverHeight}px` : `calc(var(--landing-top) + ${logo.size / 2}px)` } : { height: distribution.coverHeight ? `${distribution.coverHeight}px` : undefined, maskImage: coverFadeGradient(cover.fade) }}>
+            {stableCoverCanvasHeight ? <div className="landing-cover-photo-canvas" style={{ height: stableCoverCanvasHeight }}><div className="landing-cover-photo" style={{ backgroundImage: `url(${JSON.stringify(coverImageUrl)})`, backgroundPosition: `${cover.x}% ${cover.y}%`, transform: `scale(${cover.zoom})`, transformOrigin: `${cover.x}% ${cover.y}%` }} /></div> : <div className="landing-cover-photo" style={{ backgroundImage: `url(${JSON.stringify(coverImageUrl)})`, backgroundPosition: `${cover.x}% ${cover.y}%`, transform: `scale(${cover.zoom})`, transformOrigin: `${cover.x}% ${cover.y}%` }} />}
             {/* The sample photo shows as-is: darkening is a per-photo choice, and applied to a
                 stand-in it only makes the preview look muddier than the real thing will. */}
-            {!isSampleCover && <div className="landing-cover-veil" style={{ background: isBanner ? `rgba(0, 0, 0, ${cover.overlay})` : hexToRgba(contrastTextColor(title.color), cover.overlay) }} />}
+            {!isSampleCover && <div className="landing-cover-veil" style={{ background: isBanner ? `rgba(0, 0, 0, ${cover.overlay})` : hexToRgba(cover.overlayColor || contrastTextColor(title.color), cover.overlay) }} />}
           </div>
         )}
         {isSampleCover && !isContact && <button type="button" className="editor-sample-badge" onClick={edit?.onSelectCover}><strong>Portada de ejemplo</strong><span>(Subí la tuya)</span></button>}
-        <div className="landing-identity-block">
+        <div className="landing-identity-block" style={!isContact ? { textAlign: title.align } : undefined}>
         <div
           className={edit ? "avatar editor-hit" : "avatar"}
           data-tag={isContact ? "Foto de perfil" : "Logo"}
@@ -335,7 +347,7 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
           ) : landing.logo_url ? (
             <div style={{ width: "100%", height: "100%", borderRadius: "inherit", overflow: "hidden", backgroundImage: `url(${landing.logo_url})`, backgroundSize: `${logo.zoom * 100}%`, backgroundPosition: `${logo.x}% ${logo.y}%`, backgroundRepeat: "no-repeat" }} />
           ) : (
-            <div style={{ width: "100%", height: "100%", borderRadius: "inherit", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: resolveTextFont(title.font) }}><LogoInitials font={title.font}>{logoInitials(landing.business_name, logo.initials)}</LogoInitials></div>
+            <div style={{ width: "100%", height: "100%", borderRadius: "inherit", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: resolveTextFont(title.font) }}><LogoInitials font={title.font}>{logoInitials(publicTitle, logo.initials)}</LogoInitials></div>
           )}
         </div>
         {!isContact && role}

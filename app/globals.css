@@ -2490,6 +2490,7 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
    need to stay fully independent of each other. */
 .landing-header-region { position: relative; display: flow-root; isolation: isolate; }
 .landing-cover-bg { position: absolute; z-index: -1; top: calc(-1 * var(--landing-top, var(--space-8))); left: 50%; width: calc(100cqw + 2 * var(--space-4)); height: calc(var(--cover-h, 220px) + var(--landing-top, 64px)); transform: translateX(-50%); overflow: hidden; pointer-events: none; }
+.landing-cover-photo-canvas { position: absolute; top: 50%; left: 0; width: 100%; transform: translateY(-50%); }
 .landing-cover-photo { position: absolute; inset: 0; background-size: cover; background-repeat: no-repeat; }
 .landing-cover-veil { position: absolute; inset: 0; }
 

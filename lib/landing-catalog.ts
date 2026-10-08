@@ -184,13 +184,17 @@ export function parseQuickSocials(raw: unknown): QuickSocial[] {
 
 export type DistributionStyle = {
   top: number; logoGap: number; buttonsGap: number; socialsGap: number;
+  // Undefined preserves the legacy geometry for existing pages. Once spacing is edited, the
+  // editor stores the currently rendered cover height so later spacing changes cannot reframe it.
+  coverHeight?: number;
   separator: boolean; separatorStyle: "solid" | "dotted" | "double" | "fade" | "diamond" | "sparkle" | "circle" | "heart" | "leaf" | "star" | "flower" | "trio" | "bolt" | "sun";
   separatorColor: string; separatorWidth: number; separatorWeight: number; separatorSpace: number;
 };
 export function parseDistribution(raw: unknown, layout = "center"): DistributionStyle {
   const p = raw && typeof raw === "object" ? raw as Partial<DistributionStyle> : {};
   const n = (v: unknown, low: number, high: number, fallback: number) => typeof v === "number" && Number.isFinite(v) ? Math.min(high, Math.max(low, v)) : fallback;
-  return { top: n(p.top, 48, 160, 64), logoGap: n(p.logoGap, 0, 64, layout === "compact" ? 14 : 18), buttonsGap: n(p.buttonsGap, 0, 100, 10), socialsGap: n(p.socialsGap, 0, 64, 12),
+  return { top: n(p.top, 48, 320, 64), logoGap: n(p.logoGap, 0, 64, layout === "compact" ? 14 : 18), buttonsGap: n(p.buttonsGap, 0, 100, 10), socialsGap: n(p.socialsGap, 0, 64, 12),
+    coverHeight: typeof p.coverHeight === "number" && Number.isFinite(p.coverHeight) ? Math.min(900, Math.max(120, p.coverHeight)) : undefined,
     separator: typeof p.separator === "boolean" ? p.separator : layout === "poster",
     separatorStyle: p.separatorStyle && ["solid", "dotted", "double", "fade", "diamond", "sparkle", "circle", "heart", "leaf", "star", "flower", "trio", "bolt", "sun"].includes(p.separatorStyle) ? p.separatorStyle : "solid",
     separatorColor: typeof p.separatorColor === "string" && /^#[0-9a-f]{6}$/i.test(p.separatorColor) ? p.separatorColor : "#b2a18a",
@@ -205,6 +209,10 @@ export type ButtonZoneStyle = {
   contactLayout?: "card" | "document";
   contactTheme?: "classic" | "paper" | "linen" | "noir" | "photo" | "essential" | "editorial" | "professional" | "studio" | "monogram" | "impact";
   contactSurfaceColor?: string;
+  // Frozen legacy defaults used after the name color is edited. These prevent that text control
+  // from also changing the card surface and secondary copy on older contact designs.
+  contactResolvedSurface?: string;
+  contactResolvedInk?: string;
   contactCoverColor?: string;
   contactCoverPattern?: ContactCoverPattern;
   contactDensity?: "compact" | "balanced" | "airy";
@@ -292,6 +300,8 @@ export function parseButtonZone(raw: unknown): ButtonZoneStyle {
     contactLayout: parsed.contactLayout === "document" ? "document" : "card",
     contactTheme,
     contactSurfaceColor: typeof parsed.contactSurfaceColor === "string" && /^#[0-9a-f]{6}$/i.test(parsed.contactSurfaceColor) ? parsed.contactSurfaceColor : undefined,
+    contactResolvedSurface: typeof parsed.contactResolvedSurface === "string" && /^#[0-9a-f]{6}(?:[0-9a-f]{2})?$/i.test(parsed.contactResolvedSurface) ? parsed.contactResolvedSurface : undefined,
+    contactResolvedInk: typeof parsed.contactResolvedInk === "string" && /^#[0-9a-f]{6}$/i.test(parsed.contactResolvedInk) ? parsed.contactResolvedInk : undefined,
     contactCoverColor: typeof parsed.contactCoverColor === "string" && /^#[0-9a-f]{6}$/i.test(parsed.contactCoverColor) ? parsed.contactCoverColor : undefined,
     contactCoverPattern,
     contactDensity: parsed.contactDensity === "compact" || parsed.contactDensity === "airy" ? parsed.contactDensity : "balanced",
@@ -348,8 +358,8 @@ export function headerCardOn(zone: ButtonZoneStyle): boolean {
 // not just the app's older shared font_pair + text_color + one text_panel toggle.
 // The eyebrow shares the title font by default. Contact cards can opt into a separate font,
 // while older landing designs keep their previous appearance.
-export type TitleStyle = { letterSpacing?: number; eyebrow?: string; eyebrowFont?: string; eyebrowItalic?: boolean; eyebrowSize: number; eyebrowWeight: number; eyebrowColor?: string; font: string; italic?: boolean; weight: number; size: number; color: string; bgMode: "none" | "solid"; bg: string; align: "left" | "center" | "right" };
-export type SubtitleStyle = { letterSpacing?: number; font: string; italic?: boolean; weight: number; size: number; color: string; bgMode: "none" | "solid"; bg: string };
+export type TitleStyle = { headline?: string; presetId?: string; letterSpacing?: number; lineHeight?: number; maxWidth?: number; transform?: "none" | "uppercase"; effect?: "none" | "shadow" | "outline" | "gradient"; effectColor?: string; eyebrow?: string; eyebrowFont?: string; eyebrowItalic?: boolean; eyebrowLetterSpacing?: number; eyebrowTransform?: "none" | "uppercase"; eyebrowSize: number; eyebrowWeight: number; eyebrowColor?: string; font: string; italic?: boolean; weight: number; size: number; color: string; bgMode: "none" | "solid"; bg: string; align: "left" | "center" | "right" };
+export type SubtitleStyle = { letterSpacing?: number; lineHeight?: number; maxWidth?: number; align?: "left" | "center" | "right"; font: string; italic?: boolean; weight: number; size: number; color: string; bgMode: "none" | "solid"; bg: string };
 export type LogoStyle = {
   treatment: "template" | "clean" | "badge" | "card" | "highlight" | "brutal" | "custom";
   shape: "round" | "square" | "sharp";
@@ -379,14 +389,14 @@ export type LogoStyle = {
   // lost-looking initial the way a fixed font-size would.
   initials: "one" | "two";
 };
-export type BackgroundPosition = { zoom: number; x: number; y: number; tint: number };
+export type BackgroundPosition = { zoom: number; x: number; y: number; tint: number; lighten: number; blur: number; tintColor?: string };
 
 // eyebrowSize/eyebrowWeight repeat what the stylesheet used to hardcode (10px / 600), so a
 // landing saved before these existed renders exactly as it did.
 const DEFAULT_TITLE_STYLE: TitleStyle = { eyebrowSize: 10, eyebrowWeight: 600, font: FONT_OPTIONS[0].id, weight: 900, size: 28, color: "#ffffff", bgMode: "none", bg: "#111111", align: "center" };
 const DEFAULT_SUBTITLE_STYLE: SubtitleStyle = { font: FONT_OPTIONS[0].id, weight: 500, size: 14, color: "#ffffff", bgMode: "none", bg: "#111111" };
 const DEFAULT_LOGO_STYLE: LogoStyle = { treatment: "template", shape: "round", size: 124, zoom: 1, x: 50, y: 50, backgroundMode: "auto", fallback: "#f5eddf", borderWidth: 0, borderColor: "#ffffff", shadowColor: "#0a0a0a", shadow: "soft", shadowSize: 1, initials: "one" };
-const DEFAULT_BG_POSITION: BackgroundPosition = { zoom: 1, x: 50, y: 50, tint: 0.08 };
+const DEFAULT_BG_POSITION: BackgroundPosition = { zoom: 1, x: 50, y: 50, tint: 0.08, lighten: 0, blur: 0 };
 
 function hasKeys(raw: unknown): raw is Record<string, unknown> {
   return Boolean(raw && typeof raw === "object" && Object.keys(raw as object).length > 0);
@@ -399,13 +409,13 @@ export function parseTitleStyle(landing: BackgroundLike & { text_color?: string 
   const value = hasKeys(landing.title_style)
     ? { ...DEFAULT_TITLE_STYLE, ...(landing.title_style as Partial<TitleStyle>) }
     : { ...DEFAULT_TITLE_STYLE, color: landing.text_color || autoTextColor(landing), font: landing.font_pair || "modern" };
-  return { ...value, letterSpacing: parseLetterSpacing(value.letterSpacing), eyebrow: typeof value.eyebrow === "string" ? value.eyebrow.trim().slice(0, 60) : "", eyebrowFont: typeof value.eyebrowFont === "string" ? value.eyebrowFont : undefined, eyebrowItalic: value.eyebrowItalic === true, eyebrowSize: Math.min(20, Math.max(8, Number(value.eyebrowSize) || 10)), eyebrowWeight: [400,500,600,700,800,900].includes(Number(value.eyebrowWeight)) ? Number(value.eyebrowWeight) : 600, eyebrowColor: /^#[0-9a-f]{6}$/i.test(String(value.eyebrowColor)) ? value.eyebrowColor : undefined, italic: value.italic === true, size: Math.min(48, Math.max(18, Number(value.size) || 28)), weight: [400,500,600,700,800,900].includes(Number(value.weight)) ? Number(value.weight) : 900, align: ["left","center","right"].includes(value.align) ? value.align : "center", bgMode: value.bgMode === "solid" ? "solid" : "none" };
+  return { ...value, headline: typeof value.headline === "string" ? value.headline.trim().slice(0, 100) : undefined, presetId: typeof value.presetId === "string" ? value.presetId : undefined, letterSpacing: parseLetterSpacing(value.letterSpacing), lineHeight: typeof value.lineHeight === "number" ? Math.min(1.5, Math.max(.85, value.lineHeight)) : undefined, maxWidth: typeof value.maxWidth === "number" ? Math.min(430, Math.max(180, value.maxWidth)) : undefined, transform: value.transform === "uppercase" || value.transform === "none" ? value.transform : undefined, effect: ["shadow","outline","gradient"].includes(String(value.effect)) ? value.effect : "none", effectColor: /^#[0-9a-f]{6}$/i.test(String(value.effectColor)) ? value.effectColor : undefined, eyebrow: typeof value.eyebrow === "string" ? value.eyebrow.trim().slice(0, 60) : "", eyebrowFont: typeof value.eyebrowFont === "string" ? value.eyebrowFont : undefined, eyebrowItalic: value.eyebrowItalic === true, eyebrowLetterSpacing: parseLetterSpacing(value.eyebrowLetterSpacing), eyebrowTransform: value.eyebrowTransform === "none" || value.eyebrowTransform === "uppercase" ? value.eyebrowTransform : undefined, eyebrowSize: Math.min(20, Math.max(8, Number(value.eyebrowSize) || 10)), eyebrowWeight: [400,500,600,700,800,900].includes(Number(value.eyebrowWeight)) ? Number(value.eyebrowWeight) : 600, eyebrowColor: /^#[0-9a-f]{6}$/i.test(String(value.eyebrowColor)) ? value.eyebrowColor : undefined, italic: value.italic === true, size: Math.min(48, Math.max(18, Number(value.size) || 28)), weight: [400,500,600,700,800,900].includes(Number(value.weight)) ? Number(value.weight) : 900, align: ["left","center","right"].includes(value.align) ? value.align : "center", bgMode: value.bgMode === "solid" ? "solid" : "none" };
 }
 export function parseSubtitleStyle(landing: BackgroundLike & { text_color?: string | null; font_pair?: string | null; subtitle_style?: unknown }): SubtitleStyle {
   const value = hasKeys(landing.subtitle_style)
     ? { ...DEFAULT_SUBTITLE_STYLE, ...(landing.subtitle_style as Partial<SubtitleStyle>) }
     : { ...DEFAULT_SUBTITLE_STYLE, color: landing.text_color || autoTextColor(landing), font: landing.font_pair || "modern" };
-  return { ...value, letterSpacing: parseLetterSpacing(value.letterSpacing), italic: value.italic === true, size: Math.min(26, Math.max(10, Number(value.size) || 14)), weight: [400,500,600,700,800,900].includes(Number(value.weight)) ? Number(value.weight) : 500, bgMode: value.bgMode === "solid" ? "solid" : "none" };
+  return { ...value, letterSpacing: parseLetterSpacing(value.letterSpacing), lineHeight: typeof value.lineHeight === "number" ? Math.min(2, Math.max(1, value.lineHeight)) : undefined, maxWidth: typeof value.maxWidth === "number" ? Math.min(430, Math.max(180, value.maxWidth)) : undefined, align: ["left","center","right"].includes(String(value.align)) ? value.align : undefined, italic: value.italic === true, size: Math.min(26, Math.max(10, Number(value.size) || 14)), weight: [400,500,600,700,800,900].includes(Number(value.weight)) ? Number(value.weight) : 500, bgMode: value.bgMode === "solid" ? "solid" : "none" };
 }
 export function parseLogoStyle(raw: unknown): LogoStyle {
   const value = hasKeys(raw) ? { ...DEFAULT_LOGO_STYLE, ...(raw as Partial<LogoStyle>) } : { ...DEFAULT_LOGO_STYLE };
@@ -482,7 +492,7 @@ export function logoBorderRadius(shape: LogoStyle["shape"], size: number): strin
 // Decorative header layer: independent of the page background and content layout.
 // mode: "fade" is the photo behind the whole header, dissolving toward the buttons; "banner" is a
 // hard-edged photo across the top that ends halfway down the logo.
-export type CoverStyle = { enabled: boolean; mode: "fade" | "banner"; size: "small" | "medium" | "large"; zoom: number; x: number; y: number; fade: number; overlay: number };
+export type CoverStyle = { enabled: boolean; mode: "fade" | "banner"; size: "small" | "medium" | "large"; zoom: number; x: number; y: number; fade: number; overlay: number; overlayColor?: string; stableSizing?: boolean };
 const DEFAULT_COVER_STYLE: CoverStyle = { enabled: false, mode: "fade", size: "medium", zoom: 1, x: 50, y: 50, fade: 55, overlay: .15 };
 
 // How much extra height (px, on top of the logo+text reserve computed in landing-renderer.tsx)
@@ -505,13 +515,19 @@ export function parseCoverStyle(raw: unknown): CoverStyle {
     // 0 = crisp hard edge, 100 = fades starting right from the top.
     fade: clamp(parsed.fade, 10, 90, DEFAULT_COVER_STYLE.fade),
     overlay: clamp(parsed.overlay, 0, .85, DEFAULT_COVER_STYLE.overlay),
+    // Older pages keep their original derived tone. Editing the title color freezes that tone
+    // here first, so the photo treatment no longer changes together with the text.
+    overlayColor: typeof parsed.overlayColor === "string" && /^#[0-9a-f]{6}$/i.test(parsed.overlayColor) ? parsed.overlayColor : undefined,
+    // New landing covers use one stable large image canvas. Size then changes only the visible
+    // window, rather than asking background-size: cover to calculate a different scale each time.
+    stableSizing: parsed.stableSizing === true,
   };
 }
 
 export function parseBackgroundPosition(raw: unknown): BackgroundPosition {
   const parsed = hasKeys(raw) ? raw as Partial<BackgroundPosition> : {};
   const clamp = (value: unknown, min: number, max: number, fallback: number) => typeof value === "number" && Number.isFinite(value) ? Math.min(max, Math.max(min, value)) : fallback;
-  return { zoom: clamp(parsed.zoom, 1, 2.5, 1), x: clamp(parsed.x, 0, 100, 50), y: clamp(parsed.y, 0, 100, 50), tint: clamp(parsed.tint, 0, .85, .08) };
+  return { zoom: clamp(parsed.zoom, 1, 2.5, 1), x: clamp(parsed.x, 0, 100, 50), y: clamp(parsed.y, 0, 100, 50), tint: clamp(parsed.tint, 0, .85, .08), lighten: clamp(parsed.lighten, 0, .85, 0), blur: clamp(parsed.blur, 0, 14, 0), tintColor: typeof parsed.tintColor === "string" && /^#[0-9a-f]{6}$/i.test(parsed.tintColor) ? parsed.tintColor : undefined };
 }
 
 export function buttonZoneShadow(shadow: ButtonZoneStyle["shadow"]): string {

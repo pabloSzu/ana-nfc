@@ -13,8 +13,9 @@
 .image-adjust-preview-cover { width: min(100%, 390px); aspect-ratio: 1.35 / 1; border-radius: 10px; }
 .image-adjust-preview-banner { aspect-ratio: 3 / 1; }
 .image-adjust-preview-cover.is-contact-cover { border: 2px dashed #6c5ce7; box-shadow: 0 0 0 4px #6c5ce71c; }
-.image-adjust-contact-canvas { position: absolute; top: 50%; left: 0; width: 100%; transform: translateY(-50%); }
-.image-adjust-cover-veil { position: absolute; inset: 0; pointer-events: none; }
+.image-adjust-cover-canvas { position: absolute; top: 50%; left: 0; width: 100%; transform: translateY(-50%); }
+.image-adjust-cover-veil, .image-adjust-fade-guide { position: absolute; inset: 0; pointer-events: none; }
+.image-adjust-fade-guide { z-index: 1; }
 .image-adjust-visible-label { position: absolute; right: 8px; bottom: 7px; z-index: 1; padding: 4px 7px; border-radius: 5px; background: #211d2ccf; color: #fff; font-size: 10px; font-weight: 700; pointer-events: none; }
 .image-adjust-preview-background { width: min(200px, 52vw); aspect-ratio: 9 / 16; border-radius: 10px; }
 .image-adjust-photo { position: absolute; inset: 0; background-repeat: no-repeat; }

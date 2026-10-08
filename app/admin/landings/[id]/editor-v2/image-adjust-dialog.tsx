@@ -14,7 +14,7 @@ const titles: Record<ImageKind, string> = {
 
 const clamp = (value: number) => Math.max(0, Math.min(100, value));
 
-export default function ImageAdjustDialog({ kind, src, shape, contactLogo = false, logoBackground, coverMode, contactCoverSize, contactFrameWidth, contactCoverOverlay, initial, onApply, onCancel }: {
+export default function ImageAdjustDialog({ kind, src, shape, contactLogo = false, logoBackground, coverMode, contactCoverSize, coverFrameWidth, coverFrameHeight, coverCanvasHeight, coverOverlay, coverOverlayColor, coverFade, initial, onApply, onCancel }: {
   kind: ImageKind;
   src: string;
   shape?: "round" | "square" | "sharp";
@@ -22,8 +22,12 @@ export default function ImageAdjustDialog({ kind, src, shape, contactLogo = fals
   logoBackground?: string;
   coverMode?: "fade" | "banner";
   contactCoverSize?: CoverStyle["size"];
-  contactFrameWidth?: number;
-  contactCoverOverlay?: number;
+  coverFrameWidth?: number;
+  coverFrameHeight?: number;
+  coverCanvasHeight?: number;
+  coverOverlay?: number;
+  coverOverlayColor?: string;
+  coverFade?: number;
   initial: ImagePlacement;
   onApply: (placement: ImagePlacement) => void;
   onCancel: () => void;
@@ -40,10 +44,14 @@ export default function ImageAdjustDialog({ kind, src, shape, contactLogo = fals
   const minZoom = kind === "logo" ? .5 : 1;
   const fillLogo = kind === "logo" && contactLogo;
   const contactCover = kind === "cover" && contactCoverSize !== undefined;
-  const coverHeight = contactCover ? CONTACT_COVER_HEIGHT[contactCoverSize] : 0;
-  const qualityScale = contactCover && imageSize ? Math.max((contactFrameWidth || 402) / imageSize.width, CONTACT_COVER_HEIGHT.large / imageSize.height) * placement.zoom : 0;
-  const cropSize = previewSize && contactCover
-    ? { width: previewSize.width, height: previewSize.width * CONTACT_COVER_HEIGHT.large / (contactFrameWidth || 402) }
+  const exactCover = kind === "cover" && Boolean(coverFrameWidth && coverFrameHeight);
+  const stableCover = kind === "cover" && Boolean(coverCanvasHeight);
+  const frameWidth = coverFrameWidth || 402;
+  const coverHeight = contactCover ? CONTACT_COVER_HEIGHT[contactCoverSize] : coverFrameHeight || 0;
+  const imageCanvasHeight = contactCover ? CONTACT_COVER_HEIGHT.large : coverCanvasHeight || coverHeight;
+  const qualityScale = kind === "cover" && imageSize && imageCanvasHeight ? Math.max(frameWidth / imageSize.width, imageCanvasHeight / imageSize.height) * placement.zoom : 0;
+  const cropSize = previewSize && (contactCover || stableCover)
+    ? { width: previewSize.width, height: previewSize.width * imageCanvasHeight / frameWidth }
     : previewSize;
 
   useEffect(() => { cancelRef.current = onCancel; }, [onCancel]);
@@ -123,7 +131,7 @@ export default function ImageAdjustDialog({ kind, src, shape, contactLogo = fals
       <div
         ref={previewRef}
         className={`image-adjust-preview image-adjust-preview-${kind} image-adjust-shape-${shape || "square"} ${kind === "cover" && coverMode === "banner" ? "image-adjust-preview-banner" : ""}${contactCover ? " is-contact-cover" : ""}`}
-        style={contactCover ? { aspectRatio: `${contactFrameWidth || 402} / ${coverHeight}` } : kind === "logo" ? { background: logoBackground || "#e7e8ed" } : undefined}
+        style={exactCover || contactCover ? { aspectRatio: `${frameWidth} / ${coverHeight}` } : kind === "logo" ? { background: logoBackground || "#e7e8ed" } : undefined}
         role="img"
         aria-label={`Vista del encuadre de ${kind === "logo" ? "logo" : kind === "cover" ? "portada" : "fondo"}`}
         onPointerDown={(event) => {
@@ -133,8 +141,9 @@ export default function ImageAdjustDialog({ kind, src, shape, contactLogo = fals
         onPointerMove={onPointerMove}
         onPointerUp={() => { dragRef.current = null; }}
         onPointerCancel={() => { dragRef.current = null; }}
-      >{contactCover ? <div className="image-adjust-contact-canvas" style={{ aspectRatio: `${contactFrameWidth || 402} / ${CONTACT_COVER_HEIGHT.large}` }}><div className="image-adjust-photo" style={imageStyle} /></div> : <div className="image-adjust-photo" style={imageStyle} />}{contactCover && <><span className="image-adjust-cover-veil" style={{ background: `rgba(0,0,0,${contactCoverOverlay || 0})` }} /><span className="image-adjust-visible-label">Área visible en tu tarjeta</span></>}</div>
+      >{contactCover || stableCover ? <div className="image-adjust-cover-canvas" style={{ aspectRatio: `${frameWidth} / ${imageCanvasHeight}` }}><div className="image-adjust-photo" style={imageStyle} /></div> : <div className="image-adjust-photo" style={imageStyle} />}{kind === "cover" && <><span className="image-adjust-cover-veil" style={{ background: `${coverOverlayColor || "#000000"}${Math.round((coverOverlay || 0) * 255).toString(16).padStart(2, "0")}` }} />{coverFade !== undefined && <span className="image-adjust-fade-guide" style={{ background: `linear-gradient(to bottom, transparent ${100 - coverFade}%, rgba(255,255,255,.76) 100%)` }} />}{contactCover && <span className="image-adjust-visible-label">Área visible en tu tarjeta</span>}</>}</div>
       {contactCover && <p className="image-adjust-note">El borde punteado muestra exactamente qué parte se verá en la portada {contactCoverSize === "small" ? "chica" : contactCoverSize === "medium" ? "mediana" : "grande"}. El tamaño cambia el área visible, no la escala de la foto.</p>}
+      {kind === "cover" && !contactCover && <p className="image-adjust-note">Este recuadro usa exactamente el ancho y el alto de la portada que ves en el celular. Arrastrá para elegir el punto principal y ajustá el zoom si hace falta.{stableCover ? " Chico, Mediano y Grande conservarán esta misma escala." : ""}</p>}
       {kind === "logo" && <p className="image-adjust-note">Bajá de 100% para alejar la imagen y dejar espacio alrededor. El espacio usa el color de fondo elegido para el logo.</p>}
       {qualityScale > .5 && <p className="image-adjust-quality" role="status">{qualityScale > 1 ? "La foto es demasiado pequeña para este zoom: puede verse pixelada." : "En pantallas de alta resolución esta foto podría verse poco nítida con este zoom."} Probá una imagen de mayor resolución o reducí el zoom.</p>}
       <label className="image-adjust-slider">Zoom <span>{Math.round(placement.zoom * 100)}%</span>
