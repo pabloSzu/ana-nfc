@@ -20,7 +20,11 @@ type LandingAction = {
   message?: string | null;
   url?: string | null;
   icon?: string | null;
+  icon_url?: string | null;
+  icon_fit?: "contain" | "cover" | null;
+  icon_scale?: number | string | null;
   background_color?: string | null;
+  background_gradient_to?: string | null;
   text_color?: string | null;
   icon_color?: string | null;
   icon_background_color?: string | null;
@@ -382,9 +386,19 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
             });
             const isSelected = Boolean(edit && typeof edit.selected === "object" && edit.selected?.buttonId === action.id);
             const isDragging = edit?.draggingId === action.id;
-            const hasCustomIcon = hasCustomActionIcon(action.icon);
+            const hasCustomIcon = Boolean(action.icon_url) || hasCustomActionIcon(action.icon);
             const customIconBackground = /^#[0-9a-f]{6}$/i.test(action.icon_background_color || "") ? action.icon_background_color! : undefined;
+            const customGradientTo = !action.use_auto_color && /^#[0-9a-f]{6}$/i.test(action.background_gradient_to || "") ? action.background_gradient_to! : undefined;
             const instagramAsset = instagramAssetMode(zone.collection, action.type, iconAppearance, hasCustomIcon);
+            const collectionStyle = buttonCollectionStyle(zone.collection, bg, text, index, action.type, isAuthentic, useNetworkAccent);
+            const keepsStructuralBorder = zone.collection === "brutal" || zone.collection === "retro";
+            const customGradientStyle: CSSProperties = customGradientTo
+              ? {
+                  background: `linear-gradient(135deg,${bg},${customGradientTo})`,
+                  ...(keepsStructuralBorder ? {} : { border: "none" }),
+                  boxShadow: keepsStructuralBorder ? collectionStyle.boxShadow : buttonZoneShadow(zone.shadow),
+                }
+              : {};
             return (
               <div key={action.id} ref={edit && !isSampleButtons ? (el) => edit.onButtonRef(action.id, el) : undefined} className={`landing-action-row${edit ? " editor-action-row" : ""}${isDragging ? " is-dragging" : ""}${isSampleButtons ? " editor-sample-row" : ""}`} style={{ position: "relative", width: isContact ? "100%" : buttonCollectionWidth(zone, index), margin: "0 auto" }}>
               <a
@@ -395,12 +409,13 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
                 rel="noreferrer"
                 onClick={edit ? (event) => { event.preventDefault(); if (isSampleButtons) edit.onAddButton(); else edit.onSelectButton(action.id); } : editorPreview && !action.url ? (event) => event.preventDefault() : undefined}
                 style={{
-                  ...(isContact ? { background: "var(--contact-surface)", color: contactInk, border: "1px solid color-mix(in srgb, var(--contact-ink) 15%, transparent)" } : buttonCollectionStyle(zone.collection, bg, text, index, action.type, isAuthentic, useNetworkAccent)),
+                  ...(isContact ? { background: "var(--contact-surface)", color: contactInk, border: "1px solid color-mix(in srgb, var(--contact-ink) 15%, transparent)" } : collectionStyle),
+                  ...(!isContact ? customGradientStyle : {}),
                   width: "100%",
                   minHeight: isContact ? 68 : zone.height,
                   margin: "0 auto",
                   borderRadius: isContact ? 18 : zone.radius,
-                  boxShadow: isContact ? "0 6px 18px rgba(15,17,30,.08)" : buttonCollectionStyle(zone.collection, bg, text, index, action.type, isAuthentic, useNetworkAccent).boxShadow || buttonZoneShadow(zone.shadow),
+                  boxShadow: isContact ? "0 6px 18px rgba(15,17,30,.08)" : customGradientStyle.boxShadow || collectionStyle.boxShadow || buttonZoneShadow(zone.shadow),
                   fontFamily: buttonFont,
                   fontSize: isContact ? 14 : zone.textSize,
                   flexDirection: "column",
@@ -412,13 +427,14 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
                 <span className={`action-main action-main-${isContact ? "left" : zone.contentAlign}`} style={isContact ? { width: "100%", display: "flex", alignItems: "center", gap: 12 } : zone.contentAlign === "center" ? { width: "100%", display: "grid", gridTemplateColumns: `${zone.iconSize}px minmax(0,1fr) ${zone.iconSize}px`, alignItems: "center", columnGap: 10 } : { width: "100%", display: "flex", alignItems: "center", justifyContent: "flex-start", gap: 10 }}>
                   <span className="action-brand-icon" style={{
                     ...(isContact ? { width: 42, height: 42, flex: "0 0 42px", display: "grid", placeItems: "center", borderRadius: 13, background: primary, color: contrastTextColor(primary) } : buttonIconStyle(zone.collection, bg, zone.iconSize, action.type, iconAppearance, isAuthentic, useNetworkAccent, hasCustomIcon)),
+                    ...(action.icon_url ? { overflow: "hidden" } : {}),
                     ...(!isContact && zone.textColor && iconAppearance === "minimal" && !hasCustomIcon
                       ? { color: zone.textColor }
                       : {}),
                     ...(!isContact && customIconBackground
                       ? { background: customIconBackground, color: contrastTextColor(customIconBackground) }
                       : {}),
-                  }}><ActionTypeIcon type={action.type} icon={action.icon} brandMark={!isContact && shouldUseBrandMark(zone.collection, action.type, iconAppearance, isAuthentic)} brandBackground={youtubeMarkSurfaceColor(zone.collection, bg, action.icon_background_color)} instagramAsset={isContact ? "mono" : customIconBackground && instagramAsset === "color" ? "mono" : instagramAsset} /></span>
+                  }}><ActionTypeIcon type={action.type} icon={action.icon} customImageUrl={action.icon_url} customImageFit={action.icon_fit === "cover" ? "cover" : "contain"} customImageScale={Number(action.icon_scale) || 1} brandMark={!isContact && shouldUseBrandMark(zone.collection, action.type, iconAppearance, isAuthentic)} brandBackground={youtubeMarkSurfaceColor(zone.collection, bg, action.icon_background_color)} instagramAsset={isContact ? "mono" : customIconBackground && instagramAsset === "color" ? "mono" : instagramAsset} /></span>
                   <span className="action-copy" style={{ textAlign: isContact ? "left" : zone.contentAlign === "center" ? "center" : "left", color: isContact ? contactInk : zone.textColor || undefined, flex: isContact ? "1 1 auto" : undefined }}>
                     <span className={`action-title${zone.titleLines === 2 ? " action-title-two-lines" : ""}`} style={{ fontWeight: isContact ? 750 : zone.fontWeight === undefined ? undefined : resolveFontWeight(landing.button_font || "modern", zone.fontWeight), letterSpacing: isContact ? undefined : zone.letterSpacing === undefined ? undefined : `${zone.letterSpacing}em`, fontSynthesis: zone.fontWeight === undefined ? undefined : "none", color: isContact ? contactInk : zone.textColor || undefined }}>{action.title}</span>
                     {action.subtitle && <small style={{ fontSize: 11, opacity: 0.82, fontWeight: 600, color: isContact ? contactInk : zone.textColor || undefined }}>{action.subtitle}</small>}

@@ -345,6 +345,9 @@
 }
 
 .v2-own-color { display: grid; gap: 8px; padding: 10px; border-radius: 12px; background: #f7f7fa; }
+.v2-button-finish { display: grid; gap: 7px; }
+.v2-button-finish > span { color: #373b47; font-size: 11px; font-weight: 850; }
+.v2-gradient-colors { display: grid; gap: 8px; }
 .v2-inline-action,.v2-reset-action {
   min-height: 36px;
   border: 1px solid #dedfe7;

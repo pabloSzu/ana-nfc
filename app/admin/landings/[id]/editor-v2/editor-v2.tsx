@@ -21,7 +21,7 @@ import ImageAdjustDialog, { type ImageKind, type ImagePlacement } from "./image-
 import { createClient as createBrowserClient } from "@/lib/supabase/client";
 import PendingSubmitButton from "@/components/pending-submit-button";
 
-type ButtonItem = { id: string; type: string; title: string; subtitle: string; url: string; message: string; icon: string; icon_background_color: string; background_color: string; text_color: string; use_auto_color: boolean; position: number };
+type ButtonItem = { id: string; type: string; title: string; subtitle: string; url: string; message: string; icon: string; icon_url: string; icon_fit: "contain" | "cover"; icon_scale: number; icon_background_color: string; background_color: string; background_gradient_to: string; text_color: string; use_auto_color: boolean; position: number };
 type LandingDraft = {
   id: string; slug: string; business_name: string; business_type?: string | null; description?: string | null; logo_url?: string | null; primary_color?: string | null;
   background_color?: string | null; background_type?: string | null; background_gradient_to?: string | null; background_image_url?: string | null;
@@ -195,6 +195,8 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
   const [cvPreviewUrl, setCvPreviewUrl] = useState("");
   const cvPreviewUrlRef = useRef("");
   const [cvUploading, setCvUploading] = useState(false);
+  const [iconUploadingId, setIconUploadingId] = useState("");
+  const [iconUploadError, setIconUploadError] = useState<{ buttonId: string; message: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [imageEditor, setImageEditor] = useState<ImageEditorDraft | null>(null);
   const activeButton = typeof panel === "object" && panel ? buttons.find((button) => button.id === panel.buttonId) : null;
@@ -365,6 +367,35 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
   const changeZone = (patch: Partial<ButtonZoneStyle>) => change({ buttonZone: { ...draft.buttonZone, ...patch } });
   const patchButtons = (updater: (current: ButtonItem[]) => ButtonItem[]) => { setButtons(updater); setDirty(true); };
   const changeButton = (id: string, patch: Partial<ButtonItem>) => { commitContinuous(); patchButtons((current) => current.map((button) => button.id === id ? { ...button, ...patch } : button)); };
+  const uploadButtonIcon = async (buttonId: string, file: File) => {
+    setIconUploadError(null);
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+      setIconUploadError({ buttonId, message: "Elegí una imagen PNG, JPG o WebP." });
+      return;
+    }
+    if (file.size > 3 * 1024 * 1024) {
+      setIconUploadError({ buttonId, message: "El ícono no puede superar 3 MB." });
+      return;
+    }
+    setIconUploadingId(buttonId);
+    try {
+      const optimized = await compressImage(file, 512, .9);
+      const supabase = createBrowserClient();
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      if (authError || !authData.user) throw new Error("Tu sesión venció. Volvé a ingresar antes de subir el ícono.");
+      const extension = optimized.type === "image/jpeg" ? "jpg" : optimized.type === "image/webp" ? "webp" : "png";
+      const path = `${authData.user.id}/${draft.id}/button-icon-${crypto.randomUUID()}.${extension}`;
+      const { error: uploadError } = await supabase.storage.from("landing-assets").upload(path, optimized, { contentType: optimized.type, upsert: false });
+      if (uploadError) throw new Error("No se pudo subir el ícono. Probá de nuevo.");
+      const publicUrl = supabase.storage.from("landing-assets").getPublicUrl(path).data.publicUrl;
+      commitDiscrete();
+      patchButtons((current) => current.map((button) => button.id === buttonId ? { ...button, icon: "", icon_url: publicUrl, icon_fit: "contain", icon_scale: 1 } : button));
+    } catch (error) {
+      setIconUploadError({ buttonId, message: error instanceof Error ? error.message : "No se pudo subir el ícono." });
+    } finally {
+      setIconUploadingId("");
+    }
+  };
   const changeContactAction = (type: "phone" | "email" | "whatsapp", value: string) => {
     commitContinuous();
     const newId = `new-${crypto.randomUUID()}`;
@@ -373,7 +404,7 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
       if (!value.trim()) return current.filter((button) => button.type !== type);
       if (existing) return current.map((button) => button.id === existing.id ? { ...button, url: value } : button);
       const def = actionDefs.find((action) => action.type === type)!;
-      return [...current, { id: newId, type, title: def.label, subtitle: "", url: value, message: type === "whatsapp" ? "Hola, quiero hacer una consulta." : "", icon: "", icon_background_color: "", background_color: "#1f2937", text_color: "#ffffff", use_auto_color: true, position: current.length }];
+      return [...current, { id: newId, type, title: def.label, subtitle: "", url: value, message: type === "whatsapp" ? "Hola, quiero hacer una consulta." : "", icon: "", icon_url: "", icon_fit: "contain", icon_scale: 1, icon_background_color: "", background_color: "#1f2937", background_gradient_to: "", text_color: "#ffffff", use_auto_color: true, position: current.length }];
     });
   };
   const selectCvFile = (file?: File) => {
@@ -396,7 +427,7 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
     if (buttons.some((button) => button.type === "cv")) { setDirty(true); return; }
     commitDiscrete();
     const id = `new-${crypto.randomUUID()}`;
-    patchButtons((current) => [...current, { id, type: "cv", title: "Ver CV / portfolio", subtitle: "Documento PDF", url: "", message: "", icon: "", icon_background_color: "", background_color: "#5754ae", text_color: "#ffffff", use_auto_color: true, position: current.length }]);
+    patchButtons((current) => [...current, { id, type: "cv", title: "Ver CV / portfolio", subtitle: "Documento PDF", url: "", message: "", icon: "", icon_url: "", icon_fit: "contain", icon_scale: 1, icon_background_color: "", background_color: "#5754ae", background_gradient_to: "", text_color: "#ffffff", use_auto_color: true, position: current.length }]);
   };
   const clearSelectedCvFile = () => {
     const input = document.getElementById("v2-cv-file") as HTMLInputElement | null;
@@ -468,7 +499,7 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
     });
     // Every template card applies its complete visual design, including its button colors.
     // Content and uploaded images stay intact; one undo restores the previous appearance.
-    patchButtons((current) => current.map((button) => ({ ...button, use_auto_color: true, icon_background_color: "" })));
+    patchButtons((current) => current.map((button) => ({ ...button, use_auto_color: true, background_gradient_to: "", icon_background_color: "" })));
   }
 
   function applyContactLook(id: (typeof CONTACT_LOOKS)[number]["id"]) {
@@ -517,9 +548,9 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
   }
 
   function resetButtonOverrides() {
-    if (!buttons.some((button) => !button.use_auto_color || button.icon_background_color)) return;
+    if (!buttons.some((button) => !button.use_auto_color || button.background_gradient_to || button.icon_background_color)) return;
     commitDiscrete();
-    patchButtons((current) => current.map((button) => ({ ...button, use_auto_color: true, icon_background_color: "" })));
+    patchButtons((current) => current.map((button) => ({ ...button, use_auto_color: true, background_gradient_to: "", icon_background_color: "" })));
   }
 
   function addButton(type: string) {
@@ -529,7 +560,7 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
     }
     const def = actionDefs.find((item) => item.type === type) || actionDefs[actionDefs.length - 1];
     const id = `new-${crypto.randomUUID()}`;
-    const button: ButtonItem = { id, type: def.type, title: type === "cv" ? "Ver archivo PDF" : def.label, subtitle: "", url: "", message: def.message ? "Hola, quiero hacer una consulta." : "", icon: "", icon_background_color: "", background_color: "#1f2937", text_color: "#ffffff", use_auto_color: true, position: buttons.length };
+    const button: ButtonItem = { id, type: def.type, title: type === "cv" ? "Ver archivo PDF" : def.label, subtitle: "", url: "", message: def.message ? "Hola, quiero hacer una consulta." : "", icon: "", icon_url: "", icon_fit: "contain", icon_scale: 1, icon_background_color: "", background_color: "#1f2937", background_gradient_to: "", text_color: "#ffffff", use_auto_color: true, position: buttons.length };
     commitDiscrete();
     patchButtons((current) => [...current, button]); setPanel({ buttonId: id });
   }
@@ -722,6 +753,10 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
     const form = event.currentTarget;
     const cvInput = form.querySelector<HTMLInputElement>("#v2-cv-file");
     const file = cvInput?.files?.[0];
+    if (iconUploadingId) {
+      event.preventDefault();
+      return;
+    }
     if (!file) {
       if (saving) event.preventDefault();
       else setSaving(true);
@@ -806,7 +841,7 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
         </div>
         <button className="v2-ghost" type="button" onClick={() => { setPanel(draft.business_type === "contact" ? "settings" : panel === "settings" ? null : "settings"); setPreview(false); }}>{draft.business_type === "contact" ? "Publicar" : "Ajustes"}</button>
         <button className="v2-ghost" type="button" onClick={() => { setPreview(!preview); setPanel(preview ? (window.innerWidth <= 840 || draft.business_type === "contact" ? null : "templates") : null); }}>{preview ? "Seguir editando" : "Vista previa"}</button>
-        <button className="v2-save" form="v2-save" type="submit" name="return_to" value={`/admin/landings/${draft.id}/editor-v2`} disabled={!dirty || cvUploading || saving} aria-busy={saving}>{cvUploading ? "Subiendo PDF…" : saving ? "Guardando…" : "Guardar cambios"}</button>
+        <button className="v2-save" form="v2-save" type="submit" name="return_to" value={`/admin/landings/${draft.id}/editor-v2`} disabled={!dirty || cvUploading || Boolean(iconUploadingId) || saving} aria-busy={saving || Boolean(iconUploadingId)}>{iconUploadingId ? "Subiendo ícono…" : cvUploading ? "Subiendo PDF…" : saving ? "Guardando…" : "Guardar cambios"}</button>
       </header>
 
       <div className={`v2-workspace ${preview ? "is-preview" : ""} ${panel ? "has-panel" : ""}`}>
@@ -836,7 +871,7 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
             setLogoPreview(null); setLogoRemoved(true); setDirty(true);
           }} />}
           {panel === "add" && <ActionCatalog onAdd={addButton} isContact={draft.business_type === "contact"} />}
-          {activeButton && <ButtonControls button={activeButton} draft={draft} cvFileName={cvFileName} cvFileError={cvFileError} onClearCvFile={clearSelectedCvFile} onChange={(patch) => changeButton(activeButton.id, patch)} onDelete={() => activeButton.type === "cv" ? removeCv() : deleteButton(activeButton.id)} />}
+          {activeButton && <ButtonControls button={activeButton} draft={draft} cvFileName={cvFileName} cvFileError={cvFileError} iconUploading={iconUploadingId === activeButton.id} iconUploadError={iconUploadError?.buttonId === activeButton.id ? iconUploadError.message : ""} onIconFile={(file) => uploadButtonIcon(activeButton.id, file)} onClearCvFile={clearSelectedCvFile} onChange={(patch) => { setIconUploadError(null); changeButton(activeButton.id, patch); }} onDelete={() => activeButton.type === "cv" ? removeCv() : deleteButton(activeButton.id)} />}
         </aside>}
 
         <section className={`v2-stage device-${device}`}>
@@ -968,7 +1003,7 @@ function ButtonDesign({ draft, buttons, backgroundImage, onZone, onFont, onApply
   const recommendedIcons = recommendedIconAppearance(zone.collection);
   const customColorCount = buttons.filter((button) => !button.use_auto_color).length;
   const customIconBackgroundCount = buttons.filter((button) => Boolean(button.icon_background_color)).length;
-  const customVisualCount = buttons.filter((button) => !button.use_auto_color || button.icon_background_color).length;
+  const customVisualCount = buttons.filter((button) => !button.use_auto_color || button.background_gradient_to || button.icon_background_color).length;
   const selectedSize = SIZES.find((item) => Object.entries(item.patch).every(([key, value]) => zone[key as keyof typeof item.patch] === value))?.label;
   const currentButtonLook = DESIGN_PRESETS_V2.find((preset) => preset.id === zone.preset)?.name || "Personalizado";
   const recommendedSize = DESIGN_PRESETS_V2.find((preset) => preset.id === zone.preset)?.buttonZone;
@@ -1839,8 +1874,17 @@ function ActionCatalog({ onAdd, isContact = false }: { onAdd: (type: string) => 
   </div>;
 }
 
-function ButtonControls({ button,draft,cvFileName,cvFileError,onClearCvFile,onChange,onDelete }: { button: ButtonItem; draft: LandingDraft; cvFileName: string; cvFileError: string; onClearCvFile: () => void; onChange:(p:Partial<ButtonItem>)=>void; onDelete:()=>void }) {
+function ButtonControls({ button,draft,cvFileName,cvFileError,iconUploading,iconUploadError,onIconFile,onClearCvFile,onChange,onDelete }: { button: ButtonItem; draft: LandingDraft; cvFileName: string; cvFileError: string; iconUploading: boolean; iconUploadError: string; onIconFile: (file: File) => void | Promise<void>; onClearCvFile: () => void; onChange:(p:Partial<ButtonItem>)=>void; onDelete:()=>void }) {
   const def=getAllActions().find((item)=>item.type===button.type);
+  const previewPrimary = draft.primary_color || "#1f2937";
+  const previewColors = resolveButtonColors({ zone: draft.buttonZone, type: button.type, position: button.position, primary: previewPrimary, customColor: button.background_color, useAutoColor: button.use_auto_color });
+  const customIconBackground = /^#[0-9a-f]{6}$/i.test(button.icon_background_color) ? button.icon_background_color : "";
+  const iconPreviewStyle: CSSProperties = draft.business_type === "contact"
+    ? { width: 64, height: 64, flex: "0 0 64px", display: "grid", placeItems: "center", borderRadius: 20, background: previewPrimary, color: contrastTextColor(previewPrimary) }
+    : {
+        ...buttonIconStyle(draft.buttonZone.collection, previewColors.background, 64, button.type, draft.buttonZone.iconAppearance, previewColors.isAuthentic, previewColors.useNetworkAccent, true),
+        ...(customIconBackground ? { background: customIconBackground, color: contrastTextColor(customIconBackground) } : {}),
+      };
   if (draft.business_type === "contact") return <div className="v2-fields">
     <p className="v2-help">Este enlace se muestra como una ficha de la tarjeta. Su color principal se cambia en Diseño.</p>
     <EditorSection title="Contenido y destino" tone="blue">
@@ -1848,7 +1892,7 @@ function ButtonControls({ button,draft,cvFileName,cvFileError,onClearCvFile,onCh
       <label>Detalle <small>Opcional</small><input value={button.subtitle} onChange={(event) => onChange({ subtitle: event.target.value })} /></label>
       {button.type === "cv" ? <CvSourceField value={button.url} fileName={cvFileName} error={cvFileError} onUrlChange={(url) => onChange({ url })} onClearFile={onClearCvFile} /> : <label>{def?.input === "username" ? "Usuario" : "Enlace"}<input type={def?.input === "username" ? "text" : "url"} value={button.url} placeholder={def?.placeholder || "https://..."} onChange={(event) => onChange({ url: event.target.value })} /></label>}
     </EditorSection>
-    <EditorSection title="Ícono" tone="purple"><IconPicker type={button.type} value={button.icon} onChange={(icon) => onChange({ icon })} /></EditorSection>
+    <EditorSection title="Ícono" tone="purple"><IconPicker type={button.type} value={button.icon} customImageUrl={button.icon_url} customImageFit={button.icon_fit} customImageScale={button.icon_scale} previewStyle={iconPreviewStyle} uploading={iconUploading} error={iconUploadError} onUpload={onIconFile} onChange={(icon) => onChange({ icon, icon_url: "", icon_fit: "contain", icon_scale: 1 })} onRemoveCustom={() => onChange({ icon_url: "", icon_fit: "contain", icon_scale: 1 })} onImageFitChange={(icon_fit) => onChange({ icon_fit })} onImageScaleChange={(icon_scale) => onChange({ icon_scale })} /></EditorSection>
     <button type="button" className="v2-delete" onClick={onDelete}>Quitar enlace</button>
   </div>;
   const brandColor = AUTO_COLORS[button.type] || draft.primary_color || "#1f2937";
@@ -1857,14 +1901,15 @@ function ButtonControls({ button,draft,cvFileName,cvFileError,onClearCvFile,onCh
     ? `Usa el color general ${globalColor.toUpperCase()}.`
     : `Usa el color oficial de ${def?.label || "esta acción"}.`;
   const ownColor = button.background_color || brandColor;
+  const suggestedGradient = ownColor.toLowerCase() === (draft.primary_color || "#6657e8").toLowerCase() ? "#a855f7" : draft.primary_color || "#6657e8";
   return <div className="v2-fields">
-    {button.type === "cv" ? <div className="v2-document-heading"><ActionTypeIcon type="cv"/><span><strong>Documento PDF</strong><small>CV, catálogo, menú, portfolio o cualquier archivo en PDF.</small></span><em>PDF</em></div> : <div className="v2-brand"><ActionTypeIcon type={button.type} icon={button.icon}/><span><b>{def?.label || "Enlace"}</b><small>{button.icon ? "Ícono personalizado" : "Ícono incluido automáticamente"}</small></span></div>}
+    {button.type === "cv" ? <div className="v2-document-heading"><ActionTypeIcon type="cv" customImageUrl={button.icon_url} customImageFit={button.icon_fit} customImageScale={button.icon_scale}/><span><strong>Documento PDF</strong><small>CV, catálogo, menú, portfolio o cualquier archivo en PDF.</small></span><em>PDF</em></div> : <div className="v2-brand"><ActionTypeIcon type={button.type} icon={button.icon} customImageUrl={button.icon_url} customImageFit={button.icon_fit} customImageScale={button.icon_scale}/><span><b>{def?.label || "Enlace"}</b><small>{button.icon_url ? "Imagen propia" : button.icon ? "Ícono de la galería" : "Ícono incluido automáticamente"}</small></span></div>}
 <EditorSection title="Contenido y destino" tone="blue">    <label>{button.type === "cv" ? "Texto que verá la gente" : "Texto del botón"}<input value={button.title} placeholder={button.type === "cv" ? "Ej: Ver catálogo" : undefined} onChange={(e)=>onChange({title:e.target.value})}/></label>
     {button.type === "cv" && <div className="v2-document-examples" aria-label="Ejemplos de texto para el botón">{PDF_TITLE_OPTIONS.map((title) => <button key={title} type="button" aria-pressed={button.title === title} onClick={() => onChange({ title })}>{title}</button>)}</div>}
     <label>Texto secundario <small>Opcional</small><input value={button.subtitle} onChange={(e)=>onChange({subtitle:e.target.value})}/></label>
     {button.type === "cv" ? <CvSourceField context="landing" value={button.url} fileName={cvFileName} error={cvFileError} onUrlChange={(url) => onChange({ url })} onClearFile={onClearCvFile} /> : <label>{def?.input === "phone" ? "Número" : def?.input === "email" ? "Email" : def?.input === "username" ? "Usuario" : "Enlace"}<input value={button.url} placeholder={def?.placeholder} onChange={(e)=>onChange({url:e.target.value})}/></label>}
     {def?.message && <label>Mensaje de WhatsApp<textarea rows={3} value={button.message} onChange={(e)=>onChange({message:e.target.value})}/></label>}
-</EditorSection><EditorSection title="Ícono" tone="purple">    <IconPicker type={button.type} value={button.icon} onChange={(icon)=>onChange({icon})}/>
+</EditorSection><EditorSection title="Ícono" tone="purple">    <IconPicker type={button.type} value={button.icon} customImageUrl={button.icon_url} customImageFit={button.icon_fit} customImageScale={button.icon_scale} previewStyle={iconPreviewStyle} uploading={iconUploading} error={iconUploadError} onUpload={onIconFile} onChange={(icon)=>onChange({icon,icon_url:"",icon_fit:"contain",icon_scale:1})} onRemoveCustom={() => onChange({icon_url:"",icon_fit:"contain",icon_scale:1})} onImageFitChange={(icon_fit)=>onChange({icon_fit})} onImageScaleChange={(icon_scale)=>onChange({icon_scale})}/>
     <fieldset>
       <legend>Fondo del ícono</legend>
       <Choice active={!button.icon_background_color} title="Diseño de la plantilla" note="Mantiene el estilo original del ícono." onClick={()=>onChange({icon_background_color:""})}/>
@@ -1876,9 +1921,13 @@ function ButtonControls({ button,draft,cvFileName,cvFileError,onClearCvFile,onCh
       <Choice active={button.use_auto_color} swatch={globalColor} title="Usar el diseño general" note={globalDescription} onClick={()=>onChange({use_auto_color:true})}/>
       <Choice active={!button.use_auto_color} swatch={ownColor} title="Usar un color propio" note="Solo este botón queda separado de la regla general." onClick={()=>onChange({use_auto_color:false,background_color:ownColor})}/>
       {!button.use_auto_color && <div className="v2-own-color">
-        <ColorField label="Color propio" value={ownColor} onChange={(background_color)=>onChange({background_color})}/>
+        <div className="v2-button-finish"><span>Fondo</span><div className="v2-segment" role="group" aria-label="Terminación del fondo"><button type="button" className={!button.background_gradient_to ? "active" : ""} aria-pressed={!button.background_gradient_to} onClick={() => onChange({background_gradient_to:""})}>Color sólido</button><button type="button" className={button.background_gradient_to ? "active" : ""} aria-pressed={Boolean(button.background_gradient_to)} onClick={() => onChange({background_gradient_to:button.background_gradient_to || suggestedGradient})}>Degradado</button></div></div>
+        {button.background_gradient_to ? <div className="v2-gradient-colors">
+          <ColorField label="Color 1" value={ownColor} onChange={(background_color)=>onChange({background_color})}/>
+          <ColorField label="Color 2" value={button.background_gradient_to} onChange={(background_gradient_to)=>onChange({background_gradient_to})}/>
+        </div> : <ColorField label="Color" value={ownColor} onChange={(background_color)=>onChange({background_color})}/>}
         {ownColor.toLowerCase() !== brandColor.toLowerCase() && <button type="button" className="v2-inline-action" onClick={()=>onChange({background_color:brandColor})}><i style={{background:brandColor}} /> Usar color oficial de {def?.label || "la marca"}</button>}
-        <button type="button" className="v2-reset-action" onClick={()=>onChange({use_auto_color:true})}>↩ Volver al diseño general</button>
+        <button type="button" className="v2-reset-action" onClick={()=>onChange({use_auto_color:true,background_gradient_to:""})}>↩ Volver al diseño general</button>
       </div>}
     </fieldset>
     <button type="button" className="v2-delete" onClick={onDelete}>Eliminar botón</button>
@@ -1889,7 +1938,7 @@ function Choice({active,title,note,onClick,swatch,suggested=false,preview}:{acti
 
 function ButtonChoicePreview({ draft, buttons, backgroundImage, colorMode, iconAppearance }: { draft: LandingDraft; buttons: ButtonItem[]; backgroundImage: string; colorMode: ButtonZoneStyle["colorMode"]; iconAppearance: ButtonZoneStyle["iconAppearance"] }) {
   const zone = { ...draft.buttonZone, colorMode, iconAppearance };
-  const sampleButtons = buttons.length ? buttons : [{ id: "example", type: "url", title: "Tu botón", subtitle: "", url: "", message: "", icon: "", icon_background_color: "", background_color: "", text_color: "", use_auto_color: true, position: 0 }];
+  const sampleButtons = buttons.length ? buttons : [{ id: "example", type: "url", title: "Tu botón", subtitle: "", url: "", message: "", icon: "", icon_url: "", icon_fit: "contain" as const, icon_scale: 1, icon_background_color: "", background_color: "", background_gradient_to: "", text_color: "", use_auto_color: true, position: 0 }];
   const baseColor = draft.background_color || "#f7f5f0";
   const backgroundStyle: CSSProperties = { backgroundColor: baseColor };
   if (draft.background_type === "image" && backgroundImage) {
@@ -1904,11 +1953,12 @@ function ButtonChoicePreview({ draft, buttons, backgroundImage, colorMode, iconA
   return <span className="v2-choice-preview" style={backgroundStyle} aria-hidden="true" title={buttons.length ? "Vista con tus botones" : "Ejemplo sin botones"}>
     {sampleButtons.map((button) => {
       const { background: bg, text, isAuthentic, useNetworkAccent } = resolveButtonColors({ zone, type: button.type, position: button.position, primary: draft.primary_color || "#1f2937", customColor: button.background_color, useAutoColor: button.use_auto_color });
-      const hasCustomIcon = hasCustomActionIcon(button.icon);
+      const hasCustomIcon = Boolean(button.icon_url) || hasCustomActionIcon(button.icon);
       const customIconBackground = /^#[0-9a-f]{6}$/i.test(button.icon_background_color) ? button.icon_background_color : undefined;
+      const customGradientTo = !button.use_auto_color && /^#[0-9a-f]{6}$/i.test(button.background_gradient_to) ? button.background_gradient_to : undefined;
       const instagramAsset = instagramAssetMode(zone.collection, button.type, iconAppearance, hasCustomIcon);
-      return <span key={button.id} className="v2-choice-preview-chip" style={{ ...buttonCollectionStyle(zone.collection, bg, text, button.position, button.type, isAuthentic, useNetworkAccent), borderRadius: Math.max(6, zone.radius * .32) }}>
-        <span style={{ ...buttonIconStyle(zone.collection, bg, 18, button.type, iconAppearance, isAuthentic, useNetworkAccent, hasCustomIcon), ...(zone.textColor && iconAppearance === "minimal" && !hasCustomIcon ? { color: zone.textColor } : {}), ...(customIconBackground ? { background: customIconBackground, color: contrastTextColor(customIconBackground) } : {}) }}><ActionTypeIcon type={button.type} icon={button.icon} brandMark={shouldUseBrandMark(zone.collection, button.type, iconAppearance, isAuthentic)} brandBackground={youtubeMarkSurfaceColor(zone.collection, bg, button.icon_background_color)} instagramAsset={customIconBackground && instagramAsset === "color" ? "mono" : instagramAsset} /></span>
+      return <span key={button.id} className="v2-choice-preview-chip" style={{ ...buttonCollectionStyle(zone.collection, bg, text, button.position, button.type, isAuthentic, useNetworkAccent), ...(customGradientTo ? { background: `linear-gradient(135deg,${bg},${customGradientTo})` } : {}), borderRadius: Math.max(6, zone.radius * .32) }}>
+        <span style={{ ...buttonIconStyle(zone.collection, bg, 18, button.type, iconAppearance, isAuthentic, useNetworkAccent, hasCustomIcon), ...(button.icon_url ? { overflow: "hidden" } : {}), ...(zone.textColor && iconAppearance === "minimal" && !hasCustomIcon ? { color: zone.textColor } : {}), ...(customIconBackground ? { background: customIconBackground, color: contrastTextColor(customIconBackground) } : {}) }}><ActionTypeIcon type={button.type} icon={button.icon} customImageUrl={button.icon_url} customImageFit={button.icon_fit} customImageScale={button.icon_scale} brandMark={shouldUseBrandMark(zone.collection, button.type, iconAppearance, isAuthentic)} brandBackground={youtubeMarkSurfaceColor(zone.collection, bg, button.icon_background_color)} instagramAsset={customIconBackground && instagramAsset === "color" ? "mono" : instagramAsset} /></span>
       </span>;
     })}
   </span>;

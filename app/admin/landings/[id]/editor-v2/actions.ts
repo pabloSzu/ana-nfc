@@ -34,6 +34,18 @@ function parseJson(raw: FormDataEntryValue | null): Record<string, unknown> {
   try { return JSON.parse(String(raw || "{}")); } catch { return {}; }
 }
 
+function isOwnedButtonIconUrl(value: string, userId: string, landingId: string): boolean {
+  if (!value) return true;
+  try {
+    const asset = new URL(value);
+    const project = new URL(String(process.env.NEXT_PUBLIC_SUPABASE_URL || ""));
+    const prefix = `/storage/v1/object/public/landing-assets/${userId}/${landingId}/button-icon-`;
+    return asset.origin === project.origin && asset.pathname.startsWith(prefix);
+  } catch {
+    return false;
+  }
+}
+
 // editor-v2 works as a local draft. This is its single persistence point: identity, visual
 // styles, button-zone settings and the complete ordered button list are saved together only
 // when the user presses the main "Guardar cambios" button.
@@ -170,6 +182,8 @@ export async function saveDesignStyle(fd: FormData) {
     const title = String(button.title || "").trim();
     if (!title) saveFail(`El botón ${position + 1} necesita un nombre.`);
     let value = type === "cv" && cvUploadedUrl ? cvUploadedUrl : String(button.url || "").trim();
+    const iconUrl = String(button.icon_url || "").trim();
+    if (!isOwnedButtonIconUrl(iconUrl, user.id, landingId)) saveFail(`El ícono propio del botón “${title}” no es válido.`);
     if (type === "cv" && !value) saveFail("Subí un PDF o agregá un enlace para el documento.");
     if (type === "email" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) saveFail(`El email del botón “${title}” no parece válido.`);
     if (["whatsapp", "phone"].includes(type) && value && !isPlausiblePhone(value)) saveFail(`El número del botón “${title}” parece incompleto.`);
@@ -182,8 +196,12 @@ export async function saveDesignStyle(fd: FormData) {
       message: String(button.message || "").trim(),
       url: value,
       icon: String(button.icon || "").trim(),
+      icon_url: iconUrl,
+      icon_fit: button.icon_fit === "cover" ? "cover" : "contain",
+      icon_scale: Math.min(1.5, Math.max(0.6, Number(button.icon_scale) || 1)),
       icon_background_color: hexColor.test(String(button.icon_background_color || "")) ? String(button.icon_background_color) : "",
       background_color: color(String(button.background_color || ""), AUTO_COLORS[type] || "#1f2937"),
+      background_gradient_to: hexColor.test(String(button.background_gradient_to || "")) ? String(button.background_gradient_to) : "",
       text_color: color(String(button.text_color || ""), "#ffffff"),
       use_auto_color: button.use_auto_color !== false,
       enabled: true,
