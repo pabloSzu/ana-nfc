@@ -210,21 +210,21 @@
 .v2-device-switcher button { border: 0; border-radius: 8px; padding: 6px 8px; background: transparent; color: #6d7180; font-size: 9px; font-weight: 850; cursor: pointer; }
 .v2-device-switcher button.active { background: #fff; color: #5749d5; box-shadow: 0 2px 7px rgba(28,30,42,.11); }
 /* Same "the whole phone always fits, content scrolls inside instead" reasoning as the base
-   .v2-phone rule above — each variant keeps its own real device width/aspect ratio (via
-   --v2-ratio) and shrinks it as a WHOLE (bezel included, via the height-driven term in width)
+   .v2-phone rule above — each variant keeps its physical device width/aspect ratio (via
+   --v2-ratio), then shrinks as a WHOLE (bezel included, via the height-driven term in width)
    to fit the available room, instead of letting .v2-stage scroll past the bezel's edge.
    Border-radius/width now scale per variant too (via --v2-radius/--v2-border) — they used to
    stay fixed at the "Común" numbers regardless of which size was picked, so "Chico" rendered
    with a corner radius proportionally way too big for its width, and "Grande" with one too
    small — neither looked like an actual phone (reported: "los bordes... no parece un celular"). */
-.v2-phone.device-small { --v2-w: 360px; --v2-ratio: 360 / 640; --v2-radius: 40px; --v2-border: 8px; }
-.v2-phone.device-standard { --v2-w: 390px; --v2-ratio: 390 / 780; --v2-radius: 44px; --v2-border: 9px; }
-.v2-phone.device-large { --v2-w: 430px; --v2-ratio: 430 / 840; --v2-radius: 48px; --v2-border: 10px; }
+.v2-phone.device-small { --v2-w: 375px; --v2-ratio: 375 / 667; --v2-fit: .40236; --v2-radius: 40px; --v2-border: 8px; }
+.v2-phone.device-standard { --v2-w: 390px; --v2-ratio: 390 / 844; --v2-fit: .41845; --v2-radius: 44px; --v2-border: 9px; }
+.v2-phone.device-large { --v2-w: 430px; --v2-ratio: 430 / 932; --v2-fit: .46137; --v2-radius: 48px; --v2-border: 10px; }
 .v2-phone.device-small,
 .v2-phone.device-standard,
 .v2-phone.device-large {
   aspect-ratio: var(--v2-ratio);
-  width: min(var(--v2-w), calc(100vw - 20px), max(200px, calc((100dvh - var(--global-nav-h) - 146px) * var(--v2-ratio))));
+  width: min(var(--v2-w), calc(100vw - 20px), max(200px, calc((100dvh - var(--global-nav-h) - 146px) * var(--v2-fit))));
   height: auto;
   border-radius: var(--v2-radius);
   border-width: var(--v2-border);
@@ -232,6 +232,15 @@
 .v2-phone.device-small .v2-phone-screen { border-radius: calc(var(--v2-radius) - 4px); }
 .v2-phone.device-standard .v2-phone-screen { border-radius: calc(var(--v2-radius) - 5px); }
 .v2-phone.device-large .v2-phone-screen { border-radius: calc(var(--v2-radius) - 6px); }
+.v2-phone.has-browser-chrome {
+  display: grid;
+  grid-template-rows: var(--browser-top) minmax(0, 1fr) var(--browser-bottom);
+  overflow: hidden;
+}
+.v2-phone.has-browser-chrome.device-small { --browser-top: 7%; --browser-bottom: 10.8%; }
+.v2-phone.has-browser-chrome.device-standard { --browser-top: 8.5%; --browser-bottom: 14.15%; }
+.v2-phone.has-browser-chrome.device-large { --browser-top: 8.5%; --browser-bottom: 12.2%; }
+.v2-phone.has-browser-chrome .v2-phone-screen { height: auto; min-height: 0; border-radius: 0; }
 /* The phone's actual content (title, buttons, logo — all sized in lib/landing-catalog.ts
    against a ~390px-wide design) now lives inside <ScaledPhoneCanvas>, which renders it at that
    the real width of the device being shown and scales the whole thing as one block via CSS
@@ -251,7 +260,7 @@
      mobile topbar (62px here vs 72px) and stage padding are both smaller at this breakpoint. */
   .v2-phone.device-small,
   .v2-phone.device-standard,
-  .v2-phone.device-large { width: min(var(--v2-w), calc(100vw - 20px), max(200px, calc((100dvh - var(--global-nav-h) - 138px) * var(--v2-ratio)))); }
+  .v2-phone.device-large { width: min(var(--v2-w), calc(100vw - 20px), max(200px, calc((100dvh - var(--global-nav-h) - 138px) * var(--v2-fit)))); }
 
   /* Template pickers (the general "Elegí una plantilla" grid and "Plantilla de los botones"
      inside Editar botones) go from a static grid to a horizontal swipe carousel here — a 2-up
@@ -311,7 +320,12 @@
     background: transparent;
     box-shadow: none;
   }
-  .v2-phone-screen { border-radius: 0; height: auto; min-height: 100%; overflow: visible; }
+  .v2-phone.has-browser-chrome { display: block; }
+  .v2-phone.has-browser-chrome > .phone-browser-chrome { display: none; }
+  .v2-phone-screen,
+  .v2-phone.device-small .v2-phone-screen,
+  .v2-phone.device-standard .v2-phone-screen,
+  .v2-phone.device-large .v2-phone-screen { border-radius: 0; height: auto; min-height: 100%; overflow: visible; }
   /* Here the whole .v2-stage scrolls like a normal page instead of the canvas boxing its own
      scroll region — so the canvas gives up being a scroll container. */
   .scaled-phone-canvas { height: auto; min-height: 100%; overflow: visible; }

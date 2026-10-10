@@ -31,7 +31,7 @@ export default function ScaledPhoneCanvas({
    *  phone's screen is stretched to fill it (background reaches the bottom edge, NO scrolling —
    *  like a short real page on a real phone); a taller one scrolls — also like a real phone.
    *  "contain": scale so the WHOLE landing fits inside the container on both axes at once,
-   *  centered, no scrolling. Used by "Vista previa" on mobile. */
+   *  centered, no scrolling. Reserved for illustrative mockups, never a fidelity preview. */
   fit?: "width" | "contain";
   /** Use layout dimensions inside a rotated/scaled carousel item. */
   measureUntransformed?: boolean;

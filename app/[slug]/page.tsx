@@ -1,18 +1,35 @@
 import { cache } from "react";
 import type { CSSProperties } from "react";
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { unstable_cache } from "next/cache";
+import { createClient } from "@supabase/supabase-js";
 import { notFound, redirect } from "next/navigation";
 import LandingRenderer from "@/components/landing-renderer";
 import { parseTitleStyle } from "@/lib/landing-catalog";
 import { normalizeSource, trackLandingView } from "@/lib/track-view";
 import "../globals.css";
 
-const getLanding = cache(async (slug: string) => {
-  const supabase = await createClient();
-  const { data } = await supabase.from("landings").select("*").eq("slug", slug).eq("published", true).maybeSingle();
-  return data;
-});
+const publicSupabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+  { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } },
+);
+
+const getLanding = cache((slug: string) => unstable_cache(
+  async () => {
+    const { data } = await publicSupabase
+      .from("landings")
+      .select("*, actions(*)")
+      .eq("slug", slug)
+      .eq("published", true)
+      .eq("actions.enabled", true)
+      .order("position", { referencedTable: "actions" })
+      .maybeSingle();
+    return data;
+  },
+  ["public-landing", slug],
+  { revalidate: 300 },
+)());
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -41,14 +58,13 @@ export default async function Landing({ params, searchParams }: { params: Promis
   // con after(), así que esto no agrega nada al tiempo de respuesta.
   await trackLandingView(landing.id, normalizeSource((await searchParams).s), landing.owner_id);
   if (landing.redirect_url) redirect(landing.redirect_url);
-  const supabase = await createClient();
-  const { data: actions } = await supabase.from("actions").select("*").eq("landing_id", landing.id).eq("enabled", true).order("position");
+  const { actions, ...landingData } = landing;
   return (
     <div
       className="landing-page-shell"
-      style={{ "--landing-shell-color": landing.background_color || "#f7f5f0" } as CSSProperties}
+      style={{ "--landing-shell-color": landingData.background_color || "#f7f5f0" } as CSSProperties}
     >
-      <LandingRenderer landing={landing} actions={actions || []} />
+      <LandingRenderer landing={landingData} actions={actions || []} />
     </div>
   );
 }

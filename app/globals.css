@@ -422,7 +422,7 @@ a.contact-detail-row:hover { background: color-mix(in srgb, var(--contact-accent
 
 /* A second contact structure: an actual digital document rather than a recolored card. */
 .public.is-contact.contact-layout-document > .public-inner {
-  width: min(calc(100% - 24px), 430px);
+  width: min(100%, 430px);
   padding: 22px 22px 30px;
   border: 1px solid rgba(32, 38, 55, .12);
   border-radius: 12px;
@@ -616,7 +616,7 @@ a.contact-detail-row:hover { background: color-mix(in srgb, var(--contact-accent
 }
 .public.is-contact.contact-theme-essential > .public-inner,
 .public.is-contact.contact-theme-editorial > .public-inner {
-  width: min(calc(100% - 24px), 430px);
+  width: min(100%, 430px);
   padding: 0 0 18px;
   border: 1px solid color-mix(in srgb, var(--contact-ink) 13%, transparent);
   box-shadow: 0 17px 42px rgba(22, 26, 23, .14);
@@ -793,7 +793,7 @@ a.contact-detail-row:hover { background: color-mix(in srgb, var(--contact-accent
 
 /* Three distinct contact compositions; all reuse the same content and editor controls. */
 .public.is-contact:is(.contact-theme-studio, .contact-theme-monogram, .contact-theme-impact):not(.contact-layout-document) > .public-inner {
-  width: min(calc(100% - 24px), 430px);
+  width: min(100%, 430px);
   padding: 0 0 20px;
   overflow: hidden;
   background: var(--contact-surface);
@@ -1945,20 +1945,57 @@ button[aria-busy="true"] { cursor: wait; }
    used to stay fixed at the "Común" numbers for every variant, so "Chico" got a corner radius
    proportionally way too big for its width and "Grande" one too small — neither looked like an
    actual phone (reported: "los bordes... no parece un celular"). */
-.device-preview-frame.device-small { --preview-width: 360px; --preview-ratio: 360 / 640; --preview-radius: 39px; --preview-border: 8px; }
-.device-preview-frame.device-standard { --preview-width: 390px; --preview-ratio: 390 / 780; --preview-radius: 42px; --preview-border: 9px; }
-.device-preview-frame.device-large { --preview-width: 430px; --preview-ratio: 430 / 840; --preview-radius: 46px; --preview-border: 10px; }
+/* The bezel follows physical phone proportions. Browser chrome varies by browser and collapses
+   while scrolling, so the content keeps its real width and scrolls inside this stable frame. */
+.device-preview-frame.device-small { --preview-width: 375px; --preview-ratio: 375 / 667; --preview-fit: .40236; --preview-radius: 39px; --preview-border: 8px; }
+.device-preview-frame.device-standard { --preview-width: 390px; --preview-ratio: 390 / 844; --preview-fit: .41845; --preview-radius: 42px; --preview-border: 9px; }
+.device-preview-frame.device-large { --preview-width: 430px; --preview-ratio: 430 / 932; --preview-fit: .46137; --preview-radius: 46px; --preview-border: 10px; }
 .device-preview-frame.device-small,
 .device-preview-frame.device-standard,
 .device-preview-frame.device-large {
   aspect-ratio: var(--preview-ratio);
-  width: min(var(--preview-width), calc(100vw - 48px), max(260px, calc((100dvh - var(--global-nav-h) - 104px) * var(--preview-ratio))));
+  width: min(var(--preview-width), calc(100vw - 48px), max(220px, calc((100dvh - var(--global-nav-h) - 104px) * var(--preview-fit))));
   height: auto;
+  display: grid;
+  grid-template-rows: var(--browser-top) minmax(0, 1fr) var(--browser-bottom);
   border-width: var(--preview-border);
   border-style: solid;
   border-color: #18191e;
   border-radius: var(--preview-radius);
 }
+.device-preview-frame.device-small { --browser-top: 7%; --browser-bottom: 10.8%; }
+.device-preview-frame.device-standard { --browser-top: 8.5%; --browser-bottom: 14.15%; }
+.device-preview-frame.device-large { --browser-top: 8.5%; --browser-bottom: 12.2%; }
+
+/* A restrained Safari-like shell: it reserves the browser UI that reduces the initial mobile
+   viewport, while keeping the landing itself at its real design width and fully interactive. */
+.phone-browser-chrome {
+  position: relative;
+  z-index: 8;
+  min-height: 0;
+  overflow: hidden;
+  background: rgba(238, 240, 245, .98);
+  color: #17181c;
+  font-family: Arial, sans-serif;
+  pointer-events: none;
+  user-select: none;
+}
+.phone-browser-top { display: grid; grid-template-columns: 1fr auto 1fr; align-items: start; padding: 9px 15px 6px; border-bottom: 1px solid rgba(22,24,29,.12); font-size: 10px; font-weight: 750; box-shadow: 0 2px 8px rgba(16,18,24,.08); }
+.phone-browser-time { padding-top: 3px; }
+.phone-browser-island { width: 29%; min-width: 64px; max-width: 108px; height: 18px; border-radius: 999px; background: #050506; box-shadow: inset 0 0 0 1px rgba(255,255,255,.05); }
+.phone-browser-status { display: flex; justify-self: end; align-items: end; gap: 3px; height: 12px; padding-top: 2px; }
+.phone-browser-status i:first-child { width: 12px; height: 8px; border-bottom: 2px solid currentColor; clip-path: polygon(0 100%,18% 66%,36% 76%,55% 38%,73% 51%,100% 0,100% 100%); background: currentColor; }
+.phone-browser-status i:nth-child(2) { width: 10px; height: 7px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; transform: rotate(45deg); }
+.phone-browser-status b { width: 14px; height: 7px; border: 1.5px solid currentColor; border-radius: 2px; box-shadow: inset 9px 0 currentColor; }
+.phone-browser-bottom { display: grid; grid-template-rows: auto 1fr auto; align-items: center; gap: 4px; padding: 7px 12px 5px; border-top: 1px solid rgba(22,24,29,.16); box-shadow: 0 -3px 10px rgba(16,18,24,.09); }
+.phone-browser-address { min-width: 0; height: 28px; display: grid; grid-template-columns: auto auto minmax(0,1fr) auto; align-items: center; gap: 6px; padding: 0 9px; border: 1px solid rgba(32,34,42,.08); border-radius: 9px; background: #fff; box-shadow: 0 1px 4px rgba(24,26,33,.08); font-size: 8px; }
+.phone-browser-address span { font-size: 8px; font-weight: 800; }
+.phone-browser-address strong { color: #777980; font-size: 8px; }
+.phone-browser-address em { overflow: hidden; color: #303238; font-style: normal; font-weight: 700; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+.phone-browser-address b { color: #777980; font-size: 10px; }
+.phone-browser-toolbar { display: flex; align-items: center; justify-content: space-around; color: #3b3d43; font-size: 15px; line-height: 1; }
+.phone-browser-toolbar span:nth-child(2) { opacity: .35; }
+.phone-browser-home { justify-self: center; width: 32%; max-width: 120px; height: 3px; border-radius: 999px; background: #17181c; }
 /* The device-frame preview's content is the same <ScaledPhoneCanvas> used by the editor (see
    components/scaled-phone-canvas.tsx and .scaled-phone-canvas below) — it renders the landing at
    its real ~390px design size and scales the whole thing to fit whatever width .device-preview-
@@ -1970,18 +2007,13 @@ button[aria-busy="true"] { cursor: wait; }
   .device-preview-switcher { grid-column: 1 / -1; width: 100%; overflow-x: auto; }
   .device-preview-switcher button { flex: 1 0 auto; }
   .device-preview-stage { height: calc(100dvh - var(--global-nav-h) - 112px); padding: 8px; }
-  /* Mobile is the one place this frame DOES shrink to fit available height — the opposite of
-     the true-size-and-scroll rule above. On a real phone the frame already spans nearly the
-     whole screen, so a second internal scroll inside a phone-shaped box that big feels
-     redundant ("en mobile quiero que se vea entero el celular con todos sus botones, no
-     scrolleable"). Bringing back a height-driven term here (removed from the base rule on
-     purpose, desktop keeps true size) shrinks the WHOLE frame — bezel included — to fit; its
-     <ScaledPhoneCanvas fit="contain"> content (see device-preview.tsx) then shrinks to match
-     whatever room is left inside it, so nothing ever needs to scroll on mobile. */
+  /* The frame may shrink to fit the available screen, but its content remains in `fit="width"`
+     mode. This preserves real text/button sizes and the same scrolling behavior as the public
+     landing instead of squeezing the entire page vertically just to show it all at once. */
   .device-preview-frame.device-small,
   .device-preview-frame.device-standard,
   .device-preview-frame.device-large {
-    width: min(var(--preview-width,390px), calc(100vw - 16px), calc((100dvh - var(--global-nav-h) - 128px) * var(--preview-ratio)));
+    width: min(var(--preview-width,390px), calc(100vw - 16px), calc((100dvh - var(--global-nav-h) - 128px) * var(--preview-fit)));
     /* Scaled down from the desktop --preview-border/--preview-radius values (roughly ×0.75),
        same proportions — a flat 6px/32px here regardless of variant was the same "doesn't scale
        per size" bug as the desktop rule, just at mobile's smaller scale. */
@@ -2540,19 +2572,38 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
 .landing-branding .bx-logo-word { font: 800 13px / 1 Arial, sans-serif; letter-spacing: -.035em; }
 .landing-branding .bx-logo-nfc { background: none; color: inherit; }
 .landing-branding .bx-logo-waves { width: 11px; height: 11px; stroke: currentColor; flex: none; }
-.landing-branding a:hover { color: #36303f; }
+.landing-branding a:hover { color: var(--branding-ink, #36303f); }
 .landing-branding a:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
-.landing-branding[data-tone="dark"] a:hover { color: #fff; }
-/* Over a photo the credit can land on anything, so it gets a soft dark halo to stay readable
-   without having to shout — flat grey text alone disappeared on bright parts of an image. */
-.public-bg-image .landing-branding a,
-.public-bg-image .landing-socials[data-filled="no"] a { text-shadow: 0 1px 6px rgba(0, 0, 0, .55); }
+/* A photo can be white, black or change underneath the credit. A restrained dark-glass pill
+   provides deterministic contrast without making the signature compete with the page. Contact
+   cards are excluded because their credit sits on --contact-surface, not on the outer photo. */
+.public-bg-image:not(.is-contact) .landing-branding a {
+  --branding-pill: rgba(9, 12, 18, .68);
+  --branding-pill-hover: rgba(9, 12, 18, .82);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, .14);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .2);
+  text-shadow: none;
+}
+.public-bg-image:not(.is-contact) .landing-branding-label { opacity: .78; }
+.public.is-contact .landing-branding a {
+  --branding-pill: color-mix(in srgb, var(--contact-ink) 8%, var(--contact-surface));
+  --branding-pill-hover: color-mix(in srgb, var(--contact-ink) 13%, var(--contact-surface));
+  color: var(--contact-ink);
+  border: 1px solid color-mix(in srgb, var(--contact-ink) 12%, transparent);
+  text-shadow: none;
+}
+.public-bg-image .landing-socials[data-filled="no"] a {
+  text-shadow: 0 1px 6px rgba(0, 0, 0, .55);
+}
 
 /* Short pages fill the screen; long pages push the credit below their links. */
 .public.has-branding { display: flex; flex-direction: column; min-height: 100svh; padding-bottom: max(20px, env(safe-area-inset-bottom)); }
 .public.has-branding > .public-inner { display: flex; flex-direction: column; flex: 1 0 auto; margin: 0 auto; }
 .public.has-branding .landing-header-region, .public.has-branding .public-actions { flex-shrink: 0; }
 .public.has-branding .landing-branding { flex-shrink: 0; margin-top: auto; padding-top: 20px; }
+.public.has-branding.is-contact > .public-inner { flex-grow: 0; }
+.public.has-branding.is-contact .landing-branding { margin-top: 26px; padding-top: 0; }
 .scaled-phone-canvas .public.has-branding { min-height: 0; }
 
 /* Editor-only control: a small badge peeking out of the button's own top-right corner (half

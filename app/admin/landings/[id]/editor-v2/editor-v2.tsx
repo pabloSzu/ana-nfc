@@ -10,6 +10,7 @@ import DeleteLandingButton from "@/app/admin/delete-landing-button";
 import LandingRenderer, { LandingPhotoBackground, type LandingEditControls } from "@/components/landing-renderer";
 import ContactSaveIcon from "@/components/contact-save-icon";
 import ScaledPhoneCanvas from "@/components/scaled-phone-canvas";
+import PhoneBrowserChrome from "@/components/phone-browser-chrome";
 import { compressImage } from "@/lib/compress-image";
 import { headerCardOn, parseDistribution, recommendedContactCoverPattern, type DistributionStyle, QUICK_SOCIALS, quickSocialHref, type QuickSocial, AUTO_COLORS, contrastTextColor, hexToRgba, getAllActions, parseCoverStyle, parseLogoStyle, logoBackgroundColor, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize, resolveTextFont, FONT_OPTIONS, COVER_SIZE_EXTRA, type BackgroundPosition, type ButtonZoneStyle, type CoverStyle, type LogoStyle, type SubtitleStyle, type TitleStyle } from "@/lib/landing-catalog";
 import FontPicker from "../font-picker";
@@ -43,10 +44,15 @@ const SIZES = [
 const BRAND_BUTTON_TYPES = new Set(["whatsapp", "instagram", "tiktok", "facebook", "linkedin", "youtube", "spotify", "telegram", "mercadopago", "maps", "review"]);
 const PDF_TITLE_OPTIONS = ["Ver CV", "Ver catálogo", "Ver menú", "Ver portfolio"];
 const DEVICE_OPTIONS: { id: DeviceMode; label: string; size: string; width: number }[] = [
-  { id: "small", label: "Chico", size: "360 px", width: 360 },
-  { id: "standard", label: "Común", size: "390 px", width: 390 },
-  { id: "large", label: "Grande", size: "430 px", width: 430 },
+  { id: "small", label: "Compacto", size: "375 × 667 px · iPhone SE/8", width: 375 },
+  { id: "standard", label: "Estándar", size: "390 × 844 px · iPhone 12–14", width: 390 },
+  { id: "large", label: "Grande", size: "430 × 932 px · Pro Max", width: 430 },
 ];
+const LANDING_DENSITY_PRESETS = [
+  { name: "Compacto", top: 48, logoGap: 10, buttonsGap: 4, socialsGap: 6, gap: 7, height: 48 },
+  { name: "Equilibrado", top: 64, logoGap: 18, buttonsGap: 10, socialsGap: 12, gap: 9, height: 52 },
+  { name: "Amplio", top: 88, logoGap: 30, buttonsGap: 30, socialsGap: 24, gap: 13, height: 58 },
+] as const;
 function draftDisplayTitle(draft: LandingDraft): string {
   return draft.business_type === "contact" ? draft.business_name : draft.titleStyle.headline || draft.business_name;
 }
@@ -877,12 +883,14 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
         <section className={`v2-stage device-${device}`}>
           <ThemeSceneLayer theme={editorTheme} />
           <div className="v2-stage-toolbar"><span>{preview ? "Vista limpia" : "Tamaño de pantalla"}</span><div className="v2-device-switcher">{DEVICE_OPTIONS.map((option) => <button key={option.id} type="button" className={device === option.id ? "active" : ""} title={option.size} onClick={() => setDevice(option.id)}>{option.label}</button>)}</div></div>
-          <div className={`v2-phone device-${device}`}>
+          <div className={`v2-phone device-${device}${preview ? " has-browser-chrome" : ""}`}>
+            {preview ? <PhoneBrowserChrome position="top" /> : null}
             <div className="v2-phone-screen" ref={buttonsContainerRef}>
               <ScaledPhoneCanvas className="scaled-phone-canvas" designWidth={DEVICE_OPTIONS.find((option) => option.id === device)?.width} photoBackground={draft.background_type === "image" ? <LandingPhotoBackground landing={rendererLanding} /> : undefined} onScaleChange={(next) => { phoneScaleRef.current = next; }}>
                 <LandingRenderer landing={rendererLanding} actions={preview && cvPreviewUrl ? buttons.map((button) => button.type === "cv" ? { ...button, url: cvPreviewUrl } : button) : buttons} edit={preview ? undefined : editControls} editorPreview={preview} externalPhotoBackground={draft.background_type === "image"} />
               </ScaledPhoneCanvas>
             </div>
+            {preview ? <PhoneBrowserChrome position="bottom" /> : null}
           </div>
         </section>
       </div>
@@ -1345,13 +1353,26 @@ function DistributionControls({ draft, onZone }: { draft: LandingDraft; onZone: 
     return Math.round(style.top + coverReserve);
   };
   const update = (patch: Partial<DistributionStyle>) => onZone({ distribution: { ...style, coverHeight: style.coverHeight ?? legacyCoverHeight(), ...patch } });
+  const applyDensity = ({ top, logoGap, buttonsGap, socialsGap, gap, height }: (typeof LANDING_DENSITY_PRESETS)[number]) => onZone({
+    gap,
+    height,
+    distribution: {
+      ...style,
+      coverHeight: style.coverHeight ?? legacyCoverHeight(),
+      top: isBanner ? style.top : top,
+      logoGap,
+      buttonsGap,
+      socialsGap,
+    },
+  });
   return <div className="v2-fields">
-    <p className="v2-help">Ajustá el aire entre los elementos. El contenido conserva su orden y se adapta al celular.</p>
-<EditorSection title="Posición y espacios" tone="blue">    <div className="v2-segment">{[
-      {name:"Compacto",top:48,logoGap:10,buttonsGap:4,socialsGap:6},
-      {name:"Equilibrado",top:64,logoGap:18,buttonsGap:10,socialsGap:12},
-      {name:"Amplio",top:88,logoGap:30,buttonsGap:30,socialsGap:24},
-    ].map(({name,...spaces})=><button type="button" key={name} onClick={()=>update({...spaces,...(isBanner?{top:style.top}:{})})}>{name}</button>)}</div>
+    <p className="v2-help">Elegí la densidad general y después, si querés, ajustá cada espacio. “Compacto” da una apariencia más ágil, tipo Linktree.</p>
+<EditorSection title="Densidad y espacios" tone="blue">    <div className="v2-segment">{
+      LANDING_DENSITY_PRESETS.map((preset) => {
+        const active = style.logoGap === preset.logoGap && style.buttonsGap === preset.buttonsGap && style.socialsGap === preset.socialsGap && draft.buttonZone.gap === preset.gap && draft.buttonZone.height === preset.height && (isBanner || style.top === preset.top);
+        return <button type="button" key={preset.name} className={active ? "active" : ""} aria-pressed={active} onClick={() => applyDensity(preset)}>{preset.name}</button>;
+      })
+    }</div>
     {isBanner ? <p className="v2-help" style={{margin:0}}>La portada banner mantiene automáticamente el logo apoyado sobre su borde.</p> : <Range label="Espacio superior" min={48} max={320} value={style.top} onChange={top=>update({top})}/>}
     <Range label={draft.buttonZone.layout === "compact" ? "Separación del logo (horizontal)" : "Espacio debajo del logo"} min={0} max={64} value={style.logoGap} onChange={logoGap=>update({logoGap})}/>
     <Range label="Separación de la botonera" min={0} max={100} value={style.buttonsGap} onChange={buttonsGap=>update({buttonsGap})}/>

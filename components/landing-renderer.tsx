@@ -10,6 +10,7 @@ import { getFontFamily, resolveFontWeight, resolveTextFont, FontLinks, LogoIniti
 import { buttonCollectionStyle, buttonCollectionWidth, buttonIconStyle, instagramAssetMode, resolveButtonColors, shouldUseBrandMark, youtubeMarkSurfaceColor } from "@/lib/design-presets";
 import { ActionTypeIcon, hasCustomActionIcon } from "@/components/action-icons";
 import { IconEdit, IconImage } from "@/components/icons";
+import { landingImageUrl } from "@/lib/landing-image";
 import type { CSSProperties } from "react";
 
 type LandingAction = {
@@ -77,7 +78,7 @@ export function LandingPhotoBackground({ landing }: { landing: Landing }) {
   return <div className="public-photo-viewport">
     <div className="public-photo-image" style={{
       backgroundColor: landing.background_color || "#f7f5f0",
-      backgroundImage: landing.background_image_url ? `url(${JSON.stringify(landing.background_image_url)})` : "none",
+      backgroundImage: landing.background_image_url ? `url(${JSON.stringify(landingImageUrl(landing.background_image_url, 1080))})` : "none",
       backgroundSize: "cover",
       backgroundPosition: `${position.x}% ${position.y}%`,
       backgroundRepeat: "no-repeat",
@@ -247,14 +248,20 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
   // Same perceived weight on every template, instead of a fixed opacity that reads bold on a
   // black page and disappears on a bright one. Photo backgrounds can be any color at any point,
   // so those stay on plain white plus the halo the stylesheet adds.
-  const brandingInk = landing.background_type === "image" ? "rgba(255, 255, 255, .92)" : readableInk(bottomBackdrop);
+  // Contact credits sit on the card surface, not on the outer page background. Using the
+  // background photo to choose their ink made a white card request white lettering and the
+  // credit nearly disappeared. Photo-based link pages get their contrast from the dark glass
+  // pill in CSS; their ink stays white regardless of the pixels behind it.
+  const brandingInk = isContact ? contactInk : landing.background_type === "image" ? "#ffffff" : readableInk(bottomBackdrop);
   const publicTitle = isContact ? landing.business_name : title.headline || landing.business_name;
+  const optimizedLogoUrl = landingImageUrl(landing.logo_url, 384);
+  const optimizedCoverUrl = landingImageUrl(contactHeroImage || coverImageUrl, 1080);
   const heading = (
     <h1
       className={edit ? "editor-hit" : undefined}
       data-tag={isContact ? "Nombre" : "Título"}
       onClick={edit?.onSelectTitle}
-      style={{ fontFamily: resolveTextFont(title.font), letterSpacing: title.letterSpacing === undefined ? undefined : `${title.letterSpacing}em`, lineHeight: title.lineHeight, maxWidth: isContact ? undefined : title.maxWidth, textTransform: isContact ? undefined : title.transform, whiteSpace: "pre-line", overflowWrap: "anywhere", fontWeight: editableContactTypography ? title.weight : resolveFontWeight(title.font, title.weight), fontStyle: title.italic ? "italic" : "normal", fontSynthesis: editableContactTypography ? "style weight" : "none", fontSize: title.size, color: title.color, backgroundColor: isDocument ? "transparent" : title.bgMode === "solid" ? hexToRgba(title.bg, 0.55) : "transparent", textAlign: isDocument ? "left" : title.align, borderRadius: 12, padding: isDocument ? 0 : title.bgMode === "solid" ? "4px 10px" : 0, margin: "0 0 7px", display: "inline-block", position: edit ? "relative" : undefined }}
+      style={{ fontFamily: resolveTextFont(title.font), letterSpacing: title.letterSpacing === undefined ? undefined : `${title.letterSpacing}em`, lineHeight: title.lineHeight, maxWidth: isContact ? undefined : title.maxWidth, textTransform: isContact ? undefined : title.transform, whiteSpace: "pre-line", overflowWrap: isContact ? "normal" : "anywhere", wordBreak: isContact ? "normal" : undefined, fontWeight: editableContactTypography ? title.weight : resolveFontWeight(title.font, title.weight), fontStyle: title.italic ? "italic" : "normal", fontSynthesis: editableContactTypography ? "style weight" : "none", fontSize: title.size, color: title.color, backgroundColor: isDocument ? "transparent" : title.bgMode === "solid" ? hexToRgba(title.bg, 0.55) : "transparent", textAlign: isDocument ? "left" : title.align, borderRadius: 12, padding: isDocument ? 0 : title.bgMode === "solid" ? "4px 10px" : 0, margin: "0 0 7px", display: "inline-block", position: edit ? "relative" : undefined }}
     >
       {publicTitle}
     </h1>
@@ -322,7 +329,7 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
       <div className={`public-inner layout-${layoutClass}${hasHeaderCard ? " has-header-card" : ""}`} style={{ position: "relative", zIndex: 2 }}>
         <div className={`landing-header-region${isContact ? " contact-hero" : ""}`} style={showCover ? ({ "--cover-h": `${coverReserve}px` } as CSSProperties) : undefined}>
         {isContact && <div className={`contact-hero-art contact-cover-pattern-${zone.contactCoverPattern || "original"}${edit ? " editor-hit" : ""}`} role={edit ? "button" : undefined} aria-label={edit ? "Editar portada de la tarjeta" : undefined} tabIndex={edit ? 0 : undefined} data-tag={edit ? "Portada" : undefined} onClick={edit?.onSelectCover} onKeyDown={edit ? (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); edit.onSelectCover(); } } : undefined} style={{ height: CONTACT_COVER_HEIGHT[cover.size] }}>
-          {contactHeroImage && <div className="contact-hero-photo-mask" aria-hidden="true" style={{ maskImage: cover.mode === "fade" ? coverFadeGradient(cover.fade) : undefined }}><div className="contact-hero-photo-canvas"><div className="contact-hero-photo" style={{ backgroundImage: `url(${JSON.stringify(contactHeroImage)})`, backgroundPosition: `${cover.x}% ${cover.y}%`, transform: `scale(${cover.zoom})`, transformOrigin: `${cover.x}% ${cover.y}%` }} /></div></div>}
+          {contactHeroImage && <div className="contact-hero-photo-mask" aria-hidden="true" style={{ maskImage: cover.mode === "fade" ? coverFadeGradient(cover.fade) : undefined }}><div className="contact-hero-photo-canvas"><div className="contact-hero-photo" style={{ backgroundImage: `url(${JSON.stringify(optimizedCoverUrl)})`, backgroundPosition: `${cover.x}% ${cover.y}%`, transform: `scale(${cover.zoom})`, transformOrigin: `${cover.x}% ${cover.y}%` }} /></div></div>}
           {contactHeroImage && !isSampleCover && <div className="contact-hero-veil" aria-hidden="true" style={{ background: `rgba(0,0,0,${cover.overlay})`, maskImage: cover.mode === "fade" ? coverFadeGradient(cover.fade) : undefined }} />}
           <span>{isSampleCover ? "FOTO DE EJEMPLO · SUBÍ LA TUYA" : isDocument ? "FICHA PROFESIONAL" : "TARJETA PERSONAL"}</span>
         </div>}
@@ -330,7 +337,7 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
           // The banner runs from the very top of the page down to the middle of the logo, with a
           // hard edge, so the logo sits half on the photo and half on the page.
           <div data-landing-cover className={`landing-cover-bg${isBanner ? " is-banner" : ""}${isSampleCover ? " is-sample" : ""}`} aria-hidden="true" style={isBanner ? { height: distribution.coverHeight ? `${distribution.coverHeight}px` : `calc(var(--landing-top) + ${logo.size / 2}px)` } : { height: distribution.coverHeight ? `${distribution.coverHeight}px` : undefined, maskImage: coverFadeGradient(cover.fade) }}>
-            {stableCoverCanvasHeight ? <div className="landing-cover-photo-canvas" style={{ height: stableCoverCanvasHeight }}><div className="landing-cover-photo" style={{ backgroundImage: `url(${JSON.stringify(coverImageUrl)})`, backgroundPosition: `${cover.x}% ${cover.y}%`, transform: `scale(${cover.zoom})`, transformOrigin: `${cover.x}% ${cover.y}%` }} /></div> : <div className="landing-cover-photo" style={{ backgroundImage: `url(${JSON.stringify(coverImageUrl)})`, backgroundPosition: `${cover.x}% ${cover.y}%`, transform: `scale(${cover.zoom})`, transformOrigin: `${cover.x}% ${cover.y}%` }} />}
+            {stableCoverCanvasHeight ? <div className="landing-cover-photo-canvas" style={{ height: stableCoverCanvasHeight }}><div className="landing-cover-photo" style={{ backgroundImage: `url(${JSON.stringify(optimizedCoverUrl)})`, backgroundPosition: `${cover.x}% ${cover.y}%`, transform: `scale(${cover.zoom})`, transformOrigin: `${cover.x}% ${cover.y}%` }} /></div> : <div className="landing-cover-photo" style={{ backgroundImage: `url(${JSON.stringify(optimizedCoverUrl)})`, backgroundPosition: `${cover.x}% ${cover.y}%`, transform: `scale(${cover.zoom})`, transformOrigin: `${cover.x}% ${cover.y}%` }} />}
             {/* The sample photo shows as-is: darkening is a per-photo choice, and applied to a
                 stand-in it only makes the preview look muddier than the real thing will. */}
             {!isSampleCover && <div className="landing-cover-veil" style={{ background: isBanner ? `rgba(0, 0, 0, ${cover.overlay})` : hexToRgba(cover.overlayColor || contrastTextColor(title.color), cover.overlay) }} />}
@@ -346,10 +353,10 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
         >
           {landing.logo_url && isContact ? (
             <div style={{ position: "relative", width: "100%", height: "100%", borderRadius: "inherit", overflow: "hidden" }}>
-              <div style={{ position: "absolute", inset: 0, backgroundImage: `url(${JSON.stringify(landing.logo_url)})`, backgroundSize: "cover", backgroundPosition: `${logo.x}% ${logo.y}%`, backgroundRepeat: "no-repeat", transform: `scale(${logo.zoom})`, transformOrigin: `${logo.x}% ${logo.y}%` }} />
+              <div style={{ position: "absolute", inset: 0, backgroundImage: `url(${JSON.stringify(optimizedLogoUrl)})`, backgroundSize: "cover", backgroundPosition: `${logo.x}% ${logo.y}%`, backgroundRepeat: "no-repeat", transform: `scale(${logo.zoom})`, transformOrigin: `${logo.x}% ${logo.y}%` }} />
             </div>
           ) : landing.logo_url ? (
-            <div style={{ width: "100%", height: "100%", borderRadius: "inherit", overflow: "hidden", backgroundImage: `url(${landing.logo_url})`, backgroundSize: `${logo.zoom * 100}%`, backgroundPosition: `${logo.x}% ${logo.y}%`, backgroundRepeat: "no-repeat" }} />
+            <div style={{ width: "100%", height: "100%", borderRadius: "inherit", overflow: "hidden", backgroundImage: `url(${JSON.stringify(optimizedLogoUrl)})`, backgroundSize: `${logo.zoom * 100}%`, backgroundPosition: `${logo.x}% ${logo.y}%`, backgroundRepeat: "no-repeat" }} />
           ) : (
             <div style={{ width: "100%", height: "100%", borderRadius: "inherit", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: resolveTextFont(title.font) }}><LogoInitials font={title.font}>{logoInitials(publicTitle, logo.initials)}</LogoInitials></div>
           )}
@@ -377,7 +384,7 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
           </div>}
           {saveContactAction}
         </div>}
-        <div className={`public-actions${edit?.selected === "buttons" ? " editor-zone-selected" : ""}`} style={{ position: "relative", marginTop: isContact ? contactLinksMargin : distribution.buttonsGap + (edit ? 34 : 0), display: "flex", flexDirection: "column", gap: isContact ? 10 : zone.gap }}>
+        <div className={`public-actions${edit?.selected === "buttons" ? " editor-zone-selected" : ""}`} style={{ position: "relative", marginTop: isContact ? contactLinksMargin : distribution.buttonsGap, display: "flex", flexDirection: "column", gap: isContact ? 10 : zone.gap }}>
           {edit && !isContact && <button type="button" className="editor-zone-tag" onClick={edit.onSelectZone}>✦ Editar todos los botones</button>}
           {contentActions.map((action, index) => {
             const { background: bg, text, isAuthentic, useNetworkAccent } = resolveButtonColors({
