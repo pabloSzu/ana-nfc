@@ -1957,7 +1957,10 @@ button[aria-busy="true"] { cursor: wait; }
 .device-preview-frame.device-standard,
 .device-preview-frame.device-large {
   aspect-ratio: var(--preview-ratio);
-  width: min(var(--preview-width), calc(100vw - 48px), max(220px, calc((100dvh - var(--global-nav-h) - 116px) * var(--preview-fit))));
+  /* Toolbar (86px) plus the stage's 18px top and bottom padding leaves exactly
+     100dvh - nav - 122px for the complete phone. Using 116px here made the frame 6px taller
+     than its available box and created a tiny, artificial stage scroll. */
+  width: min(var(--preview-width), calc(100vw - 48px), max(220px, calc((100dvh - var(--global-nav-h) - 122px) * var(--preview-fit))));
   height: auto;
   display: grid;
   grid-template-rows: var(--browser-top) minmax(0, 1fr) var(--browser-bottom);

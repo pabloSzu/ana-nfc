@@ -229,7 +229,9 @@
 .v2-phone.device-standard,
 .v2-phone.device-large {
   aspect-ratio: var(--v2-ratio);
-  width: min(var(--v2-w), calc(100vw - 20px), max(200px, calc((100dvh - var(--global-nav-h) - 146px) * var(--v2-fit))));
+  /* Editor workspace (topbar 72px) plus preview-stage padding (66px + 14px) leaves
+     100dvh - nav - 152px. Matching that exact room prevents the same 6px outer scroll here. */
+  width: min(var(--v2-w), calc(100vw - 20px), max(200px, calc((100dvh - var(--global-nav-h) - 152px) * var(--v2-fit))));
   height: auto;
   border-radius: var(--v2-radius);
   border-width: var(--v2-border);
