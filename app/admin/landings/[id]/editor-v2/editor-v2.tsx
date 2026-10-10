@@ -44,9 +44,9 @@ const SIZES = [
 const BRAND_BUTTON_TYPES = new Set(["whatsapp", "instagram", "tiktok", "facebook", "linkedin", "youtube", "spotify", "telegram", "mercadopago", "maps", "review"]);
 const PDF_TITLE_OPTIONS = ["Ver CV", "Ver catálogo", "Ver menú", "Ver portfolio"];
 const DEVICE_OPTIONS: { id: DeviceMode; label: string; size: string; width: number }[] = [
-  { id: "small", label: "Compacto", size: "375 × 667 px · iPhone SE/8", width: 375 },
-  { id: "standard", label: "Estándar", size: "390 × 844 px · iPhone 12–14", width: 390 },
-  { id: "large", label: "Grande", size: "430 × 932 px · Pro Max", width: 430 },
+  { id: "small", label: "Compacto", size: "iPhone SE / 8 · 375 × 667 px", width: 375 },
+  { id: "standard", label: "Estándar", size: "iPhone 12–14 · 390 × 844 px", width: 390 },
+  { id: "large", label: "Grande", size: "iPhone Pro Max · 430 × 932 px", width: 430 },
 ];
 const LANDING_DENSITY_PRESETS = [
   { name: "Compacto", top: 48, logoGap: 10, buttonsGap: 4, socialsGap: 6, gap: 7, height: 48 },
@@ -880,13 +880,13 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
           {activeButton && <ButtonControls button={activeButton} draft={draft} cvFileName={cvFileName} cvFileError={cvFileError} iconUploading={iconUploadingId === activeButton.id} iconUploadError={iconUploadError?.buttonId === activeButton.id ? iconUploadError.message : ""} onIconFile={(file) => uploadButtonIcon(activeButton.id, file)} onClearCvFile={clearSelectedCvFile} onChange={(patch) => { setIconUploadError(null); changeButton(activeButton.id, patch); }} onDelete={() => activeButton.type === "cv" ? removeCv() : deleteButton(activeButton.id)} />}
         </aside>}
 
-        <section className={`v2-stage device-${device}`}>
+        <section className="v2-stage">
           <ThemeSceneLayer theme={editorTheme} />
-          <div className="v2-stage-toolbar"><span>{preview ? "Vista limpia" : "Tamaño de pantalla"}</span><div className="v2-device-switcher">{DEVICE_OPTIONS.map((option) => <button key={option.id} type="button" className={device === option.id ? "active" : ""} title={option.size} onClick={() => setDevice(option.id)}>{option.label}</button>)}</div></div>
-          <div className={`v2-phone device-${device}${preview ? " has-browser-chrome" : ""}`}>
+          {preview ? <div className="v2-stage-toolbar preview-device-toolbar"><span>Probá distintos celulares</span><div className="v2-device-switcher">{DEVICE_OPTIONS.map((option) => <button key={option.id} type="button" className={device === option.id ? "active" : ""} aria-pressed={device === option.id} title={option.size} onClick={() => setDevice(option.id)}>{option.label}</button>)}</div></div> : null}
+          <div className={`v2-phone ${preview ? `device-${device} has-browser-chrome` : "editor-phone"}`}>
             {preview ? <PhoneBrowserChrome position="top" /> : null}
             <div className="v2-phone-screen" ref={buttonsContainerRef}>
-              <ScaledPhoneCanvas className="scaled-phone-canvas" designWidth={DEVICE_OPTIONS.find((option) => option.id === device)?.width} photoBackground={draft.background_type === "image" ? <LandingPhotoBackground landing={rendererLanding} /> : undefined} onScaleChange={(next) => { phoneScaleRef.current = next; }}>
+              <ScaledPhoneCanvas className="scaled-phone-canvas" designWidth={preview ? DEVICE_OPTIONS.find((option) => option.id === device)?.width : 390} photoBackground={draft.background_type === "image" ? <LandingPhotoBackground landing={rendererLanding} /> : undefined} onScaleChange={(next) => { phoneScaleRef.current = next; }}>
                 <LandingRenderer landing={rendererLanding} actions={preview && cvPreviewUrl ? buttons.map((button) => button.type === "cv" ? { ...button, url: cvPreviewUrl } : button) : buttons} edit={preview ? undefined : editControls} editorPreview={preview} externalPhotoBackground={draft.background_type === "image"} />
               </ScaledPhoneCanvas>
             </div>

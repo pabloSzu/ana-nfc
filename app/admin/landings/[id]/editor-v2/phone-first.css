@@ -92,7 +92,7 @@
      ~400px width and a ~40px gap folded in as a constant: -560+400+40 = -120), so the gap
      between the phone's right edge and the panel's left edge stays ~40px at any viewport
      width instead of the two drifting apart on wide screens. */
-  left: max(472px, calc(50vw - 120px));
+  left: max(492px, calc(50vw - 100px));
   width: 500px;
   max-height: calc(100dvh - var(--global-nav-h) - 108px);
   border: 1px solid rgba(224, 226, 236, 0.95);
@@ -184,7 +184,8 @@
   .v2-panel { animation: none; }
 }
 
-.v2-stage { padding-top: 60px; padding-bottom: 14px; }
+.v2-stage { padding-top: 14px; padding-bottom: 14px; }
+.is-preview .v2-stage { padding-top: 66px; }
 .v2-stage-toolbar {
   position: absolute;
   z-index: 12;
@@ -209,6 +210,10 @@
 .v2-device-switcher { display: flex; gap: 2px; padding: 2px; border-radius: 10px; background: #f0f1f5; }
 .v2-device-switcher button { border: 0; border-radius: 8px; padding: 6px 8px; background: transparent; color: #6d7180; font-size: 9px; font-weight: 850; cursor: pointer; }
 .v2-device-switcher button.active { background: #fff; color: #5749d5; box-shadow: 0 2px 7px rgba(28,30,42,.11); }
+.preview-device-toolbar { padding: 6px 7px 6px 13px; border-color: rgba(101, 86, 223, .23); box-shadow: 0 10px 28px rgba(53, 43, 133, .15); }
+.preview-device-toolbar > span { color: #4f43c0; font-size: 10px; }
+.preview-device-toolbar .v2-device-switcher { padding: 3px; }
+.preview-device-toolbar .v2-device-switcher button { padding: 7px 10px; }
 /* Same "the whole phone always fits, content scrolls inside instead" reasoning as the base
    .v2-phone rule above — each variant keeps its physical device width/aspect ratio (via
    --v2-ratio), then shrinks as a WHOLE (bezel included, via the height-driven term in width)
@@ -232,6 +237,21 @@
 .v2-phone.device-small .v2-phone-screen { border-radius: calc(var(--v2-radius) - 4px); }
 .v2-phone.device-standard .v2-phone-screen { border-radius: calc(var(--v2-radius) - 5px); }
 .v2-phone.device-large .v2-phone-screen { border-radius: calc(var(--v2-radius) - 6px); }
+/* Editing is a workspace, not another device test. Keep one roomy, stable canvas here; the
+   three real viewport proportions live in the dedicated preview where they can be compared
+   without making the controls and content shrink while somebody is designing. */
+.v2-phone.editor-phone {
+  aspect-ratio: 400 / 780;
+  width: min(
+    420px,
+    calc(100vw - 40px),
+    max(230px, calc((100dvh - var(--global-nav-h) - 108px) * 400 / 780))
+  );
+  height: auto;
+  border-width: 10px;
+  border-radius: 52px;
+}
+.v2-phone.editor-phone .v2-phone-screen { border-radius: 39px; }
 .v2-phone.has-browser-chrome {
   display: grid;
   grid-template-rows: var(--browser-top) minmax(0, 1fr) var(--browser-bottom);
@@ -252,7 +272,8 @@
    LandingRenderer's own markup like before. */
 
 @media (max-width: 840px) {
-  .v2-stage { padding-top: 62px; }
+  .v2-stage { padding-top: 10px; }
+  .is-preview .v2-stage { padding-top: 60px; }
   .v2-stage-toolbar { top: 9px; left: 50%; max-width: calc(100vw - 16px); }
   .v2-stage-toolbar > span { display: none; }
   .v2-device-switcher button { padding-inline: 7px; }
@@ -261,6 +282,7 @@
   .v2-phone.device-small,
   .v2-phone.device-standard,
   .v2-phone.device-large { width: min(var(--v2-w), calc(100vw - 20px), max(200px, calc((100dvh - var(--global-nav-h) - 138px) * var(--v2-fit)))); }
+  .v2-phone.editor-phone { width: min(420px, calc(100vw - 20px), max(220px, calc((100dvh - var(--global-nav-h) - 92px) * 400 / 780))); }
 
   /* Template pickers (the general "Elegí una plantilla" grid and "Plantilla de los botones"
      inside Editar botones) go from a static grid to a horizontal swipe carousel here — a 2-up
@@ -306,6 +328,7 @@
      .v2-phone — those carry a second class, so their own width rule (further up this file)
      outranks a plain `.v2-phone` selector on specificity alone regardless of source order. */
   .v2-phone,
+  .v2-phone.editor-phone,
   .v2-phone.device-small,
   .v2-phone.device-standard,
   .v2-phone.device-large {

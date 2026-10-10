@@ -1746,6 +1746,8 @@ button[aria-busy="true"] { cursor: wait; }
 }
 .editor-quick-tools button svg { width: 12px; height: 12px; flex: none; }
 .editor-quick-tools button.active { color: #fff; background: #6556df; border-color: #6556df; }
+.public:not(.is-contact) .editor-quick-tools { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
+.public:not(.is-contact) .editor-quick-tools button { min-width: 0; justify-content: center; gap: 4px; padding-inline: 6px; font-size: 9px; }
 .public.is-contact .editor-quick-tools { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
 .public.is-contact .editor-quick-tools button { min-width: 0; justify-content: center; gap: 5px; padding-inline: 8px; font-size: 10px; }
 
@@ -1769,10 +1771,14 @@ button[aria-busy="true"] { cursor: wait; }
   .editor-zone-tag::before, .editor-add-link::before { animation: none; }
 }
 
-/* Both editor controls in the button zone stay crisp on every template: solid fill (a translucent
-   one washed out over light pages), no backdrop blur (Chromium softens the control's own text
-   with it), and centered with auto margins instead of translateX(-50%), which lands on a half
-   pixel whenever the label's width is odd and blurs the text. */
+/* Dashed ring wrapping the whole button group while "Editar todos los botones" is open — an
+   outline, not a border, so it floats around the real buttons without adding any padding that
+   would shift their real size or spacing. */
+.public-actions:has(> .editor-zone-tag) { outline: 1.5px dashed rgba(102, 87, 232, .72); outline-offset: 10px; border-radius: 18px; }
+.editor-zone-selected { outline: 1.5px dashed rgba(102, 87, 232, .75); outline-offset: 10px; border-radius: 18px; }
+
+/* Exact compact control from the previous editor. The editor reserves its vertical room in the
+   actions' margin, so the absolute pill no longer sits on top of the subtitle. */
 .editor-zone-tag {
   top: -34px;
   left: 0;
@@ -1786,8 +1792,6 @@ button[aria-busy="true"] { cursor: wait; }
   color: #fff;
   background: #6657e8;
   box-shadow: 0 4px 14px rgba(102, 87, 232, .35);
-  /* 9px at weight 850 filled in the counters of e/a/o, and the phone canvas scales it down
-     further — a larger size at a normal bold reads clearly without growing the tag much. */
   font-size: 11px;
   font-weight: 700;
   letter-spacing: .01em;
@@ -1795,16 +1799,8 @@ button[aria-busy="true"] { cursor: wait; }
   cursor: pointer;
   white-space: nowrap;
 }
-
-/* Dashed ring wrapping the whole button group while "Editar todos los botones" is open — an
-   outline, not a border, so it floats around the real buttons without adding any padding that
-   would shift their real size or spacing. */
-.editor-zone-selected { outline: 1.5px dashed rgba(102, 87, 232, .75); outline-offset: 10px; border-radius: 18px; }
-/* Hovering the zone's own "Editar todos los botones" tag outlines the WHOLE button area, so it's
-   obvious what "todos" covers. Scoped to the tag rather than put on .public-actions directly:
-   as a plain .editor-hit it would light the whole zone up every time the pointer crossed any
-   single button, since :hover applies to ancestors too. */
-.public-actions:has(.editor-zone-tag:hover) { outline: 2px dashed rgba(255, 255, 255, .85); outline-offset: 10px; border-radius: 18px; }
+.public-actions:has(.editor-zone-tag:hover),
+.public-actions.editor-zone-selected { outline-width: 2px; outline-color: rgba(102, 87, 232, .96); }
 
 .editor-own-badge {
   position: absolute;
@@ -1904,29 +1900,36 @@ button[aria-busy="true"] { cursor: wait; }
 .device-preview-toolbar {
   position: relative;
   z-index: 20;
-  height: 68px;
+  height: 86px;
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: auto minmax(220px, 1fr) auto;
   align-items: center;
   gap: 14px;
-  padding: 0 20px;
+  padding: 0 22px;
   border-bottom: 1px solid #e1e2e8;
   background: rgba(255,255,255,.9);
   box-shadow: 0 5px 20px rgba(32,34,48,.06);
   backdrop-filter: blur(16px);
 }
 .device-preview-back { justify-self: start; color: #555a69; font-size: 12px; font-weight: 800; }
-.device-preview-title { display: grid; text-align: center; line-height: 1.15; }
-.device-preview-title strong { font-size: 13px; }
-.device-preview-title small { margin-top: 3px; color: #8b8e9a; font-size: 9px; font-weight: 700; }
-.device-preview-switcher { justify-self: end; display: flex; gap: 3px; padding: 3px; border: 1px solid #e3e4ea; border-radius: 12px; background: #f2f3f6; }
-.device-preview-switcher button { border: 0; border-radius: 9px; padding: 7px 9px; background: transparent; color: #707482; font-size: 9px; font-weight: 850; cursor: pointer; }
-.device-preview-switcher button.active { background: #fff; color: #584bd0; box-shadow: 0 2px 8px rgba(31,33,45,.12); }
+.device-preview-title { display: grid; justify-self: center; text-align: center; line-height: 1.15; }
+.device-preview-title strong { color: #262837; font-size: 14px; }
+.device-preview-title small { margin-top: 5px; color: #858997; font-size: 10px; font-weight: 750; }
+.device-preview-switcher { justify-self: end; display: flex; gap: 5px; padding: 5px; border: 1px solid #dddde9; border-radius: 17px; background: #eeeef4; box-shadow: inset 0 1px 2px rgba(35, 36, 50, .06); }
+.device-preview-switcher button { min-width: 108px; display: grid; grid-template-columns: 18px minmax(0, 1fr); align-items: center; gap: 7px; border: 1px solid transparent; border-radius: 12px; padding: 8px 10px; background: transparent; color: #686c7b; text-align: left; cursor: pointer; transition: color .16s, background .16s, border-color .16s, box-shadow .16s, transform .16s; }
+.device-preview-switcher button > span:last-child { min-width: 0; display: grid; gap: 2px; }
+.device-preview-switcher button strong { font-size: 10px; font-weight: 900; line-height: 1; }
+.device-preview-switcher button small { overflow: hidden; font-size: 8px; font-weight: 720; line-height: 1.15; text-overflow: ellipsis; white-space: nowrap; }
+.device-preview-phone-icon { position: relative; width: 13px; height: 22px; border: 1.7px solid currentColor; border-radius: 4px; opacity: .72; }
+.device-preview-phone-icon::after { content: ""; position: absolute; left: 50%; bottom: 2px; width: 3px; height: 1px; border-radius: 999px; background: currentColor; transform: translateX(-50%); }
+.device-preview-switcher button:hover { color: #5044c6; background: rgba(255, 255, 255, .64); }
+.device-preview-switcher button.active { border-color: rgba(101, 86, 223, .22); background: linear-gradient(145deg, #fff, #f1efff); color: #5749d5; box-shadow: 0 5px 14px rgba(66, 53, 160, .16), inset 0 0 0 1px rgba(255, 255, 255, .8); transform: translateY(-1px); }
+.device-preview-switcher button.active .device-preview-phone-icon { opacity: 1; box-shadow: 0 0 0 3px rgba(101, 86, 223, .09); }
 /* `safe center`: same reasoning as .v2-stage in the editor's phone-first.css — plain `center`
    first for browsers that don't understand `safe`, then the real value for those that do, so
    scrolling to see a phone taller than the stage starts from its true top edge instead of a
    chunk of empty centered space. */
-.device-preview-stage { height: calc(100dvh - var(--global-nav-h) - 68px); display: grid; place-items: center; align-items: center; align-items: safe center; overflow: auto; padding: 24px; }
+.device-preview-stage { height: calc(100dvh - var(--global-nav-h) - 86px); display: grid; place-items: center; align-items: center; align-items: safe center; overflow: auto; padding: 18px 24px; }
 .device-preview-frame {
   position: relative;
   overflow: hidden;
@@ -1954,7 +1957,7 @@ button[aria-busy="true"] { cursor: wait; }
 .device-preview-frame.device-standard,
 .device-preview-frame.device-large {
   aspect-ratio: var(--preview-ratio);
-  width: min(var(--preview-width), calc(100vw - 48px), max(220px, calc((100dvh - var(--global-nav-h) - 104px) * var(--preview-fit))));
+  width: min(var(--preview-width), calc(100vw - 48px), max(220px, calc((100dvh - var(--global-nav-h) - 116px) * var(--preview-fit))));
   height: auto;
   display: grid;
   grid-template-rows: var(--browser-top) minmax(0, 1fr) var(--browser-bottom);
@@ -2002,18 +2005,21 @@ button[aria-busy="true"] { cursor: wait; }
    frame ends up with, so text/buttons are always proportionally correct instead of just the
    frame resizing around fixed-px content. */
 @media (max-width: 720px) {
-  .device-preview-toolbar { height: 112px; grid-template-columns: 1fr auto; grid-template-rows: 48px 48px; padding: 4px 10px 8px; }
+  .device-preview-toolbar { height: 132px; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: 52px 68px; gap: 4px 10px; padding: 4px 10px 8px; }
   .device-preview-title { text-align: right; }
+  .device-preview-title strong { font-size: 12px; }
+  .device-preview-title small { font-size: 8.5px; }
   .device-preview-switcher { grid-column: 1 / -1; width: 100%; overflow-x: auto; }
-  .device-preview-switcher button { flex: 1 0 auto; }
-  .device-preview-stage { height: calc(100dvh - var(--global-nav-h) - 112px); padding: 8px; }
+  .device-preview-switcher button { flex: 1 1 0; min-width: 0; padding: 8px 7px; }
+  .device-preview-switcher button small { font-size: 7.5px; }
+  .device-preview-stage { height: calc(100dvh - var(--global-nav-h) - 132px); padding: 8px; }
   /* The frame may shrink to fit the available screen, but its content remains in `fit="width"`
      mode. This preserves real text/button sizes and the same scrolling behavior as the public
      landing instead of squeezing the entire page vertically just to show it all at once. */
   .device-preview-frame.device-small,
   .device-preview-frame.device-standard,
   .device-preview-frame.device-large {
-    width: min(var(--preview-width,390px), calc(100vw - 16px), calc((100dvh - var(--global-nav-h) - 128px) * var(--preview-fit)));
+    width: min(var(--preview-width,390px), calc(100vw - 16px), calc((100dvh - var(--global-nav-h) - 148px) * var(--preview-fit)));
     /* Scaled down from the desktop --preview-border/--preview-radius values (roughly ×0.75),
        same proportions — a flat 6px/32px here regardless of variant was the same "doesn't scale
        per size" bug as the desktop rule, just at mobile's smaller scale. */
@@ -2558,41 +2564,39 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
    AND keeps it legible on its own terms, instead of depending entirely on the page's colour.
    --branding-ink is still computed per landing (readableInk in lib/landing-catalog.ts) to hold
    the same perceived weight everywhere; the fallback only matters if it fails to arrive. */
-.landing-branding a { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 5px 10px; border: 0; border-radius: 999px; background: var(--branding-pill, rgba(18, 16, 26, .04)); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); color: var(--branding-ink, rgba(22, 20, 30, .62)); text-decoration: none; font-family: Arial, sans-serif; box-shadow: none; transition: color .15s, background .15s; }
+.landing-branding a { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 6px 10px; border: 1px solid var(--branding-border, #d9dce4); border-radius: 999px; background: var(--branding-pill, #fff); color: var(--branding-ink, #20232d); text-decoration: none; font-family: Arial, sans-serif; box-shadow: var(--branding-shadow, 0 3px 10px rgba(18, 16, 26, .09)); transition: color .15s, background .15s, border-color .15s, transform .15s, box-shadow .15s; }
 /* The pill itself stays small on purpose, so the tap target is widened invisibly instead of by
    padding — that would have grown the visible chip right back. */
 .landing-branding a::after { content: ""; position: absolute; inset: -11px -8px; }
 /* Small, spaced and quieter than the wordmark — the brand is what should stay in your head. */
-.landing-branding-label { font-size: 7.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; opacity: .6; white-space: nowrap; }
-.landing-branding[data-tone="dark"] { --branding-pill: rgba(255, 255, 255, .08); }
-.landing-branding[data-tone="light"] { --branding-pill: rgba(18, 16, 26, .04); }
+.landing-branding-label { font-size: 8.5px; font-weight: 700; letter-spacing: .015em; opacity: .82; white-space: nowrap; }
+.landing-branding[data-tone="dark"] { --branding-ink: #fff; --branding-pill: #151824; --branding-pill-hover: #1d2130; --branding-border: #ffffff2b; --branding-shadow: 0 3px 11px rgba(0, 0, 0, .24); }
+.landing-branding[data-tone="light"] { --branding-ink: #20232d; --branding-pill: #fff; --branding-pill-hover: #f5f6f9; --branding-border: #d9dce4; --branding-shadow: 0 3px 10px rgba(18, 16, 26, .09); }
 .landing-branding a:hover { background: var(--branding-pill-hover, rgba(18, 16, 26, .09)); }
 .landing-branding[data-tone="dark"] a:hover { --branding-pill-hover: rgba(255, 255, 255, .16); }
 .landing-branding .bx-logo { display: inline-flex; align-items: center; gap: 1px; }
 .landing-branding .bx-logo-word { font: 800 13px / 1 Arial, sans-serif; letter-spacing: -.035em; }
-.landing-branding .bx-logo-nfc { background: none; color: inherit; }
-.landing-branding .bx-logo-waves { width: 11px; height: 11px; stroke: currentColor; flex: none; }
-.landing-branding a:hover { color: var(--branding-ink, #36303f); }
+.landing-branding .bx-logo-nfc { background: linear-gradient(90deg, #7762ff, #16bdd2); color: transparent; -webkit-background-clip: text; background-clip: text; }
+.landing-branding .bx-logo-waves { width: 11px; height: 11px; flex: none; stroke: #23b8d3; filter: drop-shadow(0 0 3px rgba(72, 102, 255, .18)); }
+.landing-branding[data-tone="light"] .bx-logo-nfc { background-image: linear-gradient(90deg, #5740d8, #078aa4); }
+.landing-branding[data-tone="light"] .bx-logo-waves { stroke: #078da8; filter: drop-shadow(0 0 2px rgba(53, 67, 185, .12)); }
+.landing-branding[data-tone="dark"] .bx-logo-nfc { background-image: linear-gradient(90deg, #aa9cff, #5de6ee); }
+.landing-branding[data-tone="dark"] .bx-logo-waves { stroke: #65e4ed; filter: drop-shadow(0 0 4px rgba(90, 205, 239, .28)); }
+.landing-branding a:hover { color: var(--branding-ink, #20232d); transform: translateY(-1px); box-shadow: var(--branding-shadow, 0 4px 12px rgba(18, 16, 26, .11)); }
 .landing-branding a:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
 /* A photo can be white, black or change underneath the credit. A restrained dark-glass pill
    provides deterministic contrast without making the signature compete with the page. Contact
    cards are excluded because their credit sits on --contact-surface, not on the outer photo. */
 .public-bg-image:not(.is-contact) .landing-branding a {
-  --branding-pill: rgba(9, 12, 18, .68);
-  --branding-pill-hover: rgba(9, 12, 18, .82);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, .14);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, .2);
+  --branding-ink: #fff;
+  --branding-pill: #151824;
+  --branding-pill-hover: #1d2130;
+  --branding-border: #ffffff2b;
+  --branding-shadow: 0 4px 14px rgba(0, 0, 0, .26);
   text-shadow: none;
 }
-.public-bg-image:not(.is-contact) .landing-branding-label { opacity: .78; }
-.public.is-contact .landing-branding a {
-  --branding-pill: color-mix(in srgb, var(--contact-ink) 8%, var(--contact-surface));
-  --branding-pill-hover: color-mix(in srgb, var(--contact-ink) 13%, var(--contact-surface));
-  color: var(--contact-ink);
-  border: 1px solid color-mix(in srgb, var(--contact-ink) 12%, transparent);
-  text-shadow: none;
-}
+.public-bg-image:not(.is-contact) .landing-branding-label { opacity: .76; }
+.public.is-contact .landing-branding a { text-shadow: none; }
 .public-bg-image .landing-socials[data-filled="no"] a {
   text-shadow: 0 1px 6px rgba(0, 0, 0, .55);
 }

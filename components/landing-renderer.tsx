@@ -4,7 +4,7 @@ import ContactSaveIcon from "@/components/contact-save-icon";
 import BioNFCLogo from "@/components/bionfc-logo";
 import {
   QUICK_SOCIALS, quickSocialHref, buildActionLink, buttonZoneShadow, resolveBackgroundTint, contrastTextColor,
-  parseDistribution, readableInk, parseTitleStyle, parseSubtitleStyle, parseLogoStyle, parseBackgroundPosition, parseButtonZone, parseCoverStyle, headerCardOn, COVER_SIZE_EXTRA, CONTACT_COVER_HEIGHT, hexToRgba, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize,
+  parseDistribution, parseTitleStyle, parseSubtitleStyle, parseLogoStyle, parseBackgroundPosition, parseButtonZone, parseCoverStyle, headerCardOn, COVER_SIZE_EXTRA, CONTACT_COVER_HEIGHT, hexToRgba, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize,
 } from "@/lib/landing-catalog";
 import { getFontFamily, resolveFontWeight, resolveTextFont, FontLinks, LogoInitials } from "@/lib/fonts";
 import { buttonCollectionStyle, buttonCollectionWidth, buttonIconStyle, instagramAssetMode, resolveButtonColors, shouldUseBrandMark, youtubeMarkSurfaceColor } from "@/lib/design-presets";
@@ -248,11 +248,12 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
   // Same perceived weight on every template, instead of a fixed opacity that reads bold on a
   // black page and disappears on a bright one. Photo backgrounds can be any color at any point,
   // so those stay on plain white plus the halo the stylesheet adds.
-  // Contact credits sit on the card surface, not on the outer page background. Using the
-  // background photo to choose their ink made a white card request white lettering and the
-  // credit nearly disappeared. Photo-based link pages get their contrast from the dark glass
-  // pill in CSS; their ink stays white regardless of the pixels behind it.
-  const brandingInk = isContact ? contactInk : landing.background_type === "image" ? "#ffffff" : readableInk(bottomBackdrop);
+  // Contact credits sit on the card surface, not on the outer page background. The tone only
+  // chooses between two opaque, self-contained badges; their readability never depends on the
+  // exact pixel or mid-tone colour behind them.
+  const brandingTone = isContact
+    ? contrastTextColor(contactInk) === "#000000" ? "dark" : "light"
+    : bottomTone;
   const publicTitle = isContact ? landing.business_name : title.headline || landing.business_name;
   const optimizedLogoUrl = landingImageUrl(landing.logo_url, 384);
   const optimizedCoverUrl = landingImageUrl(contactHeroImage || coverImageUrl, 1080);
@@ -320,7 +321,7 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
             {isContact && <button type="button" className={edit.selected === "contact-design" || edit.selected === "templates" || edit.selected === "distribution" || edit.selected === "background" ? "active" : ""} onClick={edit.onSelectContactDesign}><FiSliders aria-hidden="true" /> Diseño</button>}
             {isContact && <button type="button" className={edit.selected === "cover" ? "active" : ""} onClick={edit.onSelectCover}><IconImage /> Portada</button>}
             {isContact && <button type="button" className={edit.selected === "contact" || edit.selected === "contact-name" || edit.selected === "contact-role" || edit.selected === "contact-company" ? "active" : ""} onClick={edit.onSelectContact}><FiUser aria-hidden="true" /> Datos</button>}
-            {!isContact && <button type="button" className={edit.selected === "cover" ? "active" : ""} onClick={edit.onSelectCover}><IconImage /> Encabezado</button>}
+            {!isContact && <button type="button" className={edit.selected === "cover" ? "active" : ""} onClick={edit.onSelectCover}><IconImage /> Portada</button>}
             {!isContact && <button type="button" className={edit.selected === "distribution" ? "active" : ""} onClick={edit.onSelectDistribution}><FiSliders aria-hidden="true" /> Distribución</button>}
             {!isContact && <button type="button" className={edit.selected === "background" ? "active" : ""} onClick={edit.onSelectBackground}><IconImage /> Fondo</button>}
           </div>
@@ -384,8 +385,8 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
           </div>}
           {saveContactAction}
         </div>}
-        <div className={`public-actions${edit?.selected === "buttons" ? " editor-zone-selected" : ""}`} style={{ position: "relative", marginTop: isContact ? contactLinksMargin : distribution.buttonsGap, display: "flex", flexDirection: "column", gap: isContact ? 10 : zone.gap }}>
-          {edit && !isContact && <button type="button" className="editor-zone-tag" onClick={edit.onSelectZone}>✦ Editar todos los botones</button>}
+        <div className={`public-actions${edit?.selected === "buttons" ? " editor-zone-selected" : ""}`} style={{ position: "relative", marginTop: isContact ? contactLinksMargin : edit ? Math.max(distribution.buttonsGap, 44) : distribution.buttonsGap, display: "flex", flexDirection: "column", gap: isContact ? 10 : zone.gap }}>
+          {edit && !isContact ? <button type="button" className="editor-zone-tag" onClick={edit.onSelectZone}>✦ Editar todos los botones</button> : null}
           {contentActions.map((action, index) => {
             const { background: bg, text, isAuthentic, useNetworkAccent } = resolveButtonColors({
               zone, type: action.type, position: index, primary,
@@ -472,9 +473,9 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
           </nav>}
           {edit && <button type="button" className="editor-socials-entry" onClick={edit.onSelectSocials}><IconEdit aria-hidden="true" />{socialLinks.length ? "Editar redes rápidas" : "Agregar redes rápidas"}</button>}
         </div>}
-        {zone.showBranding !== false && <footer className={`landing-branding${edit ? " is-editable" : ""}`} data-tone={bottomTone} style={{ "--branding-ink": brandingInk } as CSSProperties}>
-          <a href="/?utm_source=bionfc_landing&utm_medium=referral&utm_campaign=footer" target="_blank" rel="noopener noreferrer" aria-label={edit ? "Editar firma de BioNFC" : "Hecho con BioNFC. Conocé BioNFC (abre en otra pestaña)"} onClick={edit ? (event) => { event.preventDefault(); edit.onSelectSettings(); } : undefined}>
-            <span className="landing-branding-label">Hecho con</span><BioNFCLogo />
+        {zone.showBranding !== false && <footer className={`landing-branding${edit ? " is-editable" : ""}`} data-tone={brandingTone}>
+          <a href="/?utm_source=bionfc_landing&utm_medium=referral&utm_campaign=footer" target="_blank" rel="noopener noreferrer" aria-label={edit ? "Editar firma de BioNFC" : "Creado con BioNFC. Conocé BioNFC (abre en otra pestaña)"} onClick={edit ? (event) => { event.preventDefault(); edit.onSelectSettings(); } : undefined}>
+            <span className="landing-branding-label">Creado con</span><BioNFCLogo />
             {edit && <span className="editor-branding-hint"><IconEdit aria-hidden="true" /> Editar firma</span>}
           </a>
         </footer>}
