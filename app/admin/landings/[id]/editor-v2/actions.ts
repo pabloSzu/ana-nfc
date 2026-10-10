@@ -21,7 +21,7 @@ async function auth() {
 
 async function ownedLanding(landingId: string, userId: string) {
   const supabase = await createClient();
-  const { data, error } = await supabase.from("landings").select("id").eq("id", landingId).eq("owner_id", userId).maybeSingle();
+  const { data, error } = await supabase.from("landings").select("id,slug").eq("id", landingId).eq("owner_id", userId).maybeSingle();
   return { supabase, data, error };
 }
 
@@ -237,5 +237,10 @@ export async function saveDesignStyle(fd: FormData) {
   if (failed?.error) saveFail(failed.error.message);
   revalidatePath(`/admin/landings/${landingId}/editor-v2`);
   revalidatePath("/admin");
+  // La página pública guarda los datos de la landing en caché 5 minutos (app/[slug]/page.tsx),
+  // así una tarjeta escaneada carga rápido. Sin esta línea, cada cambio guardado tardaba hasta
+  // esos 5 minutos en verse publicado, en cualquier navegador. Publicar y renombrar ya lo hacían;
+  // el editor era el único que no.
+  if (landing?.slug) revalidatePath(`/${landing.slug}`);
   redirect(`${returnTo}?saved=Cambios guardados`);
 }
