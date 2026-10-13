@@ -112,3 +112,15 @@
   .bx-makers-products a, .bx-makers-products img, .bx-makers-cta { transition: none; }
   .bx-makers-products a:hover, .bx-makers-products a:hover img, .bx-makers-cta:hover { transform: none; }
 }
+
+/* Aviso de público: esta sección es solo para talleres, no para quien compra para su negocio. */
+.bx-makers { border-top: 1px solid #e3d6ec; }
+.bx-makers-audience { display: inline-flex; margin-bottom: 18px; padding: 8px 14px; border-radius: 999px; background: #49315e; color: #fff; font-size: 12px; font-weight: 850; letter-spacing: .08em; line-height: 1.2; }
+.bx-makers-redirect { margin-top: 16px; color: #6d6273; font-size: 14px; }
+.bx-makers-redirect a { color: #5b3b78; font-weight: 750; text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 760px) {
+  .bx-makers-audience { font-size: 11px; }
+  .bx-makers-heading h2 { font-size: 32px; }
+
+}
+.bx-makers-heading h2 > span { font-size: .6em; line-height: 1.2; letter-spacing: -.03em; }

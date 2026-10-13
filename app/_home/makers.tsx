@@ -14,10 +14,13 @@ export default function Makers({ whatsappNumber }: { whatsappNumber: string }) {
   return <section id="para-talleres" className="bx-makers" aria-labelledby="makers-title">
     <div className="bx-section bx-makers-inner">
       <div className="bx-makers-heading">
-        <p className="bx-section-kicker">PARA QUIENES FABRICAN Y PERSONALIZAN</p>
-        <h2 id="makers-title">Vos hacés el producto.<span>Nosotros le sumamos NFC o QR y una experiencia digital.</span></h2>
-        <p className="bx-makers-lead">Puede abrir un link, una tarjeta digital, una landing o una solución a medida. Te entregamos todo configurado y <strong>listo para que lo vendas con tu marca.</strong></p>
-        <p className="bx-makers-pack-label">PACKS PARA REVENDEDORES</p>
+        {/* Esta sección le habla a otro público: talleres que fabrican productos y quieren
+            revenderlos con NFC. Sin un aviso claro, quien buscaba un producto para su negocio la
+            leía como una oferta más para él. */}
+        <p className="bx-makers-audience">SOLO PARA FABRICANTES Y TALLERES</p>
+        <h2 id="makers-title">¿Fabricás o personalizás productos?<span>Sumales NFC o QR y una página BIONFC, y vendelos con tu marca.</span></h2>
+        <p className="bx-makers-lead">Para talleres de cartelería, grabado, impresión 3D o regalos personalizados. Vos hacés el producto; nosotros le sumamos el chip o el QR y armamos lo que se abre. <strong>Te lo entregamos listo para vender.</strong></p>
+        <p className="bx-makers-redirect">¿Buscás un producto para tu negocio? <a href="#productos">Mirá los productos y combos ↑</a></p>
       </div>
       <div className="bx-makers-flow" aria-label="Del producto físico a la experiencia digital">
         <div className="bx-makers-physical">
