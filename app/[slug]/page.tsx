@@ -59,11 +59,21 @@ export default async function Landing({ params, searchParams }: { params: Promis
   await trackLandingView(landing.id, normalizeSource((await searchParams).s), landing.owner_id);
   if (landing.redirect_url) redirect(landing.redirect_url);
   const { actions, ...landingData } = landing;
+  // Solo un color hexadecimal: este valor va a parar a una etiqueta <style>, y un texto libre de
+  // la base ahí adentro podría inyectar CSS en la página.
+  const shellColor = /^#[0-9a-f]{3,8}$/i.test(String(landingData.background_color || "")) ? landingData.background_color : "#f7f5f0";
   return (
     <div
       className="landing-page-shell"
-      style={{ "--landing-shell-color": landingData.background_color || "#f7f5f0" } as CSSProperties}
+      style={{ "--landing-shell-color": shellColor } as CSSProperties}
     >
+      {/* En el celular, el fondo de toda la ventana —lo que queda detrás de la página— toma el
+          color de la landing. La página mide como la pantalla con las barras del navegador
+          visibles, así una landing corta no scrollea; pero al ocultarse las barras la pantalla
+          crece, y ese espacio de más mostraba el fondo genérico del sitio, una franja de otro
+          color al pie. Pintando la ventana del mismo color, ese espacio no se distingue de la
+          landing. En escritorio no hace falta: ahí las barras no cambian de tamaño. */}
+      <style>{`@media (max-width: 767px) { html, body { background: ${shellColor}; } }`}</style>
       <LandingRenderer landing={landingData} actions={actions || []} />
     </div>
   );
