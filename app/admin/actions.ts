@@ -115,3 +115,32 @@ export async function assignLandingClient(fd: FormData) {
   revalidatePath("/admin/clientes/" + clientId);
   redirect(returnTo + "?saved=" + encodeURIComponent("Página asignada correctamente"));
 }
+
+// Cuando un cliente no renueva su página, la página no se borra ni se apaga: pasa a redirigir a
+// un único link que elige el cliente (sus reseñas, su Instagram…). Así la tarjeta o el mostrador
+// que ya tiene en la mano sigue sirviendo. Con el campo vacío, la página vuelve a mostrarse.
+export async function setLandingRedirect(fd: FormData) {
+  const { s, user } = await auth();
+  const id = String(fd.get("id") || "");
+  const target = "/admin/landings/" + id + "/qr";
+  const fail = (message: string): never => redirect(target + "?error=" + encodeURIComponent(message));
+  const raw = fd.get("clear") === "true" ? "" : String(fd.get("redirect_url") || "").trim();
+  const url = raw ? (/^https?:\/\//i.test(raw) ? raw : "https://" + raw) : "";
+  if (url) {
+    try {
+      const parsed = new URL(url);
+      if (!parsed.hostname.includes(".")) fail("El link no parece válido. Revisalo y probá de nuevo.");
+    } catch {
+      fail("El link no parece válido. Revisalo y probá de nuevo.");
+    }
+  }
+  const { data: landing, error: lookupError } = await s.from("landings").select("id,slug").eq("id", id).eq("owner_id", user.id).maybeSingle();
+  if (lookupError) fail(lookupError.message);
+  if (!landing) redirect("/admin?error=" + encodeURIComponent("Página inexistente o sin permisos"));
+  const { error } = await s.from("landings").update({ redirect_url: url || null }).eq("id", id).eq("owner_id", user.id);
+  if (error) fail(error.message);
+  revalidatePath("/admin/landings/" + id + "/qr");
+  revalidatePath("/admin/landings/" + id + "/editor-v2");
+  if (landing.slug) revalidatePath("/" + landing.slug);
+  redirect(target + "?saved=" + encodeURIComponent(url ? "Redirección activada" : "Redirección quitada: la página vuelve a mostrarse"));
+}

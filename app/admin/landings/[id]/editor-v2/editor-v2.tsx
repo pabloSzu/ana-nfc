@@ -27,7 +27,7 @@ type LandingDraft = {
   id: string; slug: string; business_name: string; business_type?: string | null; description?: string | null; logo_url?: string | null; primary_color?: string | null;
   background_color?: string | null; background_type?: string | null; background_gradient_to?: string | null; background_image_url?: string | null;
   text_color?: string | null; text_panel?: boolean | null; text_panel_color?: string | null; font_pair?: string | null; button_font?: string | null;
-  published?: boolean | null; buttonZone: ButtonZoneStyle; titleStyle: TitleStyle; subtitleStyle: SubtitleStyle; logoStyle: LogoStyle; bgPosition: BackgroundPosition;
+  published?: boolean | null; redirect_url?: string | null; buttonZone: ButtonZoneStyle; titleStyle: TitleStyle; subtitleStyle: SubtitleStyle; logoStyle: LogoStyle; bgPosition: BackgroundPosition;
   cover_image_url?: string | null; coverStyle: CoverStyle;
 };
 type Panel = "templates" | "buttons" | "background" | "cover" | "settings" | "contact" | "contact-design" | "contact-name" | "contact-role" | "contact-company" | "socials" | "distribution" | "title" | "subtitle" | "logo" | "add" | { buttonId: string } | null;
@@ -1423,6 +1423,14 @@ function SocialControls({ links, onChange, filled, onFilled }: { links: QuickSoc
   </div>;
 }
 
+// Una página con redirect_url no se muestra: quien la abre va directo a ese link (es lo que pasa
+// cuando un cliente no renueva). Se avisa arriba de los ajustes para que nadie edite el diseño
+// sin entender por qué no lo ve publicado. Se activa y se quita desde la pantalla del QR.
+function RedirectNotice({ draft }: { draft: LandingDraft }) {
+  if (!draft.redirect_url) return <Link className="v2-suggested" href={`/admin/landings/${draft.id}/qr#redireccion`}>Página vencida: redirigir a un link</Link>;
+  return <div className="v2-redirect-notice" role="status"><strong>Redirige a otro link</strong><span>Quien abre esta página va directo a {draft.redirect_url}. Los cambios se guardan, pero no se ven hasta quitar la redirección.</span><Link href={`/admin/landings/${draft.id}/qr#redireccion`}>Cambiar o quitar</Link></div>;
+}
+
 // The one panel that isn't a design control: publishing, sharing and deleting the landing
 // itself. Everything here posts straight to the same server actions the admin list uses
 // (`publishAction`/`deleteLandingAction`, both passed down from the page), so there's exactly
@@ -1432,6 +1440,7 @@ function SettingsControls({ draft, buttons, dirty, onTypeChange, onBrandingChang
   const missingContact = draft.business_type === "contact" && !buttons.some((button) => ["phone", "email", "whatsapp"].includes(button.type) && button.url.trim());
   if (draft.business_type === "contact") return <div className="v2-fields">
     <div className="v2-contact-publish-status"><i className={isPublished ? "is-online" : ""} aria-hidden="true" /><div><strong>{isPublished ? "Tu tarjeta está publicada" : "Tu tarjeta está en borrador"}</strong><span>{isPublished ? "Quien tenga el enlace o escanee tu NFC puede verla." : "Solo vos podés verla hasta que la publiques."}</span></div></div>
+    <RedirectNotice draft={draft} />
     <EditorSection title="Publicación" tone="green">
       <form action={publishAction}>
         <input type="hidden" name="id" value={draft.id} />
@@ -1455,6 +1464,7 @@ function SettingsControls({ draft, buttons, dirty, onTypeChange, onBrandingChang
     <div className="v2-brand">
       <span><b>{isPublished ? "Tu landing está online" : "Tu landing está en borrador"}</b><small>{isPublished ? "Cualquiera con el link o el tag NFC puede verla." : "Todavía no es visible para el público."}</small></span>
     </div>
+    <RedirectNotice draft={draft} />
     <EditorSection title="Tipo de página" tone="blue">
       <Choice active={draft.business_type === "contact"} title="Tarjeta personal" note="Presentación de perfil, contacto descargable y enlaces en fichas." onClick={() => onTypeChange("contact")} />
       <Choice active={draft.business_type !== "contact"} title="Landing de enlaces" note="Conserva el diseño y los botones, sin el acceso a Guardar contacto." onClick={() => onTypeChange("custom")} />
