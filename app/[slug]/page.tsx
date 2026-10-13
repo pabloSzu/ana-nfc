@@ -48,6 +48,37 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
+// Marca la landing como larga (.is-long) cuando su contenido no entra en la pantalla del celular
+// con las barras del navegador visibles. Ver el comentario de .landing-page-shell en globals.css.
+//
+// La pantalla se mide con un elemento invisible de 100svh, que no cambia cuando las barras
+// aparecen o desaparecen. Por eso NO se vuelve a medir en cada cambio de barras: solo al cargar,
+// cuando terminan de cargar fuentes e imágenes (cambian el alto del contenido) y si cambia el
+// ancho, al girar el celular. Medir en cada cambio de barras sería peligroso: para medir se saca
+// la clase un instante, la página se achica, y si la persona está scrolleada abajo el navegador
+// podría reacomodar el scroll, que es justo el salto que esto evita.
+const FIT_SCRIPT = `(function () {
+  var shell = document.currentScript && document.currentScript.parentElement;
+  if (!shell) return;
+  var lastWidth = -1;
+  function check() {
+    if (window.innerWidth === lastWidth) return;
+    lastWidth = window.innerWidth;
+    var probe = document.createElement("div");
+    probe.style.cssText = "position:absolute;top:0;left:0;width:0;height:100vh;height:100svh;visibility:hidden;pointer-events:none";
+    document.body.appendChild(probe);
+    var screen = probe.offsetHeight;
+    probe.remove();
+    shell.classList.remove("is-long");
+    shell.classList.toggle("is-long", shell.scrollHeight > screen + 1);
+  }
+  function recheck() { lastWidth = -1; check(); }
+  check();
+  window.addEventListener("load", recheck);
+  window.addEventListener("resize", check);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(recheck);
+})();`;
+
 export default async function Landing({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { slug } = await params;
   const landing = await getLanding(slug);
@@ -75,6 +106,7 @@ export default async function Landing({ params, searchParams }: { params: Promis
           landing. En escritorio no hace falta: ahí las barras no cambian de tamaño. */}
       <style>{`@media (max-width: 767px) { html, body { background: ${shellColor}; } }`}</style>
       <LandingRenderer landing={landingData} actions={actions || []} />
+      <script dangerouslySetInnerHTML={{ __html: FIT_SCRIPT }} />
     </div>
   );
 }

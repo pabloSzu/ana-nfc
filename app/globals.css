@@ -1629,12 +1629,17 @@ button[aria-busy="true"] { cursor: wait; }
 
 /* ---------- Public landing ---------- */
 /* Container width keeps the full-bleed header identical in public and scaled previews. */
-/* 100svh: la pantalla del celular con las barras del navegador visibles, que es como se abre la
-   página. Una landing que entra completa no scrollea ni deja espacio de más debajo de la firma.
-   Se probó 100lvh (la pantalla sin barras) y evitaba un reacomodo del scroll, pero dejaba toda
-   landing corta scrolleable, con un hueco vacío al pie. El espacio que aparece cuando las barras
-   se ocultan lo cubre el fondo de la ventana, pintado del color de la landing en
-   app/[slug]/page.tsx, así que no se nota. El 100vh queda de respaldo para navegadores viejos. */
+/* Alto de la página en el celular, donde las barras del navegador aparecen y desaparecen al
+   scrollear y con ellas cambia el alto de la pantalla.
+   - Si la landing entra completa (lo normal, con pocos botones): mide 100svh, la pantalla con
+     las barras visibles. No scrollea, las barras nunca se esconden y la firma queda quieta, pegada
+     al borde de abajo.
+   - Si no entra (.is-long, la marca un script en app/[slug]/page.tsx): mide al menos 100lvh, la
+     pantalla sin barras. Sin esto, una landing apenas más alta que la pantalla scrolleaba un poco,
+     las barras se escondían, la página de golpe entraba completa y el navegador reacomodaba todo:
+     la firma saltaba. Midiendo contra la pantalla grande, al esconderse las barras no hay nada
+     que reacomodar.
+   El 100vh queda de respaldo para navegadores viejos. */
 .landing-page-shell {
   width: 100%;
   min-height: 100vh;
@@ -2568,7 +2573,10 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
 .landing-cover-veil { position: absolute; inset: 0; }
 
 /* A small editorial credit; the invisible hit area stays comfortable to tap. */
-.landing-branding { display: flex; justify-content: center; margin: 20px 0 0; padding: 0 8px; }
+/* La firma vive afuera de .public-inner (ver landing-renderer.tsx), así que necesita el mismo
+   z-index que .public-inner para no quedar debajo de las capas de fondo, ni debajo del botón
+   invisible que el editor pone sobre el fondo para seleccionarlo. */
+.landing-branding { position: relative; z-index: 2; display: flex; justify-content: center; margin: 20px 0 0; padding: 0 8px; }
 /* The credit is a badge, not a footnote: its own translucent pill gives it a deliberate shape
    AND keeps it legible on its own terms, instead of depending entirely on the page's colour.
    --branding-ink is still computed per landing (readableInk in lib/landing-catalog.ts) to hold
@@ -2610,16 +2618,20 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
   text-shadow: 0 1px 6px rgba(0, 0, 0, .55);
 }
 
-/* La firma va a continuación del contenido, a distancia fija, igual que en Linktree. Antes
-   estaba pegada al borde de abajo de la pantalla (margin-top: auto), y en el celular ese borde
-   se mueve cada vez que aparecen o desaparecen las barras del navegador: la firma saltaba
-   acompañándolas. Las tarjetas personales (.is-contact) ya funcionaban así. */
+/* Landing corta: la firma va pegada al borde de abajo de la pantalla. Landing larga: queda al
+   final del contenido. Ver el comentario de .landing-page-shell sobre por qué no salta. */
 .public.has-branding { display: flex; flex-direction: column; min-height: 100vh; min-height: 100svh; padding-bottom: max(20px, env(safe-area-inset-bottom)); }
 .public.has-branding > .public-inner { display: flex; flex-direction: column; flex: 1 0 auto; margin: 0 auto; }
 .public.has-branding .landing-header-region, .public.has-branding .public-actions { flex-shrink: 0; }
-.public.has-branding .landing-branding { flex-shrink: 0; margin-top: 12px; padding-top: 20px; }
+.public.has-branding .landing-branding { flex-shrink: 0; margin-top: auto; padding-top: 20px; }
+@media (max-width: 767px) {
+  .landing-page-shell.is-long,
+  .landing-page-shell.is-long > .public,
+  .landing-page-shell.is-long > .public.has-branding { min-height: 100vh; min-height: 100lvh; }
+}
 .public.has-branding.is-contact > .public-inner { flex-grow: 0; }
-.public.has-branding.is-contact .landing-branding { margin-top: 26px; padding-top: 0; }
+/* Tarjeta personal: la firma también va pegada abajo, con al menos 26 px de separación. */
+.public.has-branding.is-contact .landing-branding { margin-top: auto; padding-top: 26px; }
 .scaled-phone-canvas .public.has-branding { min-height: 0; }
 
 /* Editor-only control: a small badge peeking out of the button's own top-right corner (half

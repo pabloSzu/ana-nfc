@@ -473,13 +473,18 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
           </nav>}
           {edit && <button type="button" className="editor-socials-entry" onClick={edit.onSelectSocials}><IconEdit aria-hidden="true" />{socialLinks.length ? "Editar redes rápidas" : "Agregar redes rápidas"}</button>}
         </div>}
-        {zone.showBranding !== false && <footer className={`landing-branding${edit ? " is-editable" : ""}`} data-tone={brandingTone}>
-          <a href="/?utm_source=bionfc_landing&utm_medium=referral&utm_campaign=footer" target="_blank" rel="noopener noreferrer" aria-label={edit ? "Editar firma de BioNFC" : "Creado con BioNFC. Conocé BioNFC (abre en otra pestaña)"} onClick={edit ? (event) => { event.preventDefault(); edit.onSelectSettings(); } : undefined}>
-            <span className="landing-branding-label">Creado con</span><BioNFCLogo />
-            {edit && <span className="editor-branding-hint"><IconEdit aria-hidden="true" /> Editar firma</span>}
-          </a>
-        </footer>}
       </div>
+      {/* La firma va afuera de .public-inner, como último elemento de la página. En las tarjetas
+          personales .public-inner ES la tarjeta que se ve (fondo, borde, sombra): con la firma
+          adentro, pegarla al pie de la pantalla obligaba a estirar la tarjeta hasta el borde.
+          Afuera, la tarjeta conserva su tamaño y la firma queda abajo de todo, igual que en las
+          landings. */}
+      {zone.showBranding !== false && <footer className={`landing-branding${edit ? " is-editable" : ""}`} data-tone={brandingTone}>
+        <a href="/?utm_source=bionfc_landing&utm_medium=referral&utm_campaign=footer" target="_blank" rel="noopener noreferrer" aria-label={edit ? "Editar firma de BioNFC" : "Creado con BioNFC. Conocé BioNFC (abre en otra pestaña)"} onClick={edit ? (event) => { event.preventDefault(); edit.onSelectSettings(); } : undefined}>
+          <span className="landing-branding-label">Creado con</span><BioNFCLogo />
+          {edit && <span className="editor-branding-hint"><IconEdit aria-hidden="true" /> Editar firma</span>}
+        </a>
+      </footer>}
     </main>
   );
 }
