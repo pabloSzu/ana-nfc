@@ -1629,16 +1629,23 @@ button[aria-busy="true"] { cursor: wait; }
 
 /* ---------- Public landing ---------- */
 /* Container width keeps the full-bleed header identical in public and scaled previews. */
+/* 100lvh, la pantalla con las barras del navegador ocultas, y no 100svh. En el celular las barras
+   aparecen y desaparecen al scrollear, y la página cambiaba de tamaño relativo a la pantalla:
+   con 100svh, una landing corta quedaba más alta que la pantalla chica pero más baja que la
+   grande, y al ocultarse las barras el navegador reacomodaba el scroll y todo saltaba. Midiendo
+   contra la pantalla grande la página nunca es más baja que lo visible, así que no hay nada que
+   reacomodar y el fondo siempre cubre hasta el borde de abajo. El 100vh queda de respaldo para
+   navegadores viejos (en iPhone y Android modernos, 100vh ya equivale a 100lvh). */
 .landing-page-shell {
   width: 100%;
   min-height: 100vh;
-  min-height: 100svh;
+  min-height: 100lvh;
   background: var(--landing-shell-color, var(--bg));
 }
 .landing-page-shell > .public {
   width: 100%;
   min-height: 100vh;
-  min-height: 100svh;
+  min-height: 100lvh;
   margin: 0 auto;
 }
 @media (min-width: 768px) {
@@ -2604,11 +2611,14 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
   text-shadow: 0 1px 6px rgba(0, 0, 0, .55);
 }
 
-/* Short pages fill the screen; long pages push the credit below their links. */
-.public.has-branding { display: flex; flex-direction: column; min-height: 100svh; padding-bottom: max(20px, env(safe-area-inset-bottom)); }
+/* La firma va a continuación del contenido, a distancia fija, igual que en Linktree. Antes
+   estaba pegada al borde de abajo de la pantalla (margin-top: auto), y en el celular ese borde
+   se mueve cada vez que aparecen o desaparecen las barras del navegador: la firma saltaba
+   acompañándolas. Las tarjetas personales (.is-contact) ya funcionaban así. */
+.public.has-branding { display: flex; flex-direction: column; min-height: 100vh; min-height: 100lvh; padding-bottom: max(20px, env(safe-area-inset-bottom)); }
 .public.has-branding > .public-inner { display: flex; flex-direction: column; flex: 1 0 auto; margin: 0 auto; }
 .public.has-branding .landing-header-region, .public.has-branding .public-actions { flex-shrink: 0; }
-.public.has-branding .landing-branding { flex-shrink: 0; margin-top: auto; padding-top: 20px; }
+.public.has-branding .landing-branding { flex-shrink: 0; margin-top: 12px; padding-top: 20px; }
 .public.has-branding.is-contact > .public-inner { flex-grow: 0; }
 .public.has-branding.is-contact .landing-branding { margin-top: 26px; padding-top: 0; }
 .scaled-phone-canvas .public.has-branding { min-height: 0; }
