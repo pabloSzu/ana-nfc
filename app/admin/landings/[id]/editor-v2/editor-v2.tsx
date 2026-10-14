@@ -17,6 +17,7 @@ import FontPicker from "../font-picker";
 import { FontLinks, getFontWeights, LogoInitials, recommendedButtonTypography, resolveFontWeight } from "@/lib/fonts";
 import IconPicker from "../icon-picker";
 import { BUSINESS_TEMPLATES, type BusinessTemplate } from "@/lib/business-templates";
+import { DAY_SHORT, DEFAULT_STATUS, defaultHours, openStatus, type ButtonExtra, type DayHours } from "@/lib/button-extras";
 import { DESIGN_PRESETS_V2, buttonCollectionStyle, buttonIconStyle, instagramAssetMode, recommendedIconAppearance, resolveButtonColors, shouldUseBrandMark, youtubeMarkSurfaceColor, type DesignPreset } from "@/lib/design-presets";
 import { ThemeSceneLayer, useSharedTheme } from "@/components/theme-scene";
 import ImageAdjustDialog, { type ImageKind, type ImagePlacement } from "./image-adjust-dialog";
@@ -25,7 +26,7 @@ import PendingSubmitButton from "@/components/pending-submit-button";
 import { effectiveRedirect, planOf, planStatus } from "@/lib/landing-plan";
 import { firstButtonLink } from "@/lib/landing-fallback";
 
-type ButtonItem = { id: string; type: string; title: string; subtitle: string; url: string; message: string; icon: string; icon_url: string; icon_fit: "contain" | "cover"; icon_scale: number; icon_background_color: string; background_color: string; background_gradient_to: string; text_color: string; use_auto_color: boolean; position: number };
+type ButtonItem = { id: string; type: string; title: string; subtitle: string; url: string; message: string; icon: string; icon_url: string; icon_fit: "contain" | "cover"; icon_scale: number; icon_background_color: string; background_color: string; background_gradient_to: string; text_color: string; use_auto_color: boolean; position: number; extra: ButtonExtra };
 type LandingDraft = {
   id: string; slug: string; business_name: string; business_type?: string | null; description?: string | null; logo_url?: string | null; primary_color?: string | null;
   background_color?: string | null; background_type?: string | null; background_gradient_to?: string | null; background_image_url?: string | null;
@@ -415,7 +416,7 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
       if (!value.trim()) return current.filter((button) => button.type !== type);
       if (existing) return current.map((button) => button.id === existing.id ? { ...button, url: value } : button);
       const def = actionDefs.find((action) => action.type === type)!;
-      return [...current, { id: newId, type, title: def.label, subtitle: "", url: value, message: type === "whatsapp" ? "Hola, quiero hacer una consulta." : "", icon: "", icon_url: "", icon_fit: "contain", icon_scale: 1, icon_background_color: "", background_color: "#1f2937", background_gradient_to: "", text_color: "#ffffff", use_auto_color: true, position: current.length }];
+      return [...current, { id: newId, type, title: def.label, subtitle: "", url: value, message: type === "whatsapp" ? "Hola, quiero hacer una consulta." : "", icon: "", icon_url: "", icon_fit: "contain", icon_scale: 1, icon_background_color: "", background_color: "#1f2937", background_gradient_to: "", text_color: "#ffffff", use_auto_color: true, position: current.length, extra: {} }];
     });
   };
   const selectCvFile = (file?: File) => {
@@ -438,7 +439,7 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
     if (buttons.some((button) => button.type === "cv")) { setDirty(true); return; }
     commitDiscrete();
     const id = `new-${crypto.randomUUID()}`;
-    patchButtons((current) => [...current, { id, type: "cv", title: "Ver CV / portfolio", subtitle: "Documento PDF", url: "", message: "", icon: "", icon_url: "", icon_fit: "contain", icon_scale: 1, icon_background_color: "", background_color: "#5754ae", background_gradient_to: "", text_color: "#ffffff", use_auto_color: true, position: current.length }]);
+    patchButtons((current) => [...current, { id, type: "cv", title: "Ver CV / portfolio", subtitle: "Documento PDF", url: "", message: "", icon: "", icon_url: "", icon_fit: "contain", icon_scale: 1, icon_background_color: "", background_color: "#5754ae", background_gradient_to: "", text_color: "#ffffff", use_auto_color: true, position: current.length, extra: {} }]);
   };
   const clearSelectedCvFile = () => {
     const input = document.getElementById("v2-cv-file") as HTMLInputElement | null;
@@ -576,7 +577,7 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
     patchButtons(() => template.actions.map((action, index) => ({
       id: `new-${crypto.randomUUID()}`, type: action.type, title: action.title, subtitle: action.subtitle || "", url: action.url || "", message: action.message || "",
       icon: action.icon || "", icon_url: "", icon_fit: "contain", icon_scale: 1, icon_background_color: "", background_color: "", background_gradient_to: "",
-      text_color: "#ffffff", use_auto_color: true, position: index,
+      text_color: "#ffffff", use_auto_color: true, position: index, extra: action.extra || {},
     })));
   }
 
@@ -638,7 +639,7 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
     }
     const def = actionDefs.find((item) => item.type === type) || actionDefs[actionDefs.length - 1];
     const id = `new-${crypto.randomUUID()}`;
-    const button: ButtonItem = { id, type: def.type, title: type === "cv" ? "Ver archivo PDF" : def.label, subtitle: "", url: "", message: def.message ? "Hola, quiero hacer una consulta." : "", icon: "", icon_url: "", icon_fit: "contain", icon_scale: 1, icon_background_color: "", background_color: "#1f2937", background_gradient_to: "", text_color: "#ffffff", use_auto_color: true, position: buttons.length };
+    const button: ButtonItem = { id, type: def.type, title: type === "cv" ? "Ver archivo PDF" : def.label, subtitle: "", url: "", message: def.message ? "Hola, quiero hacer una consulta." : "", icon: "", icon_url: "", icon_fit: "contain", icon_scale: 1, icon_background_color: "", background_color: "#1f2937", background_gradient_to: "", text_color: "#ffffff", use_auto_color: true, position: buttons.length, extra: {} };
     commitDiscrete();
     patchButtons((current) => [...current, button]); setPanel({ buttonId: id });
   }
@@ -1957,6 +1958,56 @@ function ActionCatalog({ onAdd, isContact = false }: { onAdd: (type: string) => 
   </div>;
 }
 
+// Horarios de lunes a domingo, con hasta dos turnos por día (por ejemplo 9 a 13 y 17 a 21). Un
+// turno que cierra antes de abrir cruza la medianoche, como en un bar de 20 a 3.
+function HoursEditor({ value, onChange }: { value: DayHours[]; onChange: (next: DayHours[]) => void }) {
+  const setDay = (index: number, patch: Partial<DayHours>) => onChange(value.map((day, current) => current === index ? { ...day, ...patch } : day));
+  const setTime = (index: number, range: number, side: 0 | 1, time: string) => setDay(index, { ranges: value[index].ranges.map((item, current) => current === range ? (side === 0 ? [time, item[1]] : [item[0], time]) as [string, string] : item) });
+  const status = openStatus(value);
+  return <div className="v2-hours">
+    {value.map((day, index) => <div key={DAY_SHORT[index]} className={`v2-hours-day${day.closed ? " is-closed" : ""}`}>
+      <label className="v2-hours-toggle"><input type="checkbox" checked={!day.closed} onChange={(event) => setDay(index, { closed: !event.target.checked, ranges: day.ranges.length ? day.ranges : [["09:00", "19:00"]] })} />{DAY_SHORT[index]}</label>
+      {day.closed ? <span className="v2-hours-closed">Cerrado</span> : <div className="v2-hours-ranges">
+        {day.ranges.map((range, rangeIndex) => <span key={rangeIndex} className="v2-hours-range">
+          <input type="time" aria-label={`Abre ${DAY_SHORT[index]}`} value={range[0]} onChange={(event) => setTime(index, rangeIndex, 0, event.target.value)} />
+          <span aria-hidden="true">a</span>
+          <input type="time" aria-label={`Cierra ${DAY_SHORT[index]}`} value={range[1]} onChange={(event) => setTime(index, rangeIndex, 1, event.target.value)} />
+          {rangeIndex === 1 && <button type="button" className="v2-hours-remove" aria-label="Quitar el segundo turno" onClick={() => setDay(index, { ranges: day.ranges.slice(0, 1) })}>✕</button>}
+        </span>)}
+        {day.ranges.length < 2 && <button type="button" className="v2-hours-add" onClick={() => setDay(index, { ranges: [...day.ranges, ["17:00", "21:00"]] })}>+ turno</button>}
+      </div>}
+    </div>)}
+    <button type="button" className="v2-ghost" onClick={() => onChange(value.map((day, index) => index >= 1 && index <= 4 ? { ...value[0] } : day))}>Copiar el lunes de martes a viernes</button>
+    <p className="v2-help">{status ? <>Ahora se ve: <b>{status.label}</b></> : "Marcá al menos un día abierto."}</p>
+  </div>;
+}
+
+// Opciones especiales de cada botón (lib/button-extras.ts): destacado para todos, y según el tipo,
+// estrellas en reseñas, "en línea" en WhatsApp y horarios en la ubicación.
+function ButtonExtras({ button, onChange }: { button: ButtonItem; onChange: (patch: Partial<ButtonItem>) => void }) {
+  const extra = button.extra || {};
+  const setExtra = (patch: Partial<ButtonExtra>) => onChange({ extra: { ...extra, ...patch } });
+  const numberOrUndefined = (value: string) => value === "" ? undefined : Number(value.replace(",", "."));
+  return <EditorSection title="Botón especial" tone="green">
+    <Choice active={Boolean(extra.featured)} title="Botón destacado" note="Para la acción principal: más alto y en el color de la marca. Conviene uno solo por página." onClick={() => setExtra({ featured: !extra.featured || undefined })} />
+    {button.type === "review" && <>
+      <div className="v2-extra-row">
+        <label>Nota<input type="number" inputMode="decimal" min={1} max={5} step={0.1} placeholder="4,9" value={extra.rating ?? ""} onChange={(event) => setExtra({ rating: numberOrUndefined(event.target.value) })} /></label>
+        <label>Reseñas<input type="number" inputMode="numeric" min={1} step={1} placeholder="128" value={extra.reviews ?? ""} onChange={(event) => setExtra({ reviews: numberOrUndefined(event.target.value) })} /></label>
+      </div>
+      <p className="v2-help">Muestra ★★★★★ con la nota. Copiá los números del perfil de Google del negocio.</p>
+    </>}
+    {button.type === "whatsapp" && <>
+      <Choice active={Boolean(extra.online)} title="Mostrar &quot;en línea&quot;" note="Un punto verde y una frase corta debajo del texto." onClick={() => setExtra({ online: !extra.online || undefined })} />
+      {extra.online && <label>Frase <small>Opcional</small><input maxLength={40} placeholder={DEFAULT_STATUS} value={extra.status || ""} onChange={(event) => setExtra({ status: event.target.value || undefined })} /></label>}
+    </>}
+    {button.type === "maps" && <>
+      <Choice active={Boolean(extra.hours)} title="Mostrar si está abierto" note="Con los horarios, muestra &quot;Abierto ahora · cierra 19:00&quot; o cuándo abre." onClick={() => setExtra({ hours: extra.hours ? undefined : defaultHours() })} />
+      {extra.hours && <HoursEditor value={extra.hours} onChange={(hours) => setExtra({ hours })} />}
+    </>}
+  </EditorSection>;
+}
+
 function ButtonControls({ button,draft,cvFileName,cvFileError,iconUploading,iconUploadError,onIconFile,onClearCvFile,onChange,onDelete }: { button: ButtonItem; draft: LandingDraft; cvFileName: string; cvFileError: string; iconUploading: boolean; iconUploadError: string; onIconFile: (file: File) => void | Promise<void>; onClearCvFile: () => void; onChange:(p:Partial<ButtonItem>)=>void; onDelete:()=>void }) {
   const def=getAllActions().find((item)=>item.type===button.type);
   const previewPrimary = draft.primary_color || "#1f2937";
@@ -1992,7 +2043,8 @@ function ButtonControls({ button,draft,cvFileName,cvFileError,iconUploading,icon
     <label>Texto secundario <small>Opcional</small><input value={button.subtitle} onChange={(e)=>onChange({subtitle:e.target.value})}/></label>
     {button.type === "cv" ? <CvSourceField context="landing" value={button.url} fileName={cvFileName} error={cvFileError} onUrlChange={(url) => onChange({ url })} onClearFile={onClearCvFile} /> : <label>{def?.input === "phone" ? "Número" : def?.input === "email" ? "Email" : def?.input === "username" ? "Usuario" : "Enlace"}<input value={button.url} placeholder={def?.placeholder} onChange={(e)=>onChange({url:e.target.value})}/></label>}
     {def?.message && <label>Mensaje de WhatsApp<textarea rows={3} value={button.message} onChange={(e)=>onChange({message:e.target.value})}/></label>}
-</EditorSection><EditorSection title="Ícono" tone="purple">    <IconPicker type={button.type} value={button.icon} customImageUrl={button.icon_url} customImageFit={button.icon_fit} customImageScale={button.icon_scale} previewStyle={iconPreviewStyle} uploading={iconUploading} error={iconUploadError} onUpload={onIconFile} onChange={(icon)=>onChange({icon,icon_url:"",icon_fit:"contain",icon_scale:1})} onRemoveCustom={() => onChange({icon_url:"",icon_fit:"contain",icon_scale:1})} onImageFitChange={(icon_fit)=>onChange({icon_fit})} onImageScaleChange={(icon_scale)=>onChange({icon_scale})}/>
+</EditorSection><ButtonExtras button={button} onChange={onChange} />
+<EditorSection title="Ícono" tone="purple">    <IconPicker type={button.type} value={button.icon} customImageUrl={button.icon_url} customImageFit={button.icon_fit} customImageScale={button.icon_scale} previewStyle={iconPreviewStyle} uploading={iconUploading} error={iconUploadError} onUpload={onIconFile} onChange={(icon)=>onChange({icon,icon_url:"",icon_fit:"contain",icon_scale:1})} onRemoveCustom={() => onChange({icon_url:"",icon_fit:"contain",icon_scale:1})} onImageFitChange={(icon_fit)=>onChange({icon_fit})} onImageScaleChange={(icon_scale)=>onChange({icon_scale})}/>
     <fieldset>
       <legend>Fondo del ícono</legend>
       <Choice active={!button.icon_background_color} title="Diseño de la plantilla" note="Mantiene el estilo original del ícono." onClick={()=>onChange({icon_background_color:""})}/>

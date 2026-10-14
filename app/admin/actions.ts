@@ -67,7 +67,7 @@ export async function newLanding(fd: FormData) {
   if (rubroTemplate) {
     const { error: actionsError } = await s.from("actions").insert(rubroTemplate.actions.map((action, position) => ({
       landing_id: landingId, type: action.type, title: action.title, subtitle: action.subtitle || "", url: action.url || "",
-      message: action.message || "", icon: action.icon || "", position, enabled: true,
+      message: action.message || "", icon: action.icon || "", extra: action.extra || {}, position, enabled: true,
     })));
     if (actionsError) onError(actionsError.message);
   }

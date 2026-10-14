@@ -6,7 +6,9 @@
 // base: así lo que se ve en el selector es exactamente lo que va a ver el cliente. Para sumar un
 // rubro, armarlo como página de prueba, exportar sus columnas y agregarlo acá.
 
-export type BusinessTemplateAction = { type: string; title: string; subtitle?: string; url?: string; message?: string; icon?: string };
+import type { ButtonExtra } from "./button-extras";
+
+export type BusinessTemplateAction = { type: string; title: string; subtitle?: string; url?: string; message?: string; icon?: string; extra?: ButtonExtra };
 
 export type BusinessTemplate = {
   id: string;
@@ -56,7 +58,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "y": 45,
         "fade": 60,
         "mode": "fade",
-        "size": "large",
+        "size": "medium",
         "zoom": 1,
         "enabled": true,
         "overlay": 0.35,
@@ -66,7 +68,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
       "title_style": {
         "bg": "#000000",
         "font": "fraunces",
-        "size": 34,
+        "size": 30,
         "align": "center",
         "color": "#f6ead8",
         "bgMode": "none",
@@ -92,7 +94,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
       "logo_style": {
         "x": 50,
         "y": 50,
-        "size": 100,
+        "size": 84,
         "zoom": 1,
         "shape": "round",
         "shadow": "soft",
@@ -108,7 +110,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "gap": 11,
         "width": 100,
         "finish": "glass",
-        "height": 56,
+        "height": 54,
         "layout": "center",
         "preset": "glass",
         "radius": 16,
@@ -122,13 +124,13 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "templateId": "rubro:gastronomia",
         "contentAlign": "left",
         "distribution": {
-          "top": 64,
-          "logoGap": 18,
+          "top": 32,
+          "logoGap": 12,
           "separator": true,
-          "buttonsGap": 12,
-          "socialsGap": 12,
+          "buttonsGap": 10,
+          "socialsGap": 10,
           "separatorColor": "#d9a066",
-          "separatorSpace": 14,
+          "separatorSpace": 6,
           "separatorStyle": "leaf",
           "separatorWidth": 40,
           "separatorWeight": 1
@@ -152,24 +154,25 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
     },
     "actions": [
       {
+        "type": "whatsapp",
+        "title": "Reservá tu mesa",
+        "url": "5493511234567",
+        "message": "Hola! Quiero reservar una mesa.",
+        "extra": {
+          "online": true,
+          "featured": true
+        }
+      },
+      {
         "type": "url",
         "title": "Ver la carta",
-        "subtitle": "Cafetería, brunch y pastelería",
+        "subtitle": "Brunch, cafetería y pastelería",
         "url": "https://molinocafe.com.ar/carta",
         "icon": "book"
       },
       {
-        "type": "whatsapp",
-        "title": "Reservá tu mesa",
-        "subtitle": "Te confirmamos al toque",
-        "url": "5493511234567",
-        "message": "Hola! Quiero reservar una mesa.",
-        "icon": "→"
-      },
-      {
         "type": "url",
         "title": "Pedí para llevar",
-        "subtitle": "Delivery y take away",
         "url": "https://pedidos.molinocafe.com.ar",
         "icon": "bag"
       },
@@ -178,7 +181,68 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "title": "Cómo llegar",
         "subtitle": "Thames 1234, Palermo",
         "url": "https://maps.google.com/?q=Thames+1234",
-        "icon": "→"
+        "extra": {
+          "hours": [
+            {
+              "closed": true,
+              "ranges": []
+            },
+            {
+              "closed": false,
+              "ranges": [
+                [
+                  "08:00",
+                  "20:00"
+                ]
+              ]
+            },
+            {
+              "closed": false,
+              "ranges": [
+                [
+                  "08:00",
+                  "20:00"
+                ]
+              ]
+            },
+            {
+              "closed": false,
+              "ranges": [
+                [
+                  "08:00",
+                  "20:00"
+                ]
+              ]
+            },
+            {
+              "closed": false,
+              "ranges": [
+                [
+                  "08:00",
+                  "20:00"
+                ]
+              ]
+            },
+            {
+              "closed": false,
+              "ranges": [
+                [
+                  "08:00",
+                  "20:00"
+                ]
+              ]
+            },
+            {
+              "closed": false,
+              "ranges": [
+                [
+                  "08:00",
+                  "20:00"
+                ]
+              ]
+            }
+          ]
+        }
       }
     ]
   },
@@ -222,7 +286,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
       "title_style": {
         "bg": "#000000",
         "font": "unbounded",
-        "size": 30,
+        "size": 28,
         "align": "center",
         "color": "#ffffff",
         "bgMode": "none",
@@ -250,7 +314,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
       "logo_style": {
         "x": 50,
         "y": 50,
-        "size": 104,
+        "size": 88,
         "zoom": 1,
         "shape": "round",
         "shadow": "glow",
@@ -267,7 +331,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "gap": 11,
         "width": 100,
         "finish": "outline",
-        "height": 56,
+        "height": 54,
         "layout": "center",
         "preset": "neon",
         "radius": 16,
@@ -282,13 +346,13 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "templateId": "rubro:bar",
         "contentAlign": "left",
         "distribution": {
-          "top": 96,
-          "logoGap": 20,
+          "top": 32,
+          "logoGap": 12,
           "separator": false,
-          "buttonsGap": 12,
-          "socialsGap": 12,
+          "buttonsGap": 10,
+          "socialsGap": 10,
           "separatorColor": "#ff4fa3",
-          "separatorSpace": 12,
+          "separatorSpace": 6,
           "separatorStyle": "solid",
           "separatorWidth": 40,
           "separatorWeight": 1
@@ -312,18 +376,22 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
     },
     "actions": [
       {
+        "type": "whatsapp",
+        "title": "Reservá tu mesa",
+        "url": "5493511234567",
+        "message": "Hola! Quiero reservar una mesa.",
+        "extra": {
+          "online": true,
+          "status": "Respondemos al toque",
+          "featured": true
+        }
+      },
+      {
         "type": "url",
         "title": "Carta de tragos",
         "subtitle": "Clásicos y de autor",
         "url": "https://distritoneon.com.ar/carta",
         "icon": "book"
-      },
-      {
-        "type": "whatsapp",
-        "title": "Reservá tu mesa",
-        "subtitle": "Grupos y cumpleaños",
-        "url": "5493511234567",
-        "message": "Hola! Quiero reservar una mesa."
       },
       {
         "type": "url",
@@ -336,7 +404,54 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "type": "maps",
         "title": "Cómo llegar",
         "subtitle": "Abasto, Córdoba",
-        "url": "https://maps.google.com/?q=Abasto+Cordoba"
+        "url": "https://maps.google.com/?q=Abasto+Cordoba",
+        "extra": {
+          "hours": [
+            {
+              "closed": true,
+              "ranges": []
+            },
+            {
+              "closed": true,
+              "ranges": []
+            },
+            {
+              "closed": true,
+              "ranges": []
+            },
+            {
+              "closed": false,
+              "ranges": [
+                [
+                  "20:00",
+                  "03:00"
+                ]
+              ]
+            },
+            {
+              "closed": false,
+              "ranges": [
+                [
+                  "20:00",
+                  "03:00"
+                ]
+              ]
+            },
+            {
+              "closed": false,
+              "ranges": [
+                [
+                  "20:00",
+                  "03:00"
+                ]
+              ]
+            },
+            {
+              "closed": true,
+              "ranges": []
+            }
+          ]
+        }
       }
     ]
   },
@@ -380,7 +495,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
       "title_style": {
         "bg": "#000000",
         "font": "outfit",
-        "size": 31,
+        "size": 28,
         "align": "center",
         "color": "#ffffff",
         "bgMode": "none",
@@ -407,7 +522,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
       "logo_style": {
         "x": 50,
         "y": 50,
-        "size": 96,
+        "size": 84,
         "zoom": 1,
         "shape": "round",
         "shadow": "soft",
@@ -423,7 +538,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "gap": 10,
         "width": 100,
         "finish": "solid",
-        "height": 56,
+        "height": 54,
         "layout": "profile-card",
         "preset": "soft",
         "radius": 28,
@@ -439,13 +554,13 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "templateId": "rubro:turismo",
         "contentAlign": "left",
         "distribution": {
-          "top": 72,
-          "logoGap": 18,
+          "top": 32,
+          "logoGap": 12,
           "separator": false,
-          "buttonsGap": 14,
-          "socialsGap": 12,
+          "buttonsGap": 10,
+          "socialsGap": 10,
           "separatorColor": "#f2b05e",
-          "separatorSpace": 12,
+          "separatorSpace": 6,
           "separatorStyle": "solid",
           "separatorWidth": 40,
           "separatorWeight": 1
@@ -469,31 +584,30 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
     },
     "actions": [
       {
+        "type": "whatsapp",
+        "title": "Reservá tu lugar",
+        "url": "5493511234567",
+        "message": "Hola! Quiero reservar una excursión.",
+        "extra": {
+          "online": true,
+          "featured": true
+        }
+      },
+      {
         "type": "url",
         "title": "Ver salidas y fechas",
-        "subtitle": "Calendario de excursiones",
+        "subtitle": "Trekking, cabalgatas y más",
         "url": "https://senderosdelvalle.com.ar/salidas",
         "icon": "calendar"
       },
       {
-        "type": "whatsapp",
-        "title": "Reservá tu lugar",
-        "subtitle": "Cupos limitados por salida",
-        "url": "5493511234567",
-        "message": "Hola! Quiero reservar una excursión."
-      },
-      {
-        "type": "url",
-        "title": "Qué incluye cada excursión",
-        "subtitle": "Dificultad, duración y equipo",
-        "url": "https://senderosdelvalle.com.ar/info",
-        "icon": "info"
-      },
-      {
         "type": "review",
         "title": "Opiniones de viajeros",
-        "subtitle": "4,9 en Google",
-        "url": "https://g.page/r/senderos/review"
+        "url": "https://g.page/r/senderos/review",
+        "extra": {
+          "rating": 4.9,
+          "reviews": 87
+        }
       },
       {
         "type": "maps",
@@ -534,7 +648,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
       "title_style": {
         "bg": "#000000",
         "font": "domine",
-        "size": 32,
+        "size": 28,
         "align": "center",
         "color": "#1f2a2e",
         "bgMode": "none",
@@ -560,7 +674,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
       "logo_style": {
         "x": 50,
         "y": 50,
-        "size": 108,
+        "size": 92,
         "zoom": 1,
         "shape": "round",
         "shadow": "soft",
@@ -576,7 +690,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "gap": 10,
         "width": 100,
         "finish": "solid",
-        "height": 56,
+        "height": 54,
         "layout": "center",
         "preset": "corporate",
         "radius": 10,
@@ -592,13 +706,13 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "templateId": "rubro:profesional",
         "contentAlign": "left",
         "distribution": {
-          "top": 64,
-          "logoGap": 16,
+          "top": 32,
+          "logoGap": 12,
           "separator": true,
-          "buttonsGap": 12,
-          "socialsGap": 12,
+          "buttonsGap": 10,
+          "socialsGap": 10,
           "separatorColor": "#5b7a6a",
-          "separatorSpace": 16,
+          "separatorSpace": 6,
           "separatorStyle": "solid",
           "separatorWidth": 25,
           "separatorWeight": 2
@@ -625,14 +739,20 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "type": "calendar",
         "title": "Agendá una consulta",
         "subtitle": "Presencial u online",
-        "url": "https://calendly.com/estudiorivas"
+        "url": "https://calendly.com/estudiorivas",
+        "extra": {
+          "featured": true
+        }
       },
       {
         "type": "whatsapp",
         "title": "Escribime por WhatsApp",
-        "subtitle": "Respondo en el día",
         "url": "5493511234567",
-        "message": "Hola! Quiero hacer una consulta."
+        "message": "Hola! Quiero hacer una consulta.",
+        "extra": {
+          "online": true,
+          "status": "Respondo en el día"
+        }
       },
       {
         "type": "url",
@@ -642,16 +762,87 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "icon": "briefcase"
       },
       {
-        "type": "email",
-        "title": "Enviar un email",
-        "subtitle": "consultas@estudiorivas.com.ar",
-        "url": "consultas@estudiorivas.com.ar"
-      },
-      {
         "type": "maps",
         "title": "Ubicación del estudio",
         "subtitle": "Bv. San Juan 456, piso 3",
-        "url": "https://maps.google.com/?q=Bv+San+Juan+456"
+        "url": "https://maps.google.com/?q=Bv+San+Juan+456",
+        "extra": {
+          "hours": [
+            {
+              "closed": false,
+              "ranges": [
+                [
+                  "09:00",
+                  "13:00"
+                ],
+                [
+                  "16:00",
+                  "19:00"
+                ]
+              ]
+            },
+            {
+              "closed": false,
+              "ranges": [
+                [
+                  "09:00",
+                  "13:00"
+                ],
+                [
+                  "16:00",
+                  "19:00"
+                ]
+              ]
+            },
+            {
+              "closed": false,
+              "ranges": [
+                [
+                  "09:00",
+                  "13:00"
+                ],
+                [
+                  "16:00",
+                  "19:00"
+                ]
+              ]
+            },
+            {
+              "closed": false,
+              "ranges": [
+                [
+                  "09:00",
+                  "13:00"
+                ],
+                [
+                  "16:00",
+                  "19:00"
+                ]
+              ]
+            },
+            {
+              "closed": false,
+              "ranges": [
+                [
+                  "09:00",
+                  "13:00"
+                ],
+                [
+                  "16:00",
+                  "19:00"
+                ]
+              ]
+            },
+            {
+              "closed": true,
+              "ranges": []
+            },
+            {
+              "closed": true,
+              "ranges": []
+            }
+          ]
+        }
       }
     ]
   },
@@ -676,7 +867,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "y": 40,
         "fade": 55,
         "mode": "banner",
-        "size": "medium",
+        "size": "small",
         "zoom": 1,
         "enabled": true,
         "overlay": 0,
@@ -686,7 +877,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
       "title_style": {
         "bg": "#000000",
         "font": "elegant",
-        "size": 38,
+        "size": 32,
         "align": "center",
         "color": "#4a2f33",
         "bgMode": "none",
@@ -713,7 +904,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
       "logo_style": {
         "x": 50,
         "y": 50,
-        "size": 108,
+        "size": 92,
         "zoom": 1,
         "shape": "round",
         "shadow": "soft",
@@ -729,7 +920,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "gap": 10,
         "width": 100,
         "finish": "solid",
-        "height": 56,
+        "height": 54,
         "layout": "center",
         "preset": "pastel",
         "radius": 30,
@@ -745,13 +936,13 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "templateId": "rubro:belleza",
         "contentAlign": "center",
         "distribution": {
-          "top": 64,
-          "logoGap": 16,
+          "top": 32,
+          "logoGap": 12,
           "separator": true,
-          "buttonsGap": 12,
-          "socialsGap": 12,
+          "buttonsGap": 10,
+          "socialsGap": 10,
           "separatorColor": "#c98a8f",
-          "separatorSpace": 14,
+          "separatorSpace": 6,
           "separatorStyle": "sparkle",
           "separatorWidth": 45,
           "separatorWeight": 1
@@ -777,10 +968,13 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
       {
         "type": "whatsapp",
         "title": "Reservá tu turno",
-        "subtitle": "Lunes a sábado de 10 a 20",
         "url": "5493511234567",
         "message": "Hola! Quiero reservar un turno.",
-        "icon": "calendar"
+        "icon": "calendar",
+        "extra": {
+          "online": true,
+          "featured": true
+        }
       },
       {
         "type": "instagram",
@@ -791,7 +985,6 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
       {
         "type": "url",
         "title": "Servicios y precios",
-        "subtitle": "Semipermanente, lifting y más",
         "url": "https://lumiere.com.ar/precios",
         "icon": "tag"
       },
@@ -799,7 +992,69 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "type": "maps",
         "title": "Cómo llegar",
         "subtitle": "Nueva Córdoba",
-        "url": "https://maps.google.com/?q=Nueva+Cordoba"
+        "url": "https://maps.google.com/?q=Nueva+Cordoba",
+        "extra": {
+          "hours": [
+            {
+              "closed": false,
+              "ranges": [
+                [
+                  "10:00",
+                  "20:00"
+                ]
+              ]
+            },
+            {
+              "closed": false,
+              "ranges": [
+                [
+                  "10:00",
+                  "20:00"
+                ]
+              ]
+            },
+            {
+              "closed": false,
+              "ranges": [
+                [
+                  "10:00",
+                  "20:00"
+                ]
+              ]
+            },
+            {
+              "closed": false,
+              "ranges": [
+                [
+                  "10:00",
+                  "20:00"
+                ]
+              ]
+            },
+            {
+              "closed": false,
+              "ranges": [
+                [
+                  "10:00",
+                  "20:00"
+                ]
+              ]
+            },
+            {
+              "closed": false,
+              "ranges": [
+                [
+                  "10:00",
+                  "20:00"
+                ]
+              ]
+            },
+            {
+              "closed": true,
+              "ranges": []
+            }
+          ]
+        }
       }
     ]
   },
@@ -824,7 +1079,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "y": 40,
         "fade": 60,
         "mode": "fade",
-        "size": "large",
+        "size": "medium",
         "zoom": 1,
         "enabled": true,
         "overlay": 0.25,
@@ -834,7 +1089,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
       "title_style": {
         "bg": "#000000",
         "font": "bebas",
-        "size": 48,
+        "size": 42,
         "align": "center",
         "color": "#f3e7d3",
         "bgMode": "none",
@@ -861,7 +1116,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
       "logo_style": {
         "x": 50,
         "y": 50,
-        "size": 104,
+        "size": 88,
         "zoom": 1,
         "shape": "round",
         "shadow": "soft",
@@ -877,7 +1132,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "gap": 10,
         "width": 100,
         "finish": "solid",
-        "height": 56,
+        "height": 54,
         "layout": "center",
         "preset": "luxury",
         "radius": 4,
@@ -892,13 +1147,13 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "templateId": "rubro:barberia",
         "contentAlign": "left",
         "distribution": {
-          "top": 64,
-          "logoGap": 18,
+          "top": 32,
+          "logoGap": 12,
           "separator": true,
-          "buttonsGap": 12,
-          "socialsGap": 12,
+          "buttonsGap": 10,
+          "socialsGap": 10,
           "separatorColor": "#c8a36a",
-          "separatorSpace": 14,
+          "separatorSpace": 6,
           "separatorStyle": "diamond",
           "separatorWidth": 50,
           "separatorWeight": 1
@@ -924,10 +1179,13 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
       {
         "type": "whatsapp",
         "title": "Reservá tu corte",
-        "subtitle": "Turnos de martes a sábado",
         "url": "5493511234567",
         "message": "Hola! Quiero reservar un turno.",
-        "icon": "scissors"
+        "icon": "scissors",
+        "extra": {
+          "online": true,
+          "featured": true
+        }
       },
       {
         "type": "url",
@@ -937,16 +1195,76 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "icon": "tag"
       },
       {
-        "type": "instagram",
-        "title": "Nuestros cortes",
-        "subtitle": "Mirá los últimos trabajos",
-        "url": "navajaclub"
+        "type": "review",
+        "title": "Reseñas de clientes",
+        "url": "https://g.page/r/navajaclub/review",
+        "extra": {
+          "rating": 4.8,
+          "reviews": 213
+        }
       },
       {
         "type": "maps",
         "title": "Cómo llegar",
         "subtitle": "Barrio Güemes",
-        "url": "https://maps.google.com/?q=Barrio+Guemes"
+        "url": "https://maps.google.com/?q=Barrio+Guemes",
+        "extra": {
+          "hours": [
+            {
+              "closed": true,
+              "ranges": []
+            },
+            {
+              "closed": false,
+              "ranges": [
+                [
+                  "10:00",
+                  "20:00"
+                ]
+              ]
+            },
+            {
+              "closed": false,
+              "ranges": [
+                [
+                  "10:00",
+                  "20:00"
+                ]
+              ]
+            },
+            {
+              "closed": false,
+              "ranges": [
+                [
+                  "10:00",
+                  "20:00"
+                ]
+              ]
+            },
+            {
+              "closed": false,
+              "ranges": [
+                [
+                  "10:00",
+                  "20:00"
+                ]
+              ]
+            },
+            {
+              "closed": false,
+              "ranges": [
+                [
+                  "10:00",
+                  "20:00"
+                ]
+              ]
+            },
+            {
+              "closed": true,
+              "ranges": []
+            }
+          ]
+        }
       }
     ]
   },
@@ -957,7 +1275,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
     "landing": {
       "business_name": "Llave Maestra",
       "description": "Aperturas, cambio de cerraduras y copias de llaves. Vamos a domicilio en toda la ciudad.",
-      "primary_color": "#ffcc00",
+      "primary_color": "#ff5a1f",
       "background_type": "gradient",
       "background_color": "#141414",
       "background_gradient_to": "#0d0d0d",
@@ -971,7 +1289,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "y": 30,
         "fade": 45,
         "mode": "banner",
-        "size": "medium",
+        "size": "small",
         "zoom": 1,
         "enabled": true,
         "overlay": 0,
@@ -981,7 +1299,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
       "title_style": {
         "bg": "#000000",
         "font": "anton",
-        "size": 46,
+        "size": 38,
         "align": "center",
         "color": "#ffffff",
         "bgMode": "none",
@@ -1009,7 +1327,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
       "logo_style": {
         "x": 50,
         "y": 50,
-        "size": 100,
+        "size": 84,
         "zoom": 1,
         "shape": "square",
         "shadow": "hard",
@@ -1026,7 +1344,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "gap": 10,
         "width": 100,
         "finish": "solid",
-        "height": 58,
+        "height": 54,
         "layout": "center",
         "preset": "brutalism",
         "radius": 6,
@@ -1042,13 +1360,13 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "templateId": "rubro:oficios",
         "contentAlign": "left",
         "distribution": {
-          "top": 64,
-          "logoGap": 16,
+          "top": 32,
+          "logoGap": 12,
           "separator": true,
-          "buttonsGap": 12,
-          "socialsGap": 12,
+          "buttonsGap": 10,
+          "socialsGap": 10,
           "separatorColor": "#ffcc00",
-          "separatorSpace": 14,
+          "separatorSpace": 6,
           "separatorStyle": "bolt",
           "separatorWidth": 40,
           "separatorWeight": 2
@@ -1075,33 +1393,121 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "type": "phone",
         "title": "Llamar ahora",
         "subtitle": "Urgencias las 24 horas",
-        "url": "3511234567"
+        "url": "3511234567",
+        "extra": {
+          "featured": true
+        }
       },
       {
         "type": "whatsapp",
         "title": "Pedí un presupuesto",
-        "subtitle": "Mandanos una foto de la cerradura",
         "url": "5493511234567",
-        "message": "Hola! Necesito un presupuesto."
-      },
-      {
-        "type": "url",
-        "title": "Servicios y precios",
-        "subtitle": "Aperturas, cerraduras y copias",
-        "url": "https://llavemaestra.com.ar/servicios",
-        "icon": "tool"
+        "message": "Hola! Necesito un presupuesto.",
+        "extra": {
+          "online": true,
+          "status": "Mandanos una foto de la cerradura"
+        }
       },
       {
         "type": "review",
         "title": "Dejanos tu reseña",
-        "subtitle": "Nos ayuda muchísimo",
-        "url": "https://g.page/r/llavemaestra/review"
+        "url": "https://g.page/r/llavemaestra/review",
+        "extra": {
+          "rating": 4.9,
+          "reviews": 156
+        }
       },
       {
         "type": "maps",
         "title": "Cómo llegar al local",
-        "subtitle": "Av. Colón 1234 · Lun a Sáb 9 a 19",
-        "url": "https://maps.google.com/?q=Av+Colon+1234"
+        "subtitle": "Av. Colón 1234",
+        "url": "https://maps.google.com/?q=Av+Colon+1234",
+        "extra": {
+          "hours": [
+            {
+              "closed": false,
+              "ranges": [
+                [
+                  "09:00",
+                  "13:00"
+                ],
+                [
+                  "16:00",
+                  "20:00"
+                ]
+              ]
+            },
+            {
+              "closed": false,
+              "ranges": [
+                [
+                  "09:00",
+                  "13:00"
+                ],
+                [
+                  "16:00",
+                  "20:00"
+                ]
+              ]
+            },
+            {
+              "closed": false,
+              "ranges": [
+                [
+                  "09:00",
+                  "13:00"
+                ],
+                [
+                  "16:00",
+                  "20:00"
+                ]
+              ]
+            },
+            {
+              "closed": false,
+              "ranges": [
+                [
+                  "09:00",
+                  "13:00"
+                ],
+                [
+                  "16:00",
+                  "20:00"
+                ]
+              ]
+            },
+            {
+              "closed": false,
+              "ranges": [
+                [
+                  "09:00",
+                  "13:00"
+                ],
+                [
+                  "16:00",
+                  "20:00"
+                ]
+              ]
+            },
+            {
+              "closed": false,
+              "ranges": [
+                [
+                  "09:00",
+                  "13:00"
+                ],
+                [
+                  "16:00",
+                  "20:00"
+                ]
+              ]
+            },
+            {
+              "closed": true,
+              "ranges": []
+            }
+          ]
+        }
       }
     ]
   }

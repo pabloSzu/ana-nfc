@@ -8,6 +8,7 @@ import {
 } from "@/lib/landing-catalog";
 import { getFontFamily, resolveFontWeight, resolveTextFont, FontLinks, LogoInitials } from "@/lib/fonts";
 import { buttonCollectionStyle, buttonCollectionWidth, buttonIconStyle, instagramAssetMode, resolveButtonColors, shouldUseBrandMark, youtubeMarkSurfaceColor } from "@/lib/design-presets";
+import { DEFAULT_STATUS, formatRating, formatReviews, openStatus, parseButtonExtra, type ButtonExtra } from "@/lib/button-extras";
 import { ActionTypeIcon, hasCustomActionIcon } from "@/components/action-icons";
 import { IconEdit, IconImage } from "@/components/icons";
 import { landingImageUrl } from "@/lib/landing-image";
@@ -30,6 +31,7 @@ type LandingAction = {
   icon_color?: string | null;
   icon_background_color?: string | null;
   use_auto_color?: boolean | null;
+  extra?: unknown;
 };
 
 type Landing = {
@@ -139,6 +141,24 @@ const SAMPLE_ACTIONS: LandingAction[] = [
 // covers" — 0% = crisp hard edge, 100% = fades starting right from the top.
 function coverFadeGradient(fade: number): string {
   return `linear-gradient(#000 ${100 - fade}%, transparent 100%)`;
+}
+
+// Línea de detalle de los botones especiales (lib/button-extras.ts). Reemplaza al subtítulo
+// cuando el botón tiene datos propios: estrellas en reseñas, "abierto ahora" en la ubicación.
+function ActionDetail({ action, extra, color }: { action: LandingAction; extra: ButtonExtra; color?: string }) {
+  if (action.type === "review" && extra.rating) {
+    return <small className="action-rating" style={{ color }}>
+      <span className="action-stars" aria-label={`${formatRating(extra.rating)} de 5 estrellas`}><span aria-hidden="true">★★★★★</span><span className="action-stars-fill" aria-hidden="true" style={{ width: `${(extra.rating / 5) * 100}%` }}>★★★★★</span></span>
+      <b>{formatRating(extra.rating)}</b>{extra.reviews ? <span>· {formatReviews(extra.reviews)}</span> : null}
+    </small>;
+  }
+  if (action.type === "maps" && extra.hours) {
+    const status = openStatus(extra.hours);
+    if (status) return <small className={`action-hours${status.open ? " is-open" : ""}`} style={{ color }} suppressHydrationWarning><i aria-hidden="true" />{status.label}</small>;
+  }
+  const subtitle = action.subtitle || (action.type === "whatsapp" && extra.online ? extra.status || DEFAULT_STATUS : action.type === "mercadopago" ? "Pagá con QR, tarjeta o transferencia" : "");
+  if (!subtitle) return null;
+  return <small style={{ fontSize: 11, opacity: 0.82, fontWeight: 600, color }}>{action.type === "whatsapp" && extra.online && <i className="action-online-dot" aria-hidden="true" />}{subtitle}</small>;
 }
 
 function actionHref(action: LandingAction) {
@@ -400,6 +420,11 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
             const instagramAsset = instagramAssetMode(zone.collection, action.type, iconAppearance, hasCustomIcon);
             const collectionStyle = buttonCollectionStyle(zone.collection, bg, text, index, action.type, isAuthentic, useNetworkAccent);
             const keepsStructuralBorder = zone.collection === "brutal" || zone.collection === "retro";
+            const extra = parseButtonExtra(action.extra);
+            // Botón destacado: el color de la marca de fondo, más alto y con más presencia.
+            const featured = !isContact && extra.featured === true;
+            const featuredInk = contrastTextColor(primary);
+            const featuredStyle: CSSProperties = featured ? { background: primary, color: featuredInk, border: "none", boxShadow: `0 10px 24px -10px ${primary}` } : {};
             const customGradientStyle: CSSProperties = customGradientTo
               ? {
                   background: `linear-gradient(135deg,${bg},${customGradientTo})`,
@@ -419,13 +444,14 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
                 style={{
                   ...(isContact ? { background: "var(--contact-surface)", color: contactInk, border: "1px solid color-mix(in srgb, var(--contact-ink) 15%, transparent)" } : collectionStyle),
                   ...(!isContact ? customGradientStyle : {}),
+                  ...featuredStyle,
                   width: "100%",
-                  minHeight: isContact ? 68 : zone.height,
+                  minHeight: isContact ? 68 : featured ? zone.height + 10 : zone.height,
                   margin: "0 auto",
                   borderRadius: isContact ? 18 : zone.radius,
-                  boxShadow: isContact ? "0 6px 18px rgba(15,17,30,.08)" : customGradientStyle.boxShadow || collectionStyle.boxShadow || buttonZoneShadow(zone.shadow),
+                  boxShadow: isContact ? "0 6px 18px rgba(15,17,30,.08)" : featuredStyle.boxShadow || customGradientStyle.boxShadow || collectionStyle.boxShadow || buttonZoneShadow(zone.shadow),
                   fontFamily: buttonFont,
-                  fontSize: isContact ? 14 : zone.textSize,
+                  fontSize: isContact ? 14 : featured ? zone.textSize + 1 : zone.textSize,
                   flexDirection: "column",
                   alignItems: isContact || zone.contentAlign === "left" ? "flex-start" : "center",
                   gap: 0,
@@ -442,10 +468,11 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
                     ...(!isContact && customIconBackground
                       ? { background: customIconBackground, color: contrastTextColor(customIconBackground) }
                       : {}),
+                    ...(featured && !hasCustomIcon ? { background: `color-mix(in srgb, ${featuredInk} 16%, transparent)`, color: featuredInk, boxShadow: "none", border: "none" } : {}),
                   }}><ActionTypeIcon type={action.type} icon={action.icon} customImageUrl={action.icon_url} customImageFit={action.icon_fit === "cover" ? "cover" : "contain"} customImageScale={Number(action.icon_scale) || 1} brandMark={!isContact && shouldUseBrandMark(zone.collection, action.type, iconAppearance, isAuthentic)} brandBackground={youtubeMarkSurfaceColor(zone.collection, bg, action.icon_background_color)} instagramAsset={isContact ? "mono" : customIconBackground && instagramAsset === "color" ? "mono" : instagramAsset} /></span>
-                  <span className="action-copy" style={{ textAlign: isContact ? "left" : zone.contentAlign === "center" ? "center" : "left", color: isContact ? contactInk : zone.textColor || undefined, flex: isContact ? "1 1 auto" : undefined }}>
-                    <span className={`action-title${zone.titleLines === 2 ? " action-title-two-lines" : ""}`} style={{ fontWeight: isContact ? 750 : zone.fontWeight === undefined ? undefined : resolveFontWeight(landing.button_font || "modern", zone.fontWeight), letterSpacing: isContact ? undefined : zone.letterSpacing === undefined ? undefined : `${zone.letterSpacing}em`, fontSynthesis: zone.fontWeight === undefined ? undefined : "none", color: isContact ? contactInk : zone.textColor || undefined }}>{action.title}</span>
-                    {action.subtitle && <small style={{ fontSize: 11, opacity: 0.82, fontWeight: 600, color: isContact ? contactInk : zone.textColor || undefined }}>{action.subtitle}</small>}
+                  <span className="action-copy" style={{ textAlign: isContact ? "left" : zone.contentAlign === "center" ? "center" : "left", color: isContact ? contactInk : featured ? featuredInk : zone.textColor || undefined, flex: isContact ? "1 1 auto" : undefined }}>
+                    <span className={`action-title${zone.titleLines === 2 ? " action-title-two-lines" : ""}`} style={{ fontWeight: isContact ? 750 : featured ? 800 : zone.fontWeight === undefined ? undefined : resolveFontWeight(landing.button_font || "modern", zone.fontWeight), letterSpacing: isContact ? undefined : zone.letterSpacing === undefined ? undefined : `${zone.letterSpacing}em`, fontSynthesis: zone.fontWeight === undefined ? undefined : "none", color: isContact ? contactInk : featured ? featuredInk : zone.textColor || undefined }}>{action.title}</span>
+                    <ActionDetail action={action} extra={extra} color={isContact ? contactInk : featured ? featuredInk : zone.textColor || undefined} />
                   </span>
                   {isContact ? !edit && <FiArrowUpRight className="contact-feature-arrow" aria-hidden="true" /> : zone.contentAlign === "center" && <span className="action-icon-balance" aria-hidden="true" />}
                 </span>

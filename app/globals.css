@@ -2971,3 +2971,15 @@ a.plan-status:hover { filter: brightness(.95); text-decoration: underline; }
   .pl-chips::-webkit-scrollbar { display: none; }
   .pl-chip { flex: 0 0 auto; }
 }
+
+/* Botones especiales (lib/button-extras.ts): estrellas de reseñas, horario y WhatsApp en línea. */
+.action-rating { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; opacity: .9; }
+.action-rating b { font-weight: 800; }
+.action-stars { position: relative; display: inline-block; font-size: 12px; letter-spacing: 1px; line-height: 1; color: color-mix(in srgb, currentColor 28%, transparent); }
+.action-stars-fill { position: absolute; inset: 0 auto 0 0; overflow: hidden; white-space: nowrap; color: #fbbc04; -webkit-text-stroke: .6px rgba(20, 16, 10, .55); paint-order: stroke fill; }
+.action-hours { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; opacity: .92; }
+.action-hours i, .action-online-dot { flex: 0 0 auto; width: 7px; height: 7px; border-radius: 50%; background: #e5484d; box-shadow: 0 0 0 2px color-mix(in srgb, #e5484d 25%, transparent); }
+.action-hours.is-open i, .action-online-dot { background: #22c55e; box-shadow: 0 0 0 2px color-mix(in srgb, #22c55e 28%, transparent); }
+.action-online-dot { display: inline-block; margin-right: 6px; vertical-align: 1px; animation: action-online 2.4s ease-in-out infinite; }
+@keyframes action-online { 0%, 100% { box-shadow: 0 0 0 2px color-mix(in srgb, #22c55e 28%, transparent); } 50% { box-shadow: 0 0 0 5px color-mix(in srgb, #22c55e 0%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .action-online-dot { animation: none; } }

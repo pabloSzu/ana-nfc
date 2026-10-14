@@ -4,6 +4,7 @@ import { parseBackgroundPosition, parseButtonZone, parseCoverStyle, parseLogoSty
 import { saveDesignStyle } from "./actions";
 import { publish, deleteLanding } from "@/app/admin/actions";
 import EditorV2 from "./editor-v2";
+import { parseButtonExtra } from "@/lib/button-extras";
 import Toast from "@/components/toast";
 import { Suspense } from "react";
 import "./editor-v2.css";
@@ -46,7 +47,7 @@ export default async function EditorV2Page({ params, searchParams }: { params: P
         id: action.id, type: action.type, title: action.title || "", subtitle: action.subtitle || "",
         url: action.url || "", message: action.message || "", icon: action.icon || "", icon_url: action.icon_url || "", icon_fit: action.icon_fit === "cover" ? "cover" : "contain", icon_scale: Number(action.icon_scale) || 1, icon_background_color: action.icon_background_color || "",
         background_color: action.background_color || "", background_gradient_to: action.background_gradient_to || "", text_color: action.text_color || "#ffffff",
-        use_auto_color: action.use_auto_color !== false, position: action.position || 0,
+        use_auto_color: action.use_auto_color !== false, position: action.position || 0, extra: parseButtonExtra(action.extra),
       }))}
       saveAction={saveDesignStyle}
       publishAction={publish}

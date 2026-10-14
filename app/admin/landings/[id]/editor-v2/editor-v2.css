@@ -360,3 +360,17 @@
 .v2-rubro-blank b { font-size: 13px; }
 .v2-rubro-blank small { color: var(--v2-muted, #6b6475); font-size: 11px; line-height: 1.35; }
 .v2-rubro-notice { margin: 0; padding: 10px 12px; border-radius: 10px; background: color-mix(in srgb, var(--v2-accent, #6d4fd8) 10%, transparent); color: inherit; font-size: 12px; line-height: 1.45; }
+
+/* Botón especial: nota y reseñas, y el editor de horarios. */
+.v2-extra-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.v2-hours { display: grid; gap: 6px; }
+.v2-hours-day { display: grid; grid-template-columns: 64px 1fr; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid var(--v2-line, #e5e1ea); border-radius: 10px; }
+.v2-hours-day.is-closed { opacity: .65; }
+.v2-hours-toggle { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 12px; font-weight: 700; }
+.v2-hours .v2-hours-toggle input[type="checkbox"] { flex: 0 0 auto; width: 16px; height: 16px; min-height: 0; margin: 0; padding: 0; accent-color: var(--v2-accent, #6d4fd8); }
+.v2-hours-closed { font-size: 12px; color: var(--v2-muted, #6b6475); }
+.v2-hours-ranges { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.v2-hours-range { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--v2-muted, #6b6475); }
+.v2-hours .v2-hours-range input[type="time"] { width: 88px; min-height: 30px; height: 30px; padding: 2px 6px; font-size: 12px; }
+.v2-hours-add, .v2-hours-remove { padding: 4px 8px; border: 1px dashed var(--v2-line, #d9d3e0); border-radius: 8px; background: none; color: inherit; font-size: 11px; cursor: pointer; }
+.v2-hours-remove { border-style: solid; padding: 4px 6px; }

@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { parseButtonExtra } from "@/lib/button-extras";
 import { normalizeUrl, isPlausiblePhone, AUTO_COLORS, businessProfiles } from "@/lib/landing-catalog";
 
 const hexColor = /^#[0-9a-f]{6}$/i;
@@ -217,6 +218,7 @@ export async function saveDesignStyle(fd: FormData) {
       background_gradient_to: hexColor.test(String(button.background_gradient_to || "")) ? String(button.background_gradient_to) : "",
       text_color: color(String(button.text_color || ""), "#ffffff"),
       use_auto_color: button.use_auto_color !== false,
+      extra: parseButtonExtra(button.extra),
       enabled: true,
       position,
     };
