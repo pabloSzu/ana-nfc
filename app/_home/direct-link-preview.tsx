@@ -1,11 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { FiArrowLeft, FiArrowUpRight, FiGlobe, FiHeart, FiMapPin, FiMessageCircle, FiMoreHorizontal } from "react-icons/fi";
+import { FiArrowLeft, FiArrowUpRight, FiHeart, FiMapPin, FiMessageCircle, FiMoreHorizontal } from "react-icons/fi";
 import { FaInstagram } from "react-icons/fa6";
 
 export type DirectLinkExample = {
-  id: "reviews" | "instagram" | "website";
+  id: "reviews" | "instagram" | "whatsapp";
   name: string;
 };
 
@@ -64,20 +64,13 @@ function InstagramPreview() {
   );
 }
 
-function WebsitePreview() {
+function WhatsAppPreview() {
   return (
-    <div className="bx-direct-view bx-direct-website">
-      <Image className="bx-direct-site-photo" src="/marketing/showcase/direct-portfolio-designer.webp" alt="Retrato ficticio de Clara Méndez" fill sizes="(max-width: 600px) 244px, 266px" />
-      <div className="bx-direct-site-shade" />
+    <div className="bx-direct-view bx-direct-whatsapp">
       <PhoneStatus />
-      <div className="bx-direct-site-nav"><b>CM.</b><span>Sobre mí&nbsp;&nbsp; Proyectos</span><FiMoreHorizontal /></div>
-      <div className="bx-direct-site-copy">
-        <p>INTERIORISMO · DIRECCIÓN CREATIVA</p>
-        <h3>Clara<br />Méndez</h3>
-        <span>Diseño espacios que se sienten propios, simples y llenos de intención.</span>
-        <button type="button">Conocé mi trabajo <FiArrowUpRight /></button>
+      <div className="bx-direct-whatsapp-app">
+        <Image className="bx-direct-whatsapp-screen" src="/marketing/showcase/direct-whatsapp-fuego-keyboard.webp" alt="Chat ficticio con Fuego Burger, un mensaje de reserva predefinido y el teclado abierto" fill sizes="(max-width: 600px) 188px, 266px" />
       </div>
-      <div className="bx-direct-site-footer"><FiGlobe /><span>claramendez.com.ar</span></div>
     </div>
   );
 }
@@ -86,7 +79,7 @@ export default function DirectLinkPreview({ example }: { example: DirectLinkExam
   return (
     <div className="bx-sample bx-direct-sample" data-direct={example.id}>
       <div className="bx-sample-screen">
-        {example.id === "reviews" ? <ReviewsPreview /> : example.id === "instagram" ? <InstagramPreview /> : <WebsitePreview />}
+        {example.id === "reviews" ? <ReviewsPreview /> : example.id === "instagram" ? <InstagramPreview /> : <WhatsAppPreview />}
       </div>
     </div>
   );

@@ -24,7 +24,7 @@ const CONTACT_EXAMPLES = [
 const DIRECT_LINK_EXAMPLES = [
   { kind: "direct", id: "reviews", category: "Reseñas de Google", name: "Café Jacarandá", style: "Reseñas + confianza", detail: "Llevá a tus clientes directo a calificarte y convertí una buena experiencia en reputación para tu negocio." },
   { kind: "direct", id: "instagram", category: "Instagram", name: "Línea Negra Tattoo", style: "Instagram + comunidad", detail: "Abrí tu perfil social con un toque para mostrar trabajos, novedades y todo lo que pasa en tu marca." },
-  { kind: "direct", id: "website", category: "Sitio web", name: "Clara Méndez", style: "Web + portfolio", detail: "Conectá directamente con tu web, portfolio, tienda o cualquier página que ya tengas online." },
+  { kind: "direct", id: "whatsapp", category: "WhatsApp directo", name: "Fuego Burger", style: "WhatsApp + reservas", detail: "Abrí una conversación con un mensaje ya escrito para que reservar una mesa sea rápido y simple." },
 ] as const;
 
 type LandingExample = typeof LANDING_EXAMPLES[number];
@@ -60,7 +60,7 @@ const SLIDES = [...LANDING_EXAMPLES, ...CONTACT_EXAMPLES, ...DIRECT_LINK_EXAMPLE
 const GROUPS: { kind: Kind; label: string; note: string }[] = [
   { kind: "landing", label: "Landings", note: "Para tu negocio" },
   { kind: "contact", label: "Tarjetas personales", note: "Para vos o tu equipo" },
-  { kind: "direct", label: "Links directos", note: "Reseñas, Instagram o tu web" },
+  { kind: "direct", label: "Links directos", note: "Reseñas, Instagram o WhatsApp" },
 ];
 
 const TAG: Record<Kind, string> = { landing: "Página BIONFC", contact: "Tarjeta BIONFC", direct: "Link directo" };
@@ -160,7 +160,7 @@ export function StyleShowcase({ waUrl }: { waUrl: string }) {
       <div className="bx-gallery-head">
         <p className="bx-showcase-kicker"><span /> LO QUE SE ABRE AL ACERCAR EL CELULAR</p>
         <h2 className="bx-h2 bx-on-dark">Páginas NFC hermosas,<br /><span className="bx-soft">hechas para tu marca.</span></h2>
-        <p className="bx-lead bx-on-dark-muted">Una landing para tu negocio, una tarjeta personal o un link directo a tus reseñas, tu Instagram o tu web. Son solo algunos ejemplos: el tuyo lo diseñamos desde cero.</p>
+        <p className="bx-lead bx-on-dark-muted">Una landing para tu negocio, una tarjeta personal o un link directo a tus reseñas, tu Instagram o un WhatsApp con mensaje predefinido. Son solo algunos ejemplos: el tuyo lo diseñamos desde cero.</p>
       </div>
       <div className="bx-gallery-groups" role="group" aria-label="Tipos de diseño">
         {GROUPS.map((group) => <button key={group.kind} type="button" aria-pressed={activeKind === group.kind} onClick={() => goToGroup(group.kind)}>
