@@ -3,6 +3,9 @@
 import Image from "next/image";
 import { FiArrowLeft, FiArrowUpRight, FiHeart, FiMapPin, FiMessageCircle, FiMoreHorizontal } from "react-icons/fi";
 import { FaInstagram } from "react-icons/fa6";
+import reviewsImage from "../../public/marketing/showcase/direct-reviews-cafe.webp";
+import instagramImage from "../../public/marketing/showcase/direct-instagram-tattoo.webp";
+import whatsappImage from "../../public/marketing/showcase/direct-whatsapp-fuego-keyboard.webp";
 
 export type DirectLinkExample = {
   id: "reviews" | "instagram" | "whatsapp";
@@ -13,13 +16,13 @@ function PhoneStatus() {
   return <div className="bx-direct-status" aria-hidden="true"><span>9:41</span><span>••• ▰</span></div>;
 }
 
-function ReviewsPreview() {
+function ReviewsPreview({ eager }: { eager: boolean }) {
   return (
     <div className="bx-direct-view bx-direct-reviews">
       <PhoneStatus />
       <div className="bx-direct-topbar"><FiArrowLeft /><span>Reseñas</span><FiMoreHorizontal /></div>
       <div className="bx-direct-review-photo">
-        <Image src="/marketing/showcase/direct-reviews-cafe.webp" alt="Fachada ficticia de Café Jacarandá" fill sizes="(max-width: 600px) 244px, 266px" />
+        <Image src={reviewsImage} alt="Fachada ficticia de Café Jacarandá" fill sizes="(max-width: 600px) 244px, 266px" loading={eager ? "eager" : "lazy"} placeholder="blur" />
       </div>
       <div className="bx-direct-review-card">
         <span className="bx-direct-google" aria-hidden="true"><i>G</i></span>
@@ -34,7 +37,7 @@ function ReviewsPreview() {
   );
 }
 
-function InstagramPreview() {
+function InstagramPreview({ eager }: { eager: boolean }) {
   return (
     <div className="bx-direct-view bx-direct-instagram">
       <PhoneStatus />
@@ -49,37 +52,37 @@ function InstagramPreview() {
       <button className="bx-direct-follow" type="button">Seguir</button>
       <div className="bx-direct-ig-tabs"><span>▦</span><span>♙</span></div>
       <div className="bx-direct-ig-grid">
-        <div className="is-photo"><Image src="/marketing/showcase/direct-instagram-tattoo.webp" alt="Trabajo ficticio del estudio Línea Negra" fill sizes="90px" /></div>
+        <div className="is-photo"><Image src={instagramImage} alt="Trabajo ficticio del estudio Línea Negra" fill sizes="90px" loading={eager ? "eager" : "lazy"} placeholder="blur" /></div>
         <div className="is-flash is-one"><span>✦</span></div>
-        <div className="is-photo is-crop"><Image src="/marketing/showcase/direct-instagram-tattoo.webp" alt="" fill sizes="90px" /></div>
+        <div className="is-photo is-crop"><Image src={instagramImage} alt="" fill sizes="90px" placeholder="blur" /></div>
         <div className="is-flash is-two"><span>☾</span></div>
-        <div className="is-photo is-detail"><Image src="/marketing/showcase/direct-instagram-tattoo.webp" alt="" fill sizes="90px" /></div>
+        <div className="is-photo is-detail"><Image src={instagramImage} alt="" fill sizes="90px" placeholder="blur" /></div>
         <div className="is-flash is-three"><span>❋</span></div>
-        <div className="is-photo is-soft"><Image src="/marketing/showcase/direct-instagram-tattoo.webp" alt="" fill sizes="90px" /></div>
+        <div className="is-photo is-soft"><Image src={instagramImage} alt="" fill sizes="90px" placeholder="blur" /></div>
         <div className="is-flash is-four"><span>⌁</span></div>
-        <div className="is-photo is-wide"><Image src="/marketing/showcase/direct-instagram-tattoo.webp" alt="" fill sizes="90px" /></div>
+        <div className="is-photo is-wide"><Image src={instagramImage} alt="" fill sizes="90px" placeholder="blur" /></div>
       </div>
       <div className="bx-direct-ig-actions" aria-hidden="true"><FiHeart /><FiMessageCircle /><span>⌁</span></div>
     </div>
   );
 }
 
-function WhatsAppPreview() {
+function WhatsAppPreview({ eager }: { eager: boolean }) {
   return (
     <div className="bx-direct-view bx-direct-whatsapp">
       <PhoneStatus />
       <div className="bx-direct-whatsapp-app">
-        <Image className="bx-direct-whatsapp-screen" src="/marketing/showcase/direct-whatsapp-fuego-keyboard.webp" alt="Chat ficticio con Fuego Burger, un mensaje de reserva predefinido y el teclado abierto" fill sizes="(max-width: 600px) 188px, 266px" />
+        <Image className="bx-direct-whatsapp-screen" src={whatsappImage} alt="Chat ficticio con Fuego Burger, un mensaje de reserva predefinido y el teclado abierto" fill sizes="(max-width: 600px) 188px, 266px" loading={eager ? "eager" : "lazy"} placeholder="blur" />
       </div>
     </div>
   );
 }
 
-export default function DirectLinkPreview({ example }: { example: DirectLinkExample }) {
+export default function DirectLinkPreview({ example, eager = false }: { example: DirectLinkExample; eager?: boolean }) {
   return (
     <div className="bx-sample bx-direct-sample" data-direct={example.id}>
       <div className="bx-sample-screen">
-        {example.id === "reviews" ? <ReviewsPreview /> : example.id === "instagram" ? <InstagramPreview /> : <WhatsAppPreview />}
+        {example.id === "reviews" ? <ReviewsPreview eager={eager} /> : example.id === "instagram" ? <InstagramPreview eager={eager} /> : <WhatsAppPreview eager={eager} />}
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import Image, { type StaticImageData } from "next/image";
 import type { CSSProperties } from "react";
 import { FiArrowUpRight, FiDownload, FiGlobe, FiMail, FiPhone } from "react-icons/fi";
 
@@ -14,10 +14,10 @@ export type ContactPreviewExample = {
   font: string;
   layout: "card" | "document";
   pattern: "original" | "grid";
-  photo?: string;
+  photo?: StaticImageData;
 };
 
-export default function ContactPreview({ example }: { example: ContactPreviewExample }) {
+export default function ContactPreview({ example, eager = false }: { example: ContactPreviewExample; eager?: boolean }) {
   const initials = example.name.split(" ").map((part) => part[0]).join("");
 
   return (
@@ -26,10 +26,10 @@ export default function ContactPreview({ example }: { example: ContactPreviewExa
         <div className="bx-contact-status" aria-hidden="true"><span>9:41</span><span>••• ▰</span></div>
         <div className="bx-contact-card">
           <div className="bx-contact-cover">
-            {example.photo && example.id !== "essential" ? <Image src={example.photo} alt="" fill sizes="280px" /> : <span aria-hidden="true">{initials}</span>}
+            {example.photo && example.id !== "essential" ? <Image src={example.photo} alt="" fill sizes="280px" loading={eager ? "eager" : "lazy"} placeholder="blur" /> : <span aria-hidden="true">{initials}</span>}
           </div>
           <div className="bx-contact-identity">
-            <div className="bx-contact-avatar">{example.photo ? <Image src={example.photo} alt="" fill sizes="90px" /> : initials}</div>
+            <div className="bx-contact-avatar">{example.photo ? <Image src={example.photo} alt="" fill sizes="90px" loading={eager ? "eager" : "lazy"} placeholder="blur" /> : initials}</div>
             <p>{example.role}</p><h3>{example.name}</h3><span>{example.company}</span>
           </div>
           <div className="bx-contact-actions">

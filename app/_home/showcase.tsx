@@ -1,23 +1,27 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import Image from "next/image";
 import { FiArrowLeft, FiArrowRight, FiArrowUpRight, FiCalendar, FiCoffee, FiGrid, FiMapPin, FiScissors } from "react-icons/fi";
 import { FaInstagram, FaWhatsapp } from "react-icons/fa6";
 import { DESIGN_PRESETS_V2 } from "@/lib/design-presets";
 import DirectLinkPreview from "./direct-link-preview";
 import ContactPreview from "./contact-preview";
+import coffeeImage from "../../public/marketing/showcase/coffee.jpg";
+import interiorImage from "../../public/marketing/showcase/interior.jpg";
+import contactExecutiveImage from "../../public/marketing/showcase/contact-executive.webp";
+import contactEditorialImage from "../../public/marketing/showcase/contact-editorial.webp";
 
 const LANDING_EXAMPLES = [
-  { kind: "landing", id: "cafe", category: "Cafetería", name: "Café Nube", line: "Un buen café. Un lindo momento.", monogram: "nube", preset: "glass", style: "Glass + fotografía", image: "/marketing/showcase/coffee.jpg", detail: "Una foto que invita a entrar. Botones de vidrio que dejan ver tu esencia.", actions: ["Explorá nuestro menú", "Reservá tu mesa", "Cómo llegar"], icons: [FiCoffee, FiCalendar, FiMapPin] },
+  { kind: "landing", id: "cafe", category: "Cafetería", name: "Café Nube", line: "Un buen café. Un lindo momento.", monogram: "nube", preset: "glass", style: "Glass + fotografía", image: coffeeImage, detail: "Una foto que invita a entrar. Botones de vidrio que dejan ver tu esencia.", actions: ["Explorá nuestro menú", "Reservá tu mesa", "Cómo llegar"], icons: [FiCoffee, FiCalendar, FiMapPin] },
   { kind: "landing", id: "beauty", category: "Belleza", name: "Blueberry Nails", line: "Un pequeño ritual para vos.", monogram: "b.", preset: "pastel", style: "Pastel + logo", detail: "Tonos suaves, un logo protagonista y todos tus turnos a un toque.", actions: ["Agendá tu próximo turno", "Nuestros trabajos", "Hablemos por WhatsApp"], icons: [FiCalendar, FaInstagram, FaWhatsapp] },
   { kind: "landing", id: "barber", category: "Barbería", name: "BARBER CLUB", line: "Tu estilo. Nuestro oficio.", monogram: "BC", preset: "brutalism", style: "Brutalismo + carácter", detail: "Tipografía con presencia, contraste y botones con personalidad.", actions: ["Reservá tu corte", "Conocé el estudio", "Cómo llegar"], icons: [FiScissors, FaInstagram, FiMapPin] },
-  { kind: "landing", id: "architecture", category: "Arquitectura", name: "ana estudio", line: "Espacios para habitar distinto.", monogram: "a /", preset: "elegant", style: "Elegante + fotografía", image: "/marketing/showcase/interior.jpg", detail: "Una composición editorial, tonos cálidos y espacio para mostrar lo que hacés.", actions: ["Nuestros proyectos", "Hablemos de tu idea", "Instagram"], icons: [FiGrid, FaWhatsapp, FaInstagram] },
+  { kind: "landing", id: "architecture", category: "Arquitectura", name: "ana estudio", line: "Espacios para habitar distinto.", monogram: "a /", preset: "elegant", style: "Elegante + fotografía", image: interiorImage, detail: "Una composición editorial, tonos cálidos y espacio para mostrar lo que hacés.", actions: ["Nuestros proyectos", "Hablemos de tu idea", "Instagram"], icons: [FiGrid, FaWhatsapp, FaInstagram] },
 ] as const;
 
 const CONTACT_EXAMPLES = [
-  { kind: "contact", id: "essential", category: "Ejecutivo", name: "Ricardo Ferrer", role: "Fundador & Director", company: "Ferrer & Asociados", style: "Ejecutivo + retrato", detail: "Un perfil sobrio y cercano, con una imagen profesional y toda la información importante bien ordenada.", accent: "#24334f", backdrop: "#e9edf2", font: "modern", layout: "card", pattern: "original", photo: "/marketing/showcase/contact-executive.webp" },
-  { kind: "contact", id: "editorial", category: "Editorial", name: "Ana Duarte", role: "Arquitecta", company: "Ana Duarte Estudio", style: "Editorial + retrato", detail: "Foto, tipografía con carácter y una presentación más personal.", accent: "#46372f", backdrop: "#e9e3dc", font: "domine", layout: "card", pattern: "original", photo: "/marketing/showcase/contact-editorial.webp" },
+  { kind: "contact", id: "essential", category: "Ejecutivo", name: "Ricardo Ferrer", role: "Fundador & Director", company: "Ferrer & Asociados", style: "Ejecutivo + retrato", detail: "Un perfil sobrio y cercano, con una imagen profesional y toda la información importante bien ordenada.", accent: "#24334f", backdrop: "#e9edf2", font: "modern", layout: "card", pattern: "original", photo: contactExecutiveImage },
+  { kind: "contact", id: "editorial", category: "Editorial", name: "Ana Duarte", role: "Arquitecta", company: "Ana Duarte Estudio", style: "Editorial + retrato", detail: "Foto, tipografía con carácter y una presentación más personal.", accent: "#46372f", backdrop: "#e9e3dc", font: "domine", layout: "card", pattern: "original", photo: contactEditorialImage },
   { kind: "contact", id: "professional", category: "Profesional", name: "Marcos Vidal", role: "Consultor de negocios", company: "Vidal Consultoría", style: "Profesional + ficha", detail: "Información ordenada en formato de ficha, ideal para compartir en reuniones.", accent: "#163b49", backdrop: "#e8eff0", font: "manrope", layout: "document", pattern: "grid" },
 ] as const;
 
@@ -29,12 +33,12 @@ const DIRECT_LINK_EXAMPLES = [
 
 type LandingExample = typeof LANDING_EXAMPLES[number];
 
-function Preview({ example }: { example: LandingExample }) {
+function Preview({ example, eager = false }: { example: LandingExample; eager?: boolean }) {
   const preset = DESIGN_PRESETS_V2.find((item) => item.id === example.preset)!;
   return (
     <div className="bx-sample" data-design={example.id} style={{ "--sample-bg": preset.background, "--sample-ink": preset.foreground, "--sample-radius": `${preset.buttonZone.radius / 4}cqw` } as CSSProperties}>
       <div className="bx-sample-screen">
-        {"image" in example && <Image className="bx-sample-photo" src={example.image} alt="" fill sizes="(max-width: 600px) 280px, 340px" />}
+        {"image" in example && <Image className="bx-sample-photo" src={example.image} alt="" fill sizes="(max-width: 600px) 280px, 340px" loading={eager ? "eager" : "lazy"} placeholder="blur" />}
         <div className="bx-sample-shade" />
         <div className="bx-sample-status" aria-hidden="true"><span>9:41</span><span>••• ▰</span></div>
         <div className="bx-sample-content">
@@ -65,12 +69,15 @@ const GROUPS: { kind: Kind; label: string; note: string }[] = [
 
 const TAG: Record<Kind, string> = { landing: "Página BIONFC", contact: "Tarjeta BIONFC", direct: "Link directo" };
 
-// Para el loop infinito la lista se dibuja tres veces seguidas y se navega siempre por la copia
-// del medio: cuando el carrusel se detiene sobre la primera o la tercera copia, salta en silencio
-// al mismo diseño de la copia del medio. Como los celulares son idénticos, el salto no se ve.
-const COPIES = 3;
+// Una sola serie real con cuatro clones a cada lado alcanza para cubrir los celulares visibles y
+// mantener el loop infinito. Antes se dibujaban tres series completas (30 teléfonos); ahora son 18.
+const CLONE_BUFFER = 4;
 const TOTAL = SLIDES.length;
-const LOOPED = Array.from({ length: COPIES }, (_, copy) => SLIDES.map((example) => ({ example, copy }))).flat();
+const MAIN_START = CLONE_BUFFER;
+const LOOPED = Array.from({ length: TOTAL + CLONE_BUFFER * 2 }, (_, index) => {
+  const slideIndex = (index - CLONE_BUFFER + TOTAL) % TOTAL;
+  return { example: SLIDES[slideIndex], slideIndex };
+});
 
 function offsetFor(track: HTMLDivElement, index: number) {
   const slide = track.children[index] as HTMLElement | undefined;
@@ -87,11 +94,12 @@ export function StyleShowcase({ waUrl }: { waUrl: string }) {
   // Destino del desplazamiento en curso. Con clics rápidos en las flechas, el siguiente paso se
   // cuenta desde acá y no desde el celular que pasa por el centro a mitad de la animación.
   const targetRef = useRef<number | null>(null);
-  const [active, setActive] = useState(TOTAL + 1);
+  const [active, setActive] = useState(MAIN_START + 1);
   const [inView, setInView] = useState(false);
   const [paused, setPaused] = useState(false);
   const [autoplay, setAutoplay] = useState(true);
-  const current = SLIDES[active % TOTAL];
+  const currentSlideIndex = LOOPED[active]?.slideIndex ?? 1;
+  const current = SLIDES[currentSlideIndex];
   const activeKind = current.kind as Kind;
 
   const goTo = useCallback((index: number) => {
@@ -106,11 +114,13 @@ export function StyleShowcase({ waUrl }: { waUrl: string }) {
   // Lleva al primer diseño de un grupo, eligiendo la copia más cercana para no recorrer de más.
   const goToGroup = (kind: Kind) => {
     const first = SLIDES.findIndex((slide) => slide.kind === kind);
-    const candidates = Array.from({ length: COPIES }, (_, copy) => first + copy * TOTAL);
+    const candidates = [MAIN_START + first];
+    if (first < CLONE_BUFFER) candidates.push(MAIN_START + TOTAL + first);
+    if (first >= TOTAL - CLONE_BUFFER) candidates.push(first - (TOTAL - CLONE_BUFFER));
     userGoTo(candidates.reduce((best, index) => Math.abs(index - active) < Math.abs(best - active) ? index : best));
   };
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const track = trackRef.current;
     if (!track) return;
     let frame = 0;
@@ -129,8 +139,8 @@ export function StyleShowcase({ waUrl }: { waUrl: string }) {
     const recenter = () => {
       targetRef.current = null;
       const index = nearestIndex();
-      if (index >= TOTAL && index < TOTAL * 2) return;
-      const target = TOTAL + (index % TOTAL);
+      if (index >= MAIN_START && index < MAIN_START + TOTAL) return;
+      const target = MAIN_START + LOOPED[index].slideIndex;
       // Sin transiciones durante el salto: si no, el celular de destino se vería crecer.
       track.classList.add("is-jumping");
       track.scrollLeft += offsetFor(track, target) - offsetFor(track, index);
@@ -143,7 +153,8 @@ export function StyleShowcase({ waUrl }: { waUrl: string }) {
       settle = window.setTimeout(recenter, 160);
     };
     track.addEventListener("scroll", onScroll, { passive: true });
-    track.scrollLeft = offsetFor(track, TOTAL + 1);
+    track.scrollLeft = offsetFor(track, MAIN_START + 1);
+    track.classList.add("is-ready");
     const observer = typeof IntersectionObserver === "undefined" ? null : new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), { threshold: 0.4 });
     observer?.observe(track);
     return () => { track.removeEventListener("scroll", onScroll); observer?.disconnect(); if (frame) cancelAnimationFrame(frame); window.clearTimeout(settle); };
@@ -169,11 +180,15 @@ export function StyleShowcase({ waUrl }: { waUrl: string }) {
       </div>
       <div className="bx-gallery-stage" onPointerEnter={(event) => { if (event.pointerType === "mouse") setPaused(true); }} onPointerLeave={() => setPaused(false)}>
         <div className="bx-gallery-track" ref={trackRef} onPointerDown={() => setAutoplay(false)} onWheel={() => setAutoplay(false)} aria-label="Ejemplos de diseños" role="region" tabIndex={0} onKeyDown={(event) => { if (event.key === "ArrowRight" || event.key === "ArrowLeft") { event.preventDefault(); step(event.key === "ArrowRight" ? 1 : -1); } }}>
-          {LOOPED.map(({ example, copy }, index) => {
+          {LOOPED.map(({ example, slideIndex }, index) => {
             const kind = example.kind as Kind;
-            return <figure key={`${copy}-${kind}-${example.id}`} className={`bx-gallery-slide is-${kind}${index === active ? " is-active" : ""}`} onClick={() => { if (index !== active) userGoTo(index); }} aria-hidden={index !== active}>
+            const directDistance = Math.abs(slideIndex - currentSlideIndex);
+            // Estas son las tarjetas que ya se ven, aunque sea parcialmente, en el primer cuadro.
+            // Marcarlas desde el HTML evita que el navegador espere a hidratar para pedir sus fotos.
+            const eager = Math.min(directDistance, TOTAL - directDistance) <= 3;
+            return <figure key={`${index}-${kind}-${example.id}`} className={`bx-gallery-slide is-${kind}${index === active ? " is-active" : ""}`} onClick={() => { if (index !== active) userGoTo(index); }} aria-hidden={index !== active}>
               <span className={`bx-gallery-tag is-${kind}`}>{TAG[kind]}</span>
-              <div className="bx-gallery-phone">{example.kind === "landing" ? <Preview example={example} /> : example.kind === "contact" ? <ContactPreview example={example} /> : <DirectLinkPreview example={example} />}</div>
+              <div className="bx-gallery-phone">{example.kind === "landing" ? <Preview example={example} eager={eager} /> : example.kind === "contact" ? <ContactPreview example={example} eager={eager} /> : <DirectLinkPreview example={example} eager={eager} />}</div>
               <figcaption>{example.category}</figcaption>
             </figure>;
           })}
@@ -183,7 +198,7 @@ export function StyleShowcase({ waUrl }: { waUrl: string }) {
       </div>
       <div className="bx-gallery-controls">
         <button type="button" className="bx-gallery-arrow" onClick={() => step(-1)} aria-hidden="true" tabIndex={-1}><FiArrowLeft aria-hidden="true" /></button>
-        <span aria-hidden="true">{SLIDES.map((slide, index) => <i key={`${slide.kind}-${slide.id}`} className={index === active % TOTAL ? "is-active" : undefined} />)}</span>
+        <span aria-hidden="true">{SLIDES.map((slide, index) => <i key={`${slide.kind}-${slide.id}`} className={index === currentSlideIndex ? "is-active" : undefined} />)}</span>
         <button type="button" className="bx-gallery-arrow" onClick={() => step(1)} aria-hidden="true" tabIndex={-1}><FiArrowRight aria-hidden="true" /></button>
       </div>
       <a className="bx-btn bx-btn-white" href={waUrl} target="_blank" rel="noreferrer">Quiero mi diseño <FiArrowUpRight aria-hidden="true" /></a>
