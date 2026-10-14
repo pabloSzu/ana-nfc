@@ -371,7 +371,7 @@
 
 /* Editor de landings en tres zonas fijas (como Canva o Wix):
    - centro: el celular, SIEMPRE en el medio; abrir o cerrar un panel no lo mueve;
-   - izquierda: "Elegir" — Prediseños, lo que cambia la página entera;
+   - izquierda: "Elegir" — Plantillas, lo que cambia la página entera;
    - derecha: "Editar" — lo que tocaste en el celular (título, un botón, el fondo…).
    Las dos son barras de arriba a abajo con el mismo aspecto, no ventanitas flotantes. Su ancho
    se achica para no pisar el celular (≈400px + 40px de aire a cada lado); en pantallas angostas
@@ -404,4 +404,15 @@
   }
   .v2-shell:not(.is-contact-editor) .v2-workspace.is-templates .v2-rubro-grid { grid-template-columns: 1fr 1fr; }
   .v2-shell:not(.is-contact-editor) .v2-workspace.is-templates .v2-rubro-preview { height: 250px; }
+}
+
+/* Editando una plantilla: el fondo detrás del celular es lila con una marca de agua "CREADOR DE PLANTILLAS" y una paleta
+   repetida en diagonal, muy tenue (como un papel membretado). Se nota de un vistazo que no es la
+   página de un cliente, sin tapar nada. */
+.v2-shell.is-template .v2-stage {
+  background:
+    url("/editor/template-watermark.svg"),
+    radial-gradient(#d4cff3 1px, transparent 1px),
+    linear-gradient(160deg, #f4f1ff, #ebe7fb);
+  background-size: 520px 230px, 22px 22px, auto;
 }

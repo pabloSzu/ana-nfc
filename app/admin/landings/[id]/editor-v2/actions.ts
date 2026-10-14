@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { buttonsMissingLink } from "@/lib/business-templates";
 import { parseButtonExtra } from "@/lib/button-extras";
 import { normalizeUrl, isPlausiblePhone, AUTO_COLORS, businessProfiles } from "@/lib/landing-catalog";
 
@@ -42,7 +43,7 @@ async function auth() {
 
 async function ownedLanding(landingId: string, userId: string) {
   const supabase = await createClient();
-  const { data, error } = await supabase.from("landings").select("id,slug").eq("id", landingId).eq("owner_id", userId).maybeSingle();
+  const { data, error } = await supabase.from("landings").select("id,slug,template_name").eq("id", landingId).eq("owner_id", userId).maybeSingle();
   return { supabase, data, error };
 }
 
@@ -211,7 +212,7 @@ export async function saveDesignStyle(fd: FormData) {
     let value = type === "cv" && cvUploadedUrl ? cvUploadedUrl : String(button.url || "").trim();
     const iconUrl = String(button.icon_url || "").trim();
     if (!isOwnedButtonIconUrl(iconUrl, user.id, landingId)) saveFail(`El ícono propio del botón “${title}” no es válido.`);
-    if (type === "cv" && !value) saveFail("Subí un PDF o agregá un enlace para el documento.");
+    if (type === "cv" && !value && !landing?.template_name) saveFail("Subí un PDF o agregá un enlace para el documento.");
     if (type === "email" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) saveFail(`El email del botón “${title}” no parece válido.`);
     if (["whatsapp", "phone"].includes(type) && value && !isPlausiblePhone(value)) saveFail(`El número del botón “${title}” parece incompleto.`);
     // Una promo puede llevar a un número de WhatsApp (ver promoHref): ese número no se toca.
@@ -272,5 +273,8 @@ export async function saveDesignStyle(fd: FormData) {
   // esos 5 minutos en verse publicado, en cualquier navegador. Publicar y renombrar ya lo hacían;
   // el editor era el único que no.
   if (landing?.slug) revalidatePath(`/${landing.slug}`);
-  redirect(`${returnTo}?saved=Cambios guardados`);
+  // Se guarda igual, pero si quedaron botones sin link se avisa (no se publican hasta completarlos).
+  const missing = businessType === "contact" || landing?.template_name ? 0 : buttonsMissingLink(requestedButtons.map((button) => ({ type: String(button.type || ""), url: String(button.url || "") }))).length;
+  const savedMessage = missing ? `Cambios guardados · ${missing === 1 ? "1 botón sigue" : `${missing} botones siguen`} sin link` : "Cambios guardados";
+  redirect(`${returnTo}?saved=${encodeURIComponent(savedMessage)}`);
 }

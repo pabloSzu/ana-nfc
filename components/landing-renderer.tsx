@@ -123,6 +123,8 @@ export type LandingEditControls = {
   onAddButton: () => void;
   onButtonRef: (id: string, el: HTMLDivElement | null) => void;
   onDragStart: (clientY: number, id: string) => void;
+  // Editando una plantilla: los links no se cargan (se copian vacíos), así que no se marcan como faltantes.
+  linksOptional?: boolean;
 };
 
 const noBlank = new Set(["whatsapp", "email", "phone"]);
@@ -187,7 +189,9 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
   const showCover = Boolean(!isContact && cover.enabled && coverImageUrl);
   const contactHeroImage = isContact && cover.enabled ? coverImageUrl : "";
   const isSampleButtons = Boolean(edit) && actions.length === 0 && !isContact;
-  const shownActions = isSampleButtons ? SAMPLE_ACTIONS : actions;
+  // En la página publicada, un botón sin link no se muestra (no llevaría a ningún lado). La
+  // promoción sí, porque muestra su código igual. En el editor y las miniaturas se ven todos.
+  const shownActions = isSampleButtons ? SAMPLE_ACTIONS : edit || editorPreview ? actions : actions.filter((action) => action.type === "promo" || String(action.url || "").trim());
   const contactQuickActions = isContact ? ["phone", "email", "whatsapp"].flatMap((type) => {
     const action = actions.find((item) => item.type === type && item.url);
     return action ? [action] : [];
@@ -218,7 +222,9 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
     ? distribution.coverHeight + COVER_SIZE_EXTRA.large - COVER_SIZE_EXTRA[cover.size]
     : undefined;
   const iconAppearance = zone.iconAppearance;
-  const socialLinks = (zone.quickSocials || []).flatMap(link => { const href = quickSocialHref(link); return href ? [{ ...link, href }] : []; });
+  // Una red sin usuario (por ejemplo, recién copiada de una plantilla) no se publica; en el editor y
+  // en las miniaturas se muestra igual, como pendiente, para que se vea qué falta completar.
+  const socialLinks = (zone.quickSocials || []).flatMap(link => { const href = quickSocialHref(link); return href ? [{ ...link, href, pending: false }] : edit || editorPreview ? [{ ...link, href: "#", pending: true }] : []; });
   const hasSavedButtonStyle = Boolean(landing.button_style && typeof landing.button_style === "object" && Object.keys(landing.button_style).length);
   if (!hasSavedButtonStyle) zone.oneColor = primary;
   const buttonFont = getFontFamily(landing.button_font || "modern");
@@ -341,7 +347,7 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
         <>
           <button type="button" className="editor-bg-hit" onClick={edit.onSelectBackground} aria-label="Editar fondo" />
           <div className="editor-quick-tools">
-            {!isContact && <button type="button" className={edit.selected === "templates" ? "active" : ""} onClick={edit.onSelectTemplates}>✦ Prediseños</button>}
+            {!isContact && <button type="button" className={edit.selected === "templates" ? "active" : ""} onClick={edit.onSelectTemplates}>✦ Plantillas</button>}
             {isContact && <button type="button" className={edit.selected === "contact-design" || edit.selected === "templates" || edit.selected === "distribution" || edit.selected === "background" ? "active" : ""} onClick={edit.onSelectContactDesign}><FiSliders aria-hidden="true" /> Diseño</button>}
             {isContact && <button type="button" className={edit.selected === "cover" ? "active" : ""} onClick={edit.onSelectCover}><IconImage /> Portada</button>}
             {isContact && <button type="button" className={edit.selected === "contact" || edit.selected === "contact-name" || edit.selected === "contact-role" || edit.selected === "contact-company" ? "active" : ""} onClick={edit.onSelectContact}><FiUser aria-hidden="true" /> Datos</button>}
@@ -394,7 +400,7 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
         </div>
         </div>
         {!isContact && distribution.separator && <div className={`landing-separator${edit ? " editor-hit" : ""}${edit?.selected === "distribution" ? " is-selected" : ""}`} data-tag={edit ? "Separador" : undefined} onClick={edit?.onSelectDistribution} style={{ paddingBlock: distribution.separatorSpace }}>
-          <div style={{ width: `${distribution.separatorWidth}%` }}><LandingSeparator variant={distribution.separatorStyle} color={distribution.separatorColor} weight={distribution.separatorWeight} /></div>
+          <div style={{ width: `${distribution.separatorWidth}%` }}><LandingSeparator variant={distribution.separatorStyle} color={distribution.separatorColor} weight={distribution.separatorWeight} logoUrl={landing.logo_url} /></div>
           {edit && <button type="button" aria-label="Editar separador" onClick={edit.onSelectDistribution}><IconEdit aria-hidden="true" /></button>}
         </div>}
         {isContact && zone.contactBio && <section className={`contact-about${edit ? " editor-hit" : ""}`} aria-label="Sobre mí" data-tag={edit ? "Sobre mí" : undefined} onClick={edit?.onSelectContact}><span>SOBRE MÍ</span><p>{zone.contactBio}</p></section>}
@@ -524,6 +530,7 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
                 )}
               </a>
               {isSampleButtons && <span className="editor-own-badge">Ejemplo</span>}
+              {edit && !isSampleButtons && !isContact && !edit.linksOptional && action.type !== "promo" && !String(action.url || "").trim() && <span className="editor-missing-link" title="Este botón todavía no tiene link" aria-label="Sin link" />}
               {edit && !isSampleButtons && <button type="button" className="editor-delete-action" aria-label={`${isContact ? "Quitar enlace" : "Eliminar botón"}: ${action.title}`} title={`Eliminar ${action.title}`} disabled={Boolean(edit.draggingId)} onClick={() => edit.onDeleteButton(action.id)}><FiTrash2 aria-hidden="true" /></button>}
               </div>
             );
@@ -532,7 +539,7 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
         </div>
         {(socialLinks.length > 0 || (edit && !isContact)) && <div className={`landing-socials-block${edit ? " editor-hit" : ""}${edit?.selected === "socials" ? " is-selected" : ""}`} data-tag={edit ? "Redes rápidas" : undefined} onClick={edit ? () => edit.onSelectSocials() : undefined} style={{ marginTop: isContact ? 14 : distribution.socialsGap }}>
           {socialLinks.length > 0 && <nav className="landing-socials" aria-label="Redes sociales" data-tone={bottomTone} data-filled={zone.quickSocialsFilled === false ? "no" : "yes"}>
-            {socialLinks.map(link => <a key={link.type} href={link.href} target="_blank" rel="noopener noreferrer" aria-label={QUICK_SOCIALS.find(option => option.type === link.type)?.label} onClick={edit ? event => { event.preventDefault(); edit.onSelectSocials(); } : undefined}><ActionTypeIcon type={link.type} /></a>)}
+            {socialLinks.map(link => <a key={link.type} className={link.pending && edit && !edit.linksOptional ? "is-pending" : undefined} title={link.pending && edit && !edit.linksOptional ? "Todavía sin usuario" : undefined} href={link.href} target="_blank" rel="noopener noreferrer" aria-label={QUICK_SOCIALS.find(option => option.type === link.type)?.label} onClick={edit ? event => { event.preventDefault(); edit.onSelectSocials(); } : undefined}><ActionTypeIcon type={link.type} /></a>)}
           </nav>}
           {edit && <button type="button" className="editor-socials-entry" onClick={edit.onSelectSocials}><IconEdit aria-hidden="true" />{socialLinks.length ? "Editar redes rápidas" : "Agregar redes rápidas"}</button>}
         </div>}

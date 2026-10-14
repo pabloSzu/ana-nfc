@@ -191,7 +191,7 @@ export type DistributionStyle = {
   // Undefined preserves the legacy geometry for existing pages. Once spacing is edited, the
   // editor stores the currently rendered cover height so later spacing changes cannot reframe it.
   coverHeight?: number;
-  separator: boolean; separatorStyle: "solid" | "dotted" | "double" | "fade" | "diamond" | "sparkle" | "circle" | "heart" | "leaf" | "star" | "flower" | "trio" | "bolt" | "sun";
+  separator: boolean; separatorStyle: "solid" | "dotted" | "double" | "fade" | "diamond" | "sparkle" | "circle" | "heart" | "leaf" | "star" | "flower" | "trio" | "bolt" | "sun" | "logo";
   separatorColor: string; separatorWidth: number; separatorWeight: number; separatorSpace: number;
 };
 export function parseDistribution(raw: unknown, layout = "center"): DistributionStyle {
@@ -200,7 +200,7 @@ export function parseDistribution(raw: unknown, layout = "center"): Distribution
   return { top: n(p.top, 48, 320, 64), logoGap: n(p.logoGap, 0, 64, layout === "compact" ? 14 : 18), buttonsGap: n(p.buttonsGap, 0, 100, 10), socialsGap: n(p.socialsGap, 0, 64, 12),
     coverHeight: typeof p.coverHeight === "number" && Number.isFinite(p.coverHeight) ? Math.min(900, Math.max(120, p.coverHeight)) : undefined,
     separator: typeof p.separator === "boolean" ? p.separator : layout === "poster",
-    separatorStyle: p.separatorStyle && ["solid", "dotted", "double", "fade", "diamond", "sparkle", "circle", "heart", "leaf", "star", "flower", "trio", "bolt", "sun"].includes(p.separatorStyle) ? p.separatorStyle : "solid",
+    separatorStyle: p.separatorStyle && ["solid", "dotted", "double", "fade", "diamond", "sparkle", "circle", "heart", "leaf", "star", "flower", "trio", "bolt", "sun", "logo"].includes(p.separatorStyle) ? p.separatorStyle : "solid",
     separatorColor: typeof p.separatorColor === "string" && /^#[0-9a-f]{6}$/i.test(p.separatorColor) ? p.separatorColor : "#b2a18a",
     separatorWidth: n(p.separatorWidth, 15, 100, 100), separatorWeight: n(p.separatorWeight, 1, 5, 1), separatorSpace: n(p.separatorSpace, 0, 48, 12) };
 }

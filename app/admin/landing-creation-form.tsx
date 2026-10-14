@@ -12,7 +12,7 @@ type LandingCreationFormProps = {
   clientId?: string;
   clientName?: string;
   returnTo?: string;
-  // Prediseños para elegir al crear (ver templateChoices en lib/business-templates.ts).
+  // Plantillas para elegir al crear (ver templateChoices en lib/business-templates.ts).
   templates?: Array<{ id: string; name: string }>;
 };
 
@@ -44,7 +44,7 @@ export default function LandingCreationForm({ clients, action, kind, clientId, c
       </> : <>
         <label className="label">{kind === "contact" ? "Nombre de la persona" : "Nombre de la landing"}<input name="business_name" placeholder={kind === "contact" ? "Ej. Ana Pérez" : "Ej. Aurora Hotel"} required /></label>
         <label className="label">URL (opcional)<input name="slug" placeholder={kind === "contact" ? "ana-perez" : "aurora-hotel"} /></label>
-        {kind === "custom" && <label className="label">Prediseño<select name="rubro_template" defaultValue="">
+        {kind === "custom" && <label className="label">Plantilla<select name="rubro_template" defaultValue="">
           <option value="">Página en blanco</option>
           {templates.map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}
         </select><small className="field-help">Arranca con el diseño, la foto y los botones de ejemplo. Después los cambiás por los del cliente.</small></label>}

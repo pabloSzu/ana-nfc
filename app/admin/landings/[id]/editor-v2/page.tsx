@@ -25,7 +25,7 @@ export default async function EditorV2Page({ params, searchParams }: { params: P
   const [{ data: landing }, { data: actions }, { data: templateRows }] = await Promise.all([
     supabase.from("landings").select("*").eq("id", id).eq("owner_id", userId).maybeSingle(),
     supabase.from("actions").select("*").eq("landing_id", id).eq("enabled", true).order("position"),
-    // Prediseños (Admin → Prediseños), para el panel del editor.
+    // Plantillas (Admin → Plantillas), para el panel del editor.
     supabase.from("landings").select("*, actions(*)").eq("owner_id", userId).eq("business_type", "custom").not("template_name", "is", null),
   ]);
   if (!landing) notFound();

@@ -60,11 +60,11 @@ export default function ManageScreen({ landing, client }: { landing: ManageLandi
       <ManagePanel data={data} saveAction={saveLandingManagement} renewAction={renewLanding} redirectAction={setLandingRedirect} />
 
       {landing.business_type !== "contact" && plan !== "direct" && <section className="card manage-template">
-        <div><strong>Guardar como prediseño</strong><p>Crea una copia de esta página en <Link href="/admin/predisenos">Prediseños</Link>, para arrancar otras desde ella. Esta página no cambia.</p></div>
+        <div><strong>Guardar como plantilla</strong><p>Crea una copia de esta página en <Link href="/admin/plantillas">Plantillas</Link>, para arrancar otras desde ella. Esta página no cambia.</p></div>
         <form action={copyAsTemplate} className="manage-template-form">
           <input type="hidden" name="id" value={landing.id} />
           <input type="hidden" name="return_to" value={`/admin/landings/${landing.id}/gestion`} />
-          <input name="template_name" maxLength={40} required placeholder="Ej. Café · degradé" aria-label="Nombre del prediseño" />
+          <input name="template_name" maxLength={40} required placeholder="Ej. Café · degradé" aria-label="Nombre de la plantilla" />
           <button className="btn" type="submit">Guardar copia</button>
         </form>
       </section>}

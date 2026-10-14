@@ -22,7 +22,7 @@ export default async function Admin() {
     supabase.from("clients").select("*").eq("owner_id", userId).order("created_at", { ascending: false }),
     supabase.from("landings").select("*, actions(type,url,enabled,position)").eq("owner_id", userId).order("created_at", { ascending: false }),
   ]);
-  // Los prediseños son landings propias pero no páginas de clientes: no cuentan acá.
+  // Las plantillas son landings propias pero no páginas de clientes: no cuentan acá.
   const landings = (allLandings || []).filter((landing) => !landing.template_name);
   const templates = templateChoices(allLandings || []);
   const totalClients = clients?.length || 0;

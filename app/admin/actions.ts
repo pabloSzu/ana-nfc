@@ -1,6 +1,6 @@
 "use server";import {createClient} from "@/lib/supabase/server";import {redirect} from "next/navigation";import {revalidatePath} from "next/cache";
 import { businessProfiles, isPlausiblePhone } from "@/lib/landing-catalog";
-import { BUSINESS_TEMPLATES, sortTemplateRows, templateActionRows, templateFromLanding, type BusinessTemplate } from "@/lib/business-templates";
+import { BUSINESS_TEMPLATES, buttonsMissingLink, sortTemplateRows, templateActionRows, templateFromLanding, withoutLinks, type BusinessTemplate } from "@/lib/business-templates";
 import { manualRedirectUpdate, managementUpdate, normalizeLink, parsePlan, publishUpdate, renewalUpdate, type UpdateResult } from "@/lib/landing-plan";
 const slugify=(v:string)=>v.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"").slice(0,60);
 const emailPattern=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -44,7 +44,7 @@ export async function newLanding(fd: FormData) {
   if (clientError) onError(clientError.message);
   if (clientId && !client) onError("Cliente inexistente o sin permisos");
   const isContact = businessType === "contact";
-  // Prediseño elegido al crear: uno propio ("mine-<id>", ver Prediseños más abajo) o, si todavía
+  // Plantilla elegida al crear: una propia ("mine-<id>", ver Plantillas más abajo) o, si todavía
   // no tiene ninguno, uno de BIONFC.
   const requestedTemplate = String(fd.get("rubro_template") || "");
   let rubroTemplate = !isContact && !isDirect ? BUSINESS_TEMPLATES.find((template) => template.id === requestedTemplate) : undefined;
@@ -52,6 +52,8 @@ export async function newLanding(fd: FormData) {
     const { data: own } = await s.from("landings").select("*, actions(*)").eq("id", requestedTemplate.slice(5)).eq("owner_id", user.id).not("template_name", "is", null).maybeSingle();
     if (own) rubroTemplate = templateFromLanding(own);
   }
+  // Los links de la plantilla son de ejemplo: la página nueva arranca sin ninguno (ver withoutLinks).
+  if (rubroTemplate) rubroTemplate = withoutLinks(rubroTemplate);
   const { data, error } = await s.from("landings").insert({
     owner_id: user.id, client_id: clientId, request_key: requestKey, business_name: businessName, slug,
     template: String(fd.get("template") || "professional"), business_type: businessType,
@@ -90,7 +92,14 @@ export async function publish(fd: FormData) {
   const { data: landing, error: lookupError } = await s.from("landings").select("id,slug,business_type,plan,expires_at,template_name").eq("id", id).eq("owner_id", user.id).maybeSingle();
   if (lookupError) redirect(target + "?error=" + encodeURIComponent(lookupError.message));
   if (!landing) redirect(target + "?error=Página inexistente o sin permisos");
-  if (desired && landing.template_name) redirect(target + "?error=" + encodeURIComponent("Un prediseño no se publica: creá una página desde él."));
+  if (desired && landing.template_name) redirect(target + "?error=" + encodeURIComponent("Una plantilla no se publica: creá una página desde ella."));
+  // Un botón sin link no llevaría a ningún lado (por ejemplo, recién copiado de una plantilla).
+  if (desired && landing.business_type !== "contact") {
+    const { data: actions, error: actionsError } = await s.from("actions").select("type,url,title").eq("landing_id", id).eq("enabled", true);
+    if (actionsError) redirect(target + "?error=" + encodeURIComponent(actionsError.message));
+    const missing = buttonsMissingLink(actions || []);
+    if (missing.length) redirect(target + "?error=" + encodeURIComponent(`Antes de publicar, completá el link de: ${missing.map((action) => action.title || "un botón").join(", ")}.`));
+  }
   if (desired && landing.business_type === "contact") {
     const { data: actions, error: actionsError } = await s.from("actions").select("type,url").eq("landing_id", id).eq("enabled", true).in("type", ["phone", "email", "whatsapp"]);
     if (actionsError) redirect(target + "?error=" + encodeURIComponent(actionsError.message));
@@ -187,21 +196,23 @@ export async function setLandingRedirect(fd: FormData) {
   return applyManagement(fd, (landing) => manualRedirectUpdate(landing, fd.get("clear") !== "true"));
 }
 
-// --- Prediseños ---------------------------------------------------------------------------------
-// Un prediseño es una landing propia con template_name: no tiene cliente, nunca se publica y no
-// aparece en Páginas. Se edita en el editor de siempre y se maneja en /admin/predisenos. Elegirlo
+// --- Plantillas ---------------------------------------------------------------------------------
+// Una plantilla es una landing propia con template_name: no tiene cliente, nunca se publica y no
+// aparece en Páginas. Se edita en el editor de siempre y se maneja en /admin/plantillas. Elegirla
 // (al crear una página o desde el editor) copia la página entera. Siempre son copias: guardar una
-// página de un cliente como prediseño no la saca de su lugar.
-const TEMPLATES_PATH = "/admin/predisenos";
+// página de un cliente como plantilla no la saca de su lugar.
+const TEMPLATES_PATH = "/admin/plantillas";
 const templateName = (value: unknown) => String(value || "").trim().slice(0, 40);
 
-async function insertTemplate(s: Awaited<ReturnType<typeof createClient>>, ownerId: string, template: BusinessTemplate | null, name: string, order: number) {
+async function insertTemplate(s: Awaited<ReturnType<typeof createClient>>, ownerId: string, source: BusinessTemplate | null, name: string, order: number) {
+  // Una plantilla nunca guarda links: ni los de ejemplo ni los de la página de un cliente copiada.
+  const template = source && withoutLinks(source);
   const { data, error } = await s.from("landings").insert({
     owner_id: ownerId, client_id: null, business_type: "custom", template: "professional", plan: "lifetime", published: false,
-    slug: "prediseno-" + crypto.randomUUID().slice(0, 8), business_name: template?.landing.business_name || name,
+    slug: "plantilla-" + crypto.randomUUID().slice(0, 8), business_name: template?.landing.business_name || name,
     ...(template ? template.landing : {}), template_name: name, template_order: order, template_hidden: false,
   }).select("id").single();
-  if (error || !data) return { error: error?.message || "No se pudo crear el prediseño" };
+  if (error || !data) return { error: error?.message || "No se pudo crear la plantilla" };
   if (template?.actions.length) {
     const { error: actionsError } = await s.from("actions").insert(templateActionRows(template, data.id));
     if (actionsError) return { error: actionsError.message };
@@ -223,14 +234,14 @@ function refreshTemplates() {
 export async function createTemplate(fd: FormData) {
   const { s, user } = await auth();
   const name = templateName(fd.get("template_name"));
-  if (!name) redirect(TEMPLATES_PATH + "?error=" + encodeURIComponent("Ponele un nombre al prediseño."));
+  if (!name) redirect(TEMPLATES_PATH + "?error=" + encodeURIComponent("Ponele un nombre a la plantilla."));
   const result = await insertTemplate(s, user.id, null, name, await nextTemplateOrder(s, user.id));
   if ("error" in result) redirect(TEMPLATES_PATH + "?error=" + encodeURIComponent(String(result.error)));
   refreshTemplates();
-  redirect("/admin/landings/" + result.id + "/editor-v2?saved=" + encodeURIComponent("Prediseño creado: armalo como cualquier página"));
+  redirect("/admin/landings/" + result.id + "/editor-v2?saved=" + encodeURIComponent("Plantilla creada: armalo como cualquier página"));
 }
 
-// Trae los prediseños de BIONFC (lib/business-templates.ts) a la cuenta, para poder editarlos,
+// Trae las plantillas de BIONFC (lib/business-templates.ts) a la cuenta, para poder editarlas,
 // ocultarlos u ordenarlos. Los que ya están (mismo nombre) no se duplican.
 export async function importBuiltinTemplates() {
   const { s, user } = await auth();
@@ -246,10 +257,10 @@ export async function importBuiltinTemplates() {
     added++;
   }
   refreshTemplates();
-  redirect(TEMPLATES_PATH + "?saved=" + encodeURIComponent(added ? `Listo: ${added} prediseños de BIONFC en tu cuenta` : "Ya los tenías todos"));
+  redirect(TEMPLATES_PATH + "?saved=" + encodeURIComponent(added ? `Listo: ${added} plantillas de BIONFC en tu cuenta` : "Ya las tenías todas"));
 }
 
-// Copia una página (un prediseño, o la landing de un cliente desde Gestión) como prediseño nuevo.
+// Copia una página (una plantilla, o la landing de un cliente desde Gestión) como plantilla nueva.
 export async function copyAsTemplate(fd: FormData) {
   const { s, user } = await auth();
   const id = String(fd.get("id") || "");
@@ -263,7 +274,7 @@ export async function copyAsTemplate(fd: FormData) {
   const result = await insertTemplate(s, user.id, templateFromLanding(source), name, await nextTemplateOrder(s, user.id));
   if ("error" in result) fail(String(result.error));
   refreshTemplates();
-  redirect(returnTo + "?saved=" + encodeURIComponent(`Prediseño "${name}" creado`));
+  redirect(returnTo + "?saved=" + encodeURIComponent(`Plantilla "${name}" creada`));
 }
 
 export async function updateTemplate(fd: FormData) {
@@ -275,18 +286,18 @@ export async function updateTemplate(fd: FormData) {
   if (error) fail(error.message);
   const sorted = sortTemplateRows(rows || []);
   const index = sorted.findIndex((row) => row.id === id);
-  if (index < 0) fail("Prediseño inexistente o sin permisos");
+  if (index < 0) fail("Plantilla inexistente o sin permisos");
   const update = (patch: Record<string, unknown>, rowId = id) => s.from("landings").update(patch).eq("id", rowId).eq("owner_id", user.id);
   let message = "";
   let updateError: { message: string } | null = null;
   if (op === "rename") {
     const name = templateName(fd.get("template_name"));
-    if (!name) fail("Ponele un nombre al prediseño.");
+    if (!name) fail("Ponele un nombre a la plantilla.");
     updateError = (await update({ template_name: name })).error;
     message = "Nombre actualizado";
   } else if (op === "hide" || op === "show") {
     updateError = (await update({ template_hidden: op === "hide" })).error;
-    message = op === "hide" ? "Prediseño oculto: ya no se ofrece al crear páginas" : "Prediseño visible otra vez";
+    message = op === "hide" ? "Plantilla oculta: ya no se ofrece al crear páginas" : "Plantilla visible otra vez";
   } else if (op === "up" || op === "down") {
     const other = index + (op === "up" ? -1 : 1);
     if (other >= 0 && other < sorted.length) {
@@ -301,7 +312,7 @@ export async function updateTemplate(fd: FormData) {
   } else if (op === "delete") {
     const { error: deleteError } = await s.from("landings").delete().eq("id", id).eq("owner_id", user.id).not("template_name", "is", null);
     if (deleteError) fail(deleteError.message);
-    message = "Prediseño eliminado";
+    message = "Plantilla eliminada";
   } else fail("Acción desconocida");
   if (updateError) fail(updateError.message);
   refreshTemplates();

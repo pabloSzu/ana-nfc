@@ -33,7 +33,7 @@ export default async function PagesPage({ searchParams }: { searchParams: Search
     supabase.from("landings").select("*, actions(type,url,enabled,position)").eq("owner_id", userId).order("created_at", { ascending: false }),
     supabase.from("landing_view_counts").select("landing_id,total,last_30_days"),
   ]);
-  // Los prediseños viven en su propio panel (/admin/predisenos), no en esta lista.
+  // Las plantillas viven en su propio panel (/admin/plantillas), no en esta lista.
   const pages = (allPages || []).filter((page) => !page.template_name);
   if (viewCountsError) console.error("No se pudieron cargar las estadísticas de visitas", { code: viewCountsError.code, message: viewCountsError.message });
   const clientsById = new Map((clients || []).map((client) => [client.id, client]));

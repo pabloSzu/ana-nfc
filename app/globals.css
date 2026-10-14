@@ -2710,6 +2710,7 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
 .landing-separator-art { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 20px; }
 .separator-line { flex: 1 1 0; min-width: 0; height: var(--separator-weight); background: currentColor; border-radius: 999px; }
 .separator-ornament { flex: 0 0 20px; width: 20px; height: 20px; }
+.separator-ornament-logo { border-radius: 50%; object-fit: cover; }
 .landing-separator-art[data-variant="fade"] .separator-line { mask-image: linear-gradient(90deg,transparent,#000 35%,#000 65%,transparent); }
 .landing-separator-art[data-ornament="true"] .separator-line:first-child { mask-image: linear-gradient(90deg,transparent,#000); }
 .landing-separator-art[data-ornament="true"] .separator-line:last-child { mask-image: linear-gradient(90deg,#000,transparent); }
@@ -3015,27 +3016,49 @@ a.plan-status:hover { filter: brightness(.95); text-decoration: underline; }
 .template-preview { position: relative; overflow: hidden; background: #111; }
 .template-preview-canvas { width: 100%; height: 100%; pointer-events: none; }
 
-/* Admin → Prediseños */
+/* Admin → Plantillas */
 .pd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--space-4); margin: var(--space-4) 0 0; padding: 0; list-style: none; }
 .pd-card { display: grid; gap: 10px; align-content: start; padding: 12px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); }
-.pd-card.is-hidden .pd-preview { opacity: .45; }
 .pd-preview { height: 340px; border-radius: 12px; }
 .pd-copy { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
 .pd-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pd-copy small { color: var(--text-muted); font-size: 0.75rem; white-space: nowrap; }
-.pd-badge { padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--text-muted); font-size: 0.75rem; font-weight: 600; }
-.pd-actions { display: flex; align-items: center; gap: 6px; }
-.pd-edit { flex: 1; justify-content: center; }
-.pd-icon { display: inline-grid; place-items: center; width: 38px; height: 38px; padding: 0; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); font-size: 1rem; cursor: pointer; }
-.pd-icon:hover { background: var(--surface-2); }
-.pd-more summary { color: var(--text-muted); font-size: 0.8125rem; cursor: pointer; }
-.pd-more > div { display: grid; gap: 10px; margin-top: 10px; }
-.pd-rename { display: flex; gap: 6px; }
-.pd-rename input { flex: 1; min-width: 0; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); color: var(--text); font: inherit; }
-.pd-row { display: flex; flex-wrap: wrap; gap: 14px; }
 .pd-text { padding: 0; border: 0; background: none; color: var(--text); font: inherit; font-size: 0.8125rem; font-weight: 600; text-decoration: underline; cursor: pointer; }
-.pd-text.is-danger { color: var(--danger, #c0392b); }
 .pd-empty { display: grid; gap: var(--space-3); }
 .pd-empty h2 { margin: 0 0 4px; }
 .pd-import { display: flex; align-items: center; gap: 10px; margin-top: var(--space-4); }
 .pd-tip { margin-top: var(--space-3); font-size: 0.8125rem; }
+
+/* Confirmación propia (app/admin/confirm-submit.tsx), en lugar del cartel del navegador. */
+dialog.confirm-modal { width: min(400px, calc(100vw - 32px)); }
+.confirm-modal .modal-content { display: grid; justify-items: center; gap: 6px; text-align: center; }
+.confirm-modal .modal-content h2 { padding-right: 0; }
+.confirm-modal .modal-content > p.muted { margin-bottom: var(--space-3); line-height: 1.5; }
+.confirm-modal-icon { display: grid; place-items: center; width: 46px; height: 46px; margin-bottom: 6px; border-radius: 50%; background: var(--danger-subtle); color: var(--danger); font-size: 22px; font-weight: 900; }
+.confirm-modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; }
+.confirm-modal-actions .btn { justify-content: center; width: 100%; }
+.btn.danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+
+/* Editor: botón sin link → un puntito discreto en la esquina; red sin usuario → más tenue.
+   El aviso con detalle está en Ajustes, al publicar. Nada de esto se ve en la página publicada. */
+.editor-missing-link { position: absolute; z-index: 3; top: 50%; left: -14px; width: 7px; height: 7px; border-radius: 50%; background: #f59e0b; box-shadow: 0 0 0 2px rgba(255,255,255,.85); transform: translateY(-50%); pointer-events: none; }
+.landing-socials a.is-pending { opacity: .4; }
+
+/* Admin → Plantillas: grilla de tarjetas grandes; la miniatura es la protagonista. El número de
+   orden va sobre la miniatura y las flechas mueven la plantilla antes/después en la grilla. */
+.tl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 18px; margin: var(--space-4) 0 0; padding: 0; list-style: none; }
+.tl-card { display: grid; gap: 12px; align-content: start; padding: 12px; border: 1px solid var(--border); border-radius: 18px; background: var(--surface); box-shadow: 0 6px 18px rgba(20, 22, 40, .05); }
+.tl-art { position: relative; }
+.tl-thumb { height: 440px; border-radius: 12px; }
+.tl-card.is-hidden .tl-thumb { opacity: .4; }
+.tl-pos { position: absolute; top: 10px; left: 10px; display: grid; place-items: center; min-width: 28px; height: 28px; padding: 0 8px; border-radius: 999px; background: rgba(255,255,255,.92); color: #1f2230; font-size: 12px; font-weight: 800; box-shadow: 0 2px 8px rgba(0,0,0,.18); }
+.tl-hidden-badge { position: absolute; top: 10px; right: 10px; padding: 4px 10px; border-radius: 999px; background: #1f2230; color: #fff; font-size: 11px; font-weight: 800; }
+.tl-copy { display: grid; gap: 3px; min-width: 0; padding: 0 2px; }
+.tl-copy strong { font-size: 15px; line-height: 1.3; overflow-wrap: anywhere; }
+.tl-copy small { color: var(--text-muted); font-size: 12px; }
+.tl-actions { display: flex; align-items: center; gap: 6px; }
+.tl-edit { flex: 1; justify-content: center; white-space: nowrap; }
+.tl-move { display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); font-size: 15px; cursor: pointer; }
+.tl-move:hover:not(:disabled) { background: var(--surface-2); }
+.tl-move:disabled { opacity: .3; cursor: default; }
+@media (max-width: 560px) { .tl-thumb { height: 520px; } }

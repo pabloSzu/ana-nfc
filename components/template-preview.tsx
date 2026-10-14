@@ -5,8 +5,8 @@ import ScaledPhoneCanvas from "@/components/scaled-phone-canvas";
 import { FontLinks } from "@/lib/fonts";
 import type { BusinessTemplate } from "@/lib/business-templates";
 
-// Miniatura de un prediseño: la página real, achicada. La usan el panel del editor y
-// Admin → Prediseños, así las dos muestran exactamente lo que va a quedar.
+// Miniatura de una plantilla: la página real, achicada. La usan el panel del editor y
+// Admin → Plantillas, así las dos muestran exactamente lo que va a quedar.
 export default function TemplatePreview({ template, className = "" }: { template: BusinessTemplate; className?: string }) {
   const landing = { ...template.landing, id: template.id, slug: "", business_type: "custom", published: true };
   const actions = template.actions.map((action, index) => ({ use_auto_color: true, ...action, id: `${template.id}-${index}` }));

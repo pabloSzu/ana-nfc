@@ -1,8 +1,17 @@
 import type { CSSProperties } from "react";
 import type { DistributionStyle } from "@/lib/landing-catalog";
 
-// The picker and public landing render the same artwork.
-export default function LandingSeparator({ variant, color, weight }: { variant: DistributionStyle["separatorStyle"]; color: string; weight: number }) {
+// The picker and public landing render the same artwork. "logo" pone el logo de la página en
+// chiquito, del mismo alto (20px) que los demás adornos, así cambiar de diseño nunca mueve nada.
+// Sin logo cargado queda un círculo: el separador nunca se ve vacío.
+export default function LandingSeparator({ variant, color, weight, logoUrl }: { variant: DistributionStyle["separatorStyle"]; color: string; weight: number; logoUrl?: string | null }) {
+  if (variant === "logo") {
+    const custom = logoUrl ? <img className="separator-ornament separator-ornament-logo" src={logoUrl} alt="" /> : null;
+    if (custom) return <span className="landing-separator-art" data-variant={variant} data-ornament="true" aria-hidden="true" style={{ color, "--separator-weight": `${weight}px` } as CSSProperties}>
+      <span className="separator-line" />{custom}<span className="separator-line" />
+    </span>;
+    variant = "circle";
+  }
   const ornaments = {
     bolt: <path d="m14 2-10 12h7l-1 8L20 10h-7Z" />,
     sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5" /></>,

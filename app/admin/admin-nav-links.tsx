@@ -8,7 +8,7 @@ const items = [
   { href: "/admin", label: "Resumen", icon: IconRocket },
   { href: "/admin/clientes", label: "Clientes", icon: IconUsers },
   { href: "/admin/paginas", label: "Páginas", icon: IconFileText },
-  { href: "/admin/predisenos", label: "Prediseños", icon: IconPaintRoller },
+  { href: "/admin/plantillas", label: "Plantillas", icon: IconPaintRoller },
 ];
 
 export default function AdminNavLinks() {

@@ -1518,7 +1518,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
   }
 ];
 
-// Prediseño: una landing marcada con template_name, que se arma y edita desde Admin → Prediseños
+// Plantilla: una landing marcada con template_name, que se arma y edita desde Admin → Plantillas
 // como cualquier otra página. Se lee con la misma forma que las de arriba para que el editor y el
 // alta de páginas las usen igual.
 type SavedLanding = Record<string, unknown> & TemplateRow & { actions?: Record<string, unknown>[] | null };
@@ -1548,9 +1548,9 @@ export function templateFromLanding(row: SavedLanding): BusinessTemplate {
   };
 }
 
-// Prediseños de un usuario. Mientras no tenga ninguno propio se ofrecen los de BIONFC de arriba
-// (desde Admin → Prediseños se traen a su cuenta para poder editarlos); en cuanto tiene alguno se
-// usan solo los suyos, en su orden y sin los ocultos.
+// Plantillas de un usuario. Mientras no tenga ninguna propia se ofrecen las de BIONFC de arriba
+// (desde Admin → Plantillas se traen a su cuenta para poder editarlas); en cuanto tiene alguna se
+// usan solo las suyas, en su orden y sin las ocultas.
 export type TemplateRow = { id: string; template_name?: string | null; template_hidden?: boolean | null; template_order?: number | null };
 
 export function sortTemplateRows<T extends TemplateRow>(rows: T[]): T[] {
@@ -1571,7 +1571,7 @@ export function editorTemplates(rows: SavedLanding[]): BusinessTemplate[] {
   return sortTemplateRows(rows).filter((row) => !row.template_hidden).map(templateFromLanding);
 }
 
-// Botones de una landing nueva copiada de un prediseño.
+// Botones de una landing nueva copiada de una plantilla.
 export function templateActionRows(template: BusinessTemplate, landingId: string) {
   return template.actions.map((action, position) => ({
     landing_id: landingId, type: action.type, title: action.title, subtitle: action.subtitle || "", url: action.url || "",
@@ -1579,4 +1579,26 @@ export function templateActionRows(template: BusinessTemplate, landingId: string
     icon_url: action.icon_url || "", icon_fit: action.icon_fit === "cover" ? "cover" : "contain", icon_scale: action.icon_scale || 1, icon_background_color: action.icon_background_color || "",
     use_auto_color: action.use_auto_color !== false, background_color: action.background_color || "#1f2937", background_gradient_to: action.background_gradient_to || "", text_color: action.text_color || "#ffffff",
   }));
+}
+
+// Una plantilla se copia SIN links: los de los botones (WhatsApp, Instagram, reseñas…) y los
+// usuarios de las redes rápidas quedan vacíos para cargar los del cliente. Así un link de ejemplo
+// nunca termina publicado. Las redes elegidas se conservan (vacías) para que se vea qué falta.
+export function withoutLinks(template: BusinessTemplate): BusinessTemplate {
+  const style = template.landing.button_style || {};
+  const socials = Array.isArray(style.quickSocials) ? style.quickSocials : undefined;
+  return {
+    ...template,
+    landing: {
+      ...template.landing,
+      button_style: socials ? { ...style, quickSocials: socials.map((link) => ({ ...(link as Record<string, unknown>), url: "" })) } : style,
+    },
+    actions: template.actions.map((action) => ({ ...action, url: "" })),
+  };
+}
+
+// Botones de una página que todavía no tienen link. La promoción puede ir sin link (muestra el
+// código igual), así que no cuenta.
+export function buttonsMissingLink<T extends { type: string; url?: string | null }>(actions: T[]): T[] {
+  return actions.filter((action) => action.type !== "promo" && !String(action.url || "").trim());
 }

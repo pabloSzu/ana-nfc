@@ -16,7 +16,7 @@ import { parseBackgroundPosition, parseButtonZone, parseSubtitleStyle, parseTitl
 import FontPicker from "../font-picker";
 import { FontLinks, getFontWeights, LogoInitials, recommendedButtonTypography, resolveFontWeight } from "@/lib/fonts";
 import IconPicker from "../icon-picker";
-import type { BusinessTemplate } from "@/lib/business-templates";
+import { buttonsMissingLink, withoutLinks, type BusinessTemplate } from "@/lib/business-templates";
 import TemplatePreview from "@/components/template-preview";
 import { DAY_SHORT, DEFAULT_STATUS, defaultHours, openStatus, type ButtonExtra, type DayHours } from "@/lib/button-extras";
 import { DESIGN_PRESETS_V2, buttonCollectionStyle, buttonIconStyle, instagramAssetMode, recommendedIconAppearance, resolveButtonColors, shouldUseBrandMark, youtubeMarkSurfaceColor, type DesignPreset } from "@/lib/design-presets";
@@ -179,8 +179,8 @@ function logoTreatmentPatch(treatment: LogoTreatment, templateId = "minimal"): P
 }
 
 export default function EditorV2({ landing, initialButtons, templates = [], isTemplate = false, newlyCreatedContact = false, saveAction, publishAction, deleteLandingAction }: { landing: LandingDraft; initialButtons: ButtonItem[]; templates?: BusinessTemplate[]; isTemplate?: boolean; newlyCreatedContact?: boolean; saveAction: SaveAction; publishAction: SaveAction; deleteLandingAction: SaveAction }) {
-  // Un prediseño se edita igual que una página, pero no se publica: se vuelve a su panel.
-  const exitHref = isTemplate ? "/admin/predisenos" : "/admin";
+  // Una plantilla se edita igual que una página, pero no se publica: se vuelve a su panel.
+  const exitHref = isTemplate ? "/admin/plantillas" : "/admin";
   const [draft, setDraft] = useState(landing);
   const [buttons, setButtons] = useState(initialButtons);
   const [panel, setPanel] = useState<Panel>(landing.business_type === "contact" && !newlyCreatedContact ? null : "templates");
@@ -191,6 +191,7 @@ export default function EditorV2({ landing, initialButtons, templates = [], isTe
   const [deletedButton, setDeletedButton] = useState<{ button: ButtonItem; index: number } | null>(null);
   const restoreButtonRef = useRef<HTMLButtonElement>(null);
   const [leaveOpen, setLeaveOpen] = useState(false);
+  const [pendingTemplate, setPendingTemplate] = useState<BusinessTemplate | "blank" | null>(null);
   const [pendingContactLook, setPendingContactLook] = useState<{ id: ContactLook["id"]; hidesBackgroundPhoto: boolean } | null>(null);
   // Purely a personal viewing preference for the app's OWN chrome — nothing to do with the
   // landing being edited — shared with /admin via the same localStorage key (theme-scene.tsx),
@@ -517,15 +518,52 @@ export default function EditorV2({ landing, initialButtons, templates = [], isTe
     patchButtons((current) => current.map((button) => ({ ...button, use_auto_color: true, background_gradient_to: "", icon_background_color: "" })));
   }
 
-  // Prediseños (Admin → Prediseños), como en Wix: elegir uno deja la página idéntica a la
+  // Plantillas (Admin → Plantillas), como en Wix: elegir uno deja la página idéntica a la
   // miniatura —textos, botones, links, logo, fotos y colores— y descarta lo que había. Es como
   // arrancar desde una página ya hecha; después se cambian los datos por los del cliente. Un
   // deshacer vuelve todo atrás.
-  function applyBusinessTemplate(id: string) {
+  // Si la página ya tiene contenido propio, antes se confirma con un cartel que muestra la miniatura
+  // de lo que va a quedar (no el del navegador).
+  function requestBusinessTemplate(id: string) {
     const template = templates.find((item) => item.id === id);
     if (!template) return;
     const hasOwnContent = buttons.some((button) => button.url.trim()) || Boolean(logoPreview || coverPreview || bgPreview);
-    if (hasOwnContent && !window.confirm(`"${template.name}" reemplaza todo lo que tiene esta página: textos, botones, links, logo y fotos. Se puede deshacer. ¿Seguir?`)) return;
+    if (hasOwnContent) setPendingTemplate(template); else applyBusinessTemplate(template);
+  }
+
+  // "Página en blanco": la página queda desnuda para armarla de cero — estilo limpio (Minimalismo),
+  // sin textos, botones, redes, separador, logo ni fotos. El título queda con el nombre de la
+  // página. Como las plantillas, si había contenido pide confirmación y se puede deshacer.
+  function requestBlankPage() {
+    const hasOwnContent = buttons.length > 0 || Boolean(draft.description || logoImage || coverImage || backgroundImage);
+    if (hasOwnContent) setPendingTemplate("blank"); else applyBlankPage();
+  }
+
+  function applyBlankPage() {
+    applyPreset("minimal");
+    setDraft((current) => ({
+      ...current,
+      description: "", logo_url: "", cover_image_url: "", background_image_url: "",
+      bgPosition: parseBackgroundPosition({}),
+      titleStyle: { ...current.titleStyle, headline: current.business_name, eyebrow: "" },
+      buttonZone: { ...current.buttonZone, quickSocials: [], distribution: { ...parseDistribution(current.buttonZone.distribution, current.buttonZone.layout), separator: false } },
+    }));
+    const clearPending = (inputId: string, preview: string | null, setPreview: (value: string | null) => void) => {
+      const input = document.getElementById(inputId) as HTMLInputElement | null;
+      if (input) input.value = "";
+      if (preview) URL.revokeObjectURL(preview);
+      setPreview(null);
+    };
+    clearPending("v2-cover-file", coverPreview, setCoverPreview); setCoverRemoved(false);
+    clearPending("v2-background-file", bgPreview, setBgPreview);
+    clearPending("v2-logo-file", logoPreview, setLogoPreview); setLogoRemoved(false);
+    patchButtons(() => []);
+    setTemplateNotice("Listo: la página quedó en blanco. Tocá cada parte del celular para completarla.");
+  }
+
+  function applyBusinessTemplate(chosen: BusinessTemplate) {
+    // Sin links: los de la plantilla son de ejemplo (ver withoutLinks).
+    const template = withoutLinks(chosen);
     const source = template.landing;
     const zone = parseButtonZone(source.button_style);
     commitDiscrete();
@@ -540,7 +578,7 @@ export default function EditorV2({ landing, initialButtons, templates = [], isTe
       coverStyle: parseCoverStyle(source.cover_style),
       description: source.description, logo_url: source.logo_url || "", cover_image_url: source.cover_image_url || "", background_image_url: source.background_image_url || "",
     });
-    // Las fotos elegidas a mano y todavía sin guardar se descartan: el prediseño trae las suyas.
+    // Las fotos elegidas a mano y todavía sin guardar se descartan: la plantilla trae las suyas.
     const clearPending = (inputId: string, preview: string | null, setPreview: (value: string | null) => void) => {
       const input = document.getElementById(inputId) as HTMLInputElement | null;
       if (input) input.value = "";
@@ -789,6 +827,7 @@ export default function EditorV2({ landing, initialButtons, templates = [], isTe
     draggingId,
     onSelectTemplates: () => selectPanel("templates"),
     onSelectSettings: () => { if (!isTemplate) selectPanel("settings"); },
+    linksOptional: isTemplate,
     onSelectContact: () => selectPanel("contact"),
     onSelectContactDesign: () => selectPanel("contact-design"),
     onSelectSocials: () => selectPanel("socials"),
@@ -868,7 +907,7 @@ export default function EditorV2({ landing, initialButtons, templates = [], isTe
   }
 
   return (
-    <main className={`v2-shell${draft.business_type === "contact" ? " is-contact-editor" : ""}`}>
+    <main className={`v2-shell${draft.business_type === "contact" ? " is-contact-editor" : ""}${isTemplate ? " is-template" : ""}`}>
       <form id="v2-save" action={saveAction} onSubmit={handleSaveSubmit}>
         <input type="hidden" name="landing_id" value={draft.id} />
         <input type="hidden" name="business_name" value={draft.business_name} /><input type="hidden" name="description" value={draft.description || ""} />
@@ -893,8 +932,8 @@ export default function EditorV2({ landing, initialButtons, templates = [], isTe
       </form>
 
       <header className="v2-topbar">
-        <button className="v2-back" type="button" onClick={() => dirty ? setLeaveOpen(true) : location.assign(exitHref)}>←</button>
-        <div><span>{isTemplate ? "Editor de prediseño" : draft.business_type === "contact" ? "Editor de tarjeta" : "Editor de landing"}</span><strong>{draft.business_name}</strong></div>
+        <button className="v2-back" type="button" title={isTemplate ? "Volver a Plantillas" : "Volver"} onClick={() => dirty ? setLeaveOpen(true) : location.assign(exitHref)}>←</button>
+        <div><span>{isTemplate ? "Editor de plantilla" : draft.business_type === "contact" ? "Editor de tarjeta" : "Editor de landing"}</span><strong>{draft.business_name}{isTemplate && <em className="v2-kind-chip" title="Los cambios se ven al crear páginas nuevas desde esta plantilla. Las ya creadas no cambian.">Plantilla</em>}</strong></div>
         <div className="v2-status"><i className={dirty ? "is-dirty" : ""} />{dirty ? "Cambios sin guardar" : "Todo guardado"}</div>
         <div className="v2-history" data-tick={historyTick}>
           <button type="button" title="Deshacer (Ctrl+Z)" aria-label="Deshacer" disabled={pastRef.current.length === 0} onClick={undo}>↶</button>
@@ -913,13 +952,13 @@ export default function EditorV2({ landing, initialButtons, templates = [], isTe
           </div>
           {draft.business_type === "contact" && panel === "templates" && <button type="button" className="v2-ghost v2-contact-return" onClick={() => setPanel("contact-design")}>← Volver a Diseño</button>}
           {draft.business_type === "contact" && (panel === "contact-name" || panel === "contact-role" || panel === "contact-company") && <button type="button" className="v2-ghost v2-contact-return" onClick={() => setPanel("contact")}>← Volver a Datos</button>}
-          {panel === "templates" && (draft.business_type === "contact" ? <ContactLooks selected={draft.buttonZone.contactTheme || "classic"} onApply={requestContactLook} /> : <Templates selected={draft.buttonZone.templateId} notice={templateNotice} templates={templates} onApply={(presetId) => { applyPreset(presetId); setTemplateNotice(""); }} onApplyBusiness={applyBusinessTemplate} />)}
+          {panel === "templates" && (draft.business_type === "contact" ? <ContactLooks selected={draft.buttonZone.contactTheme || "classic"} onApply={requestContactLook} /> : <Templates selected={draft.buttonZone.templateId} notice={templateNotice} templates={templates} onApply={requestBlankPage} onApplyBusiness={requestBusinessTemplate} />)}
           {panel === "contact-design" && <ContactDesignControls draft={draft} buttons={buttons} onChange={change} onBackground={() => selectPanel("background")} onTemplates={() => selectPanel("templates")} />}
           {panel === "buttons" && <ButtonDesign draft={draft} buttons={buttons} backgroundImage={backgroundImage} onZone={changeZone} onFont={(button_font) => change({ button_font, buttonZone: { ...draft.buttonZone, fontWeight: resolveFontWeight(button_font, draft.buttonZone.fontWeight ?? recommendedButtonTypography(button_font).fontWeight), letterSpacing: draft.buttonZone.letterSpacing ?? recommendedButtonTypography(button_font).letterSpacing } })} onApplyButtonLook={applyButtonLook} onResetButtonOverrides={resetButtonOverrides} />}
           {panel === "background" && <BackgroundControls draft={draft} tab={bgTab} onTab={setBgTab} onChange={change} onFile={(file) => openImageEditor("background", file)} onAdjust={() => openImageEditor("background")} hasImage={Boolean(backgroundImage)} hasLogo={Boolean(logoImage)} />}
           {panel === "cover" && <CoverControls draft={draft} coverImage={coverImage} onChange={change} onCoverFile={(file) => openImageEditor("cover", file)} onAdjustCover={() => openImageEditor("cover")} onRemoveCover={removeContactCover} />}
           {panel === "distribution" && (draft.business_type === "contact" ? <ContactDistributionControls draft={draft} onChange={change} /> : <DistributionControls draft={draft} onZone={changeZone} />)}
-          {panel === "socials" && <SocialControls links={draft.buttonZone.quickSocials || []} onChange={(quickSocials) => changeZone({ quickSocials })} filled={draft.buttonZone.quickSocialsFilled !== false} onFilled={(quickSocialsFilled) => changeZone({ quickSocialsFilled })} />}
+          {panel === "socials" && <SocialControls linksOptional={isTemplate} links={draft.buttonZone.quickSocials || []} onChange={(quickSocials) => changeZone({ quickSocials })} filled={draft.buttonZone.quickSocialsFilled !== false} onFilled={(quickSocialsFilled) => changeZone({ quickSocialsFilled })} />}
           {panel === "settings" && <SettingsControls draft={draft} buttons={buttons} dirty={dirty} onTypeChange={(business_type) => { if (draft.business_type !== business_type) { commitDiscrete(); patchDraft({ business_type }); } if (business_type === "contact") setPanel("contact"); }} publishAction={publishAction} deleteLandingAction={deleteLandingAction} />}
           {panel === "contact" && <ContactControls {...contactControlsProps} />}
           {(panel === "contact-name" || panel === "contact-role" || panel === "contact-company") && <ContactTextControls field={panel.slice(8) as "name" | "role" | "company"} draft={draft} onChange={change} />}
@@ -932,7 +971,7 @@ export default function EditorV2({ landing, initialButtons, templates = [], isTe
             setLogoPreview(null); setLogoRemoved(true); setDirty(true);
           }} />}
           {panel === "add" && <ActionCatalog onAdd={addButton} isContact={draft.business_type === "contact"} />}
-          {activeButton && <ButtonControls button={activeButton} draft={draft} cvFileName={cvFileName} cvFileError={cvFileError} iconUploading={iconUploadingId === activeButton.id} iconUploadError={iconUploadError?.buttonId === activeButton.id ? iconUploadError.message : ""} onIconFile={(file) => uploadButtonIcon(activeButton.id, file)} onClearCvFile={clearSelectedCvFile} onChange={(patch) => { setIconUploadError(null); changeButton(activeButton.id, patch); }} onDelete={() => activeButton.type === "cv" ? removeCv() : deleteButton(activeButton.id)} />}
+          {activeButton && <ButtonControls button={activeButton} draft={draft} linksOptional={isTemplate} cvFileName={cvFileName} cvFileError={cvFileError} iconUploading={iconUploadingId === activeButton.id} iconUploadError={iconUploadError?.buttonId === activeButton.id ? iconUploadError.message : ""} onIconFile={(file) => uploadButtonIcon(activeButton.id, file)} onClearCvFile={clearSelectedCvFile} onChange={(patch) => { setIconUploadError(null); changeButton(activeButton.id, patch); }} onDelete={() => activeButton.type === "cv" ? removeCv() : deleteButton(activeButton.id)} />}
         </aside>}
 
         <section className="v2-stage">
@@ -951,6 +990,13 @@ export default function EditorV2({ landing, initialButtons, templates = [], isTe
       </div>
 
       {imageEditor && <ImageAdjustDialog key={`${imageEditor.kind}-${imageEditor.src}`} kind={imageEditor.kind} src={imageEditor.src} shape={imageEditor.kind === "logo" ? draft.logoStyle.shape : undefined} contactLogo={imageEditor.kind === "logo" && draft.business_type === "contact"} logoBackground={imageEditor.kind === "logo" ? logoBackgroundColor(draft.logoStyle, draft.primary_color || "#1f2937") : undefined} coverMode={imageEditor.kind === "cover" && draft.business_type === "contact" ? "banner" : draft.coverStyle.mode} contactCoverSize={imageEditor.kind === "cover" && draft.business_type === "contact" ? draft.coverStyle.size : undefined} coverFrameWidth={imageEditor.coverFrame?.width || (draft.buttonZone.contactLayout === "document" ? 384 : 402)} coverFrameHeight={imageEditor.coverFrame?.height} coverCanvasHeight={imageEditorCoverCanvasHeight} coverOverlay={imageEditor.kind === "cover" ? imageEditor.file && !coverImage ? 0 : draft.coverStyle.overlay : undefined} coverOverlayColor={imageEditor.kind === "cover" ? draft.coverStyle.mode === "banner" ? "#000000" : draft.coverStyle.overlayColor || contrastTextColor(draft.titleStyle.color) : undefined} coverFade={imageEditor.kind === "cover" && draft.business_type !== "contact" && draft.coverStyle.mode === "fade" ? draft.coverStyle.fade : undefined} initial={imageEditor.initial} onApply={applyImageEditor} onCancel={cancelImageEditor} />}
+      {pendingTemplate && <div className="v2-modal-backdrop" onClick={(event) => { if (event.target === event.currentTarget) setPendingTemplate(null); }}><div className="v2-modal v2-template-confirm" role="dialog" aria-modal="true" aria-labelledby="v2-template-confirm-title">
+        {pendingTemplate === "blank" ? <div className="v2-modal-icon">+</div> : <TemplatePreview template={pendingTemplate} className="v2-template-confirm-preview" />}
+        <h2 id="v2-template-confirm-title">{pendingTemplate === "blank" ? "¿Empezar con la página en blanco?" : <>¿Usar «{pendingTemplate.name}»?</>}</h2>
+        <p>{pendingTemplate === "blank" ? "Se borran los textos, botones, redes, logo y fotos, y queda un estilo limpio para armarla de cero. Si no te gusta, lo deshacés con ↶." : "La página queda igual a esta plantilla: se reemplazan los textos, botones, links, logo y fotos que tiene ahora. Si no te gusta, lo deshacés con ↶."}</p>
+        <button type="button" className="v2-save" onClick={() => { if (pendingTemplate === "blank") applyBlankPage(); else applyBusinessTemplate(pendingTemplate); setPendingTemplate(null); }}>{pendingTemplate === "blank" ? "Sí, dejarla en blanco" : "Sí, usar esta plantilla"}</button>
+        <button type="button" className="v2-ghost" onClick={() => setPendingTemplate(null)}>Cancelar</button>
+      </div></div>}
       {pendingContactLook && <div className="v2-modal-backdrop"><div className="v2-modal v2-contact-template-confirm" role="dialog" aria-modal="true" aria-labelledby="v2-contact-template-title"><div className="v2-modal-icon">↩</div><h2 id="v2-contact-template-title">¿Aplicar {CONTACT_LOOKS.find((look) => look.id === pendingContactLook.id)?.name}?</h2><p>Se reemplazarán tus ajustes de diseño. Tus datos, enlaces y fotos se conservan.{pendingContactLook.hidesBackgroundPhoto ? " La foto del fondo exterior quedará guardada, pero dejará de mostrarse." : ""} Podés deshacer el cambio.</p><button type="button" className="v2-save" onClick={() => { applyContactLook(pendingContactLook.id); setPendingContactLook(null); }}>Aplicar plantilla</button><button type="button" className="v2-ghost" onClick={() => setPendingContactLook(null)}>Cancelar</button></div></div>}
       {deletedButton && <div className="v2-delete-notice"><span role="status">Botón eliminado: <b>{deletedButton.button.title}</b></span><button ref={restoreButtonRef} type="button" onClick={restoreDeletedButton}>Deshacer</button><button type="button" aria-label="Cerrar aviso" onClick={() => setDeletedButton(null)}>×</button></div>}
       {leaveOpen && <div className="v2-modal-backdrop"><div className="v2-modal"><div className="v2-modal-icon">!</div><h2>Tenés cambios sin guardar</h2><p>Si salís ahora, vas a perder los últimos cambios de diseño.</p><button className="v2-save" form="v2-save" name="return_to" value={exitHref}>Guardar y salir</button><Link href={exitHref} className="v2-danger">Salir sin guardar</Link><button className="v2-ghost" onClick={() => { setLeaveOpen(false); setPreview(false); }}>Seguir editando</button></div></div>}
@@ -958,26 +1004,26 @@ export default function EditorV2({ landing, initialButtons, templates = [], isTe
   );
 }
 
-function panelTitle(panel: Exclude<Panel, null>) { if (typeof panel === "object") return "Editar botón"; return ({ templates: "Prediseños", buttons: "Editar todos los botones", background: "Fondo de la página", cover: "Encabezado",settings: "Ajustes de la landing", contact: "Datos de la tarjeta", "contact-design": "Diseño de la tarjeta", "contact-name": "Editar nombre", "contact-role": "Editar cargo", "contact-company": "Editar empresa", socials: "Redes rápidas", distribution: "Distribución", title: "Editar título", subtitle: "Editar subtítulo", logo: "Editar logo", add: "Agregar un botón" } as const)[panel]; }
+function panelTitle(panel: Exclude<Panel, null>) { if (typeof panel === "object") return "Editar botón"; return ({ templates: "Plantillas", buttons: "Editar todos los botones", background: "Fondo de la página", cover: "Encabezado",settings: "Ajustes de la landing", contact: "Datos de la tarjeta", "contact-design": "Diseño de la tarjeta", "contact-name": "Editar nombre", "contact-role": "Editar cargo", "contact-company": "Editar empresa", socials: "Redes rápidas", distribution: "Distribución", title: "Editar título", subtitle: "Editar subtítulo", logo: "Editar logo", add: "Agregar un botón" } as const)[panel]; }
 
 function TemplateCard({ template, selected, onApplyBusiness }: { template: BusinessTemplate; selected: string; onApplyBusiness: (id: string) => void }) {
   return <div className={`v2-rubro-card${selected === `rubro:${template.id}` ? " is-selected" : ""}`}>
     <TemplatePreview template={template} className="v2-rubro-preview" />
     <div className="v2-rubro-copy"><b>{template.name}</b></div>
     <div className="v2-rubro-actions">
-      <button type="button" className="v2-save" onClick={() => onApplyBusiness(template.id)}>Usar este</button>
+      <button type="button" className="v2-save" onClick={() => onApplyBusiness(template.id)}>Usar esta</button>
     </div>
   </div>;
 }
 
 function Templates({ selected, notice, templates, onApply, onApplyBusiness }: { selected: string; notice: string; templates: BusinessTemplate[]; onApply: (id: string) => void; onApplyBusiness: (id: string) => void }) {
   return <div className="v2-fields">
-    {notice ? <p className="v2-rubro-notice" role="status">{notice}</p> : <p className="v2-help">Elegí uno y la página queda igual a la miniatura: textos, botones, fotos y colores. Después cambiás los datos por los del cliente. Se puede deshacer.</p>}
+    {notice ? <p className="v2-rubro-notice" role="status">{notice}</p> : <p className="v2-help">Elegí una y la página queda igual a la miniatura: textos, botones, fotos y colores. Después cambiás los datos por los del cliente. Se puede deshacer.</p>}
     <div className="v2-rubro-grid">{templates.map((template) => <TemplateCard key={template.id} template={template} selected={selected} onApplyBusiness={onApplyBusiness} />)}</div>
-    <Link className="v2-suggested" href="/admin/predisenos">Administrar prediseños</Link>
+    <Link className="v2-suggested" href="/admin/plantillas">Administrar plantillas</Link>
     <button type="button" className={`v2-rubro-blank${selected === "minimal" ? " is-selected" : ""}`} onClick={() => onApply("minimal")}>
       <span aria-hidden="true">+</span>
-      <span><b>Página en blanco</b><small>Un estilo limpio para armarla a tu gusto. Los estilos de botones están en Botones → Diseño.</small></span>
+      <span><b>Página en blanco</b><small>Sin textos, botones ni fotos: un estilo limpio para armarla de cero.</small></span>
     </button>
   </div>;
 }
@@ -1035,7 +1081,8 @@ function ButtonDesign({ draft, buttons, backgroundImage, onZone, onFont, onApply
   const customIconBackgroundCount = buttons.filter((button) => Boolean(button.icon_background_color)).length;
   const customVisualCount = buttons.filter((button) => !button.use_auto_color || button.background_gradient_to || button.icon_background_color).length;
   const selectedSize = SIZES.find((item) => Object.entries(item.patch).every(([key, value]) => zone[key as keyof typeof item.patch] === value))?.label;
-  const currentButtonLook = DESIGN_PRESETS_V2.find((preset) => preset.id === zone.preset)?.name || "Personalizado";
+  const currentLookPreset = DESIGN_PRESETS_V2.find((preset) => preset.id === zone.preset);
+  const currentButtonLook = currentLookPreset?.name || "Personalizado";
   const recommendedSize = DESIGN_PRESETS_V2.find((preset) => preset.id === zone.preset)?.buttonZone;
   const usesRecommendedSize = Boolean(recommendedSize && zone.height === recommendedSize.height && zone.textSize === recommendedSize.textSize && zone.iconSize === recommendedSize.iconSize && zone.gap === recommendedSize.gap);
   const currentFontWeight = zone.fontWeight ?? (zone.collection === "aura" ? 850 : zone.collection === "gummy" ? 800 : 700);
@@ -1060,9 +1107,9 @@ function ButtonDesign({ draft, buttons, backgroundImage, onZone, onFont, onApply
       </div>}
       <details className="v2-button-look-picker" key={zone.preset}>
         <summary>
-          <span className="v2-look-head"><strong>Estilos de botones <em>{DESIGN_PRESETS_V2.length}</em></strong><small>Actual: <b>{currentButtonLook}</b>. Cambia solo los botones, no el resto de la página.</small></span>
-          <span className="v2-look-teaser" aria-hidden="true">{DESIGN_PRESETS_V2.filter((preset) => preset.id !== zone.preset).slice(0, 4).map((preset) => <ButtonLookSwatch key={preset.id} preset={preset} />)}</span>
-          <span className="v2-look-cta"><span className="is-closed">Ver los {DESIGN_PRESETS_V2.length} estilos</span><span className="is-open">Ocultar estilos</span></span>
+          {currentLookPreset && <span className="v2-look-current" aria-hidden="true"><ButtonLookSwatch preset={currentLookPreset} /></span>}
+          <span className="v2-look-head"><small>Estilo de botones</small><strong>{currentButtonLook}</strong><small>{DESIGN_PRESETS_V2.length} estilos para elegir</small></span>
+          <span className="v2-look-cta"><span className="is-closed">Cambiar</span><span className="is-open">Cerrar</span></span>
         </summary>
         <div className="v2-button-look-content">
           <p className="v2-help">Aplica forma, color, tipografía, tamaño y alineación. Los colores propios de botones individuales se conservan.</p>
@@ -1319,22 +1366,27 @@ function EditorSection({title,tone,children}: {title:string;tone:"blue"|"purple"
   return <fieldset className="v2-editor-section" data-tone={tone}><legend>{title}</legend><div className="v2-section-content">{children}</div></fieldset>;
 }
 
-function SeparatorPicker({style,onChange}: {style:DistributionStyle;onChange:(value:DistributionStyle['separatorStyle'])=>void}) {
+function SeparatorPicker({style,logoUrl,onChange}: {style:DistributionStyle;logoUrl?:string|null;onChange:(value:DistributionStyle['separatorStyle'])=>void}) {
   const [expanded,setExpanded] = useState(false);
   const selected = SEPARATOR_DESIGNS.find(([value])=>value===style.separatorStyle);
-  const featured = SEPARATOR_DESIGNS.slice(0,6);
-  // Exactly six collapsed choices, always including the resolved saved/template value.
+  const featured = SEPARATOR_DESIGNS.slice(0,5);
+  // Cinco diseños a la vista más "Tu logo" (seis en total), siempre incluyendo el que está en uso.
   const collapsed = selected && !featured.some(([value])=>value===selected[0])
-    ? [selected,...featured.slice(0,5)] : featured;
+    ? [selected,...featured.slice(0,4)] : featured;
   const visible = expanded ? SEPARATOR_DESIGNS : collapsed;
+  const isLogo = style.separatorStyle==="logo";
   return <fieldset><legend>Diseño del separador</legend>
     <p className="v2-help">Un detalle para darle carácter a tu página. Elegí cómo se ve.</p>
-    <p className="v2-separator-current">En uso: <strong>{selected?.[1]}</strong></p>
-    <div className="v2-separator-picker">{visible.map(([value,label,note])=><button type="button" key={value} className={style.separatorStyle===value?'active':''} aria-pressed={style.separatorStyle===value} onClick={()=>onChange(value)}>
+    <p className="v2-separator-current">En uso: <strong>{isLogo?"Tu logo":selected?.[1]}</strong></p>
+    <div className="v2-separator-picker">
+      <button type="button" className={isLogo?'active':''} aria-pressed={isLogo} disabled={!logoUrl} title={logoUrl?undefined:"Primero cargá un logo"} onClick={()=>onChange("logo")}>
+        <span className="v2-separator-sample"><LandingSeparator variant="logo" color={style.separatorColor} weight={style.separatorWeight} logoUrl={logoUrl}/></span><strong>Tu logo{isLogo && <span className="v2-separator-check" aria-hidden="true">✓</span>}</strong><small>{logoUrl?"Tu marca en el centro":"Primero cargá un logo"}</small>
+      </button>
+      {visible.map(([value,label,note])=><button type="button" key={value} className={style.separatorStyle===value?'active':''} aria-pressed={style.separatorStyle===value} onClick={()=>onChange(value)}>
       <span className="v2-separator-sample"><LandingSeparator variant={value} color={style.separatorColor} weight={style.separatorWeight}/></span><strong>{label}{style.separatorStyle===value && <span className="v2-separator-check" aria-hidden="true">✓</span>}</strong><small>{note}</small>
     </button>)}</div>
     <button type="button" className="v2-separator-more" aria-expanded={expanded} onClick={()=>setExpanded(current=>!current)}>
-      <span>{expanded?'Ver menos diseños':'Ver más diseños'}</span><span className="v2-separator-count">{expanded?'−':`${SEPARATOR_DESIGNS.length} estilos · +`}</span>
+      <span>{expanded?'Ver menos diseños':'Ver más diseños'}</span><span className="v2-separator-count">{expanded?'−':`${SEPARATOR_DESIGNS.length + 1} estilos · +`}</span>
     </button>
   </fieldset>;
 }
@@ -1370,6 +1422,9 @@ function DistributionControls({ draft, onZone }: { draft: LandingDraft; onZone: 
     return Math.round(style.top + coverReserve);
   };
   const update = (patch: Partial<DistributionStyle>) => onZone({ distribution: { ...style, coverHeight: style.coverHeight ?? legacyCoverHeight(), ...patch } });
+  // El separador va debajo del encabezado y no cambia la portada: no fija su alto. Fijarlo pasa la
+  // foto al modo estable y la reencuadra, y eso se veía como si el separador cambiara la portada.
+  const updateSeparator = (patch: Partial<DistributionStyle>) => onZone({ distribution: { ...style, ...patch } });
   const applyDensity = ({ top, logoGap, buttonsGap, socialsGap, gap, height }: (typeof LANDING_DENSITY_PRESETS)[number]) => onZone({
     gap,
     height,
@@ -1394,19 +1449,34 @@ function DistributionControls({ draft, onZone }: { draft: LandingDraft; onZone: 
     <Range label={draft.buttonZone.layout === "compact" ? "Separación del logo (horizontal)" : "Espacio debajo del logo"} min={0} max={64} value={style.logoGap} onChange={logoGap=>update({logoGap})}/>
     <Range label="Separación de la botonera" min={0} max={100} value={style.buttonsGap} onChange={buttonsGap=>update({buttonsGap})}/>
     <Range label="Separación de redes rápidas" min={0} max={64} value={style.socialsGap} onChange={socialsGap=>update({socialsGap})}/>
-</EditorSection><EditorSection title="Separador" tone="purple">    <Choice active={style.separator} title="Mostrar separador" note="Una línea entre el encabezado y los botones." onClick={()=>update({separator:!style.separator})}/>
+</EditorSection><EditorSection title="Separador" tone="purple">    <Choice active={style.separator} title="Mostrar separador" note="Una línea entre el encabezado y los botones." onClick={()=>updateSeparator({separator:!style.separator})}/>
     {style.separator && <>
-      <SeparatorPicker style={style} onChange={separatorStyle=>update({separatorStyle})}/>
-      <ColorField label="Color del separador" value={style.separatorColor} onChange={separatorColor=>update({separatorColor})}/>
-      <Range label="Ancho del separador (%)" min={15} max={100} value={style.separatorWidth} onChange={separatorWidth=>update({separatorWidth})}/>
-      <Range label="Grosor del separador" min={1} max={5} value={style.separatorWeight} onChange={separatorWeight=>update({separatorWeight})}/>
-      <Range label="Espacio alrededor del separador" min={0} max={48} value={style.separatorSpace} onChange={separatorSpace=>update({separatorSpace})}/>
+      <SeparatorPicker style={style} logoUrl={draft.logo_url} onChange={separatorStyle=>updateSeparator({separatorStyle})}/>
+      <ColorField label="Color del separador" value={style.separatorColor} onChange={separatorColor=>updateSeparator({separatorColor})}/>
+      <Range label="Ancho del separador (%)" min={15} max={100} value={style.separatorWidth} onChange={separatorWidth=>updateSeparator({separatorWidth})}/>
+      <Range label="Grosor del separador" min={1} max={5} value={style.separatorWeight} onChange={separatorWeight=>updateSeparator({separatorWeight})}/>
+      <Range label="Espacio alrededor del separador" min={0} max={48} value={style.separatorSpace} onChange={separatorSpace=>updateSeparator({separatorSpace})}/>
     </>}
 </EditorSection>    <p className="v2-help">Guardá los cambios para aplicar esta distribución a tu página.</p>
   </div>;
 }
 
-function SocialControls({ links, onChange, filled, onFilled }: { links: QuickSocial[]; onChange: (links: QuickSocial[]) => void; filled: boolean; onFilled: (filled: boolean) => void }) {
+function SocialControls({ links, onChange, filled, onFilled, linksOptional = false }: { links: QuickSocial[]; onChange: (links: QuickSocial[]) => void; filled: boolean; onFilled: (filled: boolean) => void; linksOptional?: boolean }) {
+  // En una plantilla solo se eligen las redes: el usuario de cada una se carga en cada página.
+  if (linksOptional) return <div className="v2-fields">
+    <p className="v2-help">Elegí qué redes muestra esta plantilla. El usuario de cada una se carga en cada página que crees con él.</p>
+    <fieldset>
+      <legend>Estilo de los íconos</legend>
+      <div className="v2-segment">
+        <button type="button" className={filled ? "active" : ""} onClick={() => onFilled(true)}>Con fondo</button>
+        <button type="button" className={!filled ? "active" : ""} onClick={() => onFilled(false)}>Sin fondo</button>
+      </div>
+    </fieldset>
+    <div className="v2-social-pick">{QUICK_SOCIALS.map(option => {
+      const active = links.some(link => link.type === option.type);
+      return <button type="button" key={option.type} className={active ? "active" : ""} aria-pressed={active} onClick={() => onChange(active ? links.filter(link => link.type !== option.type) : [...links, { type: option.type, url: "" }])}><ActionTypeIcon type={option.type} brandMark /><span>{option.label}</span></button>;
+    })}</div>
+  </div>;
   return <div className="v2-fields">
     <p className="v2-help">Accesos secundarios debajo de tus botones. Agregá solo las redes que quieras mostrar; no copiamos tus botones automáticamente.</p>
     <fieldset>
@@ -1457,8 +1527,19 @@ function ManageNotice({ draft, buttons }: { draft: LandingDraft; buttons: Button
 // itself. Everything here posts straight to the same server actions the admin list uses
 // (`publishAction`/`deleteLandingAction`, both passed down from the page), so there's exactly
 // one place in the whole app that actually flips `published` or deletes a landing row.
+// Revisión antes de publicar: qué botones no tienen link todavía (no se publican hasta tenerlo) y
+// el consejo de probarlos todos una vez publicada la página.
+function PublishCheck({ missing }: { missing: string[] }) {
+  return <div className={`v2-publish-check${missing.length ? " has-missing" : ""}`} role="status">
+    {missing.length
+      ? <><strong>{missing.length === 1 ? "Falta 1 link" : `Faltan ${missing.length} links`}</strong><ul>{missing.map((title, index) => <li key={index}>{title}</li>)}</ul><small>Tocá cada botón en el celular para cargarlo. Los que tienen un puntito naranja son los que faltan.</small></>
+      : <><strong>Todos los botones tienen link</strong><small>Después de publicar, probá cada botón desde tu celular para confirmar que abre lo correcto.</small></>}
+  </div>;
+}
+
 function SettingsControls({ draft, buttons, dirty, onTypeChange, publishAction, deleteLandingAction }: { draft: LandingDraft; buttons: ButtonItem[]; dirty: boolean; onTypeChange: (type: string) => void; publishAction: SaveAction; deleteLandingAction: SaveAction }) {
   const isPublished = Boolean(draft.published);
+  const missingLinks = draft.business_type === "contact" ? [] : buttonsMissingLink(buttons);
   const missingContact = draft.business_type === "contact" && !buttons.some((button) => ["phone", "email", "whatsapp"].includes(button.type) && button.url.trim());
   if (draft.business_type === "contact") return <div className="v2-fields">
     <div className="v2-contact-publish-status"><i className={isPublished ? "is-online" : ""} aria-hidden="true" /><div><strong>{isPublished ? "Tu tarjeta está publicada" : "Tu tarjeta está en borrador"}</strong><span>{isPublished ? "Quien tenga el enlace o escanee tu NFC puede verla." : "Solo vos podés verla hasta que la publiques."}</span></div></div>
@@ -1468,7 +1549,7 @@ function SettingsControls({ draft, buttons, dirty, onTypeChange, publishAction, 
         <input type="hidden" name="id" value={draft.id} />
         <input type="hidden" name="published" value={String(!isPublished)} />
         <input type="hidden" name="return_to" value={`/admin/landings/${draft.id}/editor-v2`} />
-        <PendingSubmitButton className="v2-save" style={{ width: "100%" }} pendingText={isPublished ? "Despublicando…" : "Publicando…"} disabled={!isPublished && (dirty || missingContact)}>{isPublished ? "Despublicar tarjeta" : "Publicar tarjeta"}</PendingSubmitButton>
+        <PendingSubmitButton className="v2-save" style={{ width: "100%" }} pendingText={isPublished ? "Despublicando…" : "Publicando…"} disabled={!isPublished && (dirty || missingContact || missingLinks.length > 0)}>{isPublished ? "Despublicar tarjeta" : "Publicar tarjeta"}</PendingSubmitButton>
       </form>
       {!isPublished && dirty && <p className="v2-help" role="status">Primero guardá los cambios con el botón de arriba.</p>}
       {!isPublished && missingContact && <p className="v2-help" role="status">Agregá un teléfono, email o WhatsApp en Datos.</p>}
@@ -1494,10 +1575,11 @@ function SettingsControls({ draft, buttons, dirty, onTypeChange, publishAction, 
       <input type="hidden" name="id" value={draft.id} />
       <input type="hidden" name="published" value={String(!isPublished)} />
       <input type="hidden" name="return_to" value={`/admin/landings/${draft.id}/editor-v2`} />
-      <PendingSubmitButton className="v2-save" style={{ width: "100%" }} pendingText={isPublished ? "Despublicando…" : "Publicando…"} disabled={!isPublished && (dirty || missingContact)}>{isPublished ? "Despublicar" : draft.business_type === "contact" ? "Publicar tarjeta" : "Publicar landing"}</PendingSubmitButton>
+      <PendingSubmitButton className="v2-save" style={{ width: "100%" }} pendingText={isPublished ? "Despublicando…" : "Publicando…"} disabled={!isPublished && (dirty || missingContact || missingLinks.length > 0)}>{isPublished ? "Despublicar" : draft.business_type === "contact" ? "Publicar tarjeta" : "Publicar landing"}</PendingSubmitButton>
     </form>
     {!isPublished && dirty && <p className="v2-help" role="status">Guardá los cambios antes de publicar.</p>}
     {!isPublished && missingContact && <p className="v2-help" role="status">Agregá un teléfono, email o WhatsApp para poder publicar la tarjeta.</p>}
+    <PublishCheck missing={missingLinks.map((button) => button.title || "Un botón")} />
     <a className="v2-suggested" href={`/${draft.slug}`} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", gap: 8 }}><IconEye /> Ver {draft.business_type === "contact" ? "tarjeta" : "landing"} publicada</a>
     <Link className="v2-suggested" href={`/admin/landings/${draft.id}/qr`} style={{ display: "flex", alignItems: "center", gap: 8 }}><IconQrCode /> Código QR para el tag NFC</Link>
 </EditorSection>    <DeleteLandingButton action={deleteLandingAction} landingId={draft.id} label={draft.business_type === "contact" ? "Eliminar tarjeta" : "Eliminar landing"} isContact={draft.business_type === "contact"} />
@@ -1988,7 +2070,7 @@ function ButtonExtras({ button, onChange }: { button: ButtonItem; onChange: (pat
   </EditorSection>;
 }
 
-function ButtonControls({ button,draft,cvFileName,cvFileError,iconUploading,iconUploadError,onIconFile,onClearCvFile,onChange,onDelete }: { button: ButtonItem; draft: LandingDraft; cvFileName: string; cvFileError: string; iconUploading: boolean; iconUploadError: string; onIconFile: (file: File) => void | Promise<void>; onClearCvFile: () => void; onChange:(p:Partial<ButtonItem>)=>void; onDelete:()=>void }) {
+function ButtonControls({ button,draft,linksOptional=false,cvFileName,cvFileError,iconUploading,iconUploadError,onIconFile,onClearCvFile,onChange,onDelete }: { button: ButtonItem; draft: LandingDraft; linksOptional?: boolean; cvFileName: string; cvFileError: string; iconUploading: boolean; iconUploadError: string; onIconFile: (file: File) => void | Promise<void>; onClearCvFile: () => void; onChange:(p:Partial<ButtonItem>)=>void; onDelete:()=>void }) {
   const def=getAllActions().find((item)=>item.type===button.type);
   const previewPrimary = draft.primary_color || "#1f2937";
   const previewColors = resolveButtonColors({ zone: draft.buttonZone, type: button.type, position: button.position, primary: previewPrimary, customColor: button.background_color, useAutoColor: button.use_auto_color });
@@ -2021,7 +2103,7 @@ function ButtonControls({ button,draft,cvFileName,cvFileError,iconUploading,icon
 <EditorSection title="Contenido y destino" tone="blue">    <label>{button.type === "cv" ? "Texto que verá la gente" : "Texto del botón"}<input value={button.title} placeholder={button.type === "cv" ? "Ej: Ver catálogo" : undefined} onChange={(e)=>onChange({title:e.target.value})}/></label>
     {button.type === "cv" && <div className="v2-document-examples" aria-label="Ejemplos de texto para el botón">{PDF_TITLE_OPTIONS.map((title) => <button key={title} type="button" aria-pressed={button.title === title} onClick={() => onChange({ title })}>{title}</button>)}</div>}
     <label>{button.type === "promo" ? "Descripción" : "Texto secundario"} <small>Opcional</small><input value={button.subtitle} placeholder={button.type === "promo" ? "Ej: En tu primer turno, hasta fin de mes" : undefined} onChange={(e)=>onChange({subtitle:e.target.value})}/></label>
-    {button.type === "cv" ? <CvSourceField context="landing" value={button.url} fileName={cvFileName} error={cvFileError} onUrlChange={(url) => onChange({ url })} onClearFile={onClearCvFile} /> : <label>{button.type === "promo" ? "WhatsApp o enlace" : def?.input === "phone" ? "Número" : def?.input === "email" ? "Email" : def?.input === "username" ? "Usuario" : "Enlace"}<input value={button.url} placeholder={def?.placeholder} onChange={(e)=>onChange({url:e.target.value})}/></label>}
+    {linksOptional && button.type !== "cv" ? <p className="v2-link-note">Los links se cargan en cada página que crees con esta plantilla, con los del cliente.</p> : button.type === "cv" ? <CvSourceField context="landing" value={button.url} fileName={cvFileName} error={cvFileError} onUrlChange={(url) => onChange({ url })} onClearFile={onClearCvFile} /> : <label>{button.type === "promo" ? "WhatsApp o enlace" : def?.input === "phone" ? "Número" : def?.input === "email" ? "Email" : def?.input === "username" ? "Usuario" : "Enlace"}<input value={button.url} placeholder={def?.placeholder} onChange={(e)=>onChange({url:e.target.value})}/></label>}
     {def?.message && <label>{button.type === "promo" ? "Mensaje de WhatsApp (si el destino es un número)" : "Mensaje de WhatsApp"}<textarea rows={3} value={button.message} onChange={(e)=>onChange({message:e.target.value})}/></label>}
 </EditorSection><ButtonExtras button={button} onChange={onChange} />
 <EditorSection title="Ícono" tone="purple">    <IconPicker type={button.type} value={button.icon} customImageUrl={button.icon_url} customImageFit={button.icon_fit} customImageScale={button.icon_scale} previewStyle={iconPreviewStyle} uploading={iconUploading} error={iconUploadError} onUpload={onIconFile} onChange={(icon)=>onChange({icon,icon_url:"",icon_fit:"contain",icon_scale:1})} onRemoveCustom={() => onChange({icon_url:"",icon_fit:"contain",icon_scale:1})} onImageFitChange={(icon_fit)=>onChange({icon_fit})} onImageScaleChange={(icon_scale)=>onChange({icon_scale})}/>
