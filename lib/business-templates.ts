@@ -380,7 +380,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
       "title_style": {
         "bg": "#000000",
         "font": "outfit",
-        "size": 36,
+        "size": 31,
         "align": "center",
         "color": "#ffffff",
         "bgMode": "none",
