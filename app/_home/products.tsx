@@ -17,9 +17,10 @@ const PRODUCTS = [
     { image: "/marketing/products/card-generic-v4.webp", label: "Tu nombre, negocio o empresa · QR + NFC" },
   ] },
   { id: "stand-small", name: "Mostrador pequeño", context: "4 × 6 CM", line: "Pequeño y siempre visible.", description: "Un formato compacto para mesas, cajas o escritorios.", use: "Mesas · recepciones", directPrice: "$20.000", pagePrice: "$30.000", listPrice: "$38.000", examples: [
-    { image: "/marketing/products/stand-small-google-v3.webp", label: "Reseñas · QR + NFC" },
-    { image: "/marketing/products/stand-small-instagram-v3.webp", label: "Instagram · QR + NFC" },
-    { image: "/marketing/products/stand-small-brand-v2.webp", label: "Tu marca · QR + NFC" },
+    { image: "/marketing/products/stand-small-google-v5.webp", label: "Reseñas · QR + NFC" },
+    { image: "/marketing/products/stand-small-whatsapp-v2.webp", label: "WhatsApp · QR + NFC" },
+    { image: "/marketing/products/stand-small-instagram-v5.webp", label: "Instagram · QR + NFC" },
+    { image: "/marketing/products/stand-small-brand-v4.webp", label: "Tu marca · QR + NFC" },
   ] },
   { id: "stand-large", name: "Mostrador grande", context: "9 × 14 CM", line: "El mensaje se entiende al instante.", description: "Más espacio para tu marca y una invitación clara a conectar.", use: "Locales · consultorios", directPrice: "$25.000", pagePrice: "$35.000", listPrice: "$44.000", examples: [
     { image: "/marketing/products/stand-large-google-v3.webp", label: "Reseñas · QR + NFC" },
@@ -35,58 +36,50 @@ const COMBOS = [
     id: "business",
     name: "Negocio completo",
     context: "EL MÁS COMPLETO",
-    example: "Tu marca, tus colores y tus destinos",
     description: "Una solución completa para el local, el equipo y cada oportunidad de contacto.",
     comboPrice: "$69.000",
     pagePrice: "$79.000",
     listPrice: "$99.000",
     featured: true,
     products: ["Mostrador grande", "Mostrador pequeño", "Tarjeta personal", "Llavero personalizado"],
-    uses: ["Mostrador grande → reseñas de Google", "Mostrador pequeño → WhatsApp o pedidos", "Tarjeta → perfil o link de cobro", "Llavero → redes o catálogo"],
-    image: "/marketing/combos/combo-negocio-v1.webp",
-    imageAlt: "Combo Negocio completo con mostradores, tarjeta y llavero NFC personalizados con tu marca",
+    images: [
+      { src: "/marketing/combos/combo-negocio-v1.webp", label: "Tu Marca", alt: "Ejemplo del combo Negocio completo con cuatro productos diseñados para Tu Marca" },
+      { src: "/marketing/combos/combo-negocio-cafe-v1.webp", label: "Café Nube", alt: "Otra propuesta del mismo combo con el diseño de Café Nube" },
+      { src: "/marketing/combos/combo-negocio-barber-v1.webp", label: "Norte Barber", alt: "Otra propuesta del mismo combo con el diseño de Norte Barber" },
+    ],
   },
   {
     id: "professional",
     name: "Profesional",
     context: "PARA PRESENTARTE",
-    example: "Ejemplo: profesional independiente",
     description: "Dos formatos para compartir tu perfil, contacto o trabajo estés donde estés.",
     comboPrice: "$35.000",
     pagePrice: "$45.000",
     listPrice: "$56.000",
     products: ["Tarjeta personal", "Llavero personalizado"],
-    uses: ["Tarjeta → perfil, contacto o link de cobro", "Llavero → WhatsApp, portfolio o redes"],
-    image: "/marketing/combos/combo-profesional-v2.webp",
-    imageAlt: "Combo Profesional de Ana Duarte con tarjeta personal y llavero NFC personalizados",
+    images: [{ src: "/marketing/combos/combo-profesional-v2.webp", label: "Ana Duarte", alt: "Ejemplo del combo Profesional con tarjeta y llavero diseñados para Ana Duarte" }],
   },
   {
     id: "entrepreneur",
     name: "Emprendedor",
     context: "PARA EMPEZAR",
-    example: "Ejemplo: emprendimiento gastronómico",
     description: "Tu marca en el mostrador y dos formatos para llevar, vender y cobrar.",
     comboPrice: "$49.000",
     pagePrice: "$59.000",
     listPrice: "$74.000",
     products: ["Mostrador pequeño", "Tarjeta personal", "Llavero personalizado"],
-    uses: ["Mostrador pequeño → turnos o WhatsApp", "Tarjeta → perfil o link de cobro", "Llavero → Instagram o catálogo"],
-    image: "/marketing/combos/combo-emprendedor-v1.webp",
-    imageAlt: "Combo Emprendedor Casa Oliva con mostrador para WhatsApp, tarjeta Mercado Pago y llavero NFC",
+    images: [{ src: "/marketing/combos/combo-emprendedor-v1.webp", label: "Casa Oliva", alt: "Ejemplo del combo Emprendedor con mostrador, tarjeta y llavero diseñados para Casa Oliva" }],
   },
   {
     id: "local",
     name: "Local",
     context: "PARA TU NEGOCIO",
-    example: "Ejemplo: estudio de tattoo",
-    description: "Tres puntos de contacto para conseguir reseñas, recibir pedidos y sumar seguidores.",
+    description: "Tres formatos para conectar tu local con los destinos que más te sirvan.",
     comboPrice: "$55.000",
     pagePrice: "$65.000",
     listPrice: "$82.000",
     products: ["Mostrador grande", "Mostrador pequeño", "Llavero personalizado"],
-    uses: ["Mostrador grande → reseñas de Google", "Mostrador pequeño → menú o pedidos", "Llavero → Instagram o WhatsApp"],
-    image: "/marketing/combos/combo-local-v2.webp",
-    imageAlt: "Combo Local Norte Tattoo con mostradores para reseñas y turnos y llavero NFC",
+    images: [{ src: "/marketing/combos/combo-local-v2.webp", label: "Norte Tattoo", alt: "Ejemplo del combo Local con dos mostradores y un llavero diseñados para Norte Tattoo" }],
   },
 ];
 
@@ -122,6 +115,7 @@ export default function Products({ whatsappNumber }: { whatsappNumber: string })
   const [selected, setSelected] = useState(0);
   const [activeExample, setActiveExample] = useState(0);
   const [selectedCombo, setSelectedCombo] = useState(0);
+  const [comboImage, setComboImage] = useState(0);
   const productPanelRef = useRef<HTMLElement>(null);
   const comboPanelRef = useRef<HTMLElement>(null);
   const product: Product = PRODUCTS[selected];
@@ -132,7 +126,7 @@ export default function Products({ whatsappNumber }: { whatsappNumber: string })
     window.setTimeout(() => panel.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
   };
   const selectProduct = (index: number) => { setSelected(index); setActiveExample(0); revealOnMobile(productPanelRef); };
-  const selectCombo = (index: number) => { setSelectedCombo(index); revealOnMobile(comboPanelRef); };
+  const selectCombo = (index: number) => { setSelectedCombo(index); setComboImage(0); revealOnMobile(comboPanelRef); };
   const inquiry = (name: string) => `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Hola BioNFC, me interesa ${name}. Quiero conocer las opciones para mi negocio.`)}`;
   return <section id="productos" className="bx-shop">
     <div className="bx-section">
@@ -164,8 +158,8 @@ export default function Products({ whatsappNumber }: { whatsappNumber: string })
       <div className="bx-shop-included"><span><FiLayers aria-hidden="true" /> Lo armamos con vos</span><ul><li><FiCheck aria-hidden="true" /> Tu identidad de marca</li><li><FiCheck aria-hidden="true" /> QR, NFC o ambos</li><li><FiCheck aria-hidden="true" /> El destino que vos elijas</li></ul></div>
       <section id="combos" className="bx-combos" aria-labelledby="combos-title">
         <div className="bx-combos-head">
-          <div><p className="bx-combos-kicker">COMBOS CON AHORRO</p><h3 id="combos-title">Más formas de conectar.<br /><span>Un solo diseño para tu marca.</span></h3></div>
-          <p>Elegí una combinación lista o armamos la tuya. Cada objeto puede abrir un destino diferente.</p>
+          <div><p className="bx-combos-kicker">COMBOS CON AHORRO</p><h3 id="combos-title">Elegí los productos.<br /><span>Personalizamos el diseño y los destinos.</span></h3></div>
+          <p>Las fotos muestran ideas de diseño. Vos elegís cómo se ve cada pieza y qué abre al escanearla o acercar el celular.</p>
         </div>
         <div className="bx-combo-tabs" role="tablist" aria-label="Elegí un combo">
           {COMBOS.map((item, index) => <button key={item.id} id={`combo-tab-${item.id}`} type="button" role="tab" aria-selected={selectedCombo === index} aria-controls="combo-panel" className={selectedCombo === index ? "is-active" : ""} onClick={() => selectCombo(index)}>
@@ -174,19 +168,21 @@ export default function Products({ whatsappNumber }: { whatsappNumber: string })
         </div>
         <article ref={comboPanelRef} id="combo-panel" role="tabpanel" aria-labelledby={`combo-tab-${combo.id}`} className={`bx-combo-panel is-${combo.id}`}>
           <div className="bx-combo-art">
-            <span className="bx-combo-example">{combo.example}</span>
-            <div className="bx-combo-image"><Image src={combo.image} alt={combo.imageAlt} fill sizes="(max-width: 760px) 92vw, 620px" /></div>
-            <p>Todos personalizados · NFC, QR o ambos</p>
+            <span className="bx-combo-example">Ejemplo de diseño · {combo.images[comboImage].label}</span>
+            <div className="bx-combo-image"><Image key={combo.images[comboImage].src} src={combo.images[comboImage].src} alt={combo.images[comboImage].alt} fill sizes="(max-width: 760px) 92vw, 620px" /></div>
+            {combo.images.length > 1 ? <div className="bx-combo-variants" aria-label="Ejemplos de diseño">{combo.images.map((image, index) => <button key={image.src} type="button" className={index === comboImage ? "is-active" : ""} aria-pressed={index === comboImage} onClick={() => setComboImage(index)}>{image.label}</button>)}</div> : <p>Ejemplo ilustrativo · lo hacemos con tu marca</p>}
           </div>
           <div className="bx-combo-info">
             <div className="bx-combo-title-row"><div><span>{combo.context}</span><h4>Combo {combo.name}</h4></div></div>
             <p>{combo.description}</p>
-            <ul className="bx-combo-use-list">{combo.uses.map((use) => <li key={use}><FiCheck aria-hidden="true" />{use}</li>)}</ul>
-            <PriceBlock dark listPrice={combo.listPrice} pagePrice={combo.pagePrice} directPrice={combo.comboPrice} includes={[`${combo.products.length} productos con tu marca`, "1 página con todos tus links"]} directNote="Cada producto abre un link" directHref={inquiry(`el Combo ${combo.name} sin página (con links directos)`)} />
-            <a href={inquiry(`el Combo ${combo.name} con página BioNFC`)} target="_blank" rel="noreferrer">Quiero este combo con página<FiArrowUpRight aria-hidden="true" /></a>
+            <p className="bx-combo-includes-title">El combo incluye</p>
+            <ul className="bx-combo-use-list">{combo.products.map((product) => <li key={product}><FiCheck aria-hidden="true" />{product}</li>)}</ul>
+            <div className="bx-combo-destinations"><strong>Elegí qué abre cada producto</strong><p>Todos pueden llevar a tu misma página BIONFC. También podés combinarlos: uno a reseñas, otro a WhatsApp, Instagram o el enlace que elijas.</p></div>
+            <PriceBlock dark listPrice={combo.listPrice} pagePrice={combo.pagePrice} directPrice={combo.comboPrice} includes={[`${combo.products.length} productos personalizados`, "1 página BIONFC y destinos a elección"]} directNote="Destinos directos a elección" directHref={inquiry(`el Combo ${combo.name} sin página (con destinos a elección)`)} />
+            <a href={inquiry(`el Combo ${combo.name} con página BioNFC y destinos personalizados`)} target="_blank" rel="noreferrer">Personalizar este combo<FiArrowUpRight aria-hidden="true" /></a>
           </div>
         </article>
-        <p className="bx-combos-note">Cada producto del combo abre tu página o el link que elijas. El link de cobro no reemplaza un posnet. ¿Querés otra combinación? La armamos a medida.</p>
+        <p className="bx-combos-note">Los diseños y destinos de las fotos son ejemplos. Confirmamos con vos la marca, los enlaces y los detalles de cada pieza. ¿Querés otra combinación? La armamos a medida.</p>
       </section>
       <section id="renovacion" className="bx-renewal" aria-labelledby="renewal-title">
         <p className="bx-section-kicker">DESPUÉS DEL PRIMER AÑO</p>

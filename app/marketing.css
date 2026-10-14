@@ -293,8 +293,8 @@ html:has(.bx) { scroll-behavior: smooth; }
 }
 
 /* Curated examples, based on the editor's Glass, Pastel, Brutalism and Elegant presets. */
-.bx-showcase-kicker { display: flex; align-items: center; justify-content: center; gap: 9px; margin-bottom: 24px; color: #c3baff; font-size: 11px; font-weight: 700; letter-spacing: .15em; }
-.bx-showcase-kicker > span { width: 6px; height: 6px; background: #b4a3ff; border-radius: 50%; box-shadow: 0 0 16px #9775ff; }
+.bx-showcase-kicker { display: flex; align-items: center; justify-content: center; gap: 9px; width: fit-content; max-width: 100%; margin: 0 auto 24px; color: #c3baff; font-size: 11px; font-weight: 700; letter-spacing: .15em; text-align: center; }
+.bx-showcase-kicker > span { flex: 0 0 6px; width: 6px; height: 6px; background: #b4a3ff; border-radius: 50%; box-shadow: 0 0 16px #9775ff; }
 .bx-sample { width: 100%; height: 100%; container-type: inline-size; border-radius: 42px; padding: 7px; background: linear-gradient(145deg,#8d8490,#17131d 40%,#5d5369); box-shadow: 0 26px 55px #0006, inset 0 0 0 1px #ffffff30; }
 .bx-sample-screen { position: relative; display: flex; flex-direction: column; height: 100%; overflow: hidden; border-radius: 35px; background: var(--sample-bg); color: var(--sample-ink); }
 .bx-sample-photo { object-fit: cover; }
@@ -460,7 +460,7 @@ html:has(.bx) { scroll-behavior: smooth; }
 }
 @media (max-width: 520px) {
   .bx-section-dark { padding-block: 52px; }
-  .bx-showcase-kicker { max-width: 29ch; margin-bottom: 15px; font-size: 10px; line-height: 1.45; }
+  .bx-showcase-kicker { margin-bottom: 15px; font-size: 10px; line-height: 1.45; }
 }
 @media (max-width: 350px) {
   .bx-section-dark { padding-block: 46px; }
