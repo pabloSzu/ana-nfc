@@ -1,16 +1,19 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import Toast from "@/components/toast";
-import { IconEdit, IconExternalLink, IconQrCode } from "@/components/icons";
+import { IconEdit, IconExternalLink, IconLink, IconQrCode } from "@/components/icons";
+import TemplatePreview from "@/components/template-preview";
+import { templateFromLanding } from "@/lib/business-templates";
+import { relativeDay, shortDate } from "@/lib/page-sort";
 import { copyAsTemplate, renewLanding, saveLandingManagement, setLandingRedirect } from "@/app/admin/actions";
 import { effectiveRedirect, fallbackOf, formatDate, pageKindLabel, planOf, planStatus, renewedExpiry } from "@/lib/landing-plan";
 import ManagePanel, { type ManagePanelData } from "./manage-panel";
 
-type ManageLanding = Parameters<typeof planStatus>[0] & { id: string; slug: string; business_name: string; business_type?: string | null; published?: boolean | null };
+type ManageLanding = Parameters<typeof planStatus>[0] & { id: string; slug: string; business_name: string; business_type?: string | null; published?: boolean | null; created_at?: string | null; updated_at?: string | null; actions?: Record<string, unknown>[] | null };
 type ManageClient = { id: string; name: string; phone?: string | null; notes?: string | null } | null;
 
 // La pantalla de Gestión, separada de la carga de datos de page.tsx.
-export default function ManageScreen({ landing, client }: { landing: ManageLanding; client: ManageClient }) {
+export default function ManageScreen({ landing, client, views }: { landing: ManageLanding; client: ManageClient; views: { total: number; last30: number } }) {
   const plan = planOf(landing);
   const status = planStatus(landing);
   const kind = landing.business_type === "contact" ? "tarjeta" : "página";
@@ -57,6 +60,21 @@ export default function ManageScreen({ landing, client }: { landing: ManageLandi
         </div>
       </header>
 
+      <div className="manage-layout">
+      <aside className="card manage-summary" aria-label="Resumen de la página">
+        {plan === "direct"
+          ? <div className="manage-summary-direct"><IconLink /><span>Abre directo</span><strong>{String(landing.redirect_url || "Sin link cargado").replace(/^https?:\/\//, "")}</strong></div>
+          : <TemplatePreview template={templateFromLanding(landing as Parameters<typeof templateFromLanding>[0])} className="manage-summary-preview" />}
+        <dl className="manage-facts">
+          <div><dt>Tipo</dt><dd>{pageKindLabel(landing)}</dd></div>
+          <div><dt>Cliente</dt><dd>{client ? <Link href={`/admin/clientes/${client.id}`}>{client.name}</Link> : "Sin cliente"}</dd></div>
+          <div><dt>Estado</dt><dd>{landing.published ? "Publicada" : "Borrador"}</dd></div>
+          {landing.created_at && <div><dt>Creada</dt><dd>{shortDate(landing.created_at)}</dd></div>}
+          {landing.updated_at && <div><dt>Última edición</dt><dd title={shortDate(landing.updated_at)}>{relativeDay(landing.updated_at).replace(/^./, (letter) => letter.toUpperCase())}</dd></div>}
+          <div><dt>Visitas</dt><dd>{views.total ? `${views.total} · ${views.last30} en 30 días` : "Todavía ninguna"}</dd></div>
+        </dl>
+      </aside>
+      <div className="manage-main">
       <ManagePanel data={data} saveAction={saveLandingManagement} renewAction={renewLanding} redirectAction={setLandingRedirect} />
 
       {landing.business_type !== "contact" && plan !== "direct" && <section className="card manage-template">
@@ -69,6 +87,8 @@ export default function ManageScreen({ landing, client }: { landing: ManageLandi
         </form>
       </section>}
       {client?.notes && <section className="card manage-notes"><strong>Notas del cliente</strong><p>{client.notes}</p></section>}
+      </div>
+      </div>
     </main>
   );
 }

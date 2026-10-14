@@ -12,8 +12,9 @@ import { effectiveRedirect, planOf, planStatus } from "@/lib/landing-plan";
 import { withAutoFallback } from "@/lib/landing-fallback";
 import { templateChoices } from "@/lib/business-templates";
 import PagesList, { type PageKind, type PageRow, type PageView } from "./pages-list";
+import { parsePageSort } from "@/lib/page-sort";
 
-type SearchParams = Promise<{ q?: string | string[]; type?: string | string[]; view?: string | string[]; renewal?: string | string[] }>;
+type SearchParams = Promise<{ q?: string | string[]; type?: string | string[]; view?: string | string[]; renewal?: string | string[]; sort?: string | string[] }>;
 type ViewCount = { landing_id: string; total?: number | string | null; last_30_days?: number | string | null };
 const value = (item: string | string[] | undefined) => typeof item === "string" ? item : "";
 
@@ -23,6 +24,7 @@ export default async function PagesPage({ searchParams }: { searchParams: Search
   // renewal=due y type=unassigned son los links viejos (Inicio, aviso de páginas sin cliente).
   const initialView = (["attention", "published", "draft"].includes(value(params.view)) ? value(params.view) : value(params.renewal) === "due" || value(params.type) === "unassigned" ? "attention" : "all") as PageView;
   const initialQuery = value(params.q).trim().slice(0, 100);
+  const initialSort = parsePageSort(value(params.sort));
   const supabase = await createClient();
   const { data: authData } = await supabase.auth.getClaims();
   const userId = String(authData?.claims?.sub || "");
@@ -64,6 +66,9 @@ export default async function PagesPage({ searchParams }: { searchParams: Search
       status: page.published || kind === "direct" ? { label: status.label, tone: status.tone } : { label: "Borrador", tone: "muted" },
       destination: kind === "direct" ? String(page.redirect_url || "") : String(effectiveRedirect(page) || ""),
       attention,
+      createdAt: String(page.created_at || ""),
+      updatedAt: String(page.updated_at || page.created_at || ""),
+      expiresAt: page.expires_at ? String(page.expires_at) : "",
       views: { total: Number(views?.total) || 0, last30: Number(views?.last_30_days) || 0 },
       avatar: { business_name: page.business_name, business_type: page.business_type, logo_url: page.logo_url, logo_style: page.logo_style, primary_color: page.primary_color },
     };
@@ -83,7 +88,7 @@ export default async function PagesPage({ searchParams }: { searchParams: Search
     <section className="elevated-section">
       {!rows.length
         ? <div className="empty-state"><IconFileText /><strong>Todavía no hay páginas</strong><p className="muted">Creá un cliente y después agregale su primera landing, tarjeta o link directo.</p></div>
-        : <PagesList rows={rows} clients={clients || []} initialKind={initialKind} initialView={initialView} initialQuery={initialQuery} actions={{ publish, rename: renameLanding, remove: deleteLanding, assign: assignLandingClient }} />}
+        : <PagesList rows={rows} clients={clients || []} initialKind={initialKind} initialView={initialView} initialQuery={initialQuery} initialSort={initialSort} actions={{ publish, rename: renameLanding, remove: deleteLanding, assign: assignLandingClient }} />}
     </section>
   </main>;
 }

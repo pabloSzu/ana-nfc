@@ -4,12 +4,13 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import AdminPageAvatar, { type AdminPageAvatarData } from "@/components/admin-page-avatar";
 import PendingSubmitButton from "@/components/pending-submit-button";
-import { IconAlertCircle, IconCalendar, IconEdit, IconExternalLink, IconEye, IconLink, IconPause, IconPlay, IconQrCode } from "@/components/icons";
+import { IconAlertCircle, IconCalendar, IconEdit, IconEye, IconLink, IconPause, IconPlay, IconQrCode } from "@/components/icons";
 import RenameLandingButton from "../rename-landing-button";
 import ViewLandingButton from "../view-landing-button";
 import DeleteLandingButton from "../delete-landing-button";
 import AssignClientButton from "../assign-client-button";
 import type { PlanTone } from "@/lib/landing-plan";
+import { PAGE_SORTS, relativeDay, shortDate, sortPages, type PageSort } from "@/lib/page-sort";
 
 type Action = (fd: FormData) => void | Promise<void>;
 export type PageKind = "landing" | "contact" | "direct";
@@ -26,6 +27,9 @@ export type PageRow = {
   status: { label: string; tone: PlanTone };
   destination: string;
   attention: string;
+  createdAt: string;
+  updatedAt: string;
+  expiresAt: string;
   views: { total: number; last30: number };
   avatar: AdminPageAvatarData;
 };
@@ -71,17 +75,19 @@ function RowMenu({ children }: { children: ReactNode }) {
 // Listado de páginas: filtros instantáneos (tipo, estado y búsqueda) y, por fila, un botón
 // principal según el tipo —Editar diseño, o Cambiar link en un link directo— más lo frecuente a
 // la vista y el resto en el menú ⋯. Los filtros quedan en la URL para poder volver o compartirla.
-export default function PagesList({ rows, clients, initialKind, initialView, initialQuery, actions }: {
+export default function PagesList({ rows, clients, initialKind, initialView, initialQuery, initialSort = "recent", actions }: {
   rows: PageRow[];
   clients: { id: string; name: string }[];
   initialKind: PageKind | "all";
   initialView: PageView;
   initialQuery: string;
+  initialSort?: PageSort;
   actions: { publish: Action; rename: Action; remove: Action; assign: Action };
 }) {
   const [kind, setKind] = useState<PageKind | "all">(initialKind);
   const [view, setView] = useState<PageView>(initialView);
   const [query, setQuery] = useState(initialQuery);
+  const [sort, setSort] = useState<PageSort>(initialSort);
   const returnTo = "/admin/paginas";
 
   useEffect(() => {
@@ -89,9 +95,10 @@ export default function PagesList({ rows, clients, initialKind, initialView, ini
     if (kind !== "all") params.set("type", kind);
     if (view !== "all") params.set("view", view);
     if (query.trim()) params.set("q", query.trim());
+    if (sort !== "recent") params.set("sort", sort);
     const next = params.toString() ? `?${params}` : window.location.pathname;
     window.history.replaceState(null, "", next);
-  }, [kind, view, query]);
+  }, [kind, view, query, sort]);
 
   const matchesView = (row: PageRow, value: PageView) => value === "all" || (value === "attention" ? Boolean(row.attention) : value === "published" ? row.published : !row.published);
   const matchesKind = (row: PageRow, value: PageKind | "all") => value === "all" || row.kind === value;
@@ -103,15 +110,20 @@ export default function PagesList({ rows, clients, initialKind, initialView, ini
     view: Object.fromEntries(VIEWS.map((item) => [item.value, rows.filter((row) => matchesView(row, item.value) && matchesKind(row, kind) && matchesQuery(row)).length])),
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [rows, kind, view, needle]);
-  const visible = rows.filter((row) => matchesKind(row, kind) && matchesView(row, view) && matchesQuery(row));
+  const visible = sortPages(rows.filter((row) => matchesKind(row, kind) && matchesView(row, view) && matchesQuery(row)), sort);
   const filtered = kind !== "all" || view !== "all" || Boolean(needle);
 
   return <div className="pl">
     <div className="pl-filters" role="search">
-      <label className="pl-search">
-        <span className="sr-only">Buscar</span>
-        <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por nombre, cliente o link…" />
-      </label>
+      <div className="pl-search-row">
+        <label className="pl-search">
+          <span className="sr-only">Buscar</span>
+          <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por nombre, cliente o link…" />
+        </label>
+        <label className="pl-sort"><span>Ordenar</span>
+          <select value={sort} onChange={(event) => setSort(event.target.value as PageSort)}>{PAGE_SORTS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}</select>
+        </label>
+      </div>
       <div className="pl-chips" role="group" aria-label="Tipo">
         {KINDS.map((item) => <button key={item.value} type="button" className={`pl-chip is-${item.value}`} aria-pressed={kind === item.value} onClick={() => setKind(item.value)}>
           {item.value !== "all" && <i aria-hidden="true" />}{item.label} <b>{counts.kind[item.value]}</b>
@@ -121,7 +133,7 @@ export default function PagesList({ rows, clients, initialKind, initialView, ini
         {VIEWS.map((item) => <button key={item.value} type="button" className={`pl-chip${item.value === "attention" ? " is-attention" : ""}`} aria-pressed={view === item.value} onClick={() => setView(item.value)}>
           {item.value === "attention" && <IconAlertCircle aria-hidden="true" />}{item.label} <b>{counts.view[item.value]}</b>
         </button>)}
-        {filtered && <button type="button" className="pl-clear" onClick={() => { setKind("all"); setView("all"); setQuery(""); }}>Limpiar</button>}
+        {(filtered || sort !== "recent") && <button type="button" className="pl-clear" onClick={() => { setKind("all"); setView("all"); setQuery(""); setSort("recent"); }}>Limpiar</button>}
       </div>
     </div>
 
@@ -139,14 +151,15 @@ export default function PagesList({ rows, clients, initialKind, initialView, ini
         <div className="pl-state">
           <Link className={`plan-status is-${row.status.tone}`} href={`/admin/landings/${row.id}/gestion`}>{row.status.label}</Link>
           <small>{row.views.total ? `${row.views.total} visitas · ${row.views.last30} en 30 días` : "Sin visitas"}</small>
+          <small className="pl-edited" title={`Creada el ${shortDate(row.createdAt)} · Última edición el ${shortDate(row.updatedAt)}`}>Editada {relativeDay(row.updatedAt)}</small>
         </div>
         <div className="pl-actions">
           {row.kind === "direct"
             ? <Link className="btn pl-primary" href={`/admin/landings/${row.id}/gestion`}><IconLink /> Cambiar link</Link>
             : <Link className="btn pl-primary" href={`/admin/landings/${row.id}/editor-v2`}><IconEdit /> Editar diseño</Link>}
-          {row.kind !== "direct" && <Link className="pl-icon" href={`/admin/landings/${row.id}/gestion`} title="Gestión: plan y vencimiento" aria-label="Gestión"><IconCalendar /></Link>}
+          <Link className="pl-icon" href={`/admin/landings/${row.id}/gestion`} title="Gestión: plan y vencimiento" aria-label="Gestión"><IconCalendar /></Link>
           {row.kind === "direct"
-            ? <a className="pl-icon" href={`/${row.slug}`} target="_blank" rel="noreferrer" title="Probar el link" aria-label="Probar el link"><IconExternalLink /></a>
+            ? <a className="pl-icon" href={`/${row.slug}`} target="_blank" rel="noreferrer" title="Ver: abre el link para probarlo" aria-label="Ver el link"><IconEye /></a>
             : <ViewLandingButton slug={row.slug} landingId={row.id} published={row.published} publishAction={actions.publish} className="pl-icon" isContact={row.kind === "contact"} returnTo={returnTo} />}
           <Link className="pl-icon" href={`/admin/landings/${row.id}/qr`} title="QR y NFC" aria-label="QR y NFC"><IconQrCode /></Link>
           <RowMenu>

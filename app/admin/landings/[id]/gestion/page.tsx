@@ -11,7 +11,10 @@ export default async function Gestion({ params }: { params: Promise<{ id: string
   const { data: authData } = await supabase.auth.getClaims();
   const userId = String(authData?.claims?.sub || "");
   if (!userId) redirect("/admin/login");
-  const { data: row } = await supabase.from("landings").select("*, actions(type,url,enabled,position)").eq("id", id).eq("owner_id", userId).maybeSingle();
+  const [{ data: row }, { data: views }] = await Promise.all([
+    supabase.from("landings").select("*, actions(*)").eq("id", id).eq("owner_id", userId).maybeSingle(),
+    supabase.from("landing_view_counts").select("total,last_30_days").eq("landing_id", id).maybeSingle(),
+  ]);
   if (!row) notFound();
   // Una plantilla no tiene plan ni cliente: se maneja desde su propio panel.
   if (row.template_name) redirect("/admin/plantillas");
@@ -19,6 +22,6 @@ export default async function Gestion({ params }: { params: Promise<{ id: string
   const { data: client } = landing.client_id
     ? await supabase.from("clients").select("id,name,phone,notes").eq("id", landing.client_id).eq("owner_id", userId).maybeSingle()
     : { data: null };
-  return <ManageScreen landing={landing} client={client} />;
+  return <ManageScreen landing={landing} client={client} views={{ total: Number(views?.total) || 0, last30: Number(views?.last_30_days) || 0 }} />;
 }
 

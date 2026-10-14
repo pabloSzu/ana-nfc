@@ -3062,3 +3062,34 @@ dialog.confirm-modal { width: min(400px, calc(100vw - 32px)); }
 .tl-move:hover:not(:disabled) { background: var(--surface-2); }
 .tl-move:disabled { opacity: .3; cursor: default; }
 @media (max-width: 560px) { .tl-thumb { height: 520px; } }
+
+/* Páginas: buscador + "Ordenar" en una fila, y acciones en columnas fijas (el botón principal
+   tiene el mismo ancho en landings, tarjetas y links directos, así todas las filas se alinean). */
+.pl-search-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.pl-sort { display: flex; align-items: center; gap: 8px; padding: 0 4px 0 12px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); color: var(--text-muted); font-size: 0.8125rem; font-weight: 600; }
+.pl-sort select { padding: 10px 8px; border: 0; background: transparent; color: var(--text); font: inherit; font-weight: 700; cursor: pointer; }
+.pl-primary { min-width: 148px; justify-content: center; }
+@media (max-width: 560px) { .pl-search-row { grid-template-columns: 1fr; } .pl-primary { min-width: 0; } }
+.pl-state .pl-edited { color: var(--text); font-weight: 600; cursor: help; }
+
+/* Gestión: a la izquierda, un resumen de la página (miniatura, cliente y datos); a la derecha,
+   lo de siempre. En pantallas angostas el resumen va arriba. */
+.manage-shell { max-width: 1120px; }
+.manage-layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); align-items: start; gap: var(--space-5); }
+.manage-summary { position: sticky; top: calc(var(--global-nav-h, 56px) + 16px); display: grid; gap: var(--space-4); padding: 14px; }
+.manage-summary-preview { height: 420px; border-radius: 14px; }
+.manage-summary-direct { display: grid; justify-items: center; gap: 6px; padding: 28px 14px; border-radius: 14px; background: color-mix(in srgb, var(--pl-direct, #d97706) 10%, transparent); text-align: center; }
+.manage-summary-direct svg { width: 28px; height: 28px; color: var(--pl-direct, #d97706); }
+.manage-summary-direct span { color: var(--text-muted); font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+.manage-summary-direct strong { font-size: 0.875rem; overflow-wrap: anywhere; }
+.manage-facts { display: grid; gap: 8px; margin: 0; }
+.manage-facts > div { display: flex; justify-content: space-between; gap: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border); font-size: 0.8125rem; }
+.manage-facts > div:last-child { border-bottom: 0; padding-bottom: 0; }
+.manage-facts dt { color: var(--text-muted); }
+.manage-facts dd { margin: 0; font-weight: 700; text-align: right; overflow-wrap: anywhere; }
+.manage-main { display: grid; gap: 0; min-width: 0; }
+@media (max-width: 860px) {
+  .manage-layout { grid-template-columns: 1fr; }
+  .manage-summary { position: static; grid-template-columns: 130px minmax(0, 1fr); align-items: start; }
+  .manage-summary-preview, .manage-summary-direct { height: 230px; }
+}
