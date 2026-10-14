@@ -965,7 +965,7 @@ function TemplateCard({ template, selected, onApplyBusiness }: { template: Busin
     <TemplatePreview template={template} className="v2-rubro-preview" />
     <div className="v2-rubro-copy"><b>{template.name}</b></div>
     <div className="v2-rubro-actions">
-      <button type="button" className="v2-save" onClick={() => onApplyBusiness(template.id)}>Usar este prediseño</button>
+      <button type="button" className="v2-save" onClick={() => onApplyBusiness(template.id)}>Usar este</button>
     </div>
   </div>;
 }
@@ -1039,9 +1039,6 @@ function ButtonDesign({ draft, buttons, backgroundImage, onZone, onFont, onApply
   const recommendedSize = DESIGN_PRESETS_V2.find((preset) => preset.id === zone.preset)?.buttonZone;
   const usesRecommendedSize = Boolean(recommendedSize && zone.height === recommendedSize.height && zone.textSize === recommendedSize.textSize && zone.iconSize === recommendedSize.iconSize && zone.gap === recommendedSize.gap);
   const currentFontWeight = zone.fontWeight ?? (zone.collection === "aura" ? 850 : zone.collection === "gummy" ? 800 : 700);
-  const hasBrandButtons = buttons.some((button) => BRAND_BUTTON_TYPES.has(button.type));
-  const hasPresetIcons = buttons.some((button) => button.type !== "url" && !button.icon);
-  const comparisonButtons = buttons.length > 1 ? [buttons[0], buttons.find((button) => button.id !== buttons[0].id && BRAND_BUTTON_TYPES.has(button.type)) || buttons[1]] : buttons;
   const previewTextColor = buttonCollectionStyle(zone.collection, zone.oneColor, contrastTextColor(zone.oneColor)).color;
   const initialTextColor = zone.collection === "aura" ? "#ffffff" : typeof previewTextColor === "string" && /^#[0-9a-f]{6}$/i.test(previewTextColor) ? previewTextColor : contrastTextColor(zone.oneColor);
   const automaticContentColors = Array.from(new Set(buttons.length ? buttons.map((button, index) => {
@@ -1056,13 +1053,17 @@ function ButtonDesign({ draft, buttons, backgroundImage, onZone, onFont, onApply
       <p className="v2-help" style={{ margin: 0 }}>Cambiar el diseño de los botones aplica también sus tamaños y alineación. Tus textos, enlaces y estilos propios de cada botón se conservan.</p>
       {(customVisualCount > 0 || zone.contentAlignMode === "manual") && <div className="v2-scope-summary has-custom" role="status">
         <b>Personalizaciones activas</b>
-        {zone.contentAlignMode === "manual" && <span>Alineación manual: {zone.contentAlign === "center" ? "Centro" : "Izquierda"}. Se reemplaza si elegís otra plantilla.</span>}
+        {zone.contentAlignMode === "manual" && <span>Alineación manual: {zone.contentAlign === "center" ? "Centro" : "Izquierda"}. Se reemplaza si elegís otro estilo de botones.</span>}
         {customVisualCount > 0 && <span>{customVisualCount} {customVisualCount === 1 ? "botón tiene" : "botones tienen"} estilo propio ({[customColorCount > 0 && `${customColorCount} con color`, customIconBackgroundCount > 0 && `${customIconBackgroundCount} con fondo de ícono`].filter(Boolean).join(" · ")}).</span>}
         {customVisualCount > 0 && <button type="button" className="v2-restore-all" onClick={onResetButtonOverrides}>↩ Quitar colores y fondos de ícono propios</button>}
         {customVisualCount > 0 && <span>No cambia textos, enlaces ni íconos elegidos.</span>}
       </div>}
       <details className="v2-button-look-picker" key={zone.preset}>
-        <summary><span><strong>Diseño de botones: {currentButtonLook}</strong><small>Elegí otro estilo para toda la botonera</small></span></summary>
+        <summary>
+          <span className="v2-look-head"><strong>Estilos de botones <em>{DESIGN_PRESETS_V2.length}</em></strong><small>Actual: <b>{currentButtonLook}</b>. Cambia solo los botones, no el resto de la página.</small></span>
+          <span className="v2-look-teaser" aria-hidden="true">{DESIGN_PRESETS_V2.filter((preset) => preset.id !== zone.preset).slice(0, 4).map((preset) => <ButtonLookSwatch key={preset.id} preset={preset} />)}</span>
+          <span className="v2-look-cta"><span className="is-closed">Ver los {DESIGN_PRESETS_V2.length} estilos</span><span className="is-open">Ocultar estilos</span></span>
+        </summary>
         <div className="v2-button-look-content">
           <p className="v2-help">Aplica forma, color, tipografía, tamaño y alineación. Los colores propios de botones individuales se conservan.</p>
           <div className="v2-look-grid">
@@ -1075,23 +1076,16 @@ function ButtonDesign({ draft, buttons, backgroundImage, onZone, onFont, onApply
       </details>
       <fieldset>
         <legend>Regla de color</legend>
-        <p className="v2-help" style={{ margin: 0 }}>{buttons.length === 0 ? "Agregá un botón para ver los cambios en la landing." : customColorCount > 0 ? `${customColorCount} ${customColorCount === 1 ? "botón conserva" : "botones conservan"} su color propio. Mirá el resultado en tu landing.` : "Mirá el resultado en tus botones de la landing."}</p>
-        <Choice
-          active={draft.buttonZone.colorMode === "one"}
-          swatch={draft.buttonZone.oneColor}
-          title="Un color para todos"
-          note={zone.collection === "glass" ? "Todos los botones tendrán el mismo matiz de vidrio." : "Los botones que usan el diseño general tendrán este color."}
-          onClick={() => onZone({ colorMode: "one" })}
-          preview={<ButtonChoicePreview draft={draft} buttons={comparisonButtons} backgroundImage={backgroundImage} colorMode="one" iconAppearance={zone.iconAppearance} />}
-        />
-        {draft.buttonZone.colorMode === "one" && <ColorField label="Color de los botones" value={draft.buttonZone.oneColor} onChange={(oneColor) => onZone({ oneColor })} />}
-        <Choice
-          active={draft.buttonZone.colorMode === "auto"}
-          title={hasBrandButtons ? "Cada marca con su color" : "Automático"}
-          note={hasBrandButtons ? zone.collection === "glass" ? "Las marcas aportan un matiz al vidrio, no un relleno sólido." : "Las redes usan sus colores de marca." : "Los enlaces personalizados usan un tono neutro; las redes tomarán sus colores si las agregás."}
-          onClick={() => onZone({ colorMode: "auto" })}
-          preview={<ButtonChoicePreview draft={draft} buttons={comparisonButtons} backgroundImage={backgroundImage} colorMode="auto" iconAppearance={zone.iconAppearance} />}
-        />
+        <p className="v2-help" style={{ margin: 0 }}>Así cambian los botones más comunes.{customColorCount > 0 ? ` ${customColorCount} ${customColorCount === 1 ? "botón conserva" : "botones conservan"} su color propio.` : ""}</p>
+        <div className="v2-compare">
+          <CompareChoice active={zone.colorMode === "one"} title="Color único" note="Todos del mismo color." onClick={() => onZone({ colorMode: "one" })}>
+            <StyleSample colorMode="one" iconAppearance={zone.iconAppearance} oneColor={zone.oneColor} />
+          </CompareChoice>
+          <CompareChoice active={zone.colorMode === "auto"} title="Color real" note="Cada red con su color de marca." onClick={() => onZone({ colorMode: "auto" })}>
+            <StyleSample colorMode="auto" iconAppearance={zone.iconAppearance} oneColor={zone.oneColor} />
+          </CompareChoice>
+        </div>
+        {zone.colorMode === "one" && <ColorField label="Color de los botones" value={zone.oneColor} onChange={(oneColor) => onZone({ oneColor })} />}
         <div className="v2-text-color-control">
           <span className={`v2-content-color-swatches count-${Math.min(contentColorSwatches.length, 3)}`} aria-hidden="true">{contentColorSwatches.slice(0, 3).map((color) => <i key={color} style={{ background: color }} />)}</span>
           <span className="v2-content-color-info"><strong>Color del contenido</strong><b>{contentColorStatus}</b><small>{zone.textColor ? zone.iconAppearance === "minimal" ? "Texto e íconos minimalistas comparten este color; los que tienen fondo propio conservan su contraste." : "Cambia el texto; los íconos reales conservan sus colores de marca." : "El diseño elige colores legibles para texto e íconos."}</small></span>
@@ -1101,28 +1095,20 @@ function ButtonDesign({ draft, buttons, backgroundImage, onZone, onFont, onApply
         {/* Picking any look (plantilla general o de botonera) always applies its own recommended
             color rule now — no more "sticky" state that made the same click behave differently
             depending on invisible history. One predictable rule, Ctrl+Z as the way back. */}
-        <p className="v2-help" style={{ margin: 0 }}>Cada plantilla trae su propia regla de color recomendada — elegir una plantilla nueva siempre la aplica. Si no era lo que buscabas, deshacé con Ctrl+Z.</p>
+        <p className="v2-help" style={{ margin: 0 }}>Cada estilo de botones trae su regla de color recomendada y elegir uno la aplica. Si no era lo que buscabas, deshacé con Ctrl+Z.</p>
       </fieldset>
-      {hasPresetIcons ? <fieldset>
-        <legend>Apariencia de los iconos</legend>
-        {!hasBrandButtons && <p className="v2-help" style={{ margin: 0 }}>No hay redes en tu landing; mirá cómo cambian los íconos de tus botones.</p>}
-        <Choice
-          active={zone.iconAppearance === "minimal"}
-          suggested={recommendedIcons === "minimal"}
-          title="Icono minimalista"
-          note={zone.collection === "glass" ? "Símbolos blancos, sin el color de cada marca." : "Todos usan un tratamiento monocromático coordinado con la botonera."}
-          onClick={() => onZone({ iconAppearance: "minimal" })}
-          preview={<ButtonChoicePreview draft={draft} buttons={comparisonButtons} backgroundImage={backgroundImage} colorMode={zone.colorMode} iconAppearance="minimal" />}
-        />
-        <Choice
-          active={zone.iconAppearance === "brand"}
-          suggested={recommendedIcons === "brand"}
-          title="Icono real"
-          note={zone.collection === "glass" ? "Cada símbolo muestra su color de marca sobre el vidrio." : "Cada marca conserva su apariencia reconocible: Spotify verde, YouTube rojo, Instagram degradado…"}
-          onClick={() => onZone({ iconAppearance: "brand" })}
-          preview={<ButtonChoicePreview draft={draft} buttons={comparisonButtons} backgroundImage={backgroundImage} colorMode={zone.colorMode} iconAppearance="brand" />}
-        />
-      </fieldset> : <p className="v2-help" style={{ margin: 0 }}>Los íconos de botones personalizados se editan dentro de cada botón. Si agregás una red, aparecerán acá las opciones de ícono minimalista o real.</p>}
+      <fieldset>
+        <legend>Íconos</legend>
+        <div className="v2-compare">
+          <CompareChoice active={zone.iconAppearance === "minimal"} suggested={recommendedIcons === "minimal"} title="Ícono minimalista" note="Símbolos simples, del color del texto." onClick={() => onZone({ iconAppearance: "minimal" })}>
+            <StyleSample colorMode={zone.colorMode} iconAppearance="minimal" oneColor={zone.oneColor} />
+          </CompareChoice>
+          <CompareChoice active={zone.iconAppearance === "brand"} suggested={recommendedIcons === "brand"} title="Ícono real" note="El logo original de cada marca." onClick={() => onZone({ iconAppearance: "brand" })}>
+            <StyleSample colorMode={zone.colorMode} iconAppearance="brand" oneColor={zone.oneColor} />
+          </CompareChoice>
+        </div>
+        <p className="v2-help" style={{ margin: 0 }}>Los botones con un ícono o foto elegidos a mano conservan el suyo.</p>
+      </fieldset>
       <div className="v2-fields-row">
         <fieldset><legend>Tamaño de botones</legend><div className="v2-segment">{SIZES.map((item) => <button type="button" className={selectedSize === item.label ? "active" : ""} aria-pressed={selectedSize === item.label} key={item.label} onClick={() => onZone(item.patch)}>{item.label}</button>)}</div><p className="v2-help" style={{ margin: "8px 0 0", fontSize: 11 }}>{selectedSize ? "Incluye alto, texto, ícono y espacio." : usesRecommendedSize ? `Tamaño recomendado por ${currentButtonLook}.` : "Tamaño personalizado; ajustalo abajo."}</p></fieldset>
         <fieldset>
@@ -1132,7 +1118,7 @@ function ButtonDesign({ draft, buttons, backgroundImage, onZone, onFont, onApply
             <button type="button" className={zone.contentAlignMode === "manual" && zone.contentAlign === "center" ? "active" : ""} aria-pressed={zone.contentAlignMode === "manual" && zone.contentAlign === "center"} onClick={() => onZone({ contentAlignMode: "manual", contentAlign: "center" })}>Centro</button>
             <button type="button" className={zone.contentAlignMode === "manual" && zone.contentAlign === "left" ? "active" : ""} aria-pressed={zone.contentAlignMode === "manual" && zone.contentAlign === "left"} onClick={() => onZone({ contentAlignMode: "manual", contentAlign: "left" })}>Izq.</button>
           </div>
-          <p className="v2-help" style={{ margin: "8px 0 0", fontSize: 11 }}>{zone.contentAlignMode === "auto" ? `Recomendado por ${alignmentPreset.name}.` : "Es una edición manual; otra plantilla aplicará su propia alineación."}</p>
+          <p className="v2-help" style={{ margin: "8px 0 0", fontSize: 11 }}>{zone.contentAlignMode === "auto" ? `Recomendado por ${alignmentPreset.name}.` : "Es una edición manual; otro estilo de botones aplicará su propia alineación."}</p>
         </fieldset>
       </div>
       <details className="v2-advanced">
@@ -1140,7 +1126,7 @@ function ButtonDesign({ draft, buttons, backgroundImage, onZone, onFont, onApply
         <div className="v2-fields" style={{ marginTop: 10 }}>
           <FontPicker label="Tipografía" value={draft.button_font || "modern"} onChange={onFont} usage="buttons" previewText={buttons[0]?.title || "Conocé mi trabajo"} previewWeight={currentFontWeight} previewLetterSpacing={zone.letterSpacing ?? 0} previewLegacy={zone.fontWeight === undefined} recommended={suggestedPreset(zone.templateId).buttonFont} />
           <FontWeightControl font={draft.button_font || "modern"} value={currentFontWeight} onChange={(fontWeight) => onZone({ fontWeight })} />
-          {zone.fontWeight === undefined && <p className="v2-help" style={{ margin: 0 }}>Esta landing usa el grosor anterior de la plantilla. Elegí uno para usar un peso real de la fuente.</p>}
+          {zone.fontWeight === undefined && <p className="v2-help" style={{ margin: 0 }}>Esta landing usa el grosor anterior del estilo. Elegí uno para usar un peso real de la fuente.</p>}
           <label className="v2-range"><span>Separación entre letras<b>{zone.letterSpacing ? `${zone.letterSpacing > 0 ? "+" : ""}${Number((zone.letterSpacing * 100).toFixed(1))}%` : "Normal"}</b></span><input type="range" min={-.03} max={.08} step={.005} value={zone.letterSpacing ?? 0} onChange={(event) => onZone({ letterSpacing: Number(event.target.value) })}/></label>
           <button type="button" className="v2-title-wrap" role="switch" aria-checked={zone.titleLines === 2} onClick={() => onZone({ titleLines: zone.titleLines === 2 ? 1 : 2 })}><span className="v2-title-wrap-switch" aria-hidden="true" /><span><strong>Mostrar más texto en nombres largos</strong><small>Si no entra en una línea, puede ocupar dos. Si lo desactivás, se corta con “…”.</small></span></button>
           <div className="v2-fields-row">
@@ -1270,7 +1256,7 @@ function CoverControls({ draft, coverImage, onChange, onCoverFile, onAdjustCover
         <button type="button" className="v2-ghost" onClick={onRemoveCover}>Quitar foto</button>
       </>}
       {!photoVisible && <EditorSection title="Portada sin foto" tone="blue">
-        <p className="v2-help" style={{ margin: 0 }}>Elegí la portada que más te guste. La recomendada combina con tu plantilla, pero podés usar cualquiera. La foto cargada no se modifica.</p>
+        <p className="v2-help" style={{ margin: 0 }}>Elegí la portada que más te guste. La recomendada combina con tu diseño, pero podés usar cualquiera. La foto cargada no se modifica.</p>
         <div className="v2-contact-cover-pattern-grid" role="group" aria-label="Diseño de la portada sin foto">
           {availablePatterns.map((option) => <button key={option.id} type="button" className={pattern === option.id ? "active" : ""} aria-pressed={pattern === option.id} onClick={() => onChange({ buttonZone: { ...draft.buttonZone, contactCoverPattern: option.id } })}><span className={`v2-contact-cover-pattern-swatch contact-cover-pattern-${option.id} contact-theme-${theme}`} style={option.id === "dots" && theme === "impact" && customColor ? { ...patternPreviewStyle, "--contact-surface": customColor } as CSSProperties : patternPreviewStyle} aria-hidden="true" /><strong>{option.label}</strong>{option.id === recommendedPattern && <small className="v2-contact-cover-recommended">✦ Recomendada</small>}</button>)}
         </div>
@@ -1848,7 +1834,7 @@ function LogoControls({ draft, logoImage, onChange, onLogo, onAdjustLogo, onRemo
     <fieldset className="v2-logo-section v2-logo-section-bg">
       <legend>1 · Color de fondo</legend>
       <p className="v2-help" style={{ margin: "0 0 4px" }}>{isContact ? "Se ve detrás de tu foto. Si todavía no subiste una, es el color de fondo de tus iniciales." : "Se ve detrás del círculo del logo (si no subiste foto, es el color de fondo de la inicial). Elegilo primero: la forma y el borde se juzgan mejor contra tu color real."}</p>
-      <Choice active={style.backgroundMode === "auto"} swatch={primary} title="Automático" note="El color sugerido por tu plantilla." onClick={() => update({ backgroundMode: "auto" })} />
+      <Choice active={style.backgroundMode === "auto"} swatch={primary} title="Automático" note="El color sugerido por tu diseño." onClick={() => update({ backgroundMode: "auto" })} />
       <Choice active={style.backgroundMode === "custom"} swatch={style.fallback} title="Personalizado" note="Elegí cualquier color para el fondo del logo." onClick={() => update({ backgroundMode: "custom" })} />
       {style.backgroundMode === "custom" && <ColorField label="Color de fondo" value={style.fallback} onChange={(fallback) => update({ fallback })} />}
     </fieldset>
@@ -2041,7 +2027,7 @@ function ButtonControls({ button,draft,cvFileName,cvFileError,iconUploading,icon
 <EditorSection title="Ícono" tone="purple">    <IconPicker type={button.type} value={button.icon} customImageUrl={button.icon_url} customImageFit={button.icon_fit} customImageScale={button.icon_scale} previewStyle={iconPreviewStyle} uploading={iconUploading} error={iconUploadError} onUpload={onIconFile} onChange={(icon)=>onChange({icon,icon_url:"",icon_fit:"contain",icon_scale:1})} onRemoveCustom={() => onChange({icon_url:"",icon_fit:"contain",icon_scale:1})} onImageFitChange={(icon_fit)=>onChange({icon_fit})} onImageScaleChange={(icon_scale)=>onChange({icon_scale})}/>
     <fieldset>
       <legend>Fondo del ícono</legend>
-      <Choice active={!button.icon_background_color} title="Diseño de la plantilla" note="Mantiene el estilo original del ícono." onClick={()=>onChange({icon_background_color:""})}/>
+      <Choice active={!button.icon_background_color} title="Como el resto" note="Usa el estilo de ícono de la botonera." onClick={()=>onChange({icon_background_color:""})}/>
       <Choice active={Boolean(button.icon_background_color)} swatch={button.icon_background_color || "#1f2937"} title="Color propio" note="Cambia solo el fondo de este ícono; el símbolo ajusta su contraste." onClick={()=>onChange({icon_background_color:button.icon_background_color || "#1f2937"})}/>
       {button.icon_background_color && <ColorField label="Color del fondo" value={button.icon_background_color} onChange={(icon_background_color)=>onChange({icon_background_color})}/>}
     </fieldset>
@@ -2065,32 +2051,34 @@ function ButtonControls({ button,draft,cvFileName,cvFileError,iconUploading,icon
 
 function Choice({active,title,note,onClick,swatch,suggested=false,preview}:{active:boolean;title:string;note:string;onClick:()=>void;swatch?:string;suggested?:boolean;preview?:ReactNode}) { return <button type="button" className={`v2-choice ${active?"active":""}`} aria-pressed={active} onClick={onClick}><i aria-hidden="true">{active?"✓":""}</i>{swatch && <em className="v2-choice-swatch" style={{background:swatch}} />}<span><b>{title}{suggested && <em className="v2-choice-suggested">(Sugerido para la plantilla)</em>}</b><small>{note}</small></span>{preview}</button>; }
 
-function ButtonChoicePreview({ draft, buttons, backgroundImage, colorMode, iconAppearance }: { draft: LandingDraft; buttons: ButtonItem[]; backgroundImage: string; colorMode: ButtonZoneStyle["colorMode"]; iconAppearance: ButtonZoneStyle["iconAppearance"] }) {
-  const zone = { ...draft.buttonZone, colorMode, iconAppearance };
-  const sampleButtons = buttons.length ? buttons : [{ id: "example", type: "url", title: "Tu botón", subtitle: "", url: "", message: "", icon: "", icon_url: "", icon_fit: "contain" as const, icon_scale: 1, icon_background_color: "", background_color: "", background_gradient_to: "", text_color: "", use_auto_color: true, position: 0 }];
-  const baseColor = draft.background_color || "#f7f5f0";
-  const backgroundStyle: CSSProperties = { backgroundColor: baseColor };
-  if (draft.background_type === "image" && backgroundImage) {
-    const tintColor = draft.bgPosition.tintColor || (draft.bgPosition.lighten > 0 ? "#ffffff" : "#000000");
-    const tint = draft.bgPosition.lighten > 0 ? draft.bgPosition.lighten : draft.bgPosition.tint;
-    backgroundStyle.backgroundImage = `linear-gradient(${hexToRgba(tintColor, tint * .52)},${hexToRgba(tintColor, tint * .82)}),url(${JSON.stringify(backgroundImage)})`;
-    backgroundStyle.backgroundSize = "cover";
-    backgroundStyle.backgroundPosition = `${draft.bgPosition.x}% ${draft.bgPosition.y}%`;
-  } else if (draft.background_type === "gradient" && draft.background_gradient_to) {
-    backgroundStyle.backgroundImage = `linear-gradient(145deg,${baseColor},${draft.background_gradient_to})`;
-  }
-  return <span className="v2-choice-preview" style={backgroundStyle} aria-hidden="true" title={buttons.length ? "Vista con tus botones" : "Ejemplo sin botones"}>
-    {sampleButtons.map((button) => {
-      const { background: bg, text, isAuthentic, useNetworkAccent } = resolveButtonColors({ zone, type: button.type, position: button.position, primary: draft.primary_color || "#1f2937", customColor: button.background_color, useAutoColor: button.use_auto_color });
-      const hasCustomIcon = Boolean(button.icon_url) || hasCustomActionIcon(button.icon);
-      const customIconBackground = /^#[0-9a-f]{6}$/i.test(button.icon_background_color) ? button.icon_background_color : undefined;
-      const customGradientTo = !button.use_auto_color && /^#[0-9a-f]{6}$/i.test(button.background_gradient_to) ? button.background_gradient_to : undefined;
-      const instagramAsset = instagramAssetMode(zone.collection, button.type, iconAppearance, hasCustomIcon);
-      return <span key={button.id} className="v2-choice-preview-chip" style={{ ...buttonCollectionStyle(zone.collection, bg, text, button.position, button.type, isAuthentic, useNetworkAccent), ...(customGradientTo ? { background: `linear-gradient(135deg,${bg},${customGradientTo})` } : {}), borderRadius: Math.max(6, zone.radius * .32) }}>
-        <span style={{ ...buttonIconStyle(zone.collection, bg, 18, button.type, iconAppearance, isAuthentic, useNetworkAccent, hasCustomIcon), ...(button.icon_url ? { overflow: "hidden" } : {}), ...(zone.textColor && iconAppearance === "minimal" && !hasCustomIcon ? { color: zone.textColor } : {}), ...(customIconBackground ? { background: customIconBackground, color: contrastTextColor(customIconBackground) } : {}) }}><ActionTypeIcon type={button.type} icon={button.icon} customImageUrl={button.icon_url} customImageFit={button.icon_fit} customImageScale={button.icon_scale} brandMark={shouldUseBrandMark(zone.collection, button.type, iconAppearance, isAuthentic)} brandBackground={youtubeMarkSurfaceColor(zone.collection, bg, button.icon_background_color)} instagramAsset={customIconBackground && instagramAsset === "color" ? "mono" : instagramAsset} /></span>
+// Muestra fija para comparar "Color único / Color real" e "Ícono minimalista / Ícono real": siempre
+// los mismos tres botones (los más usados), sobre un fondo neutro, para que la diferencia se vea
+// igual en cualquier página y con cualquier estilo. El resultado real se ve en el celular.
+const STYLE_SAMPLE = [{ type: "instagram", label: "Instagram" }, { type: "whatsapp", label: "WhatsApp" }, { type: "review", label: "Reseñas" }] as const;
+
+function StyleSample({ colorMode, iconAppearance, oneColor }: { colorMode: ButtonZoneStyle["colorMode"]; iconAppearance: ButtonZoneStyle["iconAppearance"]; oneColor: string }) {
+  return <span className="v2-sample" aria-hidden="true">
+    {STYLE_SAMPLE.map(({ type, label }) => {
+      const background = colorMode === "auto" ? AUTO_COLORS[type] : oneColor || "#1f2937";
+      const color = contrastTextColor(background);
+      const real = iconAppearance === "brand";
+      return <span key={type} className="v2-sample-button" style={{ background, color }}>
+        <span className={`v2-sample-icon${real ? " is-real" : ""}`}>
+          <ActionTypeIcon type={type} brandMark={real} instagramAsset={type === "instagram" ? (real ? "color" : undefined) : undefined} />
+        </span>
+        <span>{label}</span>
       </span>;
     })}
   </span>;
 }
+
+function CompareChoice({ active, suggested = false, title, note, onClick, children }: { active: boolean; suggested?: boolean; title: string; note: string; onClick: () => void; children: ReactNode }) {
+  return <button type="button" className={`v2-compare-card${active ? " active" : ""}`} aria-pressed={active} onClick={onClick}>
+    {children}
+    <b>{title}{suggested && <em>Recomendado</em>}</b>
+    <small>{note}</small>
+  </button>;
+}
+
 function ColorField({label,value,onChange}:{label:string;value:string;onChange:(v:string)=>void}) { return <label className="v2-color"><span>{label}</span><input type="color" value={value} onChange={(e)=>onChange(e.target.value)}/><code>{value.toUpperCase()}</code></label>; }
 function Range({label,min,max,step=1,value,onChange}:{label:string;min:number;max:number;step?:number;value:number;onChange:(v:number)=>void}) { const scaledPercent=max<=3; const percent=scaledPercent||label==="Horizontal"||label==="Vertical"; const pixels=!percent&&(label==="Tamaño"||label==="Borde"||label.includes("Alto")||label.includes("Espaciado")||label.includes("ícono")||label.includes("texto")||label==="Desenfoque"||label==="Espacio superior"); const shown=Math.round(value*(scaledPercent?100:1)); return <label className="v2-range"><span>{label}<b>{label==="Luminosidad"&&shown>0?"+":""}{shown}{percent?"%":pixels?" px":""}</b></span><input type="range" min={min} max={max} step={step} value={value} onChange={(e)=>onChange(Number(e.target.value))}/></label>; }

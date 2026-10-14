@@ -369,12 +369,39 @@
    position rather than centering it, which is what broke "Vista limpia". */
 .v2-stage > .theme-scene { position: absolute; }
 
-/* Prediseños se elige mirando las miniaturas contra el celular: en pantallas anchas el panel va
-   a la IZQUIERDA y el celular corre a la derecha (donde suele estar el panel), con el mismo
-   espacio de ~40px entre los dos. En pantallas más chicas queda como los demás paneles. */
-@media (min-width: 1241px) {
-  .v2-workspace.is-templates .v2-stage { padding-left: calc(50vw - 120px); }
-  .v2-workspace.is-templates .v2-stage-toolbar { left: calc(50vw + 75px); }
-  .v2-workspace.is-templates .v2-panel { left: max(22px, calc(50vw - 600px)); width: 440px; }
-  .v2-workspace.is-templates .v2-panel::before { display: none; }
+/* Editor de landings en tres zonas fijas (como Canva o Wix):
+   - centro: el celular, SIEMPRE en el medio; abrir o cerrar un panel no lo mueve;
+   - izquierda: "Elegir" — Prediseños, lo que cambia la página entera;
+   - derecha: "Editar" — lo que tocaste en el celular (título, un botón, el fondo…).
+   Las dos son barras de arriba a abajo con el mismo aspecto, no ventanitas flotantes. Su ancho
+   se achica para no pisar el celular (≈400px + 40px de aire a cada lado); en pantallas angostas
+   tienen un mínimo y se apoyan sobre el costado. En celular sigue la hoja de abajo de siempre.
+   Las tarjetas personales tienen su propio editor y no cambian. */
+@media (min-width: 841px) {
+  .v2-shell:not(.is-contact-editor) .v2-workspace { --v2-side-w: max(340px, min(440px, calc(50vw - 245px))); }
+  .v2-shell:not(.is-contact-editor) .v2-stage { justify-items: center; padding-left: 22px; padding-right: 22px; }
+  .v2-shell:not(.is-contact-editor) .v2-stage-toolbar { left: 50%; }
+  .v2-shell:not(.is-contact-editor) .v2-panel {
+    top: calc(var(--global-nav-h) + 72px);
+    bottom: 0;
+    left: auto;
+    right: 0;
+    width: var(--v2-side-w);
+    max-height: none;
+    border: 0;
+    border-left: 1px solid #e1e3eb;
+    border-radius: 0;
+    box-shadow: -6px 0 24px rgba(28, 31, 54, 0.06);
+    animation: none;
+  }
+  .v2-shell:not(.is-contact-editor) .v2-panel::before { display: none; }
+  .v2-shell:not(.is-contact-editor) .v2-workspace.is-templates .v2-panel {
+    left: 0;
+    right: auto;
+    border-left: 0;
+    border-right: 1px solid #e1e3eb;
+    box-shadow: 6px 0 24px rgba(28, 31, 54, 0.06);
+  }
+  .v2-shell:not(.is-contact-editor) .v2-workspace.is-templates .v2-rubro-grid { grid-template-columns: 1fr 1fr; }
+  .v2-shell:not(.is-contact-editor) .v2-workspace.is-templates .v2-rubro-preview { height: 250px; }
 }
