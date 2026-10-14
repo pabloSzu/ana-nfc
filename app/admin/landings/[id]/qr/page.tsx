@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { IconExternalLink, IconEye } from "@/components/icons";
 import { getSiteOrigin, isLocalSite } from "@/lib/site-url";
-import { setLandingRedirect } from "@/app/admin/actions";
+import { editHref, planOf } from "@/lib/landing-plan";
 import Toast from "@/components/toast";
 import { Suspense } from "react";
 
@@ -37,7 +37,7 @@ export default async function QR({ params }: { params: Promise<{ id: string }> }
     <main className="shell">
       <Suspense fallback={null}><Toast /></Suspense>
       <header className="builder-header">
-        <Link className="back-link" href={`/admin/landings/${id}/editor-v2`}>← Volver</Link>
+        <Link className="back-link" href={editHref(landing)}>← Volver</Link>
         <div>
           <p className="eyebrow">Código QR</p>
           <h1>{landing.business_name}</h1>
@@ -66,27 +66,16 @@ export default async function QR({ params }: { params: Promise<{ id: string }> }
             : <a className="btn" href={qr} target="_blank" rel="noreferrer"><IconExternalLink /> Descargar QR</a>}
           <a className="btn secondary" href={publicUrl} target="_blank" rel="noreferrer"><IconEye /> Ver página pública</a>
         </div>
+        {planOf(landing) === "direct" && <div className="qr-direct-target">
+          <span>Link directo · abre</span>
+          <strong>{landing.redirect_url || "Todavía no tiene link"}</strong>
+          <Link href={`/admin/landings/${landing.id}/gestion`}>Cambiar el link</Link>
+        </div>}
         <div className="qr-nfc-instructions">
           <strong>Dirección para grabar en el chip NFC</strong>
           <code>{nfcUrl}</code>
           <p>Usá la dirección completa, incluyendo <code>?s=nfc</code>. Así el Admin puede distinguir NFC, QR y enlaces directos.</p>
         </div>
-        <section id="redireccion" className={landing.redirect_url ? "qr-redirect is-active" : "qr-redirect"}>
-          <strong>{landing.redirect_url ? "Redirección activa" : "Página vencida: redirigir a un link"}</strong>
-          {landing.redirect_url
-            ? <p>Quien apoye la tarjeta o escanee el QR va directo a <code>{landing.redirect_url}</code>. La página no se muestra, pero no se borra nada y las visitas se siguen contando.</p>
-            : <p>Si el cliente no renueva, cargá el único link que eligió (sus reseñas, su Instagram…). La tarjeta sigue funcionando y la página queda guardada por si renueva.</p>}
-          <form action={setLandingRedirect}>
-            <input type="hidden" name="id" value={landing.id} />
-            <input name="redirect_url" type="text" inputMode="url" placeholder="instagram.com/minegocio" defaultValue={landing.redirect_url || ""} aria-label="Link al que redirigir" required />
-            <button className="btn" type="submit">{landing.redirect_url ? "Cambiar link" : "Activar redirección"}</button>
-          </form>
-          {landing.redirect_url && <form action={setLandingRedirect}>
-            <input type="hidden" name="id" value={landing.id} />
-            <input type="hidden" name="clear" value="true" />
-            <button className="btn secondary" type="submit">Quitar redirección y volver a mostrar la página</button>
-          </form>}
-        </section>
       </div>
     </main>
   );

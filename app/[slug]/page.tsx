@@ -7,6 +7,8 @@ import { notFound, redirect } from "next/navigation";
 import LandingRenderer from "@/components/landing-renderer";
 import { parseTitleStyle } from "@/lib/landing-catalog";
 import { normalizeSource, trackLandingView } from "@/lib/track-view";
+import { effectiveRedirect } from "@/lib/landing-plan";
+import { firstButtonLink } from "@/lib/landing-fallback";
 import "../globals.css";
 
 const publicSupabase = createClient(
@@ -88,7 +90,11 @@ export default async function Landing({ params, searchParams }: { params: Promis
   // nuestro, así que el conteo es lo único que queda). trackLandingView difiere el insert
   // con after(), así que esto no agrega nada al tiempo de respuesta.
   await trackLandingView(landing.id, normalizeSource((await searchParams).s), landing.owner_id);
-  if (landing.redirect_url) redirect(landing.redirect_url);
+  // Link directo, página pasada a mano al link de respaldo, o página anual vencida hace más de
+  // los días de gracia (ver lib/landing-plan.ts). Se calcula en cada visita, fuera del caché, así
+  // el vencimiento se cumple solo sin ninguna tarea programada.
+  const target = effectiveRedirect({ ...landing, auto_fallback: firstButtonLink(landing.actions) });
+  if (target) redirect(target);
   const { actions, ...landingData } = landing;
   // Solo un color hexadecimal: este valor va a parar a una etiqueta <style>, y un texto libre de
   // la base ahí adentro podría inyectar CSS en la página.

@@ -9,7 +9,8 @@
     "db:dev": "node scripts/db-migrate.mjs dev",
     "db:dev:apply": "node scripts/db-migrate.mjs dev --apply",
     "db:prod": "node scripts/db-migrate.mjs prod",
-    "db:prod:apply": "node scripts/db-migrate.mjs prod --apply"
+    "db:prod:apply": "node scripts/db-migrate.mjs prod --apply",
+    "test": "node --test \"tests/**/*.test.ts\""
   },
   "dependencies": {
     "@supabase/ssr": "latest",

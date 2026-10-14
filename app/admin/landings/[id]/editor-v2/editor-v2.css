@@ -334,3 +334,7 @@
 .v2-redirect-notice { display: grid; gap: 4px; padding: 10px 12px; border: 1px solid #d97706; border-radius: 10px; background: #fffbeb; color: #78350f; font-size: 12px; line-height: 1.45; }
 .v2-redirect-notice span { overflow-wrap: anywhere; }
 .v2-redirect-notice a { color: #b45309; font-weight: 700; }
+.v2-manage-link { display: grid; gap: 6px; padding: 10px 12px; border: 1px solid var(--v2-line, #e5e1ea); border-radius: 10px; color: inherit; text-decoration: none; font-size: 12px; }
+.v2-manage-link b { font-weight: 700; }
+.v2-manage-link:hover { background: color-mix(in srgb, currentColor 5%, transparent); }
+.v2-manage-link .plan-status { justify-self: start; }

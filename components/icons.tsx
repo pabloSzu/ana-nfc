@@ -27,6 +27,10 @@ export function IconQrCode(props: IconProps) {
   return <svg {...base} {...props}><path d="M3 8V5a2 2 0 0 1 2-2h3" /><path d="M16 3h3a2 2 0 0 1 2 2v3" /><path d="M21 16v3a2 2 0 0 1-2 2h-3" /><path d="M8 21H5a2 2 0 0 1-2-2v-3" /><rect x="9" y="9" width="6" height="6" rx="1" /></svg>;
 }
 
+export function IconCalendar(props: IconProps) {
+  return <svg {...base} {...props}><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4" /><path d="M8 2v4" /><path d="M3 10h18" /></svg>;
+}
+
 export function IconPlay(props: IconProps) {
   return <svg {...base} {...props}><polygon points="6 3 20 12 6 21 6 3" /></svg>;
 }

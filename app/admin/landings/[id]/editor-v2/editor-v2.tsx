@@ -21,13 +21,15 @@ import { ThemeSceneLayer, useSharedTheme } from "@/components/theme-scene";
 import ImageAdjustDialog, { type ImageKind, type ImagePlacement } from "./image-adjust-dialog";
 import { createClient as createBrowserClient } from "@/lib/supabase/client";
 import PendingSubmitButton from "@/components/pending-submit-button";
+import { effectiveRedirect, planOf, planStatus } from "@/lib/landing-plan";
+import { firstButtonLink } from "@/lib/landing-fallback";
 
 type ButtonItem = { id: string; type: string; title: string; subtitle: string; url: string; message: string; icon: string; icon_url: string; icon_fit: "contain" | "cover"; icon_scale: number; icon_background_color: string; background_color: string; background_gradient_to: string; text_color: string; use_auto_color: boolean; position: number };
 type LandingDraft = {
   id: string; slug: string; business_name: string; business_type?: string | null; description?: string | null; logo_url?: string | null; primary_color?: string | null;
   background_color?: string | null; background_type?: string | null; background_gradient_to?: string | null; background_image_url?: string | null;
   text_color?: string | null; text_panel?: boolean | null; text_panel_color?: string | null; font_pair?: string | null; button_font?: string | null;
-  published?: boolean | null; redirect_url?: string | null; buttonZone: ButtonZoneStyle; titleStyle: TitleStyle; subtitleStyle: SubtitleStyle; logoStyle: LogoStyle; bgPosition: BackgroundPosition;
+  published?: boolean | null; redirect_url?: string | null; plan?: string | null; expires_at?: string | null; fallback_url?: string | null; buttonZone: ButtonZoneStyle; titleStyle: TitleStyle; subtitleStyle: SubtitleStyle; logoStyle: LogoStyle; bgPosition: BackgroundPosition;
   cover_image_url?: string | null; coverStyle: CoverStyle;
 };
 type Panel = "templates" | "buttons" | "background" | "cover" | "settings" | "contact" | "contact-design" | "contact-name" | "contact-role" | "contact-company" | "socials" | "distribution" | "title" | "subtitle" | "logo" | "add" | { buttonId: string } | null;
@@ -865,7 +867,7 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
           {panel === "cover" && <CoverControls draft={draft} coverImage={coverImage} onChange={change} onCoverFile={(file) => openImageEditor("cover", file)} onAdjustCover={() => openImageEditor("cover")} onRemoveCover={removeContactCover} />}
           {panel === "distribution" && (draft.business_type === "contact" ? <ContactDistributionControls draft={draft} onChange={change} /> : <DistributionControls draft={draft} onZone={changeZone} />)}
           {panel === "socials" && <SocialControls links={draft.buttonZone.quickSocials || []} onChange={(quickSocials) => changeZone({ quickSocials })} filled={draft.buttonZone.quickSocialsFilled !== false} onFilled={(quickSocialsFilled) => changeZone({ quickSocialsFilled })} />}
-          {panel === "settings" && <SettingsControls draft={draft} buttons={buttons} dirty={dirty} onTypeChange={(business_type) => { if (draft.business_type !== business_type) { commitDiscrete(); patchDraft({ business_type }); } if (business_type === "contact") setPanel("contact"); }} onBrandingChange={(showBranding) => changeZone({ showBranding })} publishAction={publishAction} deleteLandingAction={deleteLandingAction} />}
+          {panel === "settings" && <SettingsControls draft={draft} buttons={buttons} dirty={dirty} onTypeChange={(business_type) => { if (draft.business_type !== business_type) { commitDiscrete(); patchDraft({ business_type }); } if (business_type === "contact") setPanel("contact"); }} publishAction={publishAction} deleteLandingAction={deleteLandingAction} />}
           {panel === "contact" && <ContactControls {...contactControlsProps} />}
           {(panel === "contact-name" || panel === "contact-role" || panel === "contact-company") && <ContactTextControls field={panel.slice(8) as "name" | "role" | "company"} draft={draft} onChange={change} />}
           {panel === "title" && <TitleControls draft={draft} onChange={change} />}
@@ -1423,24 +1425,29 @@ function SocialControls({ links, onChange, filled, onFilled }: { links: QuickSoc
   </div>;
 }
 
-// Una página con redirect_url no se muestra: quien la abre va directo a ese link (es lo que pasa
-// cuando un cliente no renueva). Se avisa arriba de los ajustes para que nadie edite el diseño
-// sin entender por qué no lo ve publicado. Se activa y se quita desde la pantalla del QR.
-function RedirectNotice({ draft }: { draft: LandingDraft }) {
-  if (!draft.redirect_url) return <Link className="v2-suggested" href={`/admin/landings/${draft.id}/qr#redireccion`}>Página vencida: redirigir a un link</Link>;
-  return <div className="v2-redirect-notice" role="status"><strong>Redirige a otro link</strong><span>Quien abre esta página va directo a {draft.redirect_url}. Los cambios se guardan, pero no se ven hasta quitar la redirección.</span><Link href={`/admin/landings/${draft.id}/qr#redireccion`}>Cambiar o quitar</Link></div>;
+// Plan y vencimiento arriba de los ajustes, con el acceso a Gestión (donde se renueva, se carga
+// el link de respaldo y se activa la firma). Si la página está redirigiendo, se avisa fuerte: los
+// cambios de diseño se guardan pero nadie los ve hasta que vuelva a mostrarse.
+function ManageNotice({ draft, buttons }: { draft: LandingDraft; buttons: ButtonItem[] }) {
+  const landing = { ...draft, auto_fallback: firstButtonLink(buttons) };
+  const status = planStatus(landing);
+  const target = effectiveRedirect(landing);
+  const href = `/admin/landings/${draft.id}/gestion`;
+  if (target && planOf(draft) === "direct") return <div className="v2-redirect-notice" role="status"><strong>Link directo</strong><span>El producto abre {target}. Esta página no se muestra mientras el plan sea link directo.</span><Link href={href}>Cambiar en Gestión</Link></div>;
+  if (target) return <div className="v2-redirect-notice" role="status"><strong>Redirige al link de respaldo</strong><span>Quien abre esta página va directo a {target}. Los cambios se guardan, pero no se ven hasta renovarla o volver a mostrarla.</span><Link href={href}>Ir a Gestión</Link></div>;
+  return <Link className="v2-manage-link" href={href}><span className={`plan-status is-${status.tone}`}>{status.label}</span><b>Plan, vencimiento y firma →</b></Link>;
 }
 
 // The one panel that isn't a design control: publishing, sharing and deleting the landing
 // itself. Everything here posts straight to the same server actions the admin list uses
 // (`publishAction`/`deleteLandingAction`, both passed down from the page), so there's exactly
 // one place in the whole app that actually flips `published` or deletes a landing row.
-function SettingsControls({ draft, buttons, dirty, onTypeChange, onBrandingChange, publishAction, deleteLandingAction }: { draft: LandingDraft; buttons: ButtonItem[]; dirty: boolean; onTypeChange: (type: string) => void; onBrandingChange: (show: boolean) => void; publishAction: SaveAction; deleteLandingAction: SaveAction }) {
+function SettingsControls({ draft, buttons, dirty, onTypeChange, publishAction, deleteLandingAction }: { draft: LandingDraft; buttons: ButtonItem[]; dirty: boolean; onTypeChange: (type: string) => void; publishAction: SaveAction; deleteLandingAction: SaveAction }) {
   const isPublished = Boolean(draft.published);
   const missingContact = draft.business_type === "contact" && !buttons.some((button) => ["phone", "email", "whatsapp"].includes(button.type) && button.url.trim());
   if (draft.business_type === "contact") return <div className="v2-fields">
     <div className="v2-contact-publish-status"><i className={isPublished ? "is-online" : ""} aria-hidden="true" /><div><strong>{isPublished ? "Tu tarjeta está publicada" : "Tu tarjeta está en borrador"}</strong><span>{isPublished ? "Quien tenga el enlace o escanee tu NFC puede verla." : "Solo vos podés verla hasta que la publiques."}</span></div></div>
-    <RedirectNotice draft={draft} />
+    <ManageNotice draft={draft} buttons={buttons} />
     <EditorSection title="Publicación" tone="green">
       <form action={publishAction}>
         <input type="hidden" name="id" value={draft.id} />
@@ -1453,8 +1460,7 @@ function SettingsControls({ draft, buttons, dirty, onTypeChange, onBrandingChang
       {isPublished && <a className="v2-suggested" href={`/${draft.slug}`} target="_blank" rel="noreferrer"><IconEye /> Abrir tarjeta publicada</a>}
       <Link className="v2-suggested" href={`/admin/landings/${draft.id}/qr`}><IconQrCode /> Ver código QR y NFC</Link>
     </EditorSection>
-    <details className="v2-contact-more"><summary>Más ajustes <span>Firma, tipo de página y eliminación</span></summary><div className="v2-contact-more-body">
-      <Choice active={draft.buttonZone.showBranding !== false} title="Mostrar firma de BioNFC" note="Aparece al final de la tarjeta." onClick={() => onBrandingChange(draft.buttonZone.showBranding === false)} />
+    <details className="v2-contact-more"><summary>Más ajustes <span>Tipo de página y eliminación</span></summary><div className="v2-contact-more-body">
       <p className="v2-help" style={{ margin: 0 }}>Cambiar a landing modifica la presentación, pero conserva tus datos y enlaces.</p>
       <button type="button" className="v2-ghost" onClick={() => onTypeChange("custom")}>Cambiar a landing de enlaces</button>
       <DeleteLandingButton action={deleteLandingAction} landingId={draft.id} label="Eliminar tarjeta" isContact />
@@ -1464,13 +1470,12 @@ function SettingsControls({ draft, buttons, dirty, onTypeChange, onBrandingChang
     <div className="v2-brand">
       <span><b>{isPublished ? "Tu landing está online" : "Tu landing está en borrador"}</b><small>{isPublished ? "Cualquiera con el link o el tag NFC puede verla." : "Todavía no es visible para el público."}</small></span>
     </div>
-    <RedirectNotice draft={draft} />
+    <ManageNotice draft={draft} buttons={buttons} />
     <EditorSection title="Tipo de página" tone="blue">
       <Choice active={draft.business_type === "contact"} title="Tarjeta personal" note="Presentación de perfil, contacto descargable y enlaces en fichas." onClick={() => onTypeChange("contact")} />
       <Choice active={draft.business_type !== "contact"} title="Landing de enlaces" note="Conserva el diseño y los botones, sin el acceso a Guardar contacto." onClick={() => onTypeChange("custom")} />
     </EditorSection>
-<EditorSection title="Firma de BioNFC" tone="purple">    <Choice active={draft.buttonZone.showBranding !== false} title="Mostrar firma de BioNFC" note="Agrega el logo y un enlace a BioNFC al final de tu página. Guardá los cambios para aplicar esta opción." onClick={() => onBrandingChange(draft.buttonZone.showBranding === false)} />
-</EditorSection><EditorSection title="Publicación y acceso" tone="green">    <form action={publishAction}>
+<EditorSection title="Publicación y acceso" tone="green">    <form action={publishAction}>
       <input type="hidden" name="id" value={draft.id} />
       <input type="hidden" name="published" value={String(!isPublished)} />
       <input type="hidden" name="return_to" value={`/admin/landings/${draft.id}/editor-v2`} />

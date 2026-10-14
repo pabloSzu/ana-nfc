@@ -1,0 +1,280 @@
+<title>Guía BIONFC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: una sola columna de lectura; cada sección es una "lección" con un ejemplo concreto.
+   Dos colores con significado fijo en toda la página: verde = pasa solo, ámbar = lo hacés vos. */
+:root {
+  --bg: #f6f7fb;
+  --paper: #ffffff;
+  --ink: #18192b;
+  --muted: #5b5e78;
+  --line: #e2e4ef;
+  --brand: #4f46e5;
+  --brand-soft: #eceafe;
+  --auto: #0f8a5f;
+  --auto-soft: #e3f5ec;
+  --you: #b45309;
+  --you-soft: #fdf0dc;
+  --danger: #c2410c;
+  --danger-soft: #fde8de;
+  --page-a: #2563eb;
+  --page-b: #7c3aed;
+  --link: #c2410c;
+  --link-soft: #fff1e6;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12131f; --paper: #1b1d2e; --ink: #eceef8; --muted: #a2a6c3; --line: #2d3048;
+    --brand: #a5a0ff; --brand-soft: #262447; --auto: #4ed6a0; --auto-soft: #16352a;
+    --you: #f5b453; --you-soft: #3a2c15; --danger: #ff9a6b; --danger-soft: #3b2219;
+    --page-a: #3b82f6; --page-b: #8b5cf6; --link: #ffa66b; --link-soft: #3a2316; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12131f; --paper: #1b1d2e; --ink: #eceef8; --muted: #a2a6c3; --line: #2d3048;
+  --brand: #a5a0ff; --brand-soft: #262447; --auto: #4ed6a0; --auto-soft: #16352a;
+  --you: #f5b453; --you-soft: #3a2c15; --danger: #ff9a6b; --danger-soft: #3b2219;
+  --page-a: #3b82f6; --page-b: #8b5cf6; --link: #ffa66b; --link-soft: #3a2316; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 var(--body); }
+.wrap { max-width: 760px; margin: 0 auto; padding-inline: 18px; padding-block: 40px 80px; display: grid; gap: 28px; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.15; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(34px, 7vw, 52px); font-weight: 800; letter-spacing: -0.02em; }
+h2 { font-size: clamp(24px, 4.5vw, 30px); font-weight: 800; }
+h3 { font-size: 19px; font-weight: 600; }
+p { margin: 0; }
+.lead { font-size: 19px; color: var(--muted); max-width: 60ch; }
+.eyebrow { font: 700 12px/1 var(--body); letter-spacing: .12em; text-transform: uppercase; color: var(--brand); }
+section { background: var(--paper); border: 1px solid var(--line); border-radius: 18px; padding: 24px clamp(18px, 4vw, 30px); display: grid; gap: 16px; min-width: 0; }
+.hero { background: none; border: 0; padding: 0; gap: 12px; }
+nav.toc { display: flex; flex-wrap: wrap; gap: 8px; }
+nav.toc a { padding: 6px 12px; border-radius: 99px; background: var(--paper); border: 1px solid var(--line); color: var(--ink); text-decoration: none; font-size: 14px; font-weight: 700; }
+nav.toc a:hover, nav.toc a:focus-visible { border-color: var(--brand); color: var(--brand); outline: none; }
+.legend-box { display: grid; gap: 8px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); font-size: 15.5px; color: var(--muted); }
+.legend-box .tag { margin-right: 6px; }
+.tag { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 99px; font-size: 13px; font-weight: 700; white-space: nowrap; }
+.tag.auto { background: var(--auto-soft); color: var(--auto); }
+.tag.you { background: var(--you-soft); color: var(--you); }
+.tag.money { background: var(--brand-soft); color: var(--brand); }
+.tag::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.tag.money::before { display: none; }
+/* Las dos palabras clave del negocio, siempre con el mismo color: la página en azul-violeta
+   degradado, el link directo en naranja. */
+.kw { display: inline-block; padding: 0 .45em; border-radius: 7px; font-weight: 700; white-space: nowrap; line-height: 1.45; }
+.kw.page { background: linear-gradient(120deg, var(--page-a), var(--page-b)); color: #fff; }
+.kw.link { background: var(--link-soft); color: var(--link); box-shadow: inset 0 0 0 1.5px var(--link); }
+th .kw { font-size: 11px; letter-spacing: .04em; }
+.big-idea { padding: 16px 18px; border-radius: 14px; background: var(--brand-soft); font-size: 18px; }
+.big-idea strong { color: var(--brand); }
+.table-scroll { overflow-x: auto; margin-inline: -4px; }
+table { width: 100%; border-collapse: collapse; font-size: 15.5px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+td.n, th.n { text-align: right; white-space: nowrap; }
+td .small { display: block; color: var(--muted); font-size: 13.5px; }
+.strike { text-decoration: line-through; color: var(--muted); }
+.best { font-weight: 700; color: var(--brand); }
+.plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.plan { border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 6px; align-content: start; }
+.plan h3 { display: flex; align-items: center; gap: 8px; }
+.plan .emoji { font-size: 24px; }
+.plan p { color: var(--muted); font-size: 15.5px; }
+.plan .pay { font-weight: 700; color: var(--ink); }
+.timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.timeline li { display: grid; grid-template-columns: 92px 1fr; gap: 14px; position: relative; padding-bottom: 18px; }
+.timeline li:last-child { padding-bottom: 0; }
+.timeline .when { font: 800 15px/1.3 var(--display); color: var(--muted); padding-top: 2px; text-align: right; }
+.timeline .what { border-left: 3px solid var(--line); padding-left: 16px; display: grid; gap: 6px; min-width: 0; }
+.timeline li.is-auto .what { border-left-color: var(--auto); }
+.timeline li.is-you .what { border-left-color: var(--you); }
+.timeline li.is-danger .what { border-left-color: var(--danger); }
+.timeline .what p { color: var(--muted); font-size: 15.5px; }
+.routine { display: grid; gap: 10px; counter-reset: step; }
+.routine div { display: grid; grid-template-columns: 36px 1fr; gap: 12px; align-items: start; }
+.routine div::before { counter-increment: step; content: counter(step); display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--you-soft); color: var(--you); font: 800 16px/1 var(--display); }
+.cases { display: grid; gap: 12px; }
+.case { border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; display: grid; gap: 8px; }
+.case-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.steps { margin: 0; padding-left: 20px; color: var(--muted); font-size: 15.5px; display: grid; gap: 2px; }
+.steps b { color: var(--ink); }
+.note { padding: 12px 14px; border-radius: 12px; background: var(--you-soft); color: var(--ink); font-size: 15.5px; }
+.note.good { background: var(--auto-soft); }
+.chip-demo { font-family: ui-monospace, Consolas, monospace; font-size: 14px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 2px 6px; overflow-wrap: anywhere; }
+.yesno { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.yesno > div { border-radius: 14px; padding: 14px 16px; display: grid; gap: 6px; }
+.yesno .yes { background: var(--auto-soft); }
+.yesno .no { background: var(--danger-soft); }
+.yesno ul { margin: 0; padding-left: 18px; font-size: 15.5px; }
+footer { color: var(--muted); font-size: 14px; text-align: center; }
+@media (max-width: 520px) {
+  body { font-size: 16px; }
+  .timeline li { grid-template-columns: 1fr; gap: 4px; }
+  .timeline .when { text-align: left; }
+}
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+
+<div class="wrap">
+  <header class="hero section">
+    <p class="eyebrow">Para Pablo · BIONFC</p>
+    <h1>Cómo funciona todo, explicado fácil</h1>
+    <p class="lead">Qué vendés, cuánto cobrás y qué pasa cuando una página se vence. Leela una vez y después usala como machete.</p>
+    <nav class="toc" aria-label="Secciones">
+      <a href="#idea">La idea</a>
+      <a href="#precios">Precios</a>
+      <a href="#combos">Combos</a>
+      <a href="#extras">Extras</a>
+      <a href="#planes">Los 3 planes</a>
+      <a href="#vencimiento">Cuando vence</a>
+      <a href="#rutina">Tu rutina</a>
+      <a href="#casos">Cada caso</a>
+      <a href="#chip">El chip</a>
+    </nav>
+    <div class="legend-box" aria-label="Qué significan los colores">
+      <p><span class="tag auto">Automático: no hacés nada</span> El sistema lo hace solo, sin que toques nada. Por ejemplo, contar los días o cambiar a dónde abre el producto cuando vence.</p>
+      <p><span class="tag you">Lo hacés vos en el Admin</span> Tenés que entrar y tocar un botón. Por ejemplo, avisarle al cliente o marcar que pagó.</p>
+      <p><span class="tag money">Cobrás</span> Lo que le cobrás al cliente en ese paso.</p>
+    </div>
+  </header>
+
+  <section id="idea">
+    <p class="eyebrow">Lo más importante</p>
+    <h2>La idea en una frase</h2>
+    <p class="big-idea">Vendés un objeto (llavero, tarjeta o mostrador) que, cuando lo tocan con el celular, abre algo. Ese algo puede ser una <span class="kw page">Página BIONFC</span> (se paga todos los años) o un <span class="kw link">Link directo</span> a un solo lugar (se paga una vez).</p>
+    <p class="big-idea">Regla fácil: <strong>una página siempre cuesta $10.000 más</strong> que el producto solo. Agregarla, sumarla para otra persona o renovarla un año: $10.000.</p>
+    <p>Y una regla de oro: <strong>el producto nunca deja de andar.</strong> Si alguien no paga la página, su objeto sigue abriendo un link útil, como su WhatsApp o su Instagram.</p>
+  </section>
+
+  <section id="precios">
+    <p class="eyebrow">Precios de lanzamiento</p>
+    <h2>Precios por producto</h2>
+    <p>Siempre ofrecé primero <strong>la opción con <span class="kw page">página</span></strong>: es la que más le sirve al cliente y la que te deja ingresos todos los años.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Producto</th><th class="n">Con <span class="kw page">página</span></th><th class="n"><span class="kw link">Link directo</span></th></tr></thead>
+        <tbody>
+          <tr><td>Llavero</td><td class="n"><span class="strike">$38.000</span> <span class="best">$30.000</span></td><td class="n">$20.000</td></tr>
+          <tr><td>Tarjeta</td><td class="n"><span class="strike">$38.000</span> <span class="best">$30.000</span></td><td class="n">$20.000</td></tr>
+          <tr><td>Mostrador pequeño <span class="small">4 × 6 cm</span></td><td class="n"><span class="strike">$38.000</span> <span class="best">$30.000</span></td><td class="n">$20.000</td></tr>
+          <tr><td>Mostrador grande <span class="small">9 × 14 cm</span></td><td class="n"><span class="strike">$44.000</span> <span class="best">$35.000</span></td><td class="n">$25.000</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">El precio tachado es el <strong>precio de lista</strong>. Usá números a los que de verdad vayas a subir cuando termine el lanzamiento: mostrar un precio que nunca vas a cobrar puede considerarse publicidad engañosa. <strong>Todavía falta que los confirmes.</strong></p>
+    <p>Con <span class="kw page">página</span> incluye: el producto con tu diseño, la página BIONFC y <strong>el primer año</strong>. El envío lo paga el cliente.</p>
+  </section>
+
+  <section id="combos">
+    <p class="eyebrow">Para vender más de uno</p>
+    <h2>Combos</h2>
+    <p>Un combo con <span class="kw page">página</span> incluye <strong>una sola página</strong>. Cada producto del combo puede abrir esa página o un <span class="kw link">Link directo</span> distinto (por ejemplo, el mostrador grande abre las reseñas de Google).</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Combo</th><th class="n">Con <span class="kw page">página</span></th><th class="n"><span class="kw link">Links directos</span></th></tr></thead>
+        <tbody>
+          <tr><td><strong>Negocio completo</strong> ⭐ <span class="small">Mostrador grande + Mostrador pequeño + Tarjeta + Llavero</span></td><td class="n"><span class="strike">$99.000</span> <span class="best">$79.000</span></td><td class="n">$69.000</td></tr>
+          <tr><td><strong>Profesional</strong> <span class="small">Tarjeta + Llavero</span></td><td class="n"><span class="strike">$56.000</span> <span class="best">$45.000</span></td><td class="n">$35.000</td></tr>
+          <tr><td><strong>Emprendedor</strong> <span class="small">Mostrador pequeño + Tarjeta + Llavero</span></td><td class="n"><span class="strike">$74.000</span> <span class="best">$59.000</span></td><td class="n">$49.000</td></tr>
+          <tr><td><strong>Local</strong> <span class="small">Mostrador grande + Mostrador pequeño + Llavero</span></td><td class="n"><span class="strike">$82.000</span> <span class="best">$65.000</span></td><td class="n">$55.000</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>El ⭐ es el que se recomienda en la web.</p>
+  </section>
+
+  <section id="extras">
+    <p class="eyebrow">Lo que se cobra aparte</p>
+    <h2>Renovación y extras</h2>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Qué</th><th class="n">Precio</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Renovar la <span class="kw page">página</span> un año</strong> <span class="small">Menos de $1.000 por mes. El valor se puede actualizar.</span></td><td class="n best">$10.000</td></tr>
+          <tr><td>Cambios simples en la página <span class="small">Links, textos, fotos. Hasta uno por mes.</span></td><td class="n">Incluidos</td></tr>
+          <tr><td>Diseño del producto <span class="small">1 propuesta + 2 ajustes. Sin logo: diseño BIONFC con su nombre.</span></td><td class="n">Incluido</td></tr>
+          <tr><td>Ajustes de diseño extra, o diseño desde cero sin material</td><td class="n">$5.000</td></tr>
+          <tr><td>Rediseño completo de la página</td><td class="n">$10.000</td></tr>
+          <tr><td>Cambiar a dónde abre un <span class="kw link">Link directo</span></td><td class="n">$5.000</td></tr>
+          <tr><td>Pasar de <span class="kw link">Link directo</span> a <span class="kw page">página</span> <span class="small">Con el mismo producto. Incluye diseño y primer año.</span></td><td class="n">$10.000</td></tr>
+          <tr><td>Una <span class="kw page">página</span> extra en el mismo pedido <span class="small">Para otra persona u otro negocio.</span></td><td class="n">$10.000</td></tr>
+          <tr><td><strong>Pedidos por cantidad</strong> <span class="small">Empresas, eventos o mayoristas. Se cotiza cada caso según qué y cuánto llevan.</span></td><td class="n best">A consultar</td></tr>
+          <tr><td>Envío</td><td class="n">Lo paga el cliente</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="planes">
+    <p class="eyebrow">En el Admin, cada página tiene uno</p>
+    <h2>Los 3 planes</h2>
+    <div class="plans">
+      <div class="plan"><h3><span class="emoji" aria-hidden="true">📄</span> Anual</h3><p>Abre su <span class="kw page">Página BIONFC</span>.</p><p class="pay">Paga cada año.</p></div>
+      <div class="plan"><h3><span class="emoji" aria-hidden="true">🔗</span> <span class="kw link">Link directo</span></h3><p>Abre un solo link: reseñas, Instagram, WhatsApp, web…</p><p class="pay">Paga una vez y listo.</p></div>
+      <div class="plan"><h3><span class="emoji" aria-hidden="true">♾️</span> Sin vencimiento</h3><p>Abre su <span class="kw page">Página BIONFC</span> para siempre.</p><p class="pay">Para tu página, regalos o cortesías.</p></div>
+    </div>
+    <p class="note good">¿Y si no renueva? <strong>No es un plan aparte y no tenés que hacer nada:</strong> la <span class="kw page">página</span> anual se convierte sola en un <span class="kw link">Link directo</span>. Vos no tenés que hacer nada.</p>
+  </section>
+
+  <section id="vencimiento">
+    <p class="eyebrow">Paso a paso</p>
+    <h2>Qué pasa con una <span class="kw page">página</span> anual</h2>
+    <ol class="timeline">
+      <li class="is-auto"><div class="when">Día 1</div><div class="what"><h3>La publicás</h3><p>Empieza a contar su año. <span class="tag auto">Automático: no hacés nada</span></p></div></li>
+      <li class="is-you"><div class="when">Faltan 30 días</div><div class="what"><h3>Aparece en amarillo</h3><p>La ves en el Inicio del Admin, en la tarjeta <b>"Renovaciones"</b>. La abrís y tocás <b>Avisar por WhatsApp</b>: el mensaje ya está escrito, solo lo mandás. Para eso el cliente tiene que tener su WhatsApp cargado. <span class="tag you">Lo hacés vos en el Admin</span></p></div></li>
+      <li class="is-you"><div class="when">Si paga</div><div class="what"><h3>Tocás "Renovar"</h3><p>Se suma un año desde la fecha en que vencía, así no pierde días. <span class="tag you">Lo hacés vos en el Admin</span> <span class="tag money">$10.000</span></p></div></li>
+      <li class="is-danger"><div class="when">Vence</div><div class="what"><h3>Se pone en rojo</h3><p>Durante <b>15 días de gracia</b> se sigue viendo la página, por si se olvidó de pagar. Podés volver a avisarle. <span class="tag auto">Automático: no hacés nada</span></p></div></li>
+      <li class="is-auto"><div class="when">Día 16 sin pagar</div><div class="what"><h3>Se convierte en <span class="kw link">Link directo</span></h3><p>El objeto empieza a abrir su <b>link de respaldo</b>. Si no cargaste ninguno, abre el primer botón de su página (su WhatsApp o su Instagram). <span class="tag auto">Automático: no hacés nada</span></p></div></li>
+      <li class="is-you"><div class="when">Si paga tarde</div><div class="what"><h3>Tocás "Renovar"</h3><p>Vuelve a verse la página y el año cuenta desde ese día. Nada se había borrado. <span class="tag you">Lo hacés vos en el Admin</span> <span class="tag money">$10.000</span></p></div></li>
+    </ol>
+    <p>Resumen: <strong>vos solo avisás y marcás cuando pagan.</strong> Todo lo demás lo hace el sistema solo, sin que hagas nada.</p>
+  </section>
+
+  <section id="rutina">
+    <p class="eyebrow">Una vez por semana · 5 minutos</p>
+    <h2>Tu rutina</h2>
+    <div class="routine">
+      <div><p>Entrá al <b>Inicio</b> del Admin. Si aparece la tarjeta <b>"Renovaciones"</b>, hay páginas por vencer o vencidas.</p></div>
+      <div><p>Tocá cada una: se abre su <b>Gestión</b>. Ahí tocá <b>Avisar por WhatsApp</b> y mandá el mensaje.</p></div>
+      <div><p>Cuando alguien te pague, abrí su página en <b>Páginas → Gestión</b> y tocá <b>Renovar</b>.</p></div>
+    </div>
+    <p>¿Querés ver todo lo pendiente junto? En <b>Páginas</b>, tocá el filtro <b>⚠ Requieren atención</b>.</p>
+  </section>
+
+  <section id="casos">
+    <p class="eyebrow">Qué hacer en cada situación</p>
+    <h2>Cada caso, uno por uno</h2>
+    <div class="cases">
+      <div class="case"><div class="case-head"><h3>Vendiste un producto con <span class="kw page">página</span></h3><span class="tag money">Precio con página</span></div>
+        <ol class="steps"><li>Páginas → <b>Nueva landing</b> (negocio) o <b>Nueva tarjeta</b> (persona). Plan: Anual.</li><li>Armá el diseño y tocá <b>Publicar</b>.</li><li>Andá a <b>QR y NFC</b> y grabá el chip.</li></ol></div>
+      <div class="case"><div class="case-head"><h3>Vendiste un <span class="kw link">Link directo</span></h3><span class="tag money">Precio link directo</span></div>
+        <ol class="steps"><li>Páginas → <b>Nuevo link directo</b>: cliente, nombre y el link.</li><li>Te lleva solo a la pantalla del QR: grabá el chip.</li></ol></div>
+      <div class="case"><div class="case-head"><h3>Quiere cambiar a dónde abre su <span class="kw link">Link directo</span></h3><span class="tag money">$5.000</span></div>
+        <ol class="steps"><li>En la lista, tocá <b>Cambiar link</b> (el botón naranja).</li><li>Pegá el link nuevo y guardá. <b>No hay que tocar el chip.</b></li></ol></div>
+      <div class="case"><div class="case-head"><h3>Tenía <span class="kw link">Link directo</span> y ahora quiere <span class="kw page">página</span></h3><span class="tag money">$10.000</span></div>
+        <ol class="steps"><li><b>No necesita otro producto:</b> se usa el mismo.</li><li>Gestión → elegí <b>Anual</b> y guardá.</li><li>Tocá <b>Editar diseño</b> y armale la página. El año empieza ese día.</li></ol></div>
+      <div class="case"><div class="case-head"><h3>Tenía <span class="kw page">página</span> y pide pasar a <span class="kw link">Link directo</span></h3><span class="tag money">Sin cargo</span></div>
+        <ol class="steps"><li>Gestión → elegí <b>Link directo</b>, pegá el link y guardá.</li><li>La página queda guardada por si un día vuelve.</li></ol></div>
+      <div class="case"><div class="case-head"><h3>Pide un cambio en su <span class="kw page">página</span></h3><span class="tag money">Incluido</span></div>
+        <ol class="steps"><li>Tocá <b>Editar diseño</b>, cambiá lo que pidió y guardá. Se ve al instante.</li></ol></div>
+      <div class="case"><div class="case-head"><h3>Tu propia <span class="kw page">página</span>, o un regalo</h3><span class="tag money">—</span></div>
+        <ol class="steps"><li>Gestión → elegí <b>Sin vencimiento</b>. No vence nunca.</li></ol></div>
+    </div>
+  </section>
+
+  <section id="chip">
+    <p class="eyebrow">Al grabar el NFC</p>
+    <h2>Qué grabar en el chip</h2>
+    <p>Siempre grabá <strong>el link de BIONFC</strong> que aparece en la pantalla <b>QR y NFC</b>. Es el que termina en <span class="chip-demo">?s=nfc</span>. Después <strong>bloqueá el chip</strong> desde la app con la que lo grabás (por ejemplo, NFC Tools), para que nadie lo pueda cambiar.</p>
+    <div class="yesno">
+      <div class="yes"><h3>✅ Link de BIONFC</h3><ul><li>Cambiás a dónde abre sin tocar el producto.</li><li>Podés pasarlo de <span class="kw link">Link directo</span> a <span class="kw page">página</span>.</li><li>Ves cuántas veces lo usaron.</li></ul></div>
+      <div class="no"><h3>❌ El link final (Instagram, Google…)</h3><ul><li>Para cambiarlo hay que regrabar el chip.</li><li>El QR impreso no se puede cambiar nunca.</li><li>No hay estadísticas ni se puede vender la página después.</li></ul></div>
+    </div>
+  </section>
+
+  <footer>Guía interna de BIONFC · octubre 2026 · Los precios de lista están pendientes de confirmar.</footer>
+</div>
