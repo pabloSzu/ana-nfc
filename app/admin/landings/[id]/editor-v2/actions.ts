@@ -124,6 +124,11 @@ export async function saveDesignStyle(fd: FormData) {
     coverImageUrl = supabase.storage.from("landing-assets").getPublicUrl(path).data.publicUrl;
   } else if (fd.get("remove_cover_image") === "true") {
     coverImageUrl = "";
+  } else {
+    // Foto de ejemplo de un diseño por rubro: es un archivo del propio sitio, no se sube. Solo se
+    // aceptan rutas de las carpetas de plantillas, nunca una URL externa.
+    const templateCover = String(fd.get("cover_template_url") || "");
+    if (/^\/(templates|marketing)\/[\w./-]+\.(svg|jpe?g|png|webp)$/i.test(templateCover) && !templateCover.includes("..")) coverImageUrl = templateCover;
   }
   const cvFile = fd.get("cv_file");
   let cvUploadedUrl: string | undefined;

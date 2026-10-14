@@ -338,3 +338,24 @@
 .v2-manage-link b { font-weight: 700; }
 .v2-manage-link:hover { background: color-mix(in srgb, currentColor 5%, transparent); }
 .v2-manage-link .plan-status { justify-self: start; }
+
+/* Diseños completos por rubro: miniatura real de la página, nombre y dos formas de aplicarla. */
+.v2-rubro-head { display: grid; gap: 2px; margin-top: 4px; }
+.v2-rubro-head strong { font-size: 13px; }
+.v2-rubro-head span { color: var(--v2-muted, #6b6475); font-size: 12px; line-height: 1.4; }
+.v2-rubro-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.v2-rubro-card { display: grid; gap: 8px; padding: 8px; border: 1px solid var(--v2-line, #e5e1ea); border-radius: 14px; background: var(--v2-surface, #fff); }
+.v2-rubro-card.is-selected { border-color: var(--v2-accent, #6d4fd8); box-shadow: 0 0 0 2px color-mix(in srgb, var(--v2-accent, #6d4fd8) 25%, transparent); }
+.v2-rubro-preview { position: relative; height: 260px; overflow: hidden; border-radius: 10px; background: #111; }
+.v2-rubro-canvas { width: 100%; height: 100%; pointer-events: none; }
+.v2-rubro-copy { display: grid; gap: 1px; }
+.v2-rubro-copy b { font-size: 13px; }
+.v2-rubro-copy small { color: var(--v2-muted, #6b6475); font-size: 11px; line-height: 1.35; }
+.v2-rubro-actions { display: grid; gap: 6px; }
+.v2-rubro-actions button { width: 100%; min-height: 34px; font-size: 12px; }
+.v2-rubro-blank { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px; border: 1px dashed var(--v2-line, #d9d3e0); border-radius: 14px; background: transparent; color: inherit; text-align: left; cursor: pointer; }
+.v2-rubro-blank:hover, .v2-rubro-blank.is-selected { border-style: solid; border-color: var(--v2-accent, #6d4fd8); }
+.v2-rubro-blank > span:first-child { display: grid; place-items: center; flex: 0 0 auto; width: 38px; height: 38px; border-radius: 10px; background: color-mix(in srgb, var(--v2-accent, #6d4fd8) 12%, transparent); color: var(--v2-accent, #6d4fd8); font-size: 22px; }
+.v2-rubro-blank > span:last-child { display: grid; gap: 2px; }
+.v2-rubro-blank b { font-size: 13px; }
+.v2-rubro-blank small { color: var(--v2-muted, #6b6475); font-size: 11px; line-height: 1.35; }

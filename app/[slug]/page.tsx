@@ -102,6 +102,8 @@ export default async function Landing({ params, searchParams }: { params: Promis
   return (
     <div
       className="landing-page-shell"
+      // FIT_SCRIPT le agrega "is-long" antes de que React hidrate; la diferencia es a propósito.
+      suppressHydrationWarning
       style={{ "--landing-shell-color": shellColor } as CSSProperties}
     >
       {/* En el celular, el fondo de toda la ventana —lo que queda detrás de la página— toma el

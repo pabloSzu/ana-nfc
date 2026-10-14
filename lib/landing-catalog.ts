@@ -164,8 +164,12 @@ export function quickSocialHref(link: QuickSocial): string | null {
     return digits.length >= 8 && digits.length <= 15 ? `https://wa.me/${digits}` : null;
   }
   // Turns "tumarca" into https://instagram.com/tumarca using the same prefixes the buttons use,
-  // and leaves a full URL (what these fields used to require) untouched.
-  const built = buildActionLink(link.type, value);
+  // and leaves a full URL (what these fields used to require) untouched. Facebook, LinkedIn and
+  // YouTube buttons ask for a full link, so they have no prefix; a bare username here used to
+  // build a host-less URL and the icon silently disappeared.
+  const handlePrefix: Partial<Record<QuickSocial["type"], string>> = { facebook: "facebook.com/", linkedin: "linkedin.com/in/", youtube: "youtube.com/@" };
+  const prefix = handlePrefix[link.type];
+  const built = prefix && !/[./]/.test(value) ? `https://${prefix}${value.replace(/^@/, "")}` : buildActionLink(link.type, value);
   if (!built) return null;
   try {
     const url = new URL(/^https?:\/\//i.test(built) ? built : `https://${built}`);
