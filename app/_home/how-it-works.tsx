@@ -1,71 +1,43 @@
-import Image from "next/image";
-import { FiArrowUpRight, FiCheck, FiMessageCircle } from "react-icons/fi";
+import HowItWorksStories from "./how-it-works-stories";
+import { FaWhatsapp } from "react-icons/fa6";
+import { FiArrowUpRight, FiMessageCircle, FiRefreshCw, FiStar, FiAward } from "react-icons/fi";
 import "./how-it-works.css";
 
-const STEPS = [
-  {
-    number: "01",
-    title: "Contanos qué querés lograr",
-    description: "No necesitás saber qué formato elegir. Te escuchamos y te asesoramos según tu negocio.",
-  },
-  {
-    number: "02",
-    title: "Elegimos qué se va a abrir",
-    description: "Una landing hecha por nosotros, una tarjeta personal, un enlace que ya tengas o una experiencia a medida.",
-    options: ["Landing", "Tarjeta personal", "Tu enlace", "A medida"],
-  },
-  {
-    number: "03",
-    title: "Lo llevamos al producto ideal",
-    description: "Personalizamos una tarjeta, un llavero, un mostrador u otro objeto con NFC, QR o ambos.",
-    options: ["NFC", "QR", "O ambos"],
-  },
-  {
-    number: "04",
-    title: "Lo recibís listo para usar",
-    description: "Lo colocás en tu negocio o lo llevás con vos. Tus clientes acercan, escanean y encuentran todo al instante.",
-  },
-] as const;
+// "Cómo funciona": la segunda sección de la home. Responde de un vistazo qué es, cómo lo usan tus
+// clientes, qué recibís y qué ganás: tres cuadros con imagen (el producto, el momento de acercar el
+// celular y la página que se abre), una franja de beneficios y un solo botón. En la compu los
+// cuadros van en tres columnas; en el celular se deslizan de costado, así la sección entra en una
+// pantalla. Los cuadros y sus historias (cafetería, reseñas, profesional) están en
+// how-it-works-stories.tsx.
+const BENEFITS = [
+  { icon: FiStar, text: "Más reseñas en Google" },
+  { icon: FiMessageCircle, text: "Más consultas por WhatsApp" },
+  { icon: FiAward, text: "Imagen más profesional" },
+  { icon: FiRefreshCw, text: "Cambiás el link sin reimprimir" },
+];
 
 export default function HowItWorks({ whatsappNumber }: { whatsappNumber: string }) {
-  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Hola BioNFC, tengo una idea y quiero saber qué solución me conviene.")}`;
+  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Hola BioNFC, quiero saber cómo sería el mío.")}`;
 
   return (
     <section id="como-funciona" className="bx-journey" aria-labelledby="how-title">
       <div className="bx-journey-container">
-        <div className="bx-journey-intro">
-          <p className="bx-journey-eyebrow">DE TU IDEA AL PRIMER TOQUE</p>
-          <h2 id="how-title">Lo pensamos con vos.<br /><span>Te lo entregamos listo.</span></h2>
-          <p className="bx-journey-lead">Podés venir con un enlace, elegir una página o simplemente contarnos tu idea. Nosotros te ayudamos a convertirla en una experiencia lista para compartir.</p>
+        <header className="bx-journey-intro">
+          <p className="bx-journey-eyebrow">CÓMO FUNCIONA</p>
+          <h2 id="how-title">Acercan el celular.<span> Y pasa la magia.</span></h2>
+          <p className="bx-journey-lead">Un producto con tu marca que abre tu página al instante. Sin apps y en cualquier celular.</p>
+        </header>
 
-          <figure className="bx-journey-visual">
-            <div className="bx-journey-image">
-              <Image src="/marketing/how-it-works/qr-nfc-unified-v1.webp" alt="Un código QR y un llavero NFC conectan con la misma experiencia en un celular" width={1280} height={853} sizes="(max-width: 760px) 88vw, 430px" />
-            </div>
-            <figcaption><b>Un producto. Tu identidad.</b><span>NFC, QR o ambos, según lo que necesites.</span></figcaption>
-          </figure>
-        </div>
+        <HowItWorksStories />
+        <p className="bx-journey-swipe" aria-hidden="true">Deslizá para ver los 3 pasos →</p>
 
-        <div className="bx-journey-flow">
-          <ol>
-            {STEPS.map((step) => (
-              <li key={step.number}>
-                <span className="bx-journey-number">{step.number}</span>
-                <div>
-                  <h3>{step.title}</h3>
-                  <p>{step.description}</p>
-                  {"options" in step && <ul>{step.options.map((option) => <li key={option}>{option}</li>)}</ul>}
-                </div>
-              </li>
-            ))}
-          </ol>
+        <ul className="bx-journey-benefits" aria-label="Lo que ganás">
+          {BENEFITS.map(({ icon: Icon, text }) => <li key={text}><Icon aria-hidden="true" />{text}</li>)}
+        </ul>
 
-          <div className="bx-journey-support">
-            <span><FiMessageCircle aria-hidden="true" /></span>
-            <div><b>Te acompañamos en todo.</b><p>Antes, durante y después de elegir tu BioNFC.</p></div>
-            <a href={whatsappUrl} target="_blank" rel="noreferrer">Contanos tu idea <FiArrowUpRight aria-hidden="true" /></a>
-          </div>
-          <p className="bx-journey-ready"><FiCheck aria-hidden="true" />Configurado y listo para empezar a compartir.</p>
+        <div className="bx-journey-cta">
+          <a className="bx-btn bx-journey-btn" href={whatsappUrl} target="_blank" rel="noreferrer"><FaWhatsapp aria-hidden="true" />Quiero el mío<FiArrowUpRight aria-hidden="true" /></a>
+          <span>Te asesoramos sin compromiso</span>
         </div>
       </div>
     </section>

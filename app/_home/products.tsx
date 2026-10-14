@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRef, useState } from "react";
-import { FiArrowUpRight, FiCheck, FiChevronLeft, FiChevronRight, FiLayers, FiZap } from "react-icons/fi";
+import { FiArrowUpRight, FiCheck, FiChevronLeft, FiChevronRight, FiLayers, FiLink, FiZap } from "react-icons/fi";
 
 const PRODUCTS = [
   { id: "keychain", name: "Llavero", context: "PARA LLEVAR", line: "Tu negocio, siempre a mano.", description: "Compartí el enlace que elijas desde tus llaves o mochila.", use: "Contactos · eventos", directPrice: "$20.000", pagePrice: "$30.000", listPrice: "$38.000", examples: [
@@ -43,9 +43,8 @@ const COMBOS = [
     featured: true,
     products: ["Mostrador grande", "Mostrador pequeño", "Tarjeta personal", "Llavero personalizado"],
     images: [
-      { src: "/marketing/combos/combo-negocio-v1.webp", label: "Tu Marca", alt: "Ejemplo del combo Negocio completo con cuatro productos diseñados para Tu Marca" },
-      { src: "/marketing/combos/combo-negocio-cafe-v1.webp", label: "Café Nube", alt: "Otra propuesta del mismo combo con el diseño de Café Nube" },
-      { src: "/marketing/combos/combo-negocio-barber-v1.webp", label: "Norte Barber", alt: "Otra propuesta del mismo combo con el diseño de Norte Barber" },
+      { src: "/marketing/combos/combo-negocio-burger-v5.webp", label: "Hamburguesería", alt: "Combo Fuego Burger: mostrador grande para pedidos por WhatsApp, mostrador pequeño para reseñas, tarjeta NFC sin QR para pedidos y delivery y llavero NFC de marca" },
+      { src: "/marketing/combos/combo-negocio-cerrajeria-v2.webp", label: "Cerrajería", alt: "Combo Llave Maestra: mostrador grande para urgencias por WhatsApp, mostrador pequeño para reseñas, tarjeta de servicio y llavero de marca" },
     ],
   },
   {
@@ -101,13 +100,14 @@ function showRenewal(event: React.MouseEvent<HTMLAnchorElement>) {
 }
 
 function PriceBlock({ listPrice, pagePrice, directPrice, includes, directNote, directHref, dark }: { listPrice: string; pagePrice: string; directPrice: string; includes: string[]; directNote: string; directHref: string; dark?: boolean }) {
+  const comboSaving = Number(listPrice.replace(/\D/g, "")) - Number(pagePrice.replace(/\D/g, ""));
   return <div className={dark ? "bx-price is-dark" : "bx-price"}>
     <div className="bx-price-main">
-      <div className="bx-price-head"><span>Con página BIONFC</span><em>Precio de lanzamiento</em></div>
+      <div className="bx-price-head"><span>Con página BIONFC</span><em>{dark ? `Ahorrás $${new Intl.NumberFormat("es-AR").format(comboSaving)}` : "Precio de lanzamiento"}</em></div>
       <p className="bx-price-amount"><s aria-label={`Precio de lista ${listPrice}`}>{listPrice}</s><strong>{pagePrice}</strong></p>
       <ul>{includes.map((item) => <li key={item}><FiCheck aria-hidden="true" />{item}</li>)}<li><FiCheck aria-hidden="true" /><span>Primer año incluido · <a href="#renovacion" onClick={showRenewal}>¿y después?</a></span></li></ul>
     </div>
-    <a className="bx-price-alt" href={directHref} target="_blank" rel="noreferrer"><span>Sin página BIONFC<small>{directNote}</small></span><strong>{directPrice}</strong><em>Quiero esta opción <FiArrowUpRight aria-hidden="true" /></em></a>
+    <a className="bx-price-alt" href={directHref} target="_blank" rel="noreferrer"><span>{dark ? "Sin página" : "Sin página BIONFC"}<small>{directNote}</small></span><strong>{directPrice}</strong><em>Quiero esta opción <FiArrowUpRight aria-hidden="true" /></em></a>
   </div>;
 }
 
@@ -158,12 +158,12 @@ export default function Products({ whatsappNumber }: { whatsappNumber: string })
       <div className="bx-shop-included"><span><FiLayers aria-hidden="true" /> Lo armamos con vos</span><ul><li><FiCheck aria-hidden="true" /> Tu identidad de marca</li><li><FiCheck aria-hidden="true" /> QR, NFC o ambos</li><li><FiCheck aria-hidden="true" /> El destino que vos elijas</li></ul></div>
       <section id="combos" className="bx-combos" aria-labelledby="combos-title">
         <div className="bx-combos-head">
-          <div><p className="bx-combos-kicker">COMBOS CON AHORRO</p><h3 id="combos-title">Elegí los productos.<br /><span>Personalizamos el diseño y los destinos.</span></h3></div>
-          <p>Las fotos muestran ideas de diseño. Vos elegís cómo se ve cada pieza y qué abre al escanearla o acercar el celular.</p>
+          <div><p className="bx-combos-kicker">COMBOS</p><h3 id="combos-title">Combos con ahorro</h3><p>Llevás varias piezas con tu marca y pagás menos que por separado.</p></div>
         </div>
+        <p className="bx-combo-explain"><FiLink aria-hidden="true" /><span>Lo armás como quieras. <b>Con página BIONFC:</b> los objetos abren tu página (o alguno, un link aparte). <b>Sin página:</b> cada objeto abre el link que vos elijas, como reseñas, WhatsApp o Instagram.</span></p>
         <div className="bx-combo-tabs" role="tablist" aria-label="Elegí un combo">
           {COMBOS.map((item, index) => <button key={item.id} id={`combo-tab-${item.id}`} type="button" role="tab" aria-selected={selectedCombo === index} aria-controls="combo-panel" className={selectedCombo === index ? "is-active" : ""} onClick={() => selectCombo(index)}>
-            {item.featured && <em>Recomendado</em>}<span>{item.context}</span><strong>{item.name}</strong><small>{item.products.length} productos · {item.pagePrice} con página</small><span className="bx-combo-tab-action">Ver combo <FiChevronRight aria-hidden="true" /></span>
+            {item.featured && <em>Recomendado</em>}<span>{item.context}</span><strong>{item.name}</strong><small>{item.products.length} piezas · desde {item.comboPrice}</small><span className="bx-combo-tab-action">Ver combo <FiChevronRight aria-hidden="true" /></span>
           </button>)}
         </div>
         <article ref={comboPanelRef} id="combo-panel" role="tabpanel" aria-labelledby={`combo-tab-${combo.id}`} className={`bx-combo-panel is-${combo.id}`}>
@@ -177,12 +177,11 @@ export default function Products({ whatsappNumber }: { whatsappNumber: string })
             <p>{combo.description}</p>
             <p className="bx-combo-includes-title">El combo incluye</p>
             <ul className="bx-combo-use-list">{combo.products.map((product) => <li key={product}><FiCheck aria-hidden="true" />{product}</li>)}</ul>
-            <div className="bx-combo-destinations"><strong>Elegí qué abre cada producto</strong><p>Todos pueden llevar a tu misma página BIONFC. También podés combinarlos: uno a reseñas, otro a WhatsApp, Instagram o el enlace que elijas.</p></div>
-            <PriceBlock dark listPrice={combo.listPrice} pagePrice={combo.pagePrice} directPrice={combo.comboPrice} includes={[`${combo.products.length} productos personalizados`, "1 página BIONFC y destinos a elección"]} directNote="Destinos directos a elección" directHref={inquiry(`el Combo ${combo.name} sin página (con destinos a elección)`)} />
-            <a href={inquiry(`el Combo ${combo.name} con página BioNFC y destinos personalizados`)} target="_blank" rel="noreferrer">Personalizar este combo<FiArrowUpRight aria-hidden="true" /></a>
+            <PriceBlock dark listPrice={combo.listPrice} pagePrice={combo.pagePrice} directPrice={combo.comboPrice} includes={[`${combo.products.length} piezas con tu marca`, "1 página para todo el combo", "Cada objeto abre tu página o el link que elijas"]} directNote="Cada objeto abre el link que elijas" directHref={inquiry(`el Combo ${combo.name} sin página BIONFC, con un link directo a elección para cada pieza`)} />
+            <a href={inquiry(`el Combo ${combo.name} con una página BioNFC compartida y destinos a elección por pieza`)} target="_blank" rel="noreferrer">Armar este combo con página<FiArrowUpRight aria-hidden="true" /></a>
           </div>
         </article>
-        <p className="bx-combos-note">Los diseños y destinos de las fotos son ejemplos. Confirmamos con vos la marca, los enlaces y los detalles de cada pieza. ¿Querés otra combinación? La armamos a medida.</p>
+        <p className="bx-combos-note">Las imágenes son ejemplos de diseño; sus QR son ilustrativos. Definimos con vos la marca y el destino real de cada pieza. ¿Querés otra combinación? La armamos a medida.</p>
       </section>
       <section id="renovacion" className="bx-renewal" aria-labelledby="renewal-title">
         <p className="bx-section-kicker">DESPUÉS DEL PRIMER AÑO</p>
