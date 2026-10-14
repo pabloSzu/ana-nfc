@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import Toast from "@/components/toast";
 import { IconEdit, IconExternalLink, IconQrCode } from "@/components/icons";
-import { renewLanding, saveLandingManagement, setLandingRedirect } from "@/app/admin/actions";
+import { copyAsTemplate, renewLanding, saveLandingManagement, setLandingRedirect } from "@/app/admin/actions";
 import { effectiveRedirect, fallbackOf, formatDate, pageKindLabel, planOf, planStatus, renewedExpiry } from "@/lib/landing-plan";
 import ManagePanel, { type ManagePanelData } from "./manage-panel";
 
@@ -59,6 +59,15 @@ export default function ManageScreen({ landing, client }: { landing: ManageLandi
 
       <ManagePanel data={data} saveAction={saveLandingManagement} renewAction={renewLanding} redirectAction={setLandingRedirect} />
 
+      {landing.business_type !== "contact" && plan !== "direct" && <section className="card manage-template">
+        <div><strong>Guardar como prediseño</strong><p>Crea una copia de esta página en <Link href="/admin/predisenos">Prediseños</Link>, para arrancar otras desde ella. Esta página no cambia.</p></div>
+        <form action={copyAsTemplate} className="manage-template-form">
+          <input type="hidden" name="id" value={landing.id} />
+          <input type="hidden" name="return_to" value={`/admin/landings/${landing.id}/gestion`} />
+          <input name="template_name" maxLength={40} required placeholder="Ej. Café · degradé" aria-label="Nombre del prediseño" />
+          <button className="btn" type="submit">Guardar copia</button>
+        </form>
+      </section>}
       {client?.notes && <section className="card manage-notes"><strong>Notas del cliente</strong><p>{client.notes}</p></section>}
     </main>
   );

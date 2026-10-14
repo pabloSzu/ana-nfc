@@ -393,14 +393,15 @@ export type LogoStyle = {
   // lost-looking initial the way a fixed font-size would.
   initials: "one" | "two";
 };
-export type BackgroundPosition = { zoom: number; x: number; y: number; tint: number; lighten: number; blur: number; tintColor?: string };
+// pattern: opacidad del logo repetido sobre un fondo de color o degradé (0 = apagado).
+export type BackgroundPosition = { zoom: number; x: number; y: number; tint: number; lighten: number; blur: number; tintColor?: string; pattern: number; patternSize: number };
 
 // eyebrowSize/eyebrowWeight repeat what the stylesheet used to hardcode (10px / 600), so a
 // landing saved before these existed renders exactly as it did.
 const DEFAULT_TITLE_STYLE: TitleStyle = { eyebrowSize: 10, eyebrowWeight: 600, font: FONT_OPTIONS[0].id, weight: 900, size: 28, color: "#ffffff", bgMode: "none", bg: "#111111", align: "center" };
 const DEFAULT_SUBTITLE_STYLE: SubtitleStyle = { font: FONT_OPTIONS[0].id, weight: 500, size: 14, color: "#ffffff", bgMode: "none", bg: "#111111" };
 const DEFAULT_LOGO_STYLE: LogoStyle = { treatment: "template", shape: "round", size: 124, zoom: 1, x: 50, y: 50, backgroundMode: "auto", fallback: "#f5eddf", borderWidth: 0, borderColor: "#ffffff", shadowColor: "#0a0a0a", shadow: "soft", shadowSize: 1, initials: "one" };
-const DEFAULT_BG_POSITION: BackgroundPosition = { zoom: 1, x: 50, y: 50, tint: 0.08, lighten: 0, blur: 0 };
+const DEFAULT_BG_POSITION: BackgroundPosition = { zoom: 1, x: 50, y: 50, tint: 0.08, lighten: 0, blur: 0, pattern: 0, patternSize: 72 };
 
 function hasKeys(raw: unknown): raw is Record<string, unknown> {
   return Boolean(raw && typeof raw === "object" && Object.keys(raw as object).length > 0);
@@ -531,7 +532,7 @@ export function parseCoverStyle(raw: unknown): CoverStyle {
 export function parseBackgroundPosition(raw: unknown): BackgroundPosition {
   const parsed = hasKeys(raw) ? raw as Partial<BackgroundPosition> : {};
   const clamp = (value: unknown, min: number, max: number, fallback: number) => typeof value === "number" && Number.isFinite(value) ? Math.min(max, Math.max(min, value)) : fallback;
-  return { zoom: clamp(parsed.zoom, 1, 2.5, 1), x: clamp(parsed.x, 0, 100, 50), y: clamp(parsed.y, 0, 100, 50), tint: clamp(parsed.tint, 0, .85, .08), lighten: clamp(parsed.lighten, 0, .85, 0), blur: clamp(parsed.blur, 0, 14, 0), tintColor: typeof parsed.tintColor === "string" && /^#[0-9a-f]{6}$/i.test(parsed.tintColor) ? parsed.tintColor : undefined };
+  return { zoom: clamp(parsed.zoom, 1, 2.5, 1), x: clamp(parsed.x, 0, 100, 50), y: clamp(parsed.y, 0, 100, 50), tint: clamp(parsed.tint, 0, .85, .08), lighten: clamp(parsed.lighten, 0, .85, 0), blur: clamp(parsed.blur, 0, 14, 0), tintColor: typeof parsed.tintColor === "string" && /^#[0-9a-f]{6}$/i.test(parsed.tintColor) ? parsed.tintColor : undefined, pattern: clamp(parsed.pattern, 0, .5, 0), patternSize: clamp(parsed.patternSize, 40, 160, 72) };
 }
 
 export function buttonZoneShadow(shadow: ButtonZoneStyle["shadow"]): string {
@@ -598,7 +599,7 @@ export function getBusinessProfile(value: string) {
   return businessProfiles.find((profile) => profile.value === value) || businessProfiles[0];
 }
 
-type ActionType = "whatsapp" | "instagram" | "tiktok" | "facebook" | "linkedin" | "website" | "email" | "phone" | "maps" | "review" | "youtube" | "spotify" | "mercadopago" | "calendar" | "telegram" | "cv" | "url";
+type ActionType = "whatsapp" | "instagram" | "tiktok" | "facebook" | "linkedin" | "website" | "email" | "phone" | "maps" | "review" | "youtube" | "spotify" | "mercadopago" | "calendar" | "telegram" | "cv" | "promo" | "url";
 
 type ActionDef = {
   type: ActionType;
@@ -610,7 +611,7 @@ type ActionDef = {
   prefix?: string;
 };
 
-const ACTION_ORDER: ActionType[] = ["whatsapp", "instagram", "tiktok", "facebook", "linkedin", "website", "maps", "review", "email", "phone", "youtube", "spotify", "mercadopago", "calendar", "telegram", "cv", "url"];
+const ACTION_ORDER: ActionType[] = ["whatsapp", "instagram", "tiktok", "facebook", "linkedin", "website", "maps", "review", "promo", "email", "phone", "youtube", "spotify", "mercadopago", "calendar", "telegram", "cv", "url"];
 
 const ACTION_DEFS: Record<ActionType, ActionDef> = {
   whatsapp: { type: "whatsapp", label: "WhatsApp", icon: "💬", input: "phone", placeholder: "549351XXXXXXXX", message: true },
@@ -629,6 +630,9 @@ const ACTION_DEFS: Record<ActionType, ActionDef> = {
   calendar: { type: "calendar", label: "Reservar turno", icon: "📅", input: "url", placeholder: "https://calendly.com/...", message: false },
   telegram: { type: "telegram", label: "Telegram", icon: "📨", input: "username", placeholder: "tucanal", prefix: "t.me/", message: false },
   cv: { type: "cv", label: "Archivo PDF", icon: "📄", input: "url", placeholder: "https://.../documento.pdf", message: false },
+  // Tarjeta de promoción (ver lib/button-extras.ts): cartelito, código para copiar, foto y fecha
+  // de vencimiento. El destino puede ser un WhatsApp (con el código en el mensaje) o un enlace.
+  promo: { type: "promo", label: "Promoción", icon: "🏷️", input: "url", placeholder: "549351XXXXXXXX o https://...", message: true },
   url: { type: "url", label: "Enlace", icon: "🔗", input: "url", placeholder: "https://...", message: false },
 };
 

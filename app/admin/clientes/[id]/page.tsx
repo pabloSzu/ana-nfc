@@ -11,6 +11,7 @@ import Toast from "@/components/toast";
 import { Suspense } from "react";
 import PendingSubmitButton from "@/components/pending-submit-button";
 import AdminPageAvatar from "@/components/admin-page-avatar";
+import { templateChoices } from "@/lib/business-templates";
 
 type Landing = {
   id: string;
@@ -51,12 +52,14 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const { data: authData } = await supabase.auth.getClaims();
   const userId = String(authData?.claims?.sub || "");
   if (!userId) redirect("/admin/login");
-  const [{ data: client }, { data }] = await Promise.all([
+  const [{ data: client }, { data }, { data: ownTemplates }] = await Promise.all([
     supabase.from("clients").select("*").eq("id", id).eq("owner_id", userId).maybeSingle(),
     supabase.from("landings").select("id,business_name,business_type,slug,published,logo_url,logo_style,primary_color,plan,expires_at,fallback_url,redirect_url,actions(type,url,enabled,position)").eq("client_id", id).eq("owner_id", userId).order("created_at", { ascending: false }),
+    supabase.from("landings").select("id,template_name,template_hidden,template_order").eq("owner_id", userId).not("template_name", "is", null),
   ]);
   if (!client) notFound();
   const landings = (data || []) as Landing[];
+  const templates = templateChoices(ownTemplates || []);
   const directLinks = landings.filter((landing) => planOf(landing) === "direct");
   const contactCards = landings.filter((landing) => planOf(landing) !== "direct" && landing.business_type === "contact");
   const landingPages = landings.filter((landing) => planOf(landing) !== "direct" && landing.business_type !== "contact");
@@ -69,7 +72,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       <div className="client-detail-title"><div className="avatar small colorful" style={{ background: client.primary_color || "#1f2937" }}>{client.name.slice(0, 1)}</div><div><p className="eyebrow">Cliente</p><h1>{client.name}</h1><p className="muted">{landings.length} {landings.length === 1 ? "experiencia digital" : "experiencias digitales"} en total</p></div></div>
       <div className="client-create-actions">
         <ModalTrigger label="Nueva landing" icon={<IconPlus />} title="Nueva landing" description={`Va a quedar guardada directamente dentro de ${client.name}.`}>
-          <LandingCreationForm clients={[]} action={newLanding} kind="custom" clientId={id} clientName={client.name} returnTo={returnTo} />
+          <LandingCreationForm clients={[]} action={newLanding} kind="custom" clientId={id} clientName={client.name} returnTo={returnTo} templates={templates} />
         </ModalTrigger>
         <ModalTrigger label="Nueva tarjeta personal" icon={<IconPlus />} title="Nueva tarjeta personal" description={`Va a quedar guardada directamente dentro de ${client.name}.`} variant="secondary">
           <LandingCreationForm clients={[]} action={newLanding} kind="contact" clientId={id} clientName={client.name} returnTo={returnTo} />
@@ -88,7 +91,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 
       <div className="client-page-groups">
         <section className="card client-page-group">
-          <div className="client-page-group-heading"><div><p className="eyebrow">Para el negocio</p><h2>Landings <span>{landingPages.length}</span></h2><p className="muted">Cada una puede tener su propio diseño, enlace, QR y NFC.</p></div><ModalTrigger label="Agregar" icon={<IconPlus />} title="Nueva landing" description={`Va a quedar guardada directamente dentro de ${client.name}.`} variant="secondary"><LandingCreationForm clients={[]} action={newLanding} kind="custom" clientId={id} clientName={client.name} returnTo={returnTo} /></ModalTrigger></div>
+          <div className="client-page-group-heading"><div><p className="eyebrow">Para el negocio</p><h2>Landings <span>{landingPages.length}</span></h2><p className="muted">Cada una puede tener su propio diseño, enlace, QR y NFC.</p></div><ModalTrigger label="Agregar" icon={<IconPlus />} title="Nueva landing" description={`Va a quedar guardada directamente dentro de ${client.name}.`} variant="secondary"><LandingCreationForm clients={[]} action={newLanding} kind="custom" clientId={id} clientName={client.name} returnTo={returnTo} templates={templates} /></ModalTrigger></div>
           <PageList items={landingPages} kind="landing" />
         </section>
         <section className="card client-page-group">

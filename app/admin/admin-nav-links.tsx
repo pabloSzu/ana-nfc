@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { IconFileText, IconRocket, IconUsers } from "@/components/icons";
+import { IconFileText, IconPaintRoller, IconRocket, IconUsers } from "@/components/icons";
 
 const items = [
   { href: "/admin", label: "Resumen", icon: IconRocket },
   { href: "/admin/clientes", label: "Clientes", icon: IconUsers },
   { href: "/admin/paginas", label: "Páginas", icon: IconFileText },
+  { href: "/admin/predisenos", label: "Prediseños", icon: IconPaintRoller },
 ];
 
 export default function AdminNavLinks() {

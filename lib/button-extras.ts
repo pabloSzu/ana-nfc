@@ -16,6 +16,10 @@ export type ButtonExtra = {
   status?: string;
   // Ubicación: horarios de lunes (0) a domingo (6), hasta dos turnos por día.
   hours?: DayHours[];
+  // Promoción: cartelito ("20 % OFF"), código para copiar y último día de validez (AAAA-MM-DD).
+  badge?: string;
+  code?: string;
+  until?: string;
 };
 
 export const DAY_NAMES = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"];
@@ -38,6 +42,9 @@ export function parseButtonExtra(raw: unknown): ButtonExtra {
   if (Number.isFinite(reviews) && reviews >= 1) extra.reviews = Math.min(999999, Math.floor(reviews));
   if (source.online === true) extra.online = true;
   if (typeof source.status === "string" && source.status.trim()) extra.status = source.status.trim().slice(0, 40);
+  if (typeof source.badge === "string" && source.badge.trim()) extra.badge = source.badge.trim().slice(0, 20);
+  if (typeof source.code === "string" && source.code.trim()) extra.code = source.code.trim().replace(/\s+/g, "").slice(0, 24).toUpperCase();
+  if (typeof source.until === "string" && /^\d{4}-\d{2}-\d{2}$/.test(source.until) && !Number.isNaN(Date.parse(source.until))) extra.until = source.until;
   if (Array.isArray(source.hours) && source.hours.length === 7) {
     extra.hours = source.hours.map((day) => {
       const value = day && typeof day === "object" ? day as Record<string, unknown> : {};
@@ -100,3 +107,34 @@ export function openStatus(hours: DayHours[] | undefined, now: Date = new Date()
 // "4,9" con coma decimal, como se escribe en Argentina.
 export const formatRating = (rating: number) => rating.toFixed(1).replace(".", ",");
 export const formatReviews = (count: number) => `${count.toLocaleString("es-AR")} ${count === 1 ? "reseña" : "reseñas"}`;
+
+// --- Promociones -----------------------------------------------------------------------------
+
+// Fecha de hoy en Argentina como AAAA-MM-DD, para comparar con el "válida hasta".
+export function localDate(now: Date = new Date(), timeZone = "America/Argentina/Cordoba") {
+  return new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+}
+
+// Una promo vence al terminar su último día: el 31/10 todavía se ve, el 1/11 ya no.
+export function promoExpired(extra: ButtonExtra, now: Date = new Date()) {
+  return Boolean(extra.until && extra.until < localDate(now));
+}
+
+export function promoValidity(extra: ButtonExtra, now: Date = new Date()) {
+  if (!extra.until) return "";
+  if (extra.until === localDate(now)) return "¡Último día!";
+  const [, month, day] = extra.until.split("-");
+  return `Válida hasta el ${Number(day)}/${Number(month)}`;
+}
+
+// A dónde lleva la promo: un número abre WhatsApp con el código ya escrito en el mensaje; si no,
+// es un enlace común. "{codigo}" en el mensaje se reemplaza por el código.
+export function promoHref(url: string | null | undefined, message: string | null | undefined, extra: ButtonExtra) {
+  const value = String(url || "").trim();
+  const digits = value.replace(/\D/g, "");
+  if (value && /^[+\d\s()-]+$/.test(value) && digits.length >= 8) {
+    const base = String(message || "").trim() || `Hola! Quiero aprovechar la promo${extra.code ? " con el código {codigo}" : ""}.`;
+    return `https://wa.me/${digits}?text=${encodeURIComponent(base.replace(/\{codigo\}/gi, extra.code || ""))}`;
+  }
+  return value;
+}

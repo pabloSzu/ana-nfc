@@ -8,11 +8,24 @@ import { normalizeUrl, isPlausiblePhone, AUTO_COLORS, businessProfiles } from "@
 
 const hexColor = /^#[0-9a-f]{6}$/i;
 
-// Fotos de ejemplo de las plantillas por rubro: son archivos del propio sitio y no se suben. Solo
-// se aceptan rutas de las carpetas de plantillas, nunca una URL externa.
-function templateImage(value: FormDataEntryValue | null): string | undefined {
+// Fotos que trae una plantilla: las de ejemplo de BIONFC (archivos del propio sitio) o las de una
+// plantilla propia (subidas por el mismo usuario, en su carpeta). No se vuelven a subir: se guarda
+// la misma dirección. Nunca se acepta una URL de otro usuario ni externa.
+function templateImage(value: FormDataEntryValue | null, userId: string): string | undefined {
   const path = String(value || "");
-  return /^\/(templates|marketing)\/[\w./-]+\.(svg|jpe?g|png|webp)$/i.test(path) && !path.includes("..") ? path : undefined;
+  if (!path || path.includes("..")) return undefined;
+  if (/^\/(templates|marketing)\/[\w./-]+\.(svg|jpe?g|png|webp)$/i.test(path)) return path;
+  return isOwnAsset(path, userId) ? path : undefined;
+}
+
+function isOwnAsset(value: string, userId: string): boolean {
+  try {
+    const asset = new URL(value);
+    const project = new URL(String(process.env.NEXT_PUBLIC_SUPABASE_URL || ""));
+    return asset.origin === project.origin && asset.pathname.startsWith(`/storage/v1/object/public/landing-assets/${userId}/`);
+  } catch {
+    return false;
+  }
 }
 function color(value: FormDataEntryValue | null, fallback: string) {
   const candidate = String(value || "");
@@ -33,7 +46,7 @@ async function ownedLanding(landingId: string, userId: string) {
   return { supabase, data, error };
 }
 
-const validTypes = ["whatsapp", "instagram", "tiktok", "facebook", "linkedin", "website", "email", "phone", "maps", "review", "youtube", "spotify", "mercadopago", "calendar", "telegram", "cv", "url"];
+const validTypes = ["promo", "whatsapp", "instagram", "tiktok", "facebook", "linkedin", "website", "email", "phone", "maps", "review", "youtube", "spotify", "mercadopago", "calendar", "telegram", "cv", "url"];
 
 const validFontsIdentity = ["modern", "classic", "friendly", "minimal"];
 const validFonts = ["modern", "classic", "friendly", "minimal"];
@@ -47,8 +60,8 @@ function isOwnedButtonIconUrl(value: string, userId: string, landingId: string):
   try {
     const asset = new URL(value);
     const project = new URL(String(process.env.NEXT_PUBLIC_SUPABASE_URL || ""));
-    const prefix = `/storage/v1/object/public/landing-assets/${userId}/${landingId}/button-icon-`;
-    return asset.origin === project.origin && asset.pathname.startsWith(prefix);
+    // El ícono puede venir de otra página del mismo usuario (una plantilla propia).
+    return asset.origin === project.origin && asset.pathname.startsWith(`/storage/v1/object/public/landing-assets/${userId}/`) && asset.pathname.includes("/button-icon-") && Boolean(landingId);
   } catch {
     return false;
   }
@@ -107,7 +120,7 @@ export async function saveDesignStyle(fd: FormData) {
   } else if (fd.get("remove_background_image") === "true") {
     backgroundImageUrl = "";
   } else if (backgroundType === "image") {
-    backgroundImageUrl = templateImage(fd.get("background_template_url"));
+    backgroundImageUrl = templateImage(fd.get("background_template_url"), user.id);
   }
   const logoFile = fd.get("logo_image");
   let logoImageUrl: string | undefined;
@@ -122,7 +135,7 @@ export async function saveDesignStyle(fd: FormData) {
   } else if (fd.get("remove_logo_image") === "true") {
     logoImageUrl = "";
   } else {
-    logoImageUrl = templateImage(fd.get("logo_template_url"));
+    logoImageUrl = templateImage(fd.get("logo_template_url"), user.id);
   }
   const coverFile = fd.get("cover_image");
   let coverImageUrl: string | undefined;
@@ -137,7 +150,7 @@ export async function saveDesignStyle(fd: FormData) {
   } else if (fd.get("remove_cover_image") === "true") {
     coverImageUrl = "";
   } else {
-    coverImageUrl = templateImage(fd.get("cover_template_url"));
+    coverImageUrl = templateImage(fd.get("cover_template_url"), user.id);
   }
   const cvFile = fd.get("cv_file");
   let cvUploadedUrl: string | undefined;
@@ -201,7 +214,9 @@ export async function saveDesignStyle(fd: FormData) {
     if (type === "cv" && !value) saveFail("Subí un PDF o agregá un enlace para el documento.");
     if (type === "email" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) saveFail(`El email del botón “${title}” no parece válido.`);
     if (["whatsapp", "phone"].includes(type) && value && !isPlausiblePhone(value)) saveFail(`El número del botón “${title}” parece incompleto.`);
-    if (!["whatsapp", "email", "phone"].includes(type) && value && !value.startsWith("http")) value = normalizeUrl(value);
+    // Una promo puede llevar a un número de WhatsApp (ver promoHref): ese número no se toca.
+    const isPromoPhone = type === "promo" && /^[+\d\s()-]+$/.test(value);
+    if (!["whatsapp", "email", "phone"].includes(type) && !isPromoPhone && value && !value.startsWith("http")) value = normalizeUrl(value);
     const row = {
       landing_id: landingId,
       title,

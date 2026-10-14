@@ -11,16 +11,20 @@ import { AdminThemeBackdrop } from "@/components/admin-theme";
 import AdminPageAvatar from "@/components/admin-page-avatar";
 import { editHref, pageKindLabel, planStatus } from "@/lib/landing-plan";
 import { withAutoFallback } from "@/lib/landing-fallback";
+import { templateChoices } from "@/lib/business-templates";
 
 export default async function Admin() {
   const supabase = await createClient();
   const { data: authData } = await supabase.auth.getClaims();
   const userId = String(authData?.claims?.sub || "");
   if (!userId) return <main className="auth-shell"><div className="auth-card" style={{ textAlign: "center" }}><div className="auth-mark" style={{ margin: "0 auto 16px" }}>M</div><h1>Mi Landing Web Fácil</h1><p className="muted">Iniciá sesión para gestionar tus clientes y landings.</p><Link className="btn full" href="/admin/login">Ingresar</Link></div></main>;
-  const [{ data: clients }, { data: landings }] = await Promise.all([
+  const [{ data: clients }, { data: allLandings }] = await Promise.all([
     supabase.from("clients").select("*").eq("owner_id", userId).order("created_at", { ascending: false }),
     supabase.from("landings").select("*, actions(type,url,enabled,position)").eq("owner_id", userId).order("created_at", { ascending: false }),
   ]);
+  // Los prediseños son landings propias pero no páginas de clientes: no cuentan acá.
+  const landings = (allLandings || []).filter((landing) => !landing.template_name);
+  const templates = templateChoices(allLandings || []);
   const totalClients = clients?.length || 0;
   const totalPages = landings?.length || 0;
   const totalCards = landings?.filter((landing) => landing.business_type === "contact").length || 0;
@@ -71,7 +75,7 @@ export default async function Admin() {
 
     <div className="admin-action-bar">
       {!!clients?.length && <ModalTrigger label="Nueva landing" icon={<IconPlus />} title="Nueva landing" description="Elegí el cliente al que pertenece; el resto lo completás en el editor.">
-        <LandingCreationForm clients={clients} action={newLanding} kind="custom" />
+        <LandingCreationForm clients={clients} action={newLanding} kind="custom" templates={templates} />
       </ModalTrigger>}
       {!!clients?.length && <ModalTrigger label="Nueva tarjeta personal" icon={<IconPlus />} title="Nueva tarjeta personal" description="Elegí el cliente y después completá la foto y los datos en el editor." variant="secondary">
         <LandingCreationForm clients={clients} action={newLanding} kind="contact" />

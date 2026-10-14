@@ -5,6 +5,7 @@ import { saveDesignStyle } from "./actions";
 import { publish, deleteLanding } from "@/app/admin/actions";
 import EditorV2 from "./editor-v2";
 import { parseButtonExtra } from "@/lib/button-extras";
+import { editorTemplates } from "@/lib/business-templates";
 import Toast from "@/components/toast";
 import { Suspense } from "react";
 import "./editor-v2.css";
@@ -21,9 +22,11 @@ export default async function EditorV2Page({ params, searchParams }: { params: P
   const { data: authData } = await supabase.auth.getClaims();
   const userId = String(authData?.claims?.sub || "");
   if (!userId) redirect("/admin/login");
-  const [{ data: landing }, { data: actions }] = await Promise.all([
+  const [{ data: landing }, { data: actions }, { data: templateRows }] = await Promise.all([
     supabase.from("landings").select("*").eq("id", id).eq("owner_id", userId).maybeSingle(),
     supabase.from("actions").select("*").eq("landing_id", id).eq("enabled", true).order("position"),
+    // Prediseños (Admin → Prediseños), para el panel del editor.
+    supabase.from("landings").select("*, actions(*)").eq("owner_id", userId).eq("business_type", "custom").not("template_name", "is", null),
   ]);
   if (!landing) notFound();
 
@@ -49,6 +52,8 @@ export default async function EditorV2Page({ params, searchParams }: { params: P
         background_color: action.background_color || "", background_gradient_to: action.background_gradient_to || "", text_color: action.text_color || "#ffffff",
         use_auto_color: action.use_auto_color !== false, position: action.position || 0, extra: parseButtonExtra(action.extra),
       }))}
+      isTemplate={Boolean(landing.template_name)}
+      templates={editorTemplates(templateRows || []).filter((template) => template.id !== `mine-${landing.id}`)}
       saveAction={saveDesignStyle}
       publishAction={publish}
       deleteLandingAction={deleteLanding}

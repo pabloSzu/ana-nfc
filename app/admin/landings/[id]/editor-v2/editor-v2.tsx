@@ -16,7 +16,8 @@ import { parseBackgroundPosition, parseButtonZone, parseSubtitleStyle, parseTitl
 import FontPicker from "../font-picker";
 import { FontLinks, getFontWeights, LogoInitials, recommendedButtonTypography, resolveFontWeight } from "@/lib/fonts";
 import IconPicker from "../icon-picker";
-import { BUSINESS_TEMPLATES, type BusinessTemplate } from "@/lib/business-templates";
+import type { BusinessTemplate } from "@/lib/business-templates";
+import TemplatePreview from "@/components/template-preview";
 import { DAY_SHORT, DEFAULT_STATUS, defaultHours, openStatus, type ButtonExtra, type DayHours } from "@/lib/button-extras";
 import { DESIGN_PRESETS_V2, buttonCollectionStyle, buttonIconStyle, instagramAssetMode, recommendedIconAppearance, resolveButtonColors, shouldUseBrandMark, youtubeMarkSurfaceColor, type DesignPreset } from "@/lib/design-presets";
 import { ThemeSceneLayer, useSharedTheme } from "@/components/theme-scene";
@@ -177,7 +178,9 @@ function logoTreatmentPatch(treatment: LogoTreatment, templateId = "minimal"): P
   return { treatment, shape: "round", borderWidth: 3, borderColor: templateId === "glass" ? "#2c2c33" : "#ffffff", shadow: "soft", backgroundMode: "auto" };
 }
 
-export default function EditorV2({ landing, initialButtons, newlyCreatedContact = false, saveAction, publishAction, deleteLandingAction }: { landing: LandingDraft; initialButtons: ButtonItem[]; newlyCreatedContact?: boolean; saveAction: SaveAction; publishAction: SaveAction; deleteLandingAction: SaveAction }) {
+export default function EditorV2({ landing, initialButtons, templates = [], isTemplate = false, newlyCreatedContact = false, saveAction, publishAction, deleteLandingAction }: { landing: LandingDraft; initialButtons: ButtonItem[]; templates?: BusinessTemplate[]; isTemplate?: boolean; newlyCreatedContact?: boolean; saveAction: SaveAction; publishAction: SaveAction; deleteLandingAction: SaveAction }) {
+  // Un prediseño se edita igual que una página, pero no se publica: se vuelve a su panel.
+  const exitHref = isTemplate ? "/admin/predisenos" : "/admin";
   const [draft, setDraft] = useState(landing);
   const [buttons, setButtons] = useState(initialButtons);
   const [panel, setPanel] = useState<Panel>(landing.business_type === "contact" && !newlyCreatedContact ? null : "templates");
@@ -514,70 +517,45 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
     patchButtons((current) => current.map((button) => ({ ...button, use_auto_color: true, background_gradient_to: "", icon_background_color: "" })));
   }
 
-  // Plantillas por rubro (lib/business-templates.ts), como en Wix:
-  // - "Usar esta plantilla" (full) deja la página idéntica a la miniatura, con todos los datos de
-  //   ejemplo (nombre visible, logo, fotos, textos, botones y redes) para reemplazarlos después.
-  // - "Copiar solo el estilo" copia todo lo visual (colores, letras, tipo de portada, fondo,
-  //   logo, botones, separadores y espacios) y conserva el contenido del cliente. Si el diseño
-  //   necesita una foto de portada o de fondo que el cliente no tiene, usa la de ejemplo y avisa,
-  //   para que el resultado sea siempre el mismo.
-  // Un deshacer vuelve todo atrás.
-  function applyBusinessTemplate(id: string, full: boolean) {
-    const template = BUSINESS_TEMPLATES.find((item) => item.id === id);
+  // Prediseños (Admin → Prediseños), como en Wix: elegir uno deja la página idéntica a la
+  // miniatura —textos, botones, links, logo, fotos y colores— y descarta lo que había. Es como
+  // arrancar desde una página ya hecha; después se cambian los datos por los del cliente. Un
+  // deshacer vuelve todo atrás.
+  function applyBusinessTemplate(id: string) {
+    const template = templates.find((item) => item.id === id);
     if (!template) return;
     const hasOwnContent = buttons.some((button) => button.url.trim()) || Boolean(logoPreview || coverPreview || bgPreview);
-    if (full && hasOwnContent && !window.confirm("La plantilla reemplaza textos, botones, logo y fotos por los de ejemplo. Después los cambiás por los del cliente. Se puede deshacer. ¿Seguir?")) return;
+    if (hasOwnContent && !window.confirm(`"${template.name}" reemplaza todo lo que tiene esta página: textos, botones, links, logo y fotos. Se puede deshacer. ¿Seguir?`)) return;
     const source = template.landing;
     const zone = parseButtonZone(source.button_style);
-    const titleStyle = parseTitleStyle(source);
-    const coverStyle = parseCoverStyle(source.cover_style);
-    const usesBackgroundPhoto = source.background_type === "image" && Boolean(source.background_image_url);
-    const examples: string[] = [];
-    const patch: Partial<LandingDraft> = {
+    commitDiscrete();
+    patchDraft({
       primary_color: source.primary_color, font_pair: source.font_pair, button_font: source.button_font,
       background_type: source.background_type, background_color: source.background_color, background_gradient_to: source.background_gradient_to,
       bgPosition: parseBackgroundPosition(source.background_style),
-      buttonZone: {
-        ...zone,
-        distribution: parseDistribution(zone.distribution, zone.layout),
-        showBranding: draft.buttonZone.showBranding,
-        quickSocials: full ? zone.quickSocials : draft.buttonZone.quickSocials,
-        templateId: `rubro:${template.id}`,
-      },
-      titleStyle: full ? titleStyle : { ...titleStyle, headline: draft.titleStyle.headline, eyebrow: draft.titleStyle.eyebrow },
+      buttonZone: { ...zone, distribution: parseDistribution(zone.distribution, zone.layout), showBranding: draft.buttonZone.showBranding, templateId: `rubro:${template.id}` },
+      titleStyle: parseTitleStyle(source),
       subtitleStyle: parseSubtitleStyle(source),
-      logoStyle: full ? parseLogoStyle(source.logo_style) : parseLogoStyle({ ...source.logo_style, zoom: draft.logoStyle.zoom, x: draft.logoStyle.x, y: draft.logoStyle.y }),
-      coverStyle,
-    };
-    if (full) {
-      Object.assign(patch, { description: source.description, logo_url: source.logo_url || "", cover_image_url: source.cover_image_url || "", background_image_url: source.background_image_url || "" });
-    } else {
-      // Una foto que vino de otra plantilla también es de ejemplo: se cambia por la de esta.
-      const isExample = (url: string) => /^\/(templates|marketing)\//.test(url);
-      if (coverStyle.enabled && source.cover_image_url && (!coverImage || isExample(coverImage))) { patch.cover_image_url = source.cover_image_url; examples.push("la portada"); }
-      if (usesBackgroundPhoto && (!backgroundImage || isExample(backgroundImage))) { patch.background_image_url = source.background_image_url; examples.push("el fondo"); }
-      if (logoImage && isExample(logoImage)) patch.logo_url = source.logo_url || "";
-    }
-    commitDiscrete();
-    patchDraft(patch);
-    // Las fotos elegidas a mano y todavía sin guardar se descartan si la plantilla trae las suyas.
+      logoStyle: parseLogoStyle(source.logo_style),
+      coverStyle: parseCoverStyle(source.cover_style),
+      description: source.description, logo_url: source.logo_url || "", cover_image_url: source.cover_image_url || "", background_image_url: source.background_image_url || "",
+    });
+    // Las fotos elegidas a mano y todavía sin guardar se descartan: el prediseño trae las suyas.
     const clearPending = (inputId: string, preview: string | null, setPreview: (value: string | null) => void) => {
       const input = document.getElementById(inputId) as HTMLInputElement | null;
       if (input) input.value = "";
       if (preview) URL.revokeObjectURL(preview);
       setPreview(null);
     };
-    if (full || examples.includes("la portada")) { clearPending("v2-cover-file", coverPreview, setCoverPreview); setCoverRemoved(false); }
-    if (full || examples.includes("el fondo")) clearPending("v2-background-file", bgPreview, setBgPreview);
-    if (full) { clearPending("v2-logo-file", logoPreview, setLogoPreview); setLogoRemoved(false); }
-    setTemplateNotice(full
-      ? `Listo: la página quedó igual a "${template.name}". Reemplazá el nombre, el logo, las fotos y los links por los del cliente.`
-      : examples.length ? `Estilo copiado. Usamos una foto de ejemplo para ${examples.join(" y ")}: reemplazala por la del cliente.` : "Estilo copiado. Tus textos, links y fotos se conservaron.");
-    if (!full) return;
+    clearPending("v2-cover-file", coverPreview, setCoverPreview); setCoverRemoved(false);
+    clearPending("v2-background-file", bgPreview, setBgPreview);
+    clearPending("v2-logo-file", logoPreview, setLogoPreview); setLogoRemoved(false);
+    setTemplateNotice(`Listo: la página quedó igual a "${template.name}". Reemplazá el nombre, el logo, las fotos y los links por los del cliente.`);
     patchButtons(() => template.actions.map((action, index) => ({
       id: `new-${crypto.randomUUID()}`, type: action.type, title: action.title, subtitle: action.subtitle || "", url: action.url || "", message: action.message || "",
-      icon: action.icon || "", icon_url: "", icon_fit: "contain", icon_scale: 1, icon_background_color: "", background_color: "", background_gradient_to: "",
-      text_color: "#ffffff", use_auto_color: true, position: index, extra: action.extra || {},
+      icon: action.icon || "", icon_url: action.icon_url || "", icon_fit: action.icon_fit === "cover" ? "cover" : "contain", icon_scale: action.icon_scale || 1, icon_background_color: action.icon_background_color || "",
+      use_auto_color: action.use_auto_color !== false, background_color: action.background_color || "", background_gradient_to: action.background_gradient_to || "", text_color: action.text_color || "#ffffff",
+      position: index, extra: action.extra || {},
     })));
   }
 
@@ -639,7 +617,8 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
     }
     const def = actionDefs.find((item) => item.type === type) || actionDefs[actionDefs.length - 1];
     const id = `new-${crypto.randomUUID()}`;
-    const button: ButtonItem = { id, type: def.type, title: type === "cv" ? "Ver archivo PDF" : def.label, subtitle: "", url: "", message: def.message ? "Hola, quiero hacer una consulta." : "", icon: "", icon_url: "", icon_fit: "contain", icon_scale: 1, icon_background_color: "", background_color: "#1f2937", background_gradient_to: "", text_color: "#ffffff", use_auto_color: true, position: buttons.length, extra: {} };
+    const isPromo = type === "promo";
+    const button: ButtonItem = { id, type: def.type, title: type === "cv" ? "Ver archivo PDF" : isPromo ? "Tu primera compra con descuento" : def.label, subtitle: isPromo ? "Válido hasta fin de mes" : "", url: "", message: def.message && !isPromo ? "Hola, quiero hacer una consulta." : "", icon: "", icon_url: "", icon_fit: "contain", icon_scale: 1, icon_background_color: "", background_color: "#1f2937", background_gradient_to: "", text_color: "#ffffff", use_auto_color: true, position: buttons.length, extra: isPromo ? { badge: "20 % OFF", code: "BIENVENIDA" } : {} };
     commitDiscrete();
     patchButtons((current) => [...current, button]); setPanel({ buttonId: id });
   }
@@ -809,7 +788,7 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
     selected: panel,
     draggingId,
     onSelectTemplates: () => selectPanel("templates"),
-    onSelectSettings: () => selectPanel("settings"),
+    onSelectSettings: () => { if (!isTemplate) selectPanel("settings"); },
     onSelectContact: () => selectPanel("contact"),
     onSelectContactDesign: () => selectPanel("contact-design"),
     onSelectSocials: () => selectPanel("socials"),
@@ -908,25 +887,25 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
         <input id="v2-cv-file" hidden type="file" name="cv_file" accept="application/pdf,.pdf" onChange={(event) => selectCvFile(event.target.files?.[0])} />
         <input type="hidden" name="remove_logo_image" value={String(logoRemoved)} />
         <input type="hidden" name="remove_cover_image" value={String(coverRemoved)} />
-        <input type="hidden" name="cover_template_url" value={!coverPreview && !coverRemoved && /^\/(templates|marketing)\//.test(draft.cover_image_url || "") ? draft.cover_image_url || "" : ""} />
-        <input type="hidden" name="logo_template_url" value={!logoPreview && !logoRemoved && /^\/(templates|marketing)\//.test(draft.logo_url || "") ? draft.logo_url || "" : ""} />
-        <input type="hidden" name="background_template_url" value={!bgPreview && /^\/(templates|marketing)\//.test(draft.background_image_url || "") ? draft.background_image_url || "" : ""} />
+        <input type="hidden" name="cover_template_url" value={!coverPreview && !coverRemoved && isTemplateImage(draft.cover_image_url) ? draft.cover_image_url || "" : ""} />
+        <input type="hidden" name="logo_template_url" value={!logoPreview && !logoRemoved && isTemplateImage(draft.logo_url) ? draft.logo_url || "" : ""} />
+        <input type="hidden" name="background_template_url" value={!bgPreview && isTemplateImage(draft.background_image_url) ? draft.background_image_url || "" : ""} />
       </form>
 
       <header className="v2-topbar">
-        <button className="v2-back" type="button" onClick={() => dirty ? setLeaveOpen(true) : location.assign("/admin")}>←</button>
-        <div><span>{draft.business_type === "contact" ? "Editor de tarjeta" : "Editor de landing"}</span><strong>{draft.business_name}</strong></div>
+        <button className="v2-back" type="button" onClick={() => dirty ? setLeaveOpen(true) : location.assign(exitHref)}>←</button>
+        <div><span>{isTemplate ? "Editor de prediseño" : draft.business_type === "contact" ? "Editor de tarjeta" : "Editor de landing"}</span><strong>{draft.business_name}</strong></div>
         <div className="v2-status"><i className={dirty ? "is-dirty" : ""} />{dirty ? "Cambios sin guardar" : "Todo guardado"}</div>
         <div className="v2-history" data-tick={historyTick}>
           <button type="button" title="Deshacer (Ctrl+Z)" aria-label="Deshacer" disabled={pastRef.current.length === 0} onClick={undo}>↶</button>
           <button type="button" title="Rehacer (Ctrl+Y)" aria-label="Rehacer" disabled={futureRef.current.length === 0} onClick={redo}>↷</button>
         </div>
-        <button className="v2-ghost" type="button" onClick={() => { setPanel(draft.business_type === "contact" ? "settings" : panel === "settings" ? null : "settings"); setPreview(false); }}>{draft.business_type === "contact" ? "Publicar" : "Ajustes"}</button>
+        {!isTemplate && <button className="v2-ghost" type="button" onClick={() => { setPanel(draft.business_type === "contact" ? "settings" : panel === "settings" ? null : "settings"); setPreview(false); }}>{draft.business_type === "contact" ? "Publicar" : "Ajustes"}</button>}
         <button className="v2-ghost" type="button" onClick={() => { setPreview(!preview); setPanel(preview ? (window.innerWidth <= 840 || draft.business_type === "contact" ? null : "templates") : null); }}>{preview ? "Seguir editando" : "Vista previa"}</button>
         <button className="v2-save" form="v2-save" type="submit" name="return_to" value={`/admin/landings/${draft.id}/editor-v2`} disabled={!dirty || cvUploading || Boolean(iconUploadingId) || saving} aria-busy={saving || Boolean(iconUploadingId)}>{iconUploadingId ? "Subiendo ícono…" : cvUploading ? "Subiendo PDF…" : saving ? "Guardando…" : "Guardar cambios"}</button>
       </header>
 
-      <div className={`v2-workspace ${preview ? "is-preview" : ""} ${panel ? "has-panel" : ""}`}>
+      <div className={`v2-workspace ${preview ? "is-preview" : ""} ${panel ? "has-panel" : ""} ${panel === "templates" && draft.business_type !== "contact" ? "is-templates" : ""}`}>
         {!preview && panel && <aside ref={panelRef} className="v2-panel" onClickCapture={revealExpandedSection}>
           <div className="v2-panel-head">
             <div><span>{draft.business_type === "contact" ? "Tarjeta personal" : "Paso simple"}</span><h2>{draft.business_type === "contact" && typeof panel === "object" ? "Editar enlace" : draft.business_type === "contact" && panel === "logo" ? "Foto de perfil" : draft.business_type === "contact" && panel === "cover" ? "Portada de la tarjeta" : draft.business_type === "contact" && panel === "add" ? "Agregar un enlace" : draft.business_type === "contact" && panel === "settings" ? "Publicar tarjeta" : draft.business_type === "contact" && panel === "templates" ? "Elegí un diseño" : panelTitle(panel)}</h2></div>
@@ -934,10 +913,10 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
           </div>
           {draft.business_type === "contact" && panel === "templates" && <button type="button" className="v2-ghost v2-contact-return" onClick={() => setPanel("contact-design")}>← Volver a Diseño</button>}
           {draft.business_type === "contact" && (panel === "contact-name" || panel === "contact-role" || panel === "contact-company") && <button type="button" className="v2-ghost v2-contact-return" onClick={() => setPanel("contact")}>← Volver a Datos</button>}
-          {panel === "templates" && (draft.business_type === "contact" ? <ContactLooks selected={draft.buttonZone.contactTheme || "classic"} onApply={requestContactLook} /> : <Templates selected={draft.buttonZone.templateId} notice={templateNotice} onApply={(presetId) => { applyPreset(presetId); setTemplateNotice(""); }} onApplyBusiness={applyBusinessTemplate} />)}
+          {panel === "templates" && (draft.business_type === "contact" ? <ContactLooks selected={draft.buttonZone.contactTheme || "classic"} onApply={requestContactLook} /> : <Templates selected={draft.buttonZone.templateId} notice={templateNotice} templates={templates} onApply={(presetId) => { applyPreset(presetId); setTemplateNotice(""); }} onApplyBusiness={applyBusinessTemplate} />)}
           {panel === "contact-design" && <ContactDesignControls draft={draft} buttons={buttons} onChange={change} onBackground={() => selectPanel("background")} onTemplates={() => selectPanel("templates")} />}
           {panel === "buttons" && <ButtonDesign draft={draft} buttons={buttons} backgroundImage={backgroundImage} onZone={changeZone} onFont={(button_font) => change({ button_font, buttonZone: { ...draft.buttonZone, fontWeight: resolveFontWeight(button_font, draft.buttonZone.fontWeight ?? recommendedButtonTypography(button_font).fontWeight), letterSpacing: draft.buttonZone.letterSpacing ?? recommendedButtonTypography(button_font).letterSpacing } })} onApplyButtonLook={applyButtonLook} onResetButtonOverrides={resetButtonOverrides} />}
-          {panel === "background" && <BackgroundControls draft={draft} tab={bgTab} onTab={setBgTab} onChange={change} onFile={(file) => openImageEditor("background", file)} onAdjust={() => openImageEditor("background")} hasImage={Boolean(backgroundImage)} />}
+          {panel === "background" && <BackgroundControls draft={draft} tab={bgTab} onTab={setBgTab} onChange={change} onFile={(file) => openImageEditor("background", file)} onAdjust={() => openImageEditor("background")} hasImage={Boolean(backgroundImage)} hasLogo={Boolean(logoImage)} />}
           {panel === "cover" && <CoverControls draft={draft} coverImage={coverImage} onChange={change} onCoverFile={(file) => openImageEditor("cover", file)} onAdjustCover={() => openImageEditor("cover")} onRemoveCover={removeContactCover} />}
           {panel === "distribution" && (draft.business_type === "contact" ? <ContactDistributionControls draft={draft} onChange={change} /> : <DistributionControls draft={draft} onZone={changeZone} />)}
           {panel === "socials" && <SocialControls links={draft.buttonZone.quickSocials || []} onChange={(quickSocials) => changeZone({ quickSocials })} filled={draft.buttonZone.quickSocialsFilled !== false} onFilled={(quickSocialsFilled) => changeZone({ quickSocialsFilled })} />}
@@ -974,35 +953,28 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
       {imageEditor && <ImageAdjustDialog key={`${imageEditor.kind}-${imageEditor.src}`} kind={imageEditor.kind} src={imageEditor.src} shape={imageEditor.kind === "logo" ? draft.logoStyle.shape : undefined} contactLogo={imageEditor.kind === "logo" && draft.business_type === "contact"} logoBackground={imageEditor.kind === "logo" ? logoBackgroundColor(draft.logoStyle, draft.primary_color || "#1f2937") : undefined} coverMode={imageEditor.kind === "cover" && draft.business_type === "contact" ? "banner" : draft.coverStyle.mode} contactCoverSize={imageEditor.kind === "cover" && draft.business_type === "contact" ? draft.coverStyle.size : undefined} coverFrameWidth={imageEditor.coverFrame?.width || (draft.buttonZone.contactLayout === "document" ? 384 : 402)} coverFrameHeight={imageEditor.coverFrame?.height} coverCanvasHeight={imageEditorCoverCanvasHeight} coverOverlay={imageEditor.kind === "cover" ? imageEditor.file && !coverImage ? 0 : draft.coverStyle.overlay : undefined} coverOverlayColor={imageEditor.kind === "cover" ? draft.coverStyle.mode === "banner" ? "#000000" : draft.coverStyle.overlayColor || contrastTextColor(draft.titleStyle.color) : undefined} coverFade={imageEditor.kind === "cover" && draft.business_type !== "contact" && draft.coverStyle.mode === "fade" ? draft.coverStyle.fade : undefined} initial={imageEditor.initial} onApply={applyImageEditor} onCancel={cancelImageEditor} />}
       {pendingContactLook && <div className="v2-modal-backdrop"><div className="v2-modal v2-contact-template-confirm" role="dialog" aria-modal="true" aria-labelledby="v2-contact-template-title"><div className="v2-modal-icon">↩</div><h2 id="v2-contact-template-title">¿Aplicar {CONTACT_LOOKS.find((look) => look.id === pendingContactLook.id)?.name}?</h2><p>Se reemplazarán tus ajustes de diseño. Tus datos, enlaces y fotos se conservan.{pendingContactLook.hidesBackgroundPhoto ? " La foto del fondo exterior quedará guardada, pero dejará de mostrarse." : ""} Podés deshacer el cambio.</p><button type="button" className="v2-save" onClick={() => { applyContactLook(pendingContactLook.id); setPendingContactLook(null); }}>Aplicar plantilla</button><button type="button" className="v2-ghost" onClick={() => setPendingContactLook(null)}>Cancelar</button></div></div>}
       {deletedButton && <div className="v2-delete-notice"><span role="status">Botón eliminado: <b>{deletedButton.button.title}</b></span><button ref={restoreButtonRef} type="button" onClick={restoreDeletedButton}>Deshacer</button><button type="button" aria-label="Cerrar aviso" onClick={() => setDeletedButton(null)}>×</button></div>}
-      {leaveOpen && <div className="v2-modal-backdrop"><div className="v2-modal"><div className="v2-modal-icon">!</div><h2>Tenés cambios sin guardar</h2><p>Si salís ahora, vas a perder los últimos cambios de diseño.</p><button className="v2-save" form="v2-save" name="return_to" value="/admin">Guardar y salir</button><Link href="/admin" className="v2-danger">Salir sin guardar</Link><button className="v2-ghost" onClick={() => { setLeaveOpen(false); setPreview(false); }}>Seguir editando</button></div></div>}
+      {leaveOpen && <div className="v2-modal-backdrop"><div className="v2-modal"><div className="v2-modal-icon">!</div><h2>Tenés cambios sin guardar</h2><p>Si salís ahora, vas a perder los últimos cambios de diseño.</p><button className="v2-save" form="v2-save" name="return_to" value={exitHref}>Guardar y salir</button><Link href={exitHref} className="v2-danger">Salir sin guardar</Link><button className="v2-ghost" onClick={() => { setLeaveOpen(false); setPreview(false); }}>Seguir editando</button></div></div>}
     </main>
   );
 }
 
-function panelTitle(panel: Exclude<Panel, null>) { if (typeof panel === "object") return "Editar botón"; return ({ templates: "Elegí una plantilla", buttons: "Editar todos los botones", background: "Fondo de la página", cover: "Encabezado",settings: "Ajustes de la landing", contact: "Datos de la tarjeta", "contact-design": "Diseño de la tarjeta", "contact-name": "Editar nombre", "contact-role": "Editar cargo", "contact-company": "Editar empresa", socials: "Redes rápidas", distribution: "Distribución", title: "Editar título", subtitle: "Editar subtítulo", logo: "Editar logo", add: "Agregar un botón" } as const)[panel]; }
+function panelTitle(panel: Exclude<Panel, null>) { if (typeof panel === "object") return "Editar botón"; return ({ templates: "Prediseños", buttons: "Editar todos los botones", background: "Fondo de la página", cover: "Encabezado",settings: "Ajustes de la landing", contact: "Datos de la tarjeta", "contact-design": "Diseño de la tarjeta", "contact-name": "Editar nombre", "contact-role": "Editar cargo", "contact-company": "Editar empresa", socials: "Redes rápidas", distribution: "Distribución", title: "Editar título", subtitle: "Editar subtítulo", logo: "Editar logo", add: "Agregar un botón" } as const)[panel]; }
 
-// Vista en miniatura de un diseño por rubro, con el mismo renderer que la página publicada.
-function BusinessTemplatePreview({ template }: { template: BusinessTemplate }) {
-  const landing = { ...template.landing, id: template.id, slug: "", business_type: "custom", published: true };
-  const actions = template.actions.map((action, index) => ({ ...action, id: `${template.id}-${index}`, use_auto_color: true }));
-  const fonts = [template.landing.font_pair, template.landing.button_font, String(template.landing.title_style.font || ""), String(template.landing.title_style.eyebrowFont || ""), String(template.landing.subtitle_style.font || "")].filter(Boolean);
-  return <div className="v2-rubro-preview" aria-hidden="true">
-    <FontLinks ids={fonts} />
-    <ScaledPhoneCanvas className="v2-rubro-canvas" fit="contain" photoBackground={landing.background_type === "image" ? <LandingPhotoBackground landing={landing} /> : undefined}><LandingRenderer landing={landing} actions={actions} editorPreview externalPhotoBackground={landing.background_type === "image"} /></ScaledPhoneCanvas>
+function TemplateCard({ template, selected, onApplyBusiness }: { template: BusinessTemplate; selected: string; onApplyBusiness: (id: string) => void }) {
+  return <div className={`v2-rubro-card${selected === `rubro:${template.id}` ? " is-selected" : ""}`}>
+    <TemplatePreview template={template} className="v2-rubro-preview" />
+    <div className="v2-rubro-copy"><b>{template.name}</b></div>
+    <div className="v2-rubro-actions">
+      <button type="button" className="v2-save" onClick={() => onApplyBusiness(template.id)}>Usar este prediseño</button>
+    </div>
   </div>;
 }
 
-function Templates({ selected, notice, onApply, onApplyBusiness }: { selected: string; notice: string; onApply: (id: string) => void; onApplyBusiness: (id: string, full: boolean) => void }) {
+function Templates({ selected, notice, templates, onApply, onApplyBusiness }: { selected: string; notice: string; templates: BusinessTemplate[]; onApply: (id: string) => void; onApplyBusiness: (id: string) => void }) {
   return <div className="v2-fields">
-    {notice ? <p className="v2-rubro-notice" role="status">{notice}</p> : <p className="v2-help">"Usar esta plantilla" deja la página igual a la miniatura, con datos de ejemplo para reemplazar. "Copiar solo el estilo" conserva los textos, links y fotos del cliente. Todo se puede deshacer.</p>}
-    <div className="v2-rubro-grid">{BUSINESS_TEMPLATES.map((template) => <div key={template.id} className={`v2-rubro-card${selected === `rubro:${template.id}` ? " is-selected" : ""}`}>
-      <BusinessTemplatePreview template={template} />
-      <div className="v2-rubro-copy"><b>{template.name}</b><small>{template.note}</small></div>
-      <div className="v2-rubro-actions">
-        <button type="button" className="v2-save" onClick={() => onApplyBusiness(template.id, true)}>Usar esta plantilla</button>
-        <button type="button" className="v2-ghost" onClick={() => onApplyBusiness(template.id, false)}>Copiar solo el estilo</button>
-      </div>
-    </div>)}</div>
+    {notice ? <p className="v2-rubro-notice" role="status">{notice}</p> : <p className="v2-help">Elegí uno y la página queda igual a la miniatura: textos, botones, fotos y colores. Después cambiás los datos por los del cliente. Se puede deshacer.</p>}
+    <div className="v2-rubro-grid">{templates.map((template) => <TemplateCard key={template.id} template={template} selected={selected} onApplyBusiness={onApplyBusiness} />)}</div>
+    <Link className="v2-suggested" href="/admin/predisenos">Administrar prediseños</Link>
     <button type="button" className={`v2-rubro-blank${selected === "minimal" ? " is-selected" : ""}`} onClick={() => onApply("minimal")}>
       <span aria-hidden="true">+</span>
       <span><b>Página en blanco</b><small>Un estilo limpio para armarla a tu gusto. Los estilos de botones están en Botones → Diseño.</small></span>
@@ -1185,7 +1157,7 @@ function ButtonDesign({ draft, buttons, backgroundImage, onZone, onFont, onApply
   );
 }
 
-function BackgroundControls({ draft, tab, onTab, onChange, onFile, onAdjust, hasImage }: { draft: LandingDraft; tab: BackgroundTab; onTab: (t: BackgroundTab) => void; onChange: (p: Partial<LandingDraft>) => void; onFile: (f?: File) => void; onAdjust: () => void; hasImage: boolean }) {
+function BackgroundControls({ draft, tab, onTab, onChange, onFile, onAdjust, hasImage, hasLogo }: { draft: LandingDraft; tab: BackgroundTab; onTab: (t: BackgroundTab) => void; onChange: (p: Partial<LandingDraft>) => void; onFile: (f?: File) => void; onAdjust: () => void; hasImage: boolean; hasLogo: boolean }) {
   const updatePos = (p: Partial<BackgroundPosition>) => onChange({ bgPosition: { ...draft.bgPosition, ...p } });
   const selectTab = (next: BackgroundTab) => { onTab(next); onChange({ background_type: next }); };
   const filterColor = draft.bgPosition.tintColor || (draft.bgPosition.lighten > 0 ? "#ffffff" : "#000000");
@@ -1201,6 +1173,15 @@ function BackgroundControls({ draft, tab, onTab, onChange, onFile, onAdjust, has
 </EditorSection>    {tab !== "image" && <EditorSection title={draft.business_type === "contact" ? "Fondo exterior" : "Paleta de colores"} tone="peach">
       <ColorField label={draft.business_type === "contact" ? "Color del fondo" : "Color principal"} value={draft.background_color || "#f7f5f0"} onChange={(background_color) => onChange({ background_color })} />
       {tab === "gradient" && <ColorField label="Segundo color" value={draft.background_gradient_to || "#a6c1ee"} onChange={(background_gradient_to) => onChange({ background_gradient_to })} />}
+    </EditorSection>}
+    {tab !== "image" && draft.business_type !== "contact" && <EditorSection title="Logo repetido de fondo" tone="green">
+      {hasLogo ? <>
+        <Choice active={draft.bgPosition.pattern > 0} title="Estampado con el logo" note="El logo se repite suave en todo el fondo, como un papel con estampado." onClick={() => updatePos({ pattern: draft.bgPosition.pattern > 0 ? 0 : .1 })} />
+        {draft.bgPosition.pattern > 0 && <>
+          <Range label="Intensidad" min={.03} max={.4} step={.01} value={draft.bgPosition.pattern} onChange={(pattern) => updatePos({ pattern })} />
+          <Range label="Tamaño" min={40} max={160} value={draft.bgPosition.patternSize} onChange={(patternSize) => updatePos({ patternSize })} />
+        </>}
+      </> : <p className="v2-help" style={{ margin: 0 }}>Subí el logo de la página para usarlo como estampado de fondo.</p>}
     </EditorSection>}
 
     {tab === "image" && <EditorSection title="Imagen y encuadre" tone="purple">
@@ -1960,6 +1941,12 @@ function ActionCatalog({ onAdd, isContact = false }: { onAdd: (type: string) => 
 
 // Horarios de lunes a domingo, con hasta dos turnos por día (por ejemplo 9 a 13 y 17 a 21). Un
 // turno que cierra antes de abrir cruza la medianoche, como en un bar de 20 a 3.
+// Foto que vino de una plantilla (ejemplo del sitio o subida en otra página): se guarda tal cual;
+// el servidor confirma que sea del sitio o del mismo usuario.
+const isTemplateImage = (url?: string | null) => /^\/(templates|marketing)\//.test(url || "") || (url || "").includes("/storage/v1/object/public/landing-assets/");
+
+const PROMO_BADGES = ["20 % OFF", "2x1", "NUEVO", "TEMPORADA", "ÚLTIMOS DÍAS", "REGALO"];
+
 function HoursEditor({ value, onChange }: { value: DayHours[]; onChange: (next: DayHours[]) => void }) {
   const setDay = (index: number, patch: Partial<DayHours>) => onChange(value.map((day, current) => current === index ? { ...day, ...patch } : day));
   const setTime = (index: number, range: number, side: 0 | 1, time: string) => setDay(index, { ranges: value[index].ranges.map((item, current) => current === range ? (side === 0 ? [time, item[1]] : [item[0], time]) as [string, string] : item) });
@@ -1988,6 +1975,13 @@ function ButtonExtras({ button, onChange }: { button: ButtonItem; onChange: (pat
   const extra = button.extra || {};
   const setExtra = (patch: Partial<ButtonExtra>) => onChange({ extra: { ...extra, ...patch } });
   const numberOrUndefined = (value: string) => value === "" ? undefined : Number(value.replace(",", "."));
+  if (button.type === "promo") return <EditorSection title="Promoción" tone="green">
+    <label>Cartelito <small>Opcional</small><input maxLength={20} placeholder="20 % OFF" value={extra.badge || ""} onChange={(event) => setExtra({ badge: event.target.value || undefined })} /></label>
+    <div className="v2-document-examples" aria-label="Cartelitos sugeridos">{PROMO_BADGES.map((badge) => <button key={badge} type="button" aria-pressed={extra.badge === badge} onClick={() => setExtra({ badge })}>{badge}</button>)}</div>
+    <label>Código de descuento <small>Opcional</small><input maxLength={24} placeholder="BIONFC20" value={extra.code || ""} onChange={(event) => setExtra({ code: event.target.value.toUpperCase().replace(/\s+/g, "") || undefined })} /></label>
+    <label>Válida hasta <small>Opcional: al día siguiente desaparece sola</small><input type="date" value={extra.until || ""} onChange={(event) => setExtra({ until: event.target.value || undefined })} /></label>
+    <p className="v2-help">El destino puede ser un número de WhatsApp (abre con el código ya escrito; en el mensaje podés usar <b>{"{codigo}"}</b>) o cualquier enlace. La foto es opcional y se sube en "Ícono".</p>
+  </EditorSection>;
   return <EditorSection title="Botón especial" tone="green">
     <Choice active={Boolean(extra.featured)} title="Botón destacado" note="Para la acción principal: más alto y en el color de la marca. Conviene uno solo por página." onClick={() => setExtra({ featured: !extra.featured || undefined })} />
     {button.type === "review" && <>
@@ -2040,9 +2034,9 @@ function ButtonControls({ button,draft,cvFileName,cvFileError,iconUploading,icon
     {button.type === "cv" ? <div className="v2-document-heading"><ActionTypeIcon type="cv" customImageUrl={button.icon_url} customImageFit={button.icon_fit} customImageScale={button.icon_scale}/><span><strong>Documento PDF</strong><small>CV, catálogo, menú, portfolio o cualquier archivo en PDF.</small></span><em>PDF</em></div> : <div className="v2-brand"><ActionTypeIcon type={button.type} icon={button.icon} customImageUrl={button.icon_url} customImageFit={button.icon_fit} customImageScale={button.icon_scale}/><span><b>{def?.label || "Enlace"}</b><small>{button.icon_url ? "Imagen propia" : button.icon ? "Ícono de la galería" : "Ícono incluido automáticamente"}</small></span></div>}
 <EditorSection title="Contenido y destino" tone="blue">    <label>{button.type === "cv" ? "Texto que verá la gente" : "Texto del botón"}<input value={button.title} placeholder={button.type === "cv" ? "Ej: Ver catálogo" : undefined} onChange={(e)=>onChange({title:e.target.value})}/></label>
     {button.type === "cv" && <div className="v2-document-examples" aria-label="Ejemplos de texto para el botón">{PDF_TITLE_OPTIONS.map((title) => <button key={title} type="button" aria-pressed={button.title === title} onClick={() => onChange({ title })}>{title}</button>)}</div>}
-    <label>Texto secundario <small>Opcional</small><input value={button.subtitle} onChange={(e)=>onChange({subtitle:e.target.value})}/></label>
-    {button.type === "cv" ? <CvSourceField context="landing" value={button.url} fileName={cvFileName} error={cvFileError} onUrlChange={(url) => onChange({ url })} onClearFile={onClearCvFile} /> : <label>{def?.input === "phone" ? "Número" : def?.input === "email" ? "Email" : def?.input === "username" ? "Usuario" : "Enlace"}<input value={button.url} placeholder={def?.placeholder} onChange={(e)=>onChange({url:e.target.value})}/></label>}
-    {def?.message && <label>Mensaje de WhatsApp<textarea rows={3} value={button.message} onChange={(e)=>onChange({message:e.target.value})}/></label>}
+    <label>{button.type === "promo" ? "Descripción" : "Texto secundario"} <small>Opcional</small><input value={button.subtitle} placeholder={button.type === "promo" ? "Ej: En tu primer turno, hasta fin de mes" : undefined} onChange={(e)=>onChange({subtitle:e.target.value})}/></label>
+    {button.type === "cv" ? <CvSourceField context="landing" value={button.url} fileName={cvFileName} error={cvFileError} onUrlChange={(url) => onChange({ url })} onClearFile={onClearCvFile} /> : <label>{button.type === "promo" ? "WhatsApp o enlace" : def?.input === "phone" ? "Número" : def?.input === "email" ? "Email" : def?.input === "username" ? "Usuario" : "Enlace"}<input value={button.url} placeholder={def?.placeholder} onChange={(e)=>onChange({url:e.target.value})}/></label>}
+    {def?.message && <label>{button.type === "promo" ? "Mensaje de WhatsApp (si el destino es un número)" : "Mensaje de WhatsApp"}<textarea rows={3} value={button.message} onChange={(e)=>onChange({message:e.target.value})}/></label>}
 </EditorSection><ButtonExtras button={button} onChange={onChange} />
 <EditorSection title="Ícono" tone="purple">    <IconPicker type={button.type} value={button.icon} customImageUrl={button.icon_url} customImageFit={button.icon_fit} customImageScale={button.icon_scale} previewStyle={iconPreviewStyle} uploading={iconUploading} error={iconUploadError} onUpload={onIconFile} onChange={(icon)=>onChange({icon,icon_url:"",icon_fit:"contain",icon_scale:1})} onRemoveCustom={() => onChange({icon_url:"",icon_fit:"contain",icon_scale:1})} onImageFitChange={(icon_fit)=>onChange({icon_fit})} onImageScaleChange={(icon_scale)=>onChange({icon_scale})}/>
     <fieldset>

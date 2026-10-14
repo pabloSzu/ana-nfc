@@ -8,7 +8,12 @@
 
 import type { ButtonExtra } from "./button-extras";
 
-export type BusinessTemplateAction = { type: string; title: string; subtitle?: string; url?: string; message?: string; icon?: string; extra?: ButtonExtra };
+export type BusinessTemplateAction = {
+  type: string; title: string; subtitle?: string; url?: string; message?: string; icon?: string; extra?: ButtonExtra;
+  // Colores e ícono propios de cada botón (los usan las plantillas propias).
+  use_auto_color?: boolean; background_color?: string; background_gradient_to?: string; text_color?: string;
+  icon_url?: string; icon_fit?: "contain" | "cover"; icon_scale?: number; icon_background_color?: string;
+};
 
 export type BusinessTemplate = {
   id: string;
@@ -1283,7 +1288,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
       "font_pair": "anton",
       "button_font": "manrope",
       "logo_url": "/templates/oficios-logo.png",
-      "cover_image_url": "/templates/oficios-portada.svg",
+      "cover_image_url": "/templates/oficios-portada.jpg",
       "cover_style": {
         "x": 50,
         "y": 30,
@@ -1512,3 +1517,66 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
     ]
   }
 ];
+
+// Prediseño: una landing marcada con template_name, que se arma y edita desde Admin → Prediseños
+// como cualquier otra página. Se lee con la misma forma que las de arriba para que el editor y el
+// alta de páginas las usen igual.
+type SavedLanding = Record<string, unknown> & TemplateRow & { actions?: Record<string, unknown>[] | null };
+export function templateFromLanding(row: SavedLanding): BusinessTemplate {
+  const text = (value: unknown) => typeof value === "string" ? value : "";
+  const json = (value: unknown) => value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+  const actions = [...(row.actions || [])]
+    .filter((action) => action.enabled !== false)
+    .sort((a, b) => Number(a.position || 0) - Number(b.position || 0))
+    .map((action) => ({
+      type: text(action.type), title: text(action.title), subtitle: text(action.subtitle), url: text(action.url), message: text(action.message), icon: text(action.icon),
+      extra: json(action.extra), use_auto_color: action.use_auto_color !== false, background_color: text(action.background_color), background_gradient_to: text(action.background_gradient_to),
+      text_color: text(action.text_color), icon_url: text(action.icon_url), icon_fit: action.icon_fit === "cover" ? "cover" as const : "contain" as const, icon_scale: Number(action.icon_scale) || 1, icon_background_color: text(action.icon_background_color),
+    }));
+  return {
+    id: `mine-${row.id}`,
+    name: text(row.template_name) || text(row.business_name),
+    note: text(row.business_name),
+    landing: {
+      business_name: text(row.business_name), description: text(row.description), primary_color: text(row.primary_color),
+      background_type: text(row.background_type) || "color", background_color: text(row.background_color), background_gradient_to: text(row.background_gradient_to),
+      background_image_url: text(row.background_image_url) || undefined, background_style: json(row.background_style),
+      font_pair: text(row.font_pair), button_font: text(row.button_font), logo_url: text(row.logo_url) || undefined, cover_image_url: text(row.cover_image_url) || undefined,
+      cover_style: json(row.cover_style), title_style: json(row.title_style), subtitle_style: json(row.subtitle_style), logo_style: json(row.logo_style), button_style: json(row.button_style),
+    },
+    actions,
+  };
+}
+
+// Prediseños de un usuario. Mientras no tenga ninguno propio se ofrecen los de BIONFC de arriba
+// (desde Admin → Prediseños se traen a su cuenta para poder editarlos); en cuanto tiene alguno se
+// usan solo los suyos, en su orden y sin los ocultos.
+export type TemplateRow = { id: string; template_name?: string | null; template_hidden?: boolean | null; template_order?: number | null };
+
+export function sortTemplateRows<T extends TemplateRow>(rows: T[]): T[] {
+  return rows.filter((row) => row.template_name).sort((a, b) => Number(a.template_order || 0) - Number(b.template_order || 0) || String(a.template_name).localeCompare(String(b.template_name), "es"));
+}
+
+export function usesBuiltinTemplates(rows: TemplateRow[]): boolean {
+  return !rows.some((row) => row.template_name);
+}
+
+export function templateChoices(rows: TemplateRow[]): { id: string; name: string }[] {
+  if (usesBuiltinTemplates(rows)) return BUSINESS_TEMPLATES.map((template) => ({ id: template.id, name: `${template.name} · ${template.note}` }));
+  return sortTemplateRows(rows).filter((row) => !row.template_hidden).map((row) => ({ id: `mine-${row.id}`, name: String(row.template_name) }));
+}
+
+export function editorTemplates(rows: SavedLanding[]): BusinessTemplate[] {
+  if (usesBuiltinTemplates(rows)) return BUSINESS_TEMPLATES;
+  return sortTemplateRows(rows).filter((row) => !row.template_hidden).map(templateFromLanding);
+}
+
+// Botones de una landing nueva copiada de un prediseño.
+export function templateActionRows(template: BusinessTemplate, landingId: string) {
+  return template.actions.map((action, position) => ({
+    landing_id: landingId, type: action.type, title: action.title, subtitle: action.subtitle || "", url: action.url || "",
+    message: action.message || "", icon: action.icon || "", extra: action.extra || {}, position, enabled: true,
+    icon_url: action.icon_url || "", icon_fit: action.icon_fit === "cover" ? "cover" : "contain", icon_scale: action.icon_scale || 1, icon_background_color: action.icon_background_color || "",
+    use_auto_color: action.use_auto_color !== false, background_color: action.background_color || "#1f2937", background_gradient_to: action.background_gradient_to || "", text_color: action.text_color || "#ffffff",
+  }));
+}

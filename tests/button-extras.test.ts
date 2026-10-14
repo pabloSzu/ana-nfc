@@ -90,3 +90,30 @@ describe("formatos", () => {
     assert.equal(formatReviews(1280), "1.280 reseñas");
   });
 });
+
+describe("promociones", () => {
+  test("parseButtonExtra limpia el cartel, el código y la fecha", async () => {
+    const { parseButtonExtra } = await import("../lib/button-extras.ts");
+    assert.deepEqual(parseButtonExtra({ badge: " 20 % OFF ", code: " bionfc 20 ", until: "2026-10-31" }), { badge: "20 % OFF", code: "BIONFC20", until: "2026-10-31" });
+    assert.deepEqual(parseButtonExtra({ until: "31/10/2026" }), {});
+    assert.deepEqual(parseButtonExtra({ until: "2026-02-31x" }), {});
+  });
+
+  test("vence al terminar su último día, en hora de Argentina", async () => {
+    const { promoExpired, promoValidity } = await import("../lib/button-extras.ts");
+    const extra = { until: "2026-10-31" };
+    assert.equal(promoExpired(extra, at("2026-10-31T23:30:00")), false);
+    assert.equal(promoExpired(extra, at("2026-11-01T00:10:00")), true);
+    assert.equal(promoExpired({}, at("2030-01-01T00:00:00")), false, "sin fecha no vence");
+    assert.equal(promoValidity(extra, at("2026-10-20T10:00:00")), "Válida hasta el 31/10");
+    assert.equal(promoValidity(extra, at("2026-10-31T10:00:00")), "¡Último día!");
+  });
+
+  test("un número abre WhatsApp con el código; un link queda igual", async () => {
+    const { promoHref } = await import("../lib/button-extras.ts");
+    assert.equal(promoHref("+54 9 351 123-4567", "", { code: "PROMO10" }), `https://wa.me/5493511234567?text=${encodeURIComponent("Hola! Quiero aprovechar la promo con el código PROMO10.")}`);
+    assert.equal(promoHref("5493511234567", "Quiero el {codigo} para mi turno", { code: "X1" }), `https://wa.me/5493511234567?text=${encodeURIComponent("Quiero el X1 para mi turno")}`);
+    assert.equal(promoHref("https://tienda.com/otono", "", {}), "https://tienda.com/otono");
+    assert.equal(promoHref("", "", {}), "");
+  });
+});

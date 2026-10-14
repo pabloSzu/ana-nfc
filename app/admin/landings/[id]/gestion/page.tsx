@@ -13,6 +13,8 @@ export default async function Gestion({ params }: { params: Promise<{ id: string
   if (!userId) redirect("/admin/login");
   const { data: row } = await supabase.from("landings").select("*, actions(type,url,enabled,position)").eq("id", id).eq("owner_id", userId).maybeSingle();
   if (!row) notFound();
+  // Un prediseño no tiene plan ni cliente: se maneja desde su propio panel.
+  if (row.template_name) redirect("/admin/predisenos");
   const landing = withAutoFallback(row);
   const { data: client } = landing.client_id
     ? await supabase.from("clients").select("id,name,phone,notes").eq("id", landing.client_id).eq("owner_id", userId).maybeSingle()

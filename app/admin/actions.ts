@@ -1,6 +1,6 @@
 "use server";import {createClient} from "@/lib/supabase/server";import {redirect} from "next/navigation";import {revalidatePath} from "next/cache";
 import { businessProfiles, isPlausiblePhone } from "@/lib/landing-catalog";
-import { BUSINESS_TEMPLATES } from "@/lib/business-templates";
+import { BUSINESS_TEMPLATES, sortTemplateRows, templateActionRows, templateFromLanding, type BusinessTemplate } from "@/lib/business-templates";
 import { manualRedirectUpdate, managementUpdate, normalizeLink, parsePlan, publishUpdate, renewalUpdate, type UpdateResult } from "@/lib/landing-plan";
 const slugify=(v:string)=>v.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"").slice(0,60);
 const emailPattern=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -44,7 +44,14 @@ export async function newLanding(fd: FormData) {
   if (clientError) onError(clientError.message);
   if (clientId && !client) onError("Cliente inexistente o sin permisos");
   const isContact = businessType === "contact";
-  const rubroTemplate = !isContact && !isDirect ? BUSINESS_TEMPLATES.find((template) => template.id === fd.get("rubro_template")) : undefined;
+  // Prediseño elegido al crear: uno propio ("mine-<id>", ver Prediseños más abajo) o, si todavía
+  // no tiene ninguno, uno de BIONFC.
+  const requestedTemplate = String(fd.get("rubro_template") || "");
+  let rubroTemplate = !isContact && !isDirect ? BUSINESS_TEMPLATES.find((template) => template.id === requestedTemplate) : undefined;
+  if (!isContact && !isDirect && requestedTemplate.startsWith("mine-")) {
+    const { data: own } = await s.from("landings").select("*, actions(*)").eq("id", requestedTemplate.slice(5)).eq("owner_id", user.id).not("template_name", "is", null).maybeSingle();
+    if (own) rubroTemplate = templateFromLanding(own);
+  }
   const { data, error } = await s.from("landings").insert({
     owner_id: user.id, client_id: clientId, request_key: requestKey, business_name: businessName, slug,
     template: String(fd.get("template") || "professional"), business_type: businessType,
@@ -65,10 +72,7 @@ export async function newLanding(fd: FormData) {
   const landingId = data?.id;
   if (!landingId) onError("No se pudo crear la landing");
   if (rubroTemplate) {
-    const { error: actionsError } = await s.from("actions").insert(rubroTemplate.actions.map((action, position) => ({
-      landing_id: landingId, type: action.type, title: action.title, subtitle: action.subtitle || "", url: action.url || "",
-      message: action.message || "", icon: action.icon || "", extra: action.extra || {}, position, enabled: true,
-    })));
+    const { error: actionsError } = await s.from("actions").insert(templateActionRows(rubroTemplate, landingId));
     if (actionsError) onError(actionsError.message);
   }
   revalidatePath("/admin");
@@ -83,9 +87,10 @@ export async function publish(fd: FormData) {
   const returnTo = String(fd.get("return_to") || "/admin");
   const target = returnTo.startsWith("/admin") ? returnTo : "/admin";
   const desired = String(fd.get("published")) === "true";
-  const { data: landing, error: lookupError } = await s.from("landings").select("id,slug,business_type,plan,expires_at").eq("id", id).eq("owner_id", user.id).maybeSingle();
+  const { data: landing, error: lookupError } = await s.from("landings").select("id,slug,business_type,plan,expires_at,template_name").eq("id", id).eq("owner_id", user.id).maybeSingle();
   if (lookupError) redirect(target + "?error=" + encodeURIComponent(lookupError.message));
   if (!landing) redirect(target + "?error=Página inexistente o sin permisos");
+  if (desired && landing.template_name) redirect(target + "?error=" + encodeURIComponent("Un prediseño no se publica: creá una página desde él."));
   if (desired && landing.business_type === "contact") {
     const { data: actions, error: actionsError } = await s.from("actions").select("type,url").eq("landing_id", id).eq("enabled", true).in("type", ["phone", "email", "whatsapp"]);
     if (actionsError) redirect(target + "?error=" + encodeURIComponent(actionsError.message));
@@ -180,4 +185,125 @@ export async function renewLanding(fd: FormData) {
 
 export async function setLandingRedirect(fd: FormData) {
   return applyManagement(fd, (landing) => manualRedirectUpdate(landing, fd.get("clear") !== "true"));
+}
+
+// --- Prediseños ---------------------------------------------------------------------------------
+// Un prediseño es una landing propia con template_name: no tiene cliente, nunca se publica y no
+// aparece en Páginas. Se edita en el editor de siempre y se maneja en /admin/predisenos. Elegirlo
+// (al crear una página o desde el editor) copia la página entera. Siempre son copias: guardar una
+// página de un cliente como prediseño no la saca de su lugar.
+const TEMPLATES_PATH = "/admin/predisenos";
+const templateName = (value: unknown) => String(value || "").trim().slice(0, 40);
+
+async function insertTemplate(s: Awaited<ReturnType<typeof createClient>>, ownerId: string, template: BusinessTemplate | null, name: string, order: number) {
+  const { data, error } = await s.from("landings").insert({
+    owner_id: ownerId, client_id: null, business_type: "custom", template: "professional", plan: "lifetime", published: false,
+    slug: "prediseno-" + crypto.randomUUID().slice(0, 8), business_name: template?.landing.business_name || name,
+    ...(template ? template.landing : {}), template_name: name, template_order: order, template_hidden: false,
+  }).select("id").single();
+  if (error || !data) return { error: error?.message || "No se pudo crear el prediseño" };
+  if (template?.actions.length) {
+    const { error: actionsError } = await s.from("actions").insert(templateActionRows(template, data.id));
+    if (actionsError) return { error: actionsError.message };
+  }
+  return { id: data.id as string };
+}
+
+async function nextTemplateOrder(s: Awaited<ReturnType<typeof createClient>>, ownerId: string) {
+  const { data } = await s.from("landings").select("template_order").eq("owner_id", ownerId).not("template_name", "is", null).order("template_order", { ascending: false }).limit(1);
+  return Number(data?.[0]?.template_order ?? -1) + 1;
+}
+
+function refreshTemplates() {
+  revalidatePath(TEMPLATES_PATH);
+  revalidatePath("/admin");
+  revalidatePath("/admin/paginas");
+}
+
+export async function createTemplate(fd: FormData) {
+  const { s, user } = await auth();
+  const name = templateName(fd.get("template_name"));
+  if (!name) redirect(TEMPLATES_PATH + "?error=" + encodeURIComponent("Ponele un nombre al prediseño."));
+  const result = await insertTemplate(s, user.id, null, name, await nextTemplateOrder(s, user.id));
+  if ("error" in result) redirect(TEMPLATES_PATH + "?error=" + encodeURIComponent(String(result.error)));
+  refreshTemplates();
+  redirect("/admin/landings/" + result.id + "/editor-v2?saved=" + encodeURIComponent("Prediseño creado: armalo como cualquier página"));
+}
+
+// Trae los prediseños de BIONFC (lib/business-templates.ts) a la cuenta, para poder editarlos,
+// ocultarlos u ordenarlos. Los que ya están (mismo nombre) no se duplican.
+export async function importBuiltinTemplates() {
+  const { s, user } = await auth();
+  const { data: existing, error } = await s.from("landings").select("template_name").eq("owner_id", user.id).not("template_name", "is", null);
+  if (error) redirect(TEMPLATES_PATH + "?error=" + encodeURIComponent(error.message));
+  const taken = new Set((existing || []).map((row) => row.template_name));
+  let order = await nextTemplateOrder(s, user.id);
+  let added = 0;
+  for (const template of BUSINESS_TEMPLATES) {
+    if (taken.has(template.name)) continue;
+    const result = await insertTemplate(s, user.id, template, template.name, order++);
+    if ("error" in result) redirect(TEMPLATES_PATH + "?error=" + encodeURIComponent(String(result.error)));
+    added++;
+  }
+  refreshTemplates();
+  redirect(TEMPLATES_PATH + "?saved=" + encodeURIComponent(added ? `Listo: ${added} prediseños de BIONFC en tu cuenta` : "Ya los tenías todos"));
+}
+
+// Copia una página (un prediseño, o la landing de un cliente desde Gestión) como prediseño nuevo.
+export async function copyAsTemplate(fd: FormData) {
+  const { s, user } = await auth();
+  const id = String(fd.get("id") || "");
+  const requestedReturnTo = String(fd.get("return_to") || TEMPLATES_PATH);
+  const returnTo = requestedReturnTo.startsWith("/admin") ? requestedReturnTo : TEMPLATES_PATH;
+  const fail = (message: string): never => redirect(returnTo + "?error=" + encodeURIComponent(message));
+  const { data: source, error } = await s.from("landings").select("*, actions(*)").eq("id", id).eq("owner_id", user.id).eq("business_type", "custom").maybeSingle();
+  if (error) fail(error.message);
+  if (!source) fail("Página inexistente o sin permisos");
+  const name = templateName(fd.get("template_name")) || templateName(`${source.template_name || source.business_name} (copia)`);
+  const result = await insertTemplate(s, user.id, templateFromLanding(source), name, await nextTemplateOrder(s, user.id));
+  if ("error" in result) fail(String(result.error));
+  refreshTemplates();
+  redirect(returnTo + "?saved=" + encodeURIComponent(`Prediseño "${name}" creado`));
+}
+
+export async function updateTemplate(fd: FormData) {
+  const { s, user } = await auth();
+  const id = String(fd.get("id") || "");
+  const op = String(fd.get("op") || "");
+  const fail = (message: string): never => redirect(TEMPLATES_PATH + "?error=" + encodeURIComponent(message));
+  const { data: rows, error } = await s.from("landings").select("id,template_name,template_order,template_hidden").eq("owner_id", user.id).not("template_name", "is", null);
+  if (error) fail(error.message);
+  const sorted = sortTemplateRows(rows || []);
+  const index = sorted.findIndex((row) => row.id === id);
+  if (index < 0) fail("Prediseño inexistente o sin permisos");
+  const update = (patch: Record<string, unknown>, rowId = id) => s.from("landings").update(patch).eq("id", rowId).eq("owner_id", user.id);
+  let message = "";
+  let updateError: { message: string } | null = null;
+  if (op === "rename") {
+    const name = templateName(fd.get("template_name"));
+    if (!name) fail("Ponele un nombre al prediseño.");
+    updateError = (await update({ template_name: name })).error;
+    message = "Nombre actualizado";
+  } else if (op === "hide" || op === "show") {
+    updateError = (await update({ template_hidden: op === "hide" })).error;
+    message = op === "hide" ? "Prediseño oculto: ya no se ofrece al crear páginas" : "Prediseño visible otra vez";
+  } else if (op === "up" || op === "down") {
+    const other = index + (op === "up" ? -1 : 1);
+    if (other >= 0 && other < sorted.length) {
+      [sorted[index], sorted[other]] = [sorted[other], sorted[index]];
+      for (const [position, row] of sorted.entries()) {
+        if (row.template_order === position) continue;
+        const { error: orderError } = await update({ template_order: position }, row.id);
+        if (orderError) fail(orderError.message);
+      }
+    }
+    message = "Orden actualizado";
+  } else if (op === "delete") {
+    const { error: deleteError } = await s.from("landings").delete().eq("id", id).eq("owner_id", user.id).not("template_name", "is", null);
+    if (deleteError) fail(deleteError.message);
+    message = "Prediseño eliminado";
+  } else fail("Acción desconocida");
+  if (updateError) fail(updateError.message);
+  refreshTemplates();
+  redirect(TEMPLATES_PATH + "?saved=" + encodeURIComponent(message));
 }

@@ -368,3 +368,13 @@
    position:relative instead, that same `left:50%` shifted it sideways from its normal flow
    position rather than centering it, which is what broke "Vista limpia". */
 .v2-stage > .theme-scene { position: absolute; }
+
+/* Prediseños se elige mirando las miniaturas contra el celular: en pantallas anchas el panel va
+   a la IZQUIERDA y el celular corre a la derecha (donde suele estar el panel), con el mismo
+   espacio de ~40px entre los dos. En pantallas más chicas queda como los demás paneles. */
+@media (min-width: 1241px) {
+  .v2-workspace.is-templates .v2-stage { padding-left: calc(50vw - 120px); }
+  .v2-workspace.is-templates .v2-stage-toolbar { left: calc(50vw + 75px); }
+  .v2-workspace.is-templates .v2-panel { left: max(22px, calc(50vw - 600px)); width: 440px; }
+  .v2-workspace.is-templates .v2-panel::before { display: none; }
+}

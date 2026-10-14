@@ -8,7 +8,8 @@ import {
 } from "@/lib/landing-catalog";
 import { getFontFamily, resolveFontWeight, resolveTextFont, FontLinks, LogoInitials } from "@/lib/fonts";
 import { buttonCollectionStyle, buttonCollectionWidth, buttonIconStyle, instagramAssetMode, resolveButtonColors, shouldUseBrandMark, youtubeMarkSurfaceColor } from "@/lib/design-presets";
-import { DEFAULT_STATUS, formatRating, formatReviews, openStatus, parseButtonExtra, type ButtonExtra } from "@/lib/button-extras";
+import { DEFAULT_STATUS, formatRating, formatReviews, openStatus, parseButtonExtra, promoExpired, promoHref, promoValidity, type ButtonExtra } from "@/lib/button-extras";
+import PromoCode from "@/components/promo-code";
 import { ActionTypeIcon, hasCustomActionIcon } from "@/components/action-icons";
 import { IconEdit, IconImage } from "@/components/icons";
 import { landingImageUrl } from "@/lib/landing-image";
@@ -175,6 +176,9 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
   const isContact = landing.business_type === "contact";
   const primary = landing.primary_color || "#1f2937";
   const title = parseTitleStyle(landing);
+  // Logo repetido de fondo (como un papel con estampado), apenas inclinado y transparente.
+  const patternStyle = parseBackgroundPosition(landing.background_style);
+  const logoPattern = patternStyle.pattern > 0 && landing.logo_url ? <div className="public-logo-pattern" aria-hidden="true" style={{ opacity: patternStyle.pattern, backgroundImage: `url(${JSON.stringify(landingImageUrl(landing.logo_url, 384))})`, backgroundSize: `${patternStyle.patternSize}px`, "--pattern-gap": `${Math.round(patternStyle.patternSize * 0.5)}px` } as CSSProperties} /> : null;
   const subtitle = parseSubtitleStyle(landing);
   const logo = parseLogoStyle(landing.logo_style);
   const cover = parseCoverStyle(landing.cover_style);
@@ -332,12 +336,12 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
   return (
     <main className={`public${isContact ? ` is-contact contact-theme-${contactTheme} contact-density-${zone.contactDensity || "balanced"} contact-presentation-${contactActionStyle}${zone.contactSurfaceColor ? " contact-custom-surface" : ""}${zone.contactCoverColor ? " contact-custom-cover" : ""}` : ""}${isDocument ? " contact-layout-document" : ""}${zone.showBranding !== false ? " has-branding" : ""}${landing.background_type === "image" && landing.background_image_url ? " public-bg-image" : ""}`} style={{ position: "relative", overflow: "clip", background: externalPhotoBackground && landing.background_type === "image" ? "transparent" : landing.background_color || "#f7f5f0", paddingTop: isContact ? 24 : distribution.top, "--landing-top": `${distribution.top}px`, "--landing-logo-gap": `${distribution.logoGap}px`, "--contact-avatar-size": `${avatarSize}px`, "--contact-cover-height": `${CONTACT_COVER_HEIGHT[cover.size]}px`, "--contact-accent": primary, "--contact-ink": contactInk, "--contact-surface": contactSurface, "--contact-cover-color": zone.contactCoverColor || primary, "--contact-role-color": title.eyebrowColor || title.color, "--contact-company-color": subtitle.color } as CSSProperties}>
       <FontLinks ids={fontIds} />
-      {landing.background_type === "image" ? !externalPhotoBackground && <div className="public-bg-layer public-photo-track" aria-hidden="true"><LandingPhotoBackground landing={landing} /></div> : <><div className="public-bg-layer" style={{ position: "absolute", inset: 0, zIndex: 0, ...bgLayerStyle }} /><div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none", backgroundImage: `linear-gradient(180deg, rgba(4,8,10,${(bgTint * 0.55).toFixed(3)}), rgba(5,8,11,${bgTint}))` }} /></>}
+      {landing.background_type === "image" ? !externalPhotoBackground && <div className="public-bg-layer public-photo-track" aria-hidden="true"><LandingPhotoBackground landing={landing} /></div> : <><div className="public-bg-layer" style={{ position: "absolute", inset: 0, zIndex: 0, ...bgLayerStyle }} /><div style={{ position: "absolute", inset: 0, zIndex: 1, pointerEvents: "none", backgroundImage: `linear-gradient(180deg, rgba(4,8,10,${(bgTint * 0.55).toFixed(3)}), rgba(5,8,11,${bgTint}))` }} />{logoPattern}</>}
       {edit && (
         <>
           <button type="button" className="editor-bg-hit" onClick={edit.onSelectBackground} aria-label="Editar fondo" />
           <div className="editor-quick-tools">
-            {!isContact && <button type="button" className={edit.selected === "templates" ? "active" : ""} onClick={edit.onSelectTemplates}>✦ Plantillas</button>}
+            {!isContact && <button type="button" className={edit.selected === "templates" ? "active" : ""} onClick={edit.onSelectTemplates}>✦ Prediseños</button>}
             {isContact && <button type="button" className={edit.selected === "contact-design" || edit.selected === "templates" || edit.selected === "distribution" || edit.selected === "background" ? "active" : ""} onClick={edit.onSelectContactDesign}><FiSliders aria-hidden="true" /> Diseño</button>}
             {isContact && <button type="button" className={edit.selected === "cover" ? "active" : ""} onClick={edit.onSelectCover}><IconImage /> Portada</button>}
             {isContact && <button type="button" className={edit.selected === "contact" || edit.selected === "contact-name" || edit.selected === "contact-role" || edit.selected === "contact-company" ? "active" : ""} onClick={edit.onSelectContact}><FiUser aria-hidden="true" /> Datos</button>}
@@ -408,6 +412,38 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
         <div className={`public-actions${edit?.selected === "buttons" ? " editor-zone-selected" : ""}`} style={{ position: "relative", marginTop: isContact ? contactLinksMargin : edit ? Math.max(distribution.buttonsGap, 44) : distribution.buttonsGap, display: "flex", flexDirection: "column", gap: isContact ? 10 : zone.gap }}>
           {edit && !isContact ? <button type="button" className="editor-zone-tag" onClick={edit.onSelectZone}>✦ Editar todos los botones</button> : null}
           {contentActions.map((action, index) => {
+            // Promoción: una tarjeta propia (cartelito, foto, código y vencimiento) en lugar de un
+            // botón. Vencida, desaparece de la página pública; en el editor se ve marcada.
+            if (action.type === "promo" && !isContact) {
+              const promo = parseButtonExtra(action.extra);
+              const expired = promoExpired(promo);
+              if (expired && !edit) return null;
+              const href = promoHref(action.url, action.message, promo) || undefined;
+              const isWhatsApp = Boolean(href?.startsWith("https://wa.me/"));
+              const validity = expired ? "Vencida: no se muestra en la página" : promoValidity(promo);
+              const isSelectedPromo = Boolean(edit && typeof edit.selected === "object" && edit.selected?.buttonId === action.id);
+              return (
+                <div key={action.id} ref={edit && !isSampleButtons ? (el) => edit.onButtonRef(action.id, el) : undefined} className={`landing-action-row${edit ? " editor-action-row" : ""}${edit?.draggingId === action.id ? " is-dragging" : ""}`} style={{ position: "relative", width: "100%", margin: "0 auto" }}>
+                  <div
+                    data-button-id={edit ? action.id : undefined}
+                    className={`promo-card${edit ? " editor-hit" : ""}${isSelectedPromo ? " is-selected" : ""}${expired ? " is-expired" : ""}`}
+                    onClick={edit ? () => edit.onSelectButton(action.id) : undefined}
+                    style={{ "--promo-accent": primary, "--promo-accent-ink": contrastTextColor(primary), "--promo-ink": title.color, borderRadius: Math.max(14, zone.radius), fontFamily: buttonFont } as CSSProperties}
+                  >
+                    {action.icon_url && <div className="promo-photo" style={{ backgroundImage: `url(${JSON.stringify(landingImageUrl(action.icon_url, 1080))})` }} />}
+                    <div className="promo-body">
+                      {(promo.badge || validity) && <div className="promo-top">{promo.badge && <span className="promo-badge">{promo.badge}</span>}{validity && <span className="promo-until" suppressHydrationWarning>{validity}</span>}</div>}
+                      <strong className="promo-title">{action.title}</strong>
+                      {action.subtitle && <p className="promo-text">{action.subtitle}</p>}
+                      {promo.code && <PromoCode code={promo.code} disabled={Boolean(edit)} />}
+                      {href && <a className="promo-cta" href={edit ? undefined : href} target={isWhatsApp ? undefined : "_blank"} rel="noreferrer">{isWhatsApp ? "Pedila por WhatsApp" : "Aprovechar la promo"} <FiArrowUpRight aria-hidden="true" /></a>}
+                    </div>
+                    {edit && !isSampleButtons && <span className="editor-drag" title="Arrastrar para cambiar el orden" aria-label="Mover" onClick={(event) => event.stopPropagation()} onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); edit.onDragStart(event.clientY, action.id); }}>⠿</span>}
+                  </div>
+                  {edit && !isSampleButtons && <button type="button" className="editor-delete-action" aria-label={`Eliminar promoción: ${action.title}`} title={`Eliminar ${action.title}`} disabled={Boolean(edit.draggingId)} onClick={() => edit.onDeleteButton(action.id)}><FiTrash2 aria-hidden="true" /></button>}
+                </div>
+              );
+            }
             const { background: bg, text, isAuthentic, useNetworkAccent } = resolveButtonColors({
               zone, type: action.type, position: index, primary,
               customColor: action.background_color, useAutoColor: action.use_auto_color,

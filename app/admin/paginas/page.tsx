@@ -10,6 +10,7 @@ import { AdminThemeBackdrop } from "@/components/admin-theme";
 import { IconFileText, IconPlus, IconUsers } from "@/components/icons";
 import { effectiveRedirect, planOf, planStatus } from "@/lib/landing-plan";
 import { withAutoFallback } from "@/lib/landing-fallback";
+import { templateChoices } from "@/lib/business-templates";
 import PagesList, { type PageKind, type PageRow, type PageView } from "./pages-list";
 
 type SearchParams = Promise<{ q?: string | string[]; type?: string | string[]; view?: string | string[]; renewal?: string | string[] }>;
@@ -27,11 +28,13 @@ export default async function PagesPage({ searchParams }: { searchParams: Search
   const userId = String(authData?.claims?.sub || "");
   if (!userId) redirect("/admin/login");
 
-  const [{ data: clients }, { data: pages }, { data: viewCounts, error: viewCountsError }] = await Promise.all([
+  const [{ data: clients }, { data: allPages }, { data: viewCounts, error: viewCountsError }] = await Promise.all([
     supabase.from("clients").select("id,name").eq("owner_id", userId).order("name"),
     supabase.from("landings").select("*, actions(type,url,enabled,position)").eq("owner_id", userId).order("created_at", { ascending: false }),
     supabase.from("landing_view_counts").select("landing_id,total,last_30_days"),
   ]);
+  // Los prediseños viven en su propio panel (/admin/predisenos), no en esta lista.
+  const pages = (allPages || []).filter((page) => !page.template_name);
   if (viewCountsError) console.error("No se pudieron cargar las estadísticas de visitas", { code: viewCountsError.code, message: viewCountsError.message });
   const clientsById = new Map((clients || []).map((client) => [client.id, client]));
   const viewsById = new Map<string, ViewCount>((viewCounts || []).map((row) => [String(row.landing_id), row as ViewCount]));
@@ -72,7 +75,7 @@ export default async function PagesPage({ searchParams }: { searchParams: Search
     <Suspense fallback={null}><Toast /></Suspense>
     <header className="library-page-header">
       <div><p className="eyebrow">Experiencias digitales</p><h1>Páginas</h1><p className="muted">Landings, tarjetas personales y links directos de todos tus clientes.</p></div>
-      <div className="library-page-actions">{clients?.length ? <><ModalTrigger label="Nueva landing" icon={<IconPlus />} title="Nueva landing" description="Elegí el cliente al que pertenece."><LandingCreationForm clients={clients} action={newLanding} kind="custom" returnTo={returnTo} /></ModalTrigger><ModalTrigger label="Nueva tarjeta" icon={<IconPlus />} title="Nueva tarjeta personal" description="Elegí el cliente al que pertenece." variant="secondary"><LandingCreationForm clients={clients} action={newLanding} kind="contact" returnTo={returnTo} /></ModalTrigger><ModalTrigger label="Nuevo link directo" icon={<IconPlus />} title="Nuevo link directo" description="El producto abre un solo link. Queda publicado y vas directo a grabar el NFC." variant="secondary"><LandingCreationForm clients={clients} action={newLanding} kind="direct" returnTo={returnTo} /></ModalTrigger></> : <Link className="btn" href="/admin/clientes"><IconUsers /> Primero creá un cliente</Link>}</div>
+      <div className="library-page-actions">{clients?.length ? <><ModalTrigger label="Nueva landing" icon={<IconPlus />} title="Nueva landing" description="Elegí el cliente al que pertenece."><LandingCreationForm clients={clients} action={newLanding} kind="custom" returnTo={returnTo} templates={templateChoices(allPages || [])} /></ModalTrigger><ModalTrigger label="Nueva tarjeta" icon={<IconPlus />} title="Nueva tarjeta personal" description="Elegí el cliente al que pertenece." variant="secondary"><LandingCreationForm clients={clients} action={newLanding} kind="contact" returnTo={returnTo} /></ModalTrigger><ModalTrigger label="Nuevo link directo" icon={<IconPlus />} title="Nuevo link directo" description="El producto abre un solo link. Queda publicado y vas directo a grabar el NFC." variant="secondary"><LandingCreationForm clients={clients} action={newLanding} kind="direct" returnTo={returnTo} /></ModalTrigger></> : <Link className="btn" href="/admin/clientes"><IconUsers /> Primero creá un cliente</Link>}</div>
     </header>
 
     {viewCountsError && <aside className="admin-assignment-warning"><IconFileText /><p><strong>No se pudieron cargar las visitas.</strong><span>Las páginas siguen funcionando, pero las estadísticas no están disponibles en este momento.</span></p></aside>}
