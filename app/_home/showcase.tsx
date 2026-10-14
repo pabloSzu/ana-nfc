@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import Image from "next/image";
 import { FiArrowLeft, FiArrowRight, FiArrowUpRight, FiCalendar, FiCoffee, FiGrid, FiMapPin, FiScissors } from "react-icons/fi";
 import { FaInstagram, FaWhatsapp } from "react-icons/fa6";
@@ -25,17 +25,6 @@ const DIRECT_LINK_EXAMPLES = [
   { kind: "direct", id: "reviews", category: "Reseñas de Google", name: "Café Jacarandá", style: "Reseñas + confianza", detail: "Llevá a tus clientes directo a calificarte y convertí una buena experiencia en reputación para tu negocio." },
   { kind: "direct", id: "instagram", category: "Instagram", name: "Línea Negra Tattoo", style: "Instagram + comunidad", detail: "Abrí tu perfil social con un toque para mostrar trabajos, novedades y todo lo que pasa en tu marca." },
   { kind: "direct", id: "website", category: "Sitio web", name: "Clara Méndez", style: "Web + portfolio", detail: "Conectá directamente con tu web, portfolio, tienda o cualquier página que ya tengas online." },
-] as const;
-
-const SHOWCASE_IMAGE_PRELOADS = [
-  { src: "/marketing/showcase/coffee.jpg", sizes: "(max-width: 600px) 280px, 340px" },
-  { src: "/marketing/showcase/interior.jpg", sizes: "(max-width: 600px) 280px, 340px" },
-  { src: "/marketing/showcase/contact-executive.webp", sizes: "90px" },
-  { src: "/marketing/showcase/contact-editorial.webp", sizes: "280px" },
-  { src: "/marketing/showcase/contact-editorial.webp", sizes: "90px" },
-  { src: "/marketing/showcase/direct-reviews-cafe.webp", sizes: "(max-width: 600px) 244px, 266px" },
-  { src: "/marketing/showcase/direct-instagram-tattoo.webp", sizes: "90px" },
-  { src: "/marketing/showcase/direct-portfolio-designer.webp", sizes: "(max-width: 600px) 244px, 266px" },
 ] as const;
 
 type LandingExample = typeof LANDING_EXAMPLES[number];
@@ -64,78 +53,140 @@ function Preview({ example }: { example: LandingExample }) {
   );
 }
 
+type Kind = "landing" | "contact" | "direct";
+
+const SLIDES = [...LANDING_EXAMPLES, ...CONTACT_EXAMPLES, ...DIRECT_LINK_EXAMPLES];
+
+const GROUPS: { kind: Kind; label: string; note: string }[] = [
+  { kind: "landing", label: "Landings", note: "Para tu negocio" },
+  { kind: "contact", label: "Tarjetas personales", note: "Para vos o tu equipo" },
+  { kind: "direct", label: "Links directos", note: "Reseñas, Instagram o tu web" },
+];
+
+const TAG: Record<Kind, string> = { landing: "Página BIONFC", contact: "Tarjeta BIONFC", direct: "Link directo" };
+
+// Para el loop infinito la lista se dibuja tres veces seguidas y se navega siempre por la copia
+// del medio: cuando el carrusel se detiene sobre la primera o la tercera copia, salta en silencio
+// al mismo diseño de la copia del medio. Como los celulares son idénticos, el salto no se ve.
+const COPIES = 3;
+const TOTAL = SLIDES.length;
+const LOOPED = Array.from({ length: COPIES }, (_, copy) => SLIDES.map((example) => ({ example, copy }))).flat();
+
+function offsetFor(track: HTMLDivElement, index: number) {
+  const slide = track.children[index] as HTMLElement | undefined;
+  return slide ? slide.offsetLeft - (track.clientWidth - slide.offsetWidth) / 2 : track.scrollLeft;
+}
+
+// Carrusel a todo el ancho con todos los ejemplos juntos: landings, tarjetas personales y links
+// directos. Es un scroll horizontal nativo con imán (scroll-snap), así que en el celular se desliza
+// con el dedo como cualquier galería; en la computadora se usan las flechas, los botones de
+// arriba o se toca el celular que se quiere ver. Avanza solo mientras está en pantalla, se pausa
+// con el mouse encima y deja de avanzar para siempre en cuanto la persona lo toca.
 export function StyleShowcase({ waUrl }: { waUrl: string }) {
-  const [category, setCategory] = useState<"landing" | "contact" | "direct">("landing");
-  const [active, setActive] = useState(0);
-  const [shouldPreloadImages, setShouldPreloadImages] = useState(false);
-  const showcaseRef = useRef<HTMLDivElement>(null);
-  const pointerStart = useRef<{ x: number; y: number } | null>(null);
-  const examples = category === "landing" ? LANDING_EXAMPLES : category === "contact" ? CONTACT_EXAMPLES : DIRECT_LINK_EXAMPLES;
-  const selected = examples[active];
-  const changeCategory = (next: "landing" | "contact" | "direct") => { setCategory(next); setActive(0); };
-  const move = (direction: number) => setActive((current) => (current + direction + examples.length) % examples.length);
-  const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
-    if (event.button !== 0) return;
-    pointerStart.current = { x: event.clientX, y: event.clientY };
-  };
-  const handlePointerUp = (event: PointerEvent<HTMLDivElement>) => {
-    const start = pointerStart.current;
-    pointerStart.current = null;
-    if (!start) return;
-    const dx = event.clientX - start.x;
-    const dy = event.clientY - start.y;
-    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.25) move(dx < 0 ? 1 : -1);
-  };
-  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === "ArrowRight" || event.key === "ArrowLeft") { event.preventDefault(); move(event.key === "ArrowRight" ? 1 : -1); }
-  };
-  useEffect(() => {
-    const showcase = showcaseRef.current;
-    if (!showcase || typeof IntersectionObserver === "undefined") {
-      setShouldPreloadImages(true);
-      return;
-    }
-    const observer = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting) return;
-      setShouldPreloadImages(true);
-      observer.disconnect();
-    }, { rootMargin: "700px 0px" });
-    observer.observe(showcase);
-    return () => observer.disconnect();
+  const trackRef = useRef<HTMLDivElement>(null);
+  // Destino del desplazamiento en curso. Con clics rápidos en las flechas, el siguiente paso se
+  // cuenta desde acá y no desde el celular que pasa por el centro a mitad de la animación.
+  const targetRef = useRef<number | null>(null);
+  const [active, setActive] = useState(TOTAL + 1);
+  const [inView, setInView] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const [autoplay, setAutoplay] = useState(true);
+  const current = SLIDES[active % TOTAL];
+  const activeKind = current.kind as Kind;
+
+  const goTo = useCallback((index: number) => {
+    const track = trackRef.current;
+    if (!track) return;
+    index = Math.min(LOOPED.length - 1, Math.max(0, index));
+    targetRef.current = index;
+    track.scrollTo({ left: offsetFor(track, index), behavior: "smooth" });
   }, []);
+  const userGoTo = (index: number) => { setAutoplay(false); goTo(index); };
+  const step = (direction: number) => userGoTo((targetRef.current ?? active) + direction);
+  // Lleva al primer diseño de un grupo, eligiendo la copia más cercana para no recorrer de más.
+  const goToGroup = (kind: Kind) => {
+    const first = SLIDES.findIndex((slide) => slide.kind === kind);
+    const candidates = Array.from({ length: COPIES }, (_, copy) => first + copy * TOTAL);
+    userGoTo(candidates.reduce((best, index) => Math.abs(index - active) < Math.abs(best - active) ? index : best));
+  };
+
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    let frame = 0;
+    let settle = 0;
+    const nearestIndex = () => {
+      const center = track.scrollLeft + track.clientWidth / 2;
+      let nearest = 0;
+      let distance = Infinity;
+      Array.from(track.children).forEach((child, index) => {
+        const slide = child as HTMLElement;
+        const gap = Math.abs(slide.offsetLeft + slide.offsetWidth / 2 - center);
+        if (gap < distance) { distance = gap; nearest = index; }
+      });
+      return nearest;
+    };
+    const recenter = () => {
+      targetRef.current = null;
+      const index = nearestIndex();
+      if (index >= TOTAL && index < TOTAL * 2) return;
+      const target = TOTAL + (index % TOTAL);
+      // Sin transiciones durante el salto: si no, el celular de destino se vería crecer.
+      track.classList.add("is-jumping");
+      track.scrollLeft += offsetFor(track, target) - offsetFor(track, index);
+      setActive(target);
+      requestAnimationFrame(() => requestAnimationFrame(() => track.classList.remove("is-jumping")));
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(() => { frame = 0; setActive(nearestIndex()); });
+      window.clearTimeout(settle);
+      settle = window.setTimeout(recenter, 160);
+    };
+    track.addEventListener("scroll", onScroll, { passive: true });
+    track.scrollLeft = offsetFor(track, TOTAL + 1);
+    const observer = typeof IntersectionObserver === "undefined" ? null : new IntersectionObserver(([entry]) => setInView(entry.isIntersecting), { threshold: 0.4 });
+    observer?.observe(track);
+    return () => { track.removeEventListener("scroll", onScroll); observer?.disconnect(); if (frame) cancelAnimationFrame(frame); window.clearTimeout(settle); };
+  }, []);
+
+  useEffect(() => {
+    if (!autoplay || !inView || paused || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const timer = window.setTimeout(() => goTo(active + 1), 3600);
+    return () => window.clearTimeout(timer);
+  }, [autoplay, inView, paused, active, goTo]);
+
   return (
-    <div className="bx-showcase" ref={showcaseRef}>
-      {shouldPreloadImages && <div className="bx-showcase-preloads" aria-hidden="true">
-        {SHOWCASE_IMAGE_PRELOADS.map((image) => <Image key={`${image.src}-${image.sizes}`} src={image.src} alt="" width={340} height={680} sizes={image.sizes} loading="eager" fetchPriority="low" />)}
-      </div>}
-      <div className="bx-showcase-copy">
-        <p className="bx-showcase-kicker"><span /> UNA PRESENTACIÓN HECHA PARA VOS</p>
-        <h2 className="bx-h2 bx-on-dark">{category === "landing" ? "¿Querés reunir todo en un lugar?" : category === "contact" ? "¿Querés presentarte mejor?" : "¿Querés llevarlos justo adonde importa?"}<br /><span className="bx-soft">{category === "landing" ? "Creamos tu página." : category === "contact" ? "Creamos tu tarjeta personal." : "Conectamos tu link directo."}</span></h2>
-        <p className="bx-lead bx-on-dark-muted">{category === "landing" ? "Tu logo, tus fotos, tu estilo. Diseñamos una página que se sienta tan tuya como tu negocio." : category === "contact" ? "Tus datos, tu foto si querés y un diseño propio. Compartí tu presentación y hacé fácil que guarden tu contacto." : "Un toque puede abrir tus reseñas, tu Instagram, tu tienda o cualquier sitio que quieras compartir, sin pasos de más."}</p>
-        <div className="bx-showcase-categories" role="group" aria-label="Tipo de diseño">
-          <button type="button" aria-pressed={category === "landing"} onClick={() => changeCategory("landing")}>Landings</button>
-          <button type="button" aria-pressed={category === "contact"} onClick={() => changeCategory("contact")}>Tarjetas personales</button>
-          <button type="button" aria-pressed={category === "direct"} onClick={() => changeCategory("direct")}>Links directos</button>
-        </div>
-        <div className="bx-showcase-picker" data-count={examples.length} role="group" aria-label="Elegí un ejemplo de diseño">
-          {examples.map((example, index) => <button type="button" key={example.id} aria-pressed={active === index} aria-controls="showcase-preview" onClick={() => setActive(index)}><span className={`bx-showcase-swatch is-${example.id}`} />{example.category}<FiArrowUpRight aria-hidden="true" /></button>)}
-        </div>
-        <p className="bx-showcase-hint">{category === "contact" ? "Son solo tres ejemplos. Tenemos muchísimos diseños más." : category === "landing" ? "Algunos estilos de muestra. Podemos crear muchísimos diseños más." : "Ejemplos visuales con marcas y datos ficticios."}</p>
-        <a className="bx-btn bx-btn-white" href={waUrl} target="_blank" rel="noreferrer">Quiero algo así <FiArrowUpRight aria-hidden="true" /></a>
+    <div className="bx-gallery">
+      <div className="bx-gallery-head">
+        <p className="bx-showcase-kicker"><span /> LO QUE SE ABRE AL ACERCAR EL CELULAR</p>
+        <h2 className="bx-h2 bx-on-dark">Páginas NFC hermosas,<br /><span className="bx-soft">hechas para tu marca.</span></h2>
+        <p className="bx-lead bx-on-dark-muted">Una landing para tu negocio, una tarjeta personal o un link directo a tus reseñas, tu Instagram o tu web. Son solo algunos ejemplos: el tuyo lo diseñamos desde cero.</p>
       </div>
-      <div className="bx-showcase-gallery" id="showcase-preview" role="region" aria-label={`Vista de ejemplo: ${selected.name}`}>
-        <div className="bx-showcase-orbit" aria-hidden="true" />
-        <div className="bx-showcase-stage" data-count={examples.length} role="group" tabIndex={0} onKeyDown={handleKeyDown} onPointerDown={handlePointerDown} onPointerUp={handlePointerUp} onPointerCancel={() => { pointerStart.current = null; }} aria-label="Deslizá o usá las flechas para ver otros ejemplos">
-          {examples.map((example, index) => {
-            const position = (index - active + examples.length) % examples.length;
-            return <div key={example.id} className="bx-showcase-device" data-position={position} aria-hidden={true}>{example.kind === "landing" ? <Preview example={example} /> : example.kind === "contact" ? <ContactPreview example={example} /> : <DirectLinkPreview example={example} />}</div>;
+      <div className="bx-gallery-groups" role="group" aria-label="Tipos de diseño">
+        {GROUPS.map((group) => <button key={group.kind} type="button" aria-pressed={activeKind === group.kind} onClick={() => goToGroup(group.kind)}>
+          <strong>{group.label}</strong><small>{group.note}</small>
+        </button>)}
+      </div>
+      <div className="bx-gallery-stage" onPointerEnter={(event) => { if (event.pointerType === "mouse") setPaused(true); }} onPointerLeave={() => setPaused(false)}>
+        <div className="bx-gallery-track" ref={trackRef} onPointerDown={() => setAutoplay(false)} onWheel={() => setAutoplay(false)} aria-label="Ejemplos de diseños" role="region" tabIndex={0} onKeyDown={(event) => { if (event.key === "ArrowRight" || event.key === "ArrowLeft") { event.preventDefault(); step(event.key === "ArrowRight" ? 1 : -1); } }}>
+          {LOOPED.map(({ example, copy }, index) => {
+            const kind = example.kind as Kind;
+            return <figure key={`${copy}-${kind}-${example.id}`} className={`bx-gallery-slide is-${kind}${index === active ? " is-active" : ""}`} onClick={() => { if (index !== active) userGoTo(index); }} aria-hidden={index !== active}>
+              <span className={`bx-gallery-tag is-${kind}`}>{TAG[kind]}</span>
+              <div className="bx-gallery-phone">{example.kind === "landing" ? <Preview example={example} /> : example.kind === "contact" ? <ContactPreview example={example} /> : <DirectLinkPreview example={example} />}</div>
+              <figcaption>{example.category}</figcaption>
+            </figure>;
           })}
-          <span className="bx-showcase-tag">Tu marca.<br /><b>Tu universo.</b></span>
         </div>
-        <div className="bx-showcase-caption" aria-live="polite" aria-atomic="true"><span>0{active + 1} / 0{examples.length} · {selected.style}</span><p>{selected.detail}</p></div>
-        <div className="bx-showcase-controls"><button type="button" onClick={() => move(-1)} aria-label="Ejemplo anterior"><FiArrowLeft aria-hidden="true" /></button><span aria-hidden="true">{examples.map((example, index) => <i key={example.id} className={active === index ? "is-active" : undefined} />)}</span><button type="button" onClick={() => move(1)} aria-label="Ejemplo siguiente"><FiArrowRight aria-hidden="true" /></button></div>
+        <button type="button" className="bx-gallery-side is-prev" onClick={() => step(-1)} aria-label="Diseño anterior"><FiArrowLeft aria-hidden="true" /></button>
+        <button type="button" className="bx-gallery-side is-next" onClick={() => step(1)} aria-label="Diseño siguiente"><FiArrowRight aria-hidden="true" /></button>
       </div>
-      <div className="bx-showcase-possibilities"><span className="bx-showcase-infinity" aria-hidden="true">∞</span><div><h3>Y hay muchísimos diseños más.</h3><p>Creamos una propuesta para tu marca, o conectamos directamente con el destino que más le sirva a tu negocio.</p></div><span className="bx-showcase-signature">Hecha para vos.<br /><b>Lista para compartir.</b></span></div>
+      <div className="bx-gallery-controls">
+        <button type="button" className="bx-gallery-arrow" onClick={() => step(-1)} aria-hidden="true" tabIndex={-1}><FiArrowLeft aria-hidden="true" /></button>
+        <span aria-hidden="true">{SLIDES.map((slide, index) => <i key={`${slide.kind}-${slide.id}`} className={index === active % TOTAL ? "is-active" : undefined} />)}</span>
+        <button type="button" className="bx-gallery-arrow" onClick={() => step(1)} aria-hidden="true" tabIndex={-1}><FiArrowRight aria-hidden="true" /></button>
+      </div>
+      <a className="bx-btn bx-btn-white" href={waUrl} target="_blank" rel="noreferrer">Quiero mi diseño <FiArrowUpRight aria-hidden="true" /></a>
     </div>
   );
 }
