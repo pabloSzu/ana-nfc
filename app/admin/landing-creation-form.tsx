@@ -2,6 +2,7 @@
 
 import { useRef, useState, type FormEvent } from "react";
 import PendingSubmitButton from "@/components/pending-submit-button";
+import { BUSINESS_TEMPLATES } from "@/lib/business-templates";
 
 type LandingCreationFormProps = {
   clients: Array<{ id: string; name: string }>;
@@ -42,6 +43,10 @@ export default function LandingCreationForm({ clients, action, kind, clientId, c
       </> : <>
         <label className="label">{kind === "contact" ? "Nombre de la persona" : "Nombre de la landing"}<input name="business_name" placeholder={kind === "contact" ? "Ej. Ana Pérez" : "Ej. Aurora Hotel"} required /></label>
         <label className="label">URL (opcional)<input name="slug" placeholder={kind === "contact" ? "ana-perez" : "aurora-hotel"} /></label>
+        {kind === "custom" && <label className="label">Plantilla<select name="rubro_template" defaultValue="">
+          <option value="">Página en blanco</option>
+          {BUSINESS_TEMPLATES.map((template) => <option key={template.id} value={template.id}>{template.name} · {template.note}</option>)}
+        </select><small className="field-help">Arranca con el diseño, la foto y los botones de ejemplo. Después los cambiás por los del cliente.</small></label>}
         <label className="label">Plan<select name="plan" defaultValue="annual"><option value="annual">Anual · se renueva cada año</option><option value="lifetime">Sin vencimiento · propia, regalo o cortesía</option></select></label>
         <p className="muted" style={{ fontSize: "0.75rem", marginTop: "-8px" }}>Si dejás la URL vacía, se genera sola. {kind === "contact" ? "La foto y los datos de contacto" : "Las imágenes y los botones"} se configuran después, en el editor.</p>
         <PendingSubmitButton className="btn full" pendingText={kind === "contact" ? "Creando tarjeta…" : "Creando landing…"} disabled={submitting}>{kind === "contact" ? "Crear tarjeta y editar" : "Crear landing y editar"}</PendingSubmitButton>

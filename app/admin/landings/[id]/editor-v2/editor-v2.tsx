@@ -12,7 +12,7 @@ import ContactSaveIcon from "@/components/contact-save-icon";
 import ScaledPhoneCanvas from "@/components/scaled-phone-canvas";
 import PhoneBrowserChrome from "@/components/phone-browser-chrome";
 import { compressImage } from "@/lib/compress-image";
-import { parseButtonZone, parseSubtitleStyle, parseTitleStyle, headerCardOn, parseDistribution, recommendedContactCoverPattern, type DistributionStyle, QUICK_SOCIALS, quickSocialHref, type QuickSocial, AUTO_COLORS, contrastTextColor, hexToRgba, getAllActions, parseCoverStyle, parseLogoStyle, logoBackgroundColor, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize, resolveTextFont, FONT_OPTIONS, COVER_SIZE_EXTRA, type BackgroundPosition, type ButtonZoneStyle, type CoverStyle, type LogoStyle, type SubtitleStyle, type TitleStyle } from "@/lib/landing-catalog";
+import { parseBackgroundPosition, parseButtonZone, parseSubtitleStyle, parseTitleStyle, headerCardOn, parseDistribution, recommendedContactCoverPattern, type DistributionStyle, QUICK_SOCIALS, quickSocialHref, type QuickSocial, AUTO_COLORS, contrastTextColor, hexToRgba, getAllActions, parseCoverStyle, parseLogoStyle, logoBackgroundColor, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize, resolveTextFont, FONT_OPTIONS, COVER_SIZE_EXTRA, type BackgroundPosition, type ButtonZoneStyle, type CoverStyle, type LogoStyle, type SubtitleStyle, type TitleStyle } from "@/lib/landing-catalog";
 import FontPicker from "../font-picker";
 import { FontLinks, getFontWeights, LogoInitials, recommendedButtonTypography, resolveFontWeight } from "@/lib/fonts";
 import IconPicker from "../icon-picker";
@@ -199,6 +199,8 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
   const [logoRemoved, setLogoRemoved] = useState(false);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [coverRemoved, setCoverRemoved] = useState(false);
+  // Qué hizo la última plantilla aplicada, para mostrarlo arriba del panel de plantillas.
+  const [templateNotice, setTemplateNotice] = useState("");
   const [cvFileName, setCvFileName] = useState("");
   const [cvFileError, setCvFileError] = useState("");
   const [cvPreviewUrl, setCvPreviewUrl] = useState("");
@@ -511,20 +513,29 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
     patchButtons((current) => current.map((button) => ({ ...button, use_auto_color: true, background_gradient_to: "", icon_background_color: "" })));
   }
 
-  // Aplica un diseño completo por rubro (lib/business-templates.ts). "full" trae también la foto,
-  // los textos y los botones de ejemplo; si no, solo el estilo y se conservan los del cliente. El
-  // nombre siempre queda el del cliente, y un deshacer vuelve todo atrás.
+  // Plantillas por rubro (lib/business-templates.ts), como en Wix:
+  // - "Usar esta plantilla" (full) deja la página idéntica a la miniatura, con todos los datos de
+  //   ejemplo (nombre visible, logo, fotos, textos, botones y redes) para reemplazarlos después.
+  // - "Copiar solo el estilo" copia todo lo visual (colores, letras, tipo de portada, fondo,
+  //   logo, botones, separadores y espacios) y conserva el contenido del cliente. Si el diseño
+  //   necesita una foto de portada o de fondo que el cliente no tiene, usa la de ejemplo y avisa,
+  //   para que el resultado sea siempre el mismo.
+  // Un deshacer vuelve todo atrás.
   function applyBusinessTemplate(id: string, full: boolean) {
     const template = BUSINESS_TEMPLATES.find((item) => item.id === id);
     if (!template) return;
-    if (full && buttons.some((button) => button.url.trim()) && !window.confirm("El diseño completo reemplaza tus botones, la descripción y la foto de portada por los de ejemplo. Después los cambiás por los del cliente. Se puede deshacer. ¿Seguir?")) return;
+    const hasOwnContent = buttons.some((button) => button.url.trim()) || Boolean(logoPreview || coverPreview || bgPreview);
+    if (full && hasOwnContent && !window.confirm("La plantilla reemplaza textos, botones, logo y fotos por los de ejemplo. Después los cambiás por los del cliente. Se puede deshacer. ¿Seguir?")) return;
     const source = template.landing;
     const zone = parseButtonZone(source.button_style);
     const titleStyle = parseTitleStyle(source);
-    commitDiscrete();
-    patchDraft({
+    const coverStyle = parseCoverStyle(source.cover_style);
+    const usesBackgroundPhoto = source.background_type === "image" && Boolean(source.background_image_url);
+    const examples: string[] = [];
+    const patch: Partial<LandingDraft> = {
       primary_color: source.primary_color, font_pair: source.font_pair, button_font: source.button_font,
       background_type: source.background_type, background_color: source.background_color, background_gradient_to: source.background_gradient_to,
+      bgPosition: parseBackgroundPosition(source.background_style),
       buttonZone: {
         ...zone,
         distribution: parseDistribution(zone.distribution, zone.layout),
@@ -532,20 +543,36 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
         quickSocials: full ? zone.quickSocials : draft.buttonZone.quickSocials,
         templateId: `rubro:${template.id}`,
       },
-      titleStyle: { ...titleStyle, headline: full ? draft.business_name : draft.titleStyle.headline, eyebrow: full ? titleStyle.eyebrow : draft.titleStyle.eyebrow },
+      titleStyle: full ? titleStyle : { ...titleStyle, headline: draft.titleStyle.headline, eyebrow: draft.titleStyle.eyebrow },
       subtitleStyle: parseSubtitleStyle(source),
-      logoStyle: parseLogoStyle({ ...source.logo_style, zoom: draft.logoStyle.zoom, x: draft.logoStyle.x, y: draft.logoStyle.y }),
-      // Sin foto propia, el estilo solo no prende la portada: se vería una foto de ejemplo en el
-      // editor que después no aparece en la página publicada.
-      coverStyle: full || coverImage ? parseCoverStyle(source.cover_style) : { ...draft.coverStyle, enabled: false },
-      ...(full ? { description: source.description, cover_image_url: source.cover_image_url } : {}),
-    });
+      logoStyle: full ? parseLogoStyle(source.logo_style) : parseLogoStyle({ ...source.logo_style, zoom: draft.logoStyle.zoom, x: draft.logoStyle.x, y: draft.logoStyle.y }),
+      coverStyle,
+    };
+    if (full) {
+      Object.assign(patch, { description: source.description, logo_url: source.logo_url || "", cover_image_url: source.cover_image_url || "", background_image_url: source.background_image_url || "" });
+    } else {
+      // Una foto que vino de otra plantilla también es de ejemplo: se cambia por la de esta.
+      const isExample = (url: string) => /^\/(templates|marketing)\//.test(url);
+      if (coverStyle.enabled && source.cover_image_url && (!coverImage || isExample(coverImage))) { patch.cover_image_url = source.cover_image_url; examples.push("la portada"); }
+      if (usesBackgroundPhoto && (!backgroundImage || isExample(backgroundImage))) { patch.background_image_url = source.background_image_url; examples.push("el fondo"); }
+      if (logoImage && isExample(logoImage)) patch.logo_url = source.logo_url || "";
+    }
+    commitDiscrete();
+    patchDraft(patch);
+    // Las fotos elegidas a mano y todavía sin guardar se descartan si la plantilla trae las suyas.
+    const clearPending = (inputId: string, preview: string | null, setPreview: (value: string | null) => void) => {
+      const input = document.getElementById(inputId) as HTMLInputElement | null;
+      if (input) input.value = "";
+      if (preview) URL.revokeObjectURL(preview);
+      setPreview(null);
+    };
+    if (full || examples.includes("la portada")) { clearPending("v2-cover-file", coverPreview, setCoverPreview); setCoverRemoved(false); }
+    if (full || examples.includes("el fondo")) clearPending("v2-background-file", bgPreview, setBgPreview);
+    if (full) { clearPending("v2-logo-file", logoPreview, setLogoPreview); setLogoRemoved(false); }
+    setTemplateNotice(full
+      ? `Listo: la página quedó igual a "${template.name}". Reemplazá el nombre, el logo, las fotos y los links por los del cliente.`
+      : examples.length ? `Estilo copiado. Usamos una foto de ejemplo para ${examples.join(" y ")}: reemplazala por la del cliente.` : "Estilo copiado. Tus textos, links y fotos se conservaron.");
     if (!full) return;
-    const input = document.getElementById("v2-cover-file") as HTMLInputElement | null;
-    if (input) input.value = "";
-    if (coverPreview) URL.revokeObjectURL(coverPreview);
-    setCoverPreview(null);
-    setCoverRemoved(false);
     patchButtons(() => template.actions.map((action, index) => ({
       id: `new-${crypto.randomUUID()}`, type: action.type, title: action.title, subtitle: action.subtitle || "", url: action.url || "", message: action.message || "",
       icon: action.icon || "", icon_url: "", icon_fit: "contain", icon_scale: 1, icon_background_color: "", background_color: "", background_gradient_to: "",
@@ -881,6 +908,8 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
         <input type="hidden" name="remove_logo_image" value={String(logoRemoved)} />
         <input type="hidden" name="remove_cover_image" value={String(coverRemoved)} />
         <input type="hidden" name="cover_template_url" value={!coverPreview && !coverRemoved && /^\/(templates|marketing)\//.test(draft.cover_image_url || "") ? draft.cover_image_url || "" : ""} />
+        <input type="hidden" name="logo_template_url" value={!logoPreview && !logoRemoved && /^\/(templates|marketing)\//.test(draft.logo_url || "") ? draft.logo_url || "" : ""} />
+        <input type="hidden" name="background_template_url" value={!bgPreview && /^\/(templates|marketing)\//.test(draft.background_image_url || "") ? draft.background_image_url || "" : ""} />
       </form>
 
       <header className="v2-topbar">
@@ -904,7 +933,7 @@ export default function EditorV2({ landing, initialButtons, newlyCreatedContact 
           </div>
           {draft.business_type === "contact" && panel === "templates" && <button type="button" className="v2-ghost v2-contact-return" onClick={() => setPanel("contact-design")}>← Volver a Diseño</button>}
           {draft.business_type === "contact" && (panel === "contact-name" || panel === "contact-role" || panel === "contact-company") && <button type="button" className="v2-ghost v2-contact-return" onClick={() => setPanel("contact")}>← Volver a Datos</button>}
-          {panel === "templates" && (draft.business_type === "contact" ? <ContactLooks selected={draft.buttonZone.contactTheme || "classic"} onApply={requestContactLook} /> : <Templates selected={draft.buttonZone.templateId} onApply={applyPreset} onApplyBusiness={applyBusinessTemplate} />)}
+          {panel === "templates" && (draft.business_type === "contact" ? <ContactLooks selected={draft.buttonZone.contactTheme || "classic"} onApply={requestContactLook} /> : <Templates selected={draft.buttonZone.templateId} notice={templateNotice} onApply={(presetId) => { applyPreset(presetId); setTemplateNotice(""); }} onApplyBusiness={applyBusinessTemplate} />)}
           {panel === "contact-design" && <ContactDesignControls draft={draft} buttons={buttons} onChange={change} onBackground={() => selectPanel("background")} onTemplates={() => selectPanel("templates")} />}
           {panel === "buttons" && <ButtonDesign draft={draft} buttons={buttons} backgroundImage={backgroundImage} onZone={changeZone} onFont={(button_font) => change({ button_font, buttonZone: { ...draft.buttonZone, fontWeight: resolveFontWeight(button_font, draft.buttonZone.fontWeight ?? recommendedButtonTypography(button_font).fontWeight), letterSpacing: draft.buttonZone.letterSpacing ?? recommendedButtonTypography(button_font).letterSpacing } })} onApplyButtonLook={applyButtonLook} onResetButtonOverrides={resetButtonOverrides} />}
           {panel === "background" && <BackgroundControls draft={draft} tab={bgTab} onTab={setBgTab} onChange={change} onFile={(file) => openImageEditor("background", file)} onAdjust={() => openImageEditor("background")} hasImage={Boolean(backgroundImage)} />}
@@ -953,24 +982,24 @@ function panelTitle(panel: Exclude<Panel, null>) { if (typeof panel === "object"
 
 // Vista en miniatura de un diseño por rubro, con el mismo renderer que la página publicada.
 function BusinessTemplatePreview({ template }: { template: BusinessTemplate }) {
-  const landing = { ...template.landing, id: template.id, slug: "", business_type: "custom", published: true, logo_url: "", background_image_url: "" };
+  const landing = { ...template.landing, id: template.id, slug: "", business_type: "custom", published: true };
   const actions = template.actions.map((action, index) => ({ ...action, id: `${template.id}-${index}`, use_auto_color: true }));
   const fonts = [template.landing.font_pair, template.landing.button_font, String(template.landing.title_style.font || ""), String(template.landing.title_style.eyebrowFont || ""), String(template.landing.subtitle_style.font || "")].filter(Boolean);
   return <div className="v2-rubro-preview" aria-hidden="true">
     <FontLinks ids={fonts} />
-    <ScaledPhoneCanvas className="v2-rubro-canvas" fit="contain"><LandingRenderer landing={landing} actions={actions} editorPreview /></ScaledPhoneCanvas>
+    <ScaledPhoneCanvas className="v2-rubro-canvas" fit="contain" photoBackground={landing.background_type === "image" ? <LandingPhotoBackground landing={landing} /> : undefined}><LandingRenderer landing={landing} actions={actions} editorPreview externalPhotoBackground={landing.background_type === "image"} /></ScaledPhoneCanvas>
   </div>;
 }
 
-function Templates({ selected, onApply, onApplyBusiness }: { selected: string; onApply: (id: string) => void; onApplyBusiness: (id: string, full: boolean) => void }) {
+function Templates({ selected, notice, onApply, onApplyBusiness }: { selected: string; notice: string; onApply: (id: string) => void; onApplyBusiness: (id: string, full: boolean) => void }) {
   return <div className="v2-fields">
-    <p className="v2-help">Elegí el rubro: cada diseño trae foto, textos y botones de ejemplo. Con "Solo el estilo" se conservan los del cliente. Todo se puede deshacer.</p>
+    {notice ? <p className="v2-rubro-notice" role="status">{notice}</p> : <p className="v2-help">"Usar esta plantilla" deja la página igual a la miniatura, con datos de ejemplo para reemplazar. "Copiar solo el estilo" conserva los textos, links y fotos del cliente. Todo se puede deshacer.</p>}
     <div className="v2-rubro-grid">{BUSINESS_TEMPLATES.map((template) => <div key={template.id} className={`v2-rubro-card${selected === `rubro:${template.id}` ? " is-selected" : ""}`}>
       <BusinessTemplatePreview template={template} />
       <div className="v2-rubro-copy"><b>{template.name}</b><small>{template.note}</small></div>
       <div className="v2-rubro-actions">
-        <button type="button" className="v2-save" onClick={() => onApplyBusiness(template.id, true)}>Usar diseño completo</button>
-        <button type="button" className="v2-ghost" onClick={() => onApplyBusiness(template.id, false)}>Solo el estilo</button>
+        <button type="button" className="v2-save" onClick={() => onApplyBusiness(template.id, true)}>Usar esta plantilla</button>
+        <button type="button" className="v2-ghost" onClick={() => onApplyBusiness(template.id, false)}>Copiar solo el estilo</button>
       </div>
     </div>)}</div>
     <button type="button" className={`v2-rubro-blank${selected === "minimal" ? " is-selected" : ""}`} onClick={() => onApply("minimal")}>

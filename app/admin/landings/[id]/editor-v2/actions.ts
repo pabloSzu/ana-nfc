@@ -6,6 +6,13 @@ import { createClient } from "@/lib/supabase/server";
 import { normalizeUrl, isPlausiblePhone, AUTO_COLORS, businessProfiles } from "@/lib/landing-catalog";
 
 const hexColor = /^#[0-9a-f]{6}$/i;
+
+// Fotos de ejemplo de las plantillas por rubro: son archivos del propio sitio y no se suben. Solo
+// se aceptan rutas de las carpetas de plantillas, nunca una URL externa.
+function templateImage(value: FormDataEntryValue | null): string | undefined {
+  const path = String(value || "");
+  return /^\/(templates|marketing)\/[\w./-]+\.(svg|jpe?g|png|webp)$/i.test(path) && !path.includes("..") ? path : undefined;
+}
 function color(value: FormDataEntryValue | null, fallback: string) {
   const candidate = String(value || "");
   return hexColor.test(candidate) ? candidate : fallback;
@@ -98,6 +105,8 @@ export async function saveDesignStyle(fd: FormData) {
     backgroundImageUrl = supabase.storage.from("landing-assets").getPublicUrl(path).data.publicUrl;
   } else if (fd.get("remove_background_image") === "true") {
     backgroundImageUrl = "";
+  } else if (backgroundType === "image") {
+    backgroundImageUrl = templateImage(fd.get("background_template_url"));
   }
   const logoFile = fd.get("logo_image");
   let logoImageUrl: string | undefined;
@@ -111,6 +120,8 @@ export async function saveDesignStyle(fd: FormData) {
     logoImageUrl = supabase.storage.from("landing-assets").getPublicUrl(path).data.publicUrl;
   } else if (fd.get("remove_logo_image") === "true") {
     logoImageUrl = "";
+  } else {
+    logoImageUrl = templateImage(fd.get("logo_template_url"));
   }
   const coverFile = fd.get("cover_image");
   let coverImageUrl: string | undefined;
@@ -125,10 +136,7 @@ export async function saveDesignStyle(fd: FormData) {
   } else if (fd.get("remove_cover_image") === "true") {
     coverImageUrl = "";
   } else {
-    // Foto de ejemplo de un diseño por rubro: es un archivo del propio sitio, no se sube. Solo se
-    // aceptan rutas de las carpetas de plantillas, nunca una URL externa.
-    const templateCover = String(fd.get("cover_template_url") || "");
-    if (/^\/(templates|marketing)\/[\w./-]+\.(svg|jpe?g|png|webp)$/i.test(templateCover) && !templateCover.includes("..")) coverImageUrl = templateCover;
+    coverImageUrl = templateImage(fd.get("cover_template_url"));
   }
   const cvFile = fd.get("cv_file");
   let cvUploadedUrl: string | undefined;

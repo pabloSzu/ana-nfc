@@ -1,5 +1,6 @@
 "use server";import {createClient} from "@/lib/supabase/server";import {redirect} from "next/navigation";import {revalidatePath} from "next/cache";
 import { businessProfiles, isPlausiblePhone } from "@/lib/landing-catalog";
+import { BUSINESS_TEMPLATES } from "@/lib/business-templates";
 import { manualRedirectUpdate, managementUpdate, normalizeLink, parsePlan, publishUpdate, renewalUpdate, type UpdateResult } from "@/lib/landing-plan";
 const slugify=(v:string)=>v.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"").slice(0,60);
 const emailPattern=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -43,6 +44,7 @@ export async function newLanding(fd: FormData) {
   if (clientError) onError(clientError.message);
   if (clientId && !client) onError("Cliente inexistente o sin permisos");
   const isContact = businessType === "contact";
+  const rubroTemplate = !isContact && !isDirect ? BUSINESS_TEMPLATES.find((template) => template.id === fd.get("rubro_template")) : undefined;
   const { data, error } = await s.from("landings").insert({
     owner_id: user.id, client_id: clientId, request_key: requestKey, business_name: businessName, slug,
     template: String(fd.get("template") || "professional"), business_type: businessType,
@@ -51,6 +53,9 @@ export async function newLanding(fd: FormData) {
     primary_color: client?.primary_color || (isContact ? "#343d31" : "#1f2937"),
     background_color: client?.background_color || (isContact ? "#e9eae2" : "#f7f5f0"),
     ...(isContact ? { button_style: { contactTheme: "essential", contactLayout: "card" } } : {}),
+    // Una landing creada desde una plantilla por rubro arranca idéntica a ella, con los datos de
+    // ejemplo, salvo el nombre visible, que es el que se escribió al crearla.
+    ...(rubroTemplate ? { ...rubroTemplate.landing, business_name: businessName, title_style: { ...rubroTemplate.landing.title_style, headline: businessName } } : {}),
   }).select("id").single();
   if (error && requestKey) {
     const { data: existing } = await s.from("landings").select("id,business_type").eq("owner_id", user.id).eq("request_key", requestKey).maybeSingle();
@@ -59,6 +64,13 @@ export async function newLanding(fd: FormData) {
   if (error) onError(error.message);
   const landingId = data?.id;
   if (!landingId) onError("No se pudo crear la landing");
+  if (rubroTemplate) {
+    const { error: actionsError } = await s.from("actions").insert(rubroTemplate.actions.map((action, position) => ({
+      landing_id: landingId, type: action.type, title: action.title, subtitle: action.subtitle || "", url: action.url || "",
+      message: action.message || "", icon: action.icon || "", position, enabled: true,
+    })));
+    if (actionsError) onError(actionsError.message);
+  }
   revalidatePath("/admin");
   revalidatePath("/admin/paginas");
   if (clientId) revalidatePath("/admin/clientes/" + clientId);

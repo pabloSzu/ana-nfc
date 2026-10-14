@@ -19,9 +19,12 @@ export type BusinessTemplate = {
     background_type: string;
     background_color: string;
     background_gradient_to: string;
+    background_image_url?: string;
+    background_style?: Record<string, unknown>;
     font_pair: string;
     button_font: string;
-    cover_image_url: string;
+    logo_url?: string;
+    cover_image_url?: string;
     cover_style: Record<string, unknown>;
     title_style: Record<string, unknown>;
     subtitle_style: Record<string, unknown>;
@@ -43,8 +46,10 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
       "background_type": "gradient",
       "background_color": "#1c1410",
       "background_gradient_to": "#120d0a",
+      "background_style": {},
       "font_pair": "fraunces",
       "button_font": "manrope",
+      "logo_url": "/templates/cafe-logo.png",
       "cover_image_url": "/marketing/showcase/coffee.jpg",
       "cover_style": {
         "x": 50,
@@ -87,7 +92,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
       "logo_style": {
         "x": 50,
         "y": 50,
-        "size": 96,
+        "size": 100,
         "zoom": 1,
         "shape": "round",
         "shadow": "soft",
@@ -116,6 +121,18 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "headerCard": false,
         "templateId": "rubro:gastronomia",
         "contentAlign": "left",
+        "distribution": {
+          "top": 64,
+          "logoGap": 18,
+          "separator": true,
+          "buttonsGap": 12,
+          "socialsGap": 12,
+          "separatorColor": "#d9a066",
+          "separatorSpace": 14,
+          "separatorStyle": "leaf",
+          "separatorWidth": 40,
+          "separatorWeight": 1
+        },
         "quickSocials": [
           {
             "url": "molinocafe",
@@ -173,11 +190,22 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
       "business_name": "Distrito Neón",
       "description": "Coctelería de autor, DJs en vivo y cocina hasta tarde.",
       "primary_color": "#ff4fa3",
-      "background_type": "gradient",
+      "background_type": "image",
       "background_color": "#0b0614",
       "background_gradient_to": "#170a24",
+      "background_image_url": "/templates/bar-fondo.jpg",
+      "background_style": {
+        "x": 50,
+        "y": 50,
+        "blur": 0,
+        "tint": 0.4,
+        "zoom": 1,
+        "lighten": 0,
+        "tintColor": "#0b0614"
+      },
       "font_pair": "unbounded",
       "button_font": "manrope",
+      "logo_url": "/templates/bar-logo.png",
       "cover_image_url": "/templates/bar-portada.jpg",
       "cover_style": {
         "x": 50,
@@ -186,7 +214,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "mode": "fade",
         "size": "large",
         "zoom": 1,
-        "enabled": true,
+        "enabled": false,
         "overlay": 0.2,
         "overlayColor": "#0b0614",
         "stableSizing": true
@@ -222,7 +250,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
       "logo_style": {
         "x": 50,
         "y": 50,
-        "size": 92,
+        "size": 104,
         "zoom": 1,
         "shape": "round",
         "shadow": "glow",
@@ -231,7 +259,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "treatment": "template",
         "shadowSize": 1,
         "borderColor": "#ffffff",
-        "borderWidth": 2,
+        "borderWidth": 0,
         "shadowColor": "#ff4fa3",
         "backgroundMode": "auto"
       },
@@ -253,6 +281,18 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "headerCard": false,
         "templateId": "rubro:bar",
         "contentAlign": "left",
+        "distribution": {
+          "top": 96,
+          "logoGap": 20,
+          "separator": false,
+          "buttonsGap": 12,
+          "socialsGap": 12,
+          "separatorColor": "#ff4fa3",
+          "separatorSpace": 12,
+          "separatorStyle": "solid",
+          "separatorWidth": 40,
+          "separatorWeight": 1
+        },
         "quickSocials": [
           {
             "url": "distritoneon",
@@ -308,11 +348,22 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
       "business_name": "Senderos del Valle",
       "description": "Excursiones guiadas, trekking y turismo aventura en las Sierras de Córdoba.",
       "primary_color": "#f2b05e",
-      "background_type": "gradient",
+      "background_type": "image",
       "background_color": "#0f2a24",
       "background_gradient_to": "#0a1f1a",
+      "background_image_url": "/templates/turismo-fondo.jpg",
+      "background_style": {
+        "x": 50,
+        "y": 60,
+        "blur": 0,
+        "tint": 0.25,
+        "zoom": 1,
+        "lighten": 0,
+        "tintColor": "#0f2a24"
+      },
       "font_pair": "outfit",
       "button_font": "outfit",
+      "logo_url": "/templates/turismo-logo.png",
       "cover_image_url": "/templates/turismo-portada.jpg",
       "cover_style": {
         "x": 50,
@@ -321,7 +372,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "mode": "fade",
         "size": "large",
         "zoom": 1,
-        "enabled": true,
+        "enabled": false,
         "overlay": 0.2,
         "overlayColor": "#0f2a24",
         "stableSizing": true
@@ -356,7 +407,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
       "logo_style": {
         "x": 50,
         "y": 50,
-        "size": 92,
+        "size": 96,
         "zoom": 1,
         "shape": "round",
         "shadow": "soft",
@@ -373,7 +424,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "width": 100,
         "finish": "solid",
         "height": 56,
-        "layout": "center",
+        "layout": "profile-card",
         "preset": "soft",
         "radius": 28,
         "shadow": "soft",
@@ -384,9 +435,21 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "textColor": "#0f2a24",
         "collection": "soft",
         "fontWeight": 700,
-        "headerCard": false,
+        "headerCard": true,
         "templateId": "rubro:turismo",
         "contentAlign": "left",
+        "distribution": {
+          "top": 72,
+          "logoGap": 18,
+          "separator": false,
+          "buttonsGap": 14,
+          "socialsGap": 12,
+          "separatorColor": "#f2b05e",
+          "separatorSpace": 12,
+          "separatorStyle": "solid",
+          "separatorWidth": 40,
+          "separatorWeight": 1
+        },
         "quickSocials": [
           {
             "url": "senderosdelvalle",
@@ -451,15 +514,17 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
       "background_type": "gradient",
       "background_color": "#f5f2ec",
       "background_gradient_to": "#ebe5da",
+      "background_style": {},
       "font_pair": "domine",
       "button_font": "manrope",
+      "logo_url": "/templates/profesional-perfil.jpg",
       "cover_image_url": "/templates/profesional-portada.jpg",
       "cover_style": {
         "x": 50,
         "y": 45,
         "fade": 40,
         "mode": "banner",
-        "size": "medium",
+        "size": "small",
         "zoom": 1,
         "enabled": true,
         "overlay": 0,
@@ -495,7 +560,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
       "logo_style": {
         "x": 50,
         "y": 50,
-        "size": 96,
+        "size": 108,
         "zoom": 1,
         "shape": "round",
         "shadow": "soft",
@@ -526,6 +591,18 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "headerCard": false,
         "templateId": "rubro:profesional",
         "contentAlign": "left",
+        "distribution": {
+          "top": 64,
+          "logoGap": 16,
+          "separator": true,
+          "buttonsGap": 12,
+          "socialsGap": 12,
+          "separatorColor": "#5b7a6a",
+          "separatorSpace": 16,
+          "separatorStyle": "solid",
+          "separatorWidth": 25,
+          "separatorWeight": 2
+        },
         "quickSocials": [
           {
             "url": "estudiorivas",
@@ -589,14 +666,16 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
       "background_type": "gradient",
       "background_color": "#fbf1ef",
       "background_gradient_to": "#f2dedb",
+      "background_style": {},
       "font_pair": "elegant",
       "button_font": "manrope",
+      "logo_url": "/templates/belleza-perfil.jpg",
       "cover_image_url": "/templates/belleza-portada.jpg",
       "cover_style": {
         "x": 50,
         "y": 40,
         "fade": 55,
-        "mode": "fade",
+        "mode": "banner",
         "size": "medium",
         "zoom": 1,
         "enabled": true,
@@ -634,7 +713,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
       "logo_style": {
         "x": 50,
         "y": 50,
-        "size": 96,
+        "size": 108,
         "zoom": 1,
         "shape": "round",
         "shadow": "soft",
@@ -642,8 +721,8 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "initials": "one",
         "treatment": "template",
         "shadowSize": 1,
-        "borderColor": "#e8c3c5",
-        "borderWidth": 3,
+        "borderColor": "#ffffff",
+        "borderWidth": 4,
         "backgroundMode": "auto"
       },
       "button_style": {
@@ -665,6 +744,18 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "headerCard": false,
         "templateId": "rubro:belleza",
         "contentAlign": "center",
+        "distribution": {
+          "top": 64,
+          "logoGap": 16,
+          "separator": true,
+          "buttonsGap": 12,
+          "socialsGap": 12,
+          "separatorColor": "#c98a8f",
+          "separatorSpace": 14,
+          "separatorStyle": "sparkle",
+          "separatorWidth": 45,
+          "separatorWeight": 1
+        },
         "quickSocials": [
           {
             "url": "lumiere.estudio",
@@ -723,8 +814,10 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
       "background_type": "gradient",
       "background_color": "#121010",
       "background_gradient_to": "#0b0a09",
+      "background_style": {},
       "font_pair": "bebas",
       "button_font": "manrope",
+      "logo_url": "/templates/barberia-logo.png",
       "cover_image_url": "/templates/barberia-portada.jpg",
       "cover_style": {
         "x": 50,
@@ -768,7 +861,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
       "logo_style": {
         "x": 50,
         "y": 50,
-        "size": 92,
+        "size": 104,
         "zoom": 1,
         "shape": "round",
         "shadow": "soft",
@@ -776,8 +869,8 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "initials": "two",
         "treatment": "template",
         "shadowSize": 1,
-        "borderColor": "#121010",
-        "borderWidth": 3,
+        "borderColor": "#c8a36a",
+        "borderWidth": 2,
         "backgroundMode": "auto"
       },
       "button_style": {
@@ -798,6 +891,18 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "headerCard": false,
         "templateId": "rubro:barberia",
         "contentAlign": "left",
+        "distribution": {
+          "top": 64,
+          "logoGap": 18,
+          "separator": true,
+          "buttonsGap": 12,
+          "socialsGap": 12,
+          "separatorColor": "#c8a36a",
+          "separatorSpace": 14,
+          "separatorStyle": "diamond",
+          "separatorWidth": 50,
+          "separatorWeight": 1
+        },
         "quickSocials": [
           {
             "url": "navajaclub",
@@ -856,14 +961,16 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
       "background_type": "gradient",
       "background_color": "#141414",
       "background_gradient_to": "#0d0d0d",
+      "background_style": {},
       "font_pair": "anton",
       "button_font": "manrope",
+      "logo_url": "/templates/oficios-logo.png",
       "cover_image_url": "/templates/oficios-portada.svg",
       "cover_style": {
         "x": 50,
         "y": 30,
         "fade": 45,
-        "mode": "fade",
+        "mode": "banner",
         "size": "medium",
         "zoom": 1,
         "enabled": true,
@@ -902,7 +1009,7 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
       "logo_style": {
         "x": 50,
         "y": 50,
-        "size": 92,
+        "size": 100,
         "zoom": 1,
         "shape": "square",
         "shadow": "hard",
@@ -934,6 +1041,18 @@ export const BUSINESS_TEMPLATES: BusinessTemplate[] = [
         "headerCard": false,
         "templateId": "rubro:oficios",
         "contentAlign": "left",
+        "distribution": {
+          "top": 64,
+          "logoGap": 16,
+          "separator": true,
+          "buttonsGap": 12,
+          "socialsGap": 12,
+          "separatorColor": "#ffcc00",
+          "separatorSpace": 14,
+          "separatorStyle": "bolt",
+          "separatorWidth": 40,
+          "separatorWeight": 2
+        },
         "quickSocials": [
           {
             "url": "llavemaestra",
