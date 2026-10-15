@@ -55,7 +55,8 @@
   .bx-journey-body { display:contents; }
   .bx-journey-eyebrow { order:0; justify-self:center; }
   .bx-journey-body h2 { order:1; margin-top:-10px; font-size:clamp(30px,8.4vw,38px); text-align:center; }
-  .bx-journey-photo { order:2; aspect-ratio:4/3.1; border-radius:22px; }
+  /* Cuadrada: las fotos son verticales y en un cuadro apaisado se cortaba el celular de la foto. */
+  .bx-journey-photo { order:2; aspect-ratio:1/1; border-radius:22px; }
   .bx-journey-photo figcaption { left:12px; bottom:12px; padding:8px 12px; font-size:12px; }
   .bx-journey-steps { order:3; gap:14px; margin-top:0; }
   .bx-journey-steps::before { left:15px; }

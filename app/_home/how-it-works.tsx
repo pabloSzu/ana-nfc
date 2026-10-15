@@ -16,16 +16,19 @@ const OPTIONS = [
   { icon: FaInstagram, label: "Instagram" },
 ];
 
-// La misma escena con distintos objetos y, en la pantalla, lo que abre cada uno (página, reseñas,
-// tarjeta personal), alternándose con un fundido suave: se ven varios usos sin agrandar la sección.
+// Cada escena muestra un objeto NFC y lo que abre en el celular: página, reseñas, WhatsApp,
+// tarjeta personal o credencial. Se alternan con un fundido sin agrandar la sección.
 const PHOTOS = [
-  { image: "/marketing/how-it-works/acercar-cafe.webp", label: "Tu página · Cafetería", alt: "Una clienta acerca su celular al mostrador NFC de Café Nube; en la pantalla se ve la página de Café Nube con opciones de menú, reserva y ubicación", position: "60% 55%" },
-  { image: "/marketing/how-it-works/acercar-resenas.webp", label: "Reseñas · Barbería", alt: "Un cliente acerca su celular al mostrador NFC de Norte Barber; en la pantalla se ve el formulario de Google para calificar con cinco estrellas y escribir una reseña", position: "55% 55%" },
-  { image: "/marketing/how-it-works/acercar-tarjeta.webp", label: "Tarjeta personal · Arquitecta", alt: "Una persona acerca su celular a la tarjeta NFC de Lucía Ferreyra; en la pantalla se ve su tarjeta digital con opciones para guardar el contacto, WhatsApp, Email e Instagram", position: "45% 50%" },
+  { image: "/marketing/how-it-works/acercar-cafe.webp", label: "Tu página · Cafetería", alt: "Una clienta acerca su celular al mostrador NFC de Café Nube; en la pantalla se ve la página de Café Nube con opciones de menú, reserva y ubicación", position: "62% 62%" },
+  { image: "/marketing/how-it-works/acercar-resenas.webp", label: "Reseñas · Barbería", alt: "Un cliente acerca su celular al mostrador NFC de Norte Barber; en la pantalla se ve el formulario de Google para calificar con cinco estrellas y escribir una reseña", position: "62% 60%" },
+  { image: "/marketing/how-it-works/acercar-whatsapp-tatuajes.webp", label: "WhatsApp · Tatuajes", alt: "Una persona acerca su celular al mostrador NFC de un estudio de tatuajes; se abre WhatsApp con el mensaje para reservar un turno ya escrito y el teclado visible", position: "55% 58%" },
+  { image: "/marketing/how-it-works/profesional-2-acercar-v2.webp", label: "Tarjeta personal · Arquitecta", alt: "Una mano acerca el celular a la tarjeta personal NFC de Lucía Ferreyra apoyada sobre planos de arquitectura; en la pantalla se ve su tarjeta digital con Guardar contacto, WhatsApp, Email e Instagram", position: "62% 55%" },
+  { image: "/marketing/how-it-works/credencial-mineria.webp", label: "Credencial · Feria minera", alt: "En una feria, una persona acerca su celular a la credencial NFC de Valentina Ríos, geóloga; en la pantalla se ve su tarjeta digital con Guardar contacto, WhatsApp, Email y LinkedIn", position: "58% 62%" },
+  { image: "/marketing/how-it-works/credencial-concesionaria.webp", label: "Credencial · Concesionaria", alt: "En una concesionaria, un cliente acerca su celular a la credencial NFC de Martín Rivas, asesor comercial; en la pantalla se ve su tarjeta digital con Guardar contacto, WhatsApp, Email e Instagram", position: "58% 62%" },
 ];
 
 // Cada foto se ve 3,5 s y se funde con la siguiente. La animación se arma según cuántas fotos haya,
-// así sumar una (WhatsApp, hotel…) es solo agregarla a PHOTOS.
+// así sumar otro ejemplo es solo agregarlo a PHOTOS.
 const SLIDE_SECONDS = 3.5;
 function fadeKeyframes(count: number) {
   const share = 100 / count;
