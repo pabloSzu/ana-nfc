@@ -87,8 +87,9 @@ function offsetFor(track: HTMLDivElement, index: number) {
 // Carrusel a todo el ancho con todos los ejemplos juntos: landings, tarjetas personales y links
 // directos. Es un scroll horizontal nativo con imán (scroll-snap), así que en el celular se desliza
 // con el dedo como cualquier galería; en la computadora se usan las flechas, los botones de
-// arriba o se toca el celular que se quiere ver. Avanza solo mientras está en pantalla, se pausa
-// con el mouse encima y deja de avanzar para siempre en cuanto la persona lo toca.
+// arriba o se toca el celular que se quiere ver. Avanza solo cada 3 segundos mientras está en
+// pantalla, se pausa con el mouse sobre el celular del centro y, si la persona lo toca, se
+// detiene y vuelve a avanzar solo a los 8 segundos.
 export function StyleShowcase({ waUrl }: { waUrl: string }) {
   const trackRef = useRef<HTMLDivElement>(null);
   // Destino del desplazamiento en curso. Con clics rápidos en las flechas, el siguiente paso se
@@ -119,6 +120,17 @@ export function StyleShowcase({ waUrl }: { waUrl: string }) {
     if (first >= TOTAL - CLONE_BUFFER) candidates.push(first - (TOTAL - CLONE_BUFFER));
     userGoTo(candidates.reduce((best, index) => Math.abs(index - active) < Math.abs(best - active) ? index : best));
   };
+
+  // "ver ejemplos" en los precios lleva a #ejemplos: además de bajar hasta las pestañas, el
+  // carrusel salta a las landings (lo que se compra "con página BIONFC").
+  const goToGroupRef = useRef(goToGroup);
+  goToGroupRef.current = goToGroup;
+  useEffect(() => {
+    const onHash = () => { if (window.location.hash === "#ejemplos") goToGroupRef.current("landing"); };
+    onHash();
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
 
   useLayoutEffect(() => {
     const track = trackRef.current;
@@ -160,25 +172,38 @@ export function StyleShowcase({ waUrl }: { waUrl: string }) {
     return () => { track.removeEventListener("scroll", onScroll); observer?.disconnect(); if (frame) cancelAnimationFrame(frame); window.clearTimeout(settle); };
   }, []);
 
+  // Ritmo fijo de 3 segundos. Va con un intervalo y no con un temporizador atado a "active": ese
+  // cambia también con el reacomodo invisible del bucle infinito, y reiniciaba la cuenta (el
+  // carrusel quedaba lento e irregular, entre 4 y 6 segundos por diseño).
+  const activeRef = useRef(active);
+  activeRef.current = active;
   useEffect(() => {
     if (!autoplay || !inView || paused || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const timer = window.setTimeout(() => goTo(active + 1), 3600);
+    const timer = window.setInterval(() => goTo((targetRef.current ?? activeRef.current) + 1), 3000);
+    return () => window.clearInterval(timer);
+  }, [autoplay, inView, paused, goTo]);
+
+  // Al tocar el carrusel el autoplay se detiene para no sacarte lo que estás mirando, pero vuelve
+  // solo después de 8 segundos sin interacción.
+  useEffect(() => {
+    if (autoplay || paused) return;
+    const timer = window.setTimeout(() => setAutoplay(true), 8000);
     return () => window.clearTimeout(timer);
-  }, [autoplay, inView, paused, active, goTo]);
+  }, [autoplay, paused, active]);
 
   return (
     <div className="bx-gallery">
       <div className="bx-gallery-head">
         <p className="bx-showcase-kicker"><span /> LO QUE SE ABRE AL ACERCAR EL CELULAR</p>
-        <h2 className="bx-h2 bx-on-dark">Páginas NFC hermosas,<br /><span className="bx-soft">hechas para tu marca.</span></h2>
+        <h2 className="bx-h2 bx-on-dark">Páginas NFC hermosas,<br /><span className="bx-soft">hechas a tu medida.</span></h2>
         <p className="bx-lead bx-on-dark-muted">Una landing para tu negocio, una tarjeta personal o un link directo a tus reseñas, tu Instagram o un WhatsApp con mensaje predefinido. Son solo algunos ejemplos: el tuyo lo diseñamos desde cero.</p>
       </div>
-      <div className="bx-gallery-groups" role="group" aria-label="Tipos de diseño">
+      <div id="ejemplos" className="bx-gallery-groups" role="group" aria-label="Tipos de diseño">
         {GROUPS.map((group) => <button key={group.kind} type="button" aria-pressed={activeKind === group.kind} onClick={() => goToGroup(group.kind)}>
           <strong>{group.label}</strong><small>{group.note}</small>
         </button>)}
       </div>
-      <div className="bx-gallery-stage" onPointerEnter={(event) => { if (event.pointerType === "mouse") setPaused(true); }} onPointerLeave={() => setPaused(false)}>
+      <div className="bx-gallery-stage" onPointerMove={(event) => { if (event.pointerType === "mouse") setPaused(Boolean((event.target as HTMLElement).closest(".bx-gallery-slide.is-active"))); }} onPointerLeave={() => setPaused(false)}>
         <div className="bx-gallery-track" ref={trackRef} onPointerDown={() => setAutoplay(false)} onWheel={() => setAutoplay(false)} aria-label="Ejemplos de diseños" role="region" tabIndex={0} onKeyDown={(event) => { if (event.key === "ArrowRight" || event.key === "ArrowLeft") { event.preventDefault(); step(event.key === "ArrowRight" ? 1 : -1); } }}>
           {LOOPED.map(({ example, slideIndex }, index) => {
             const kind = example.kind as Kind;

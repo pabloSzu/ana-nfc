@@ -1,63 +1,71 @@
-/* "Cómo funciona" (app/_home/how-it-works.tsx). Compu: tres cuadros con imagen en columnas,
-   franja de beneficios y botón. Celular: los cuadros se deslizan de costado (se asoma el
-   siguiente) y los beneficios van de a dos, así la sección entra en una pantalla. */
+/* "Cómo funciona" (app/_home/how-it-works.tsx). Compu: la foto protagonista a la izquierda y, a la
+   derecha, el título, los 3 pasos y el botón; los beneficios abajo, a todo el ancho. Celular: el
+   título, la foto (recortada sobre la mano y el celular) y los pasos en lista. */
 .bx-journey { position:relative; overflow:hidden; border-top:1px solid #d9e4f5; border-bottom:1px solid #d8d9ec; background:linear-gradient(132deg,#eaf3ff 0%,#f0edff 49%,#e8f7f6 100%); color:#14263d; }
 .bx-journey::before { content:""; position:absolute; inset:0; pointer-events:none; background:radial-gradient(circle at 10% 35%,#2dc2dd24 0%,transparent 30%),radial-gradient(circle at 86% 22%,#735ee932 0%,transparent 34%); }
-.bx-journey-container { position:relative; display:grid; justify-items:center; gap:40px; width:min(var(--content-max),calc(100% - var(--pad-x) - var(--pad-x))); margin-inline:auto; padding-block:clamp(72px,8vw,104px); }
+.bx-journey-container { position:relative; display:grid; grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr); align-items:center; gap:28px clamp(40px,5vw,72px); width:min(1120px,calc(100% - var(--pad-x) - var(--pad-x))); margin-inline:auto; padding-block:clamp(64px,7vw,96px); }
 
-.bx-journey-intro { max-width:660px; text-align:center; }
+/* La foto */
+.bx-journey-photo { position:relative; margin:0; overflow:hidden; aspect-ratio:4/4.5; border-radius:28px; box-shadow:0 36px 70px -42px #1d2a4a; }
+/* Fotos apiladas que se alternan con un fundido (la duración y los @keyframes se arman en
+   how-it-works.tsx según cuántas fotos haya). */
+.bx-journey-slide { position:absolute; inset:0; opacity:0; animation:bx-journey-fade 10.5s infinite; }
+.bx-journey-slide:first-child { opacity:1; }
+.bx-journey-slide img { width:100%; height:100%; object-fit:cover; }
+@media (prefers-reduced-motion: reduce) { .bx-journey-slide { animation:none; } .bx-journey-slide:not(:first-child) { display:none; } }
+.bx-journey-photo figcaption { position:absolute; left:16px; bottom:16px; display:inline-flex; align-items:center; gap:8px; padding:9px 14px; border-radius:99px; background:#ffffffe6; color:#1b2b45; font:800 13px/1 var(--bx-body),sans-serif; box-shadow:0 10px 24px -14px #1d2a4a; backdrop-filter:blur(8px); }
+.bx-journey-photo figcaption span { color:#5a4fe0; letter-spacing:-.18em; }
+
+/* Texto y pasos */
+.bx-journey-body { min-width:0; }
 .bx-journey-eyebrow { display:inline-flex; padding:8px 12px; border:1px solid #dbe5f4; border-radius:99px; background:#ffffffb5; color:#3575c4; font:800 10px/1.4 var(--bx-body),sans-serif; letter-spacing:.15em; }
-.bx-journey-intro h2 { margin-top:18px; color:#142840; font:800 clamp(36px,4.2vw,56px)/1.06 var(--bx-display),sans-serif; letter-spacing:-.05em; text-wrap:balance; }
-.bx-journey-intro h2 span { background:linear-gradient(100deg,#2f7bf0,#6a55e6 60%,#9a4fe0); -webkit-background-clip:text; background-clip:text; color:transparent; }
-.bx-journey-lead { max-width:46ch; margin:14px auto 0; color:#5d6f86; font:500 clamp(15px,1.2vw,17px)/1.6 var(--bx-body),sans-serif; text-wrap:pretty; }
+.bx-journey-body h2 { margin-top:14px; color:#142840; font:800 clamp(34px,3.8vw,50px)/1.05 var(--bx-display),sans-serif; letter-spacing:-.05em; text-wrap:balance; }
+.bx-journey-body h2 span { display:block; background:linear-gradient(100deg,#2f7bf0,#6a55e6 60%,#9a4fe0); -webkit-background-clip:text; background-clip:text; color:transparent; }
 
-.bx-journey-steps { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:20px; width:100%; margin:0; padding:0; list-style:none; }
-.bx-journey-steps > li { display:grid; align-content:start; gap:6px; padding:12px 12px 20px; border:1px solid #ffffffc4; border-radius:26px; background:#ffffffa8; box-shadow:0 26px 50px -42px #283d7790; backdrop-filter:blur(12px); }
-.bx-journey-photo { position:relative; aspect-ratio:4/4.4; margin-bottom:12px; overflow:hidden; border-radius:18px; background:#eef3fb; }
-.bx-journey-photo img { width:100%; height:100%; object-fit:cover; object-position:50% 55%; }
-.bx-journey-number { position:absolute; top:12px; left:12px; display:grid; place-items:center; width:30px; height:30px; border-radius:50%; background:#14263d; color:#fff; font:800 13px/1 var(--bx-body),sans-serif; box-shadow:0 6px 14px -6px #14263d; }
-.bx-journey-steps h3 { padding-inline:8px; color:#1b3049; font:800 clamp(19px,1.6vw,22px)/1.22 var(--bx-display),sans-serif; letter-spacing:-.035em; }
-.bx-journey-steps h3 mark { padding:0 6px; border-radius:8px; background:linear-gradient(100deg,#dbe8ff,#e6defe); color:#5143d6; }
-.bx-journey-steps p { padding-inline:8px; color:#63758b; font:500 14px/1.55 var(--bx-body),sans-serif; text-wrap:pretty; }
+.bx-journey-steps { position:relative; display:grid; gap:18px; margin:26px 0 0; padding:0; list-style:none; }
+.bx-journey-steps::before { content:""; position:absolute; top:18px; bottom:18px; left:17px; width:2px; border-radius:2px; background:linear-gradient(#7b68e4,#3ab9d4); opacity:.35; }
+.bx-journey-steps > li { position:relative; display:grid; grid-template-columns:36px 1fr; gap:14px; align-items:start; }
+.bx-journey-number { position:relative; display:grid; place-items:center; width:36px; height:36px; border-radius:50%; background:linear-gradient(140deg,#2f7bf0,#6a55e6); color:#fff; font:800 14px/1 var(--bx-body),sans-serif; box-shadow:0 8px 18px -10px #4b4fd6; }
+.bx-journey-steps h3 { margin-top:6px; color:#1b3049; font:800 clamp(18px,1.6vw,21px)/1.2 var(--bx-display),sans-serif; letter-spacing:-.035em; }
+.bx-journey-steps h3 mark { padding:0 5px; border-radius:7px; background:linear-gradient(100deg,#dbe8ff,#e6defe); color:#5143d6; }
+.bx-journey-steps p { margin-top:5px; color:#5f7189; font:500 14.5px/1.55 var(--bx-body),sans-serif; text-wrap:pretty; }
 
-.bx-journey-benefits { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin:0; padding:0; list-style:none; }
-.bx-journey-benefits li { display:inline-flex; align-items:center; gap:8px; padding:10px 15px; border:1px solid #dfe6f2; border-radius:99px; background:#ffffffc9; color:#2b3f58; font:700 13px/1.2 var(--bx-body),sans-serif; }
-.bx-journey-benefits svg { flex:0 0 auto; width:16px; height:16px; color:#5a4fe0; }
+/* Lo que se puede abrir */
+.bx-journey-options { display:flex; flex-wrap:wrap; gap:7px; margin:10px 0 0; padding:0; list-style:none; }
+.bx-journey-options li { display:inline-flex; align-items:center; gap:6px; padding:7px 11px; border:1px solid #dcd5fb; border-radius:99px; background:#fff; color:#2b3f58; font:700 12.5px/1 var(--bx-body),sans-serif; }
+.bx-journey-options svg { width:14px; height:14px; color:#5a4fe0; }
+.bx-journey-options li:nth-child(3) svg { color:#4285f4; }
+.bx-journey-options li:nth-child(4) svg { color:#22a85a; }
+.bx-journey-options li:nth-child(5) svg { color:#d6336c; }
 
-.bx-journey-swipe { display:none; }
-.bx-journey-cta { display:grid; justify-items:center; gap:10px; }
-.bx-journey-btn { padding:16px 28px; background:linear-gradient(120deg,#2f7bf0,#6a55e6); color:#fff; box-shadow:0 18px 34px -18px #4b4fd6; }
+.bx-journey-cta { display:flex; flex-wrap:wrap; align-items:center; gap:10px 16px; margin-top:28px; }
+.bx-journey-btn { padding:15px 26px; background:linear-gradient(120deg,#2f7bf0,#6a55e6); color:#fff; box-shadow:0 18px 34px -18px #4b4fd6; }
 .bx-journey-btn:hover { transform:translateY(-2px); }
 .bx-journey-btn svg { width:19px; height:19px; }
 .bx-journey-cta span { color:#6d7d92; font:600 12px/1.4 var(--bx-body),sans-serif; }
 
-@media (max-width: 800px) {
-  .bx-journey-container { width:100%; gap:22px; padding-block:48px 52px; }
-  .bx-journey-intro { padding-inline:20px; }
-  .bx-journey-intro h2 { margin-top:14px; font-size:clamp(31px,8.6vw,40px); }
-  .bx-journey-intro h2 span { display:block; }
-  .bx-journey-lead { margin-top:10px; font-size:15px; }
-  /* Cuadros deslizables: cada uno ocupa ~78% del ancho y se asoma el siguiente. */
-  .bx-journey-steps { display:flex; gap:12px; overflow-x:auto; padding:4px 20px 8px; scroll-snap-type:x mandatory; scroll-padding-inline:20px; scrollbar-width:none; }
-  .bx-journey-steps::-webkit-scrollbar { display:none; }
-  .bx-journey-steps > li { flex:0 0 78%; max-width:330px; padding:10px 10px 16px; border-radius:22px; scroll-snap-align:start; }
-  .bx-journey-photo { aspect-ratio:1/1.02; margin-bottom:8px; border-radius:15px; }
-  .bx-journey-steps h3 { font-size:18px; }
-  .bx-journey-steps p { font-size:13px; line-height:1.5; }
-  .bx-journey-swipe { display:block; margin-top:-12px; color:#6a59de; font:700 12px/1.3 var(--bx-body),sans-serif; }
-  .bx-journey-benefits { display:grid; grid-template-columns:1fr 1fr; gap:8px; width:calc(100% - 40px); }
-  .bx-journey-benefits li { justify-content:flex-start; padding:9px 11px; border-radius:14px; font-size:12px; }
-  .bx-journey-cta { width:calc(100% - 40px); }
-  .bx-journey-btn { width:100%; }
-}
-.bx-journey-steps p b { color:#2b3f58; font-weight:700; }
+/* Beneficios, a todo el ancho */
+.bx-journey-benefits { grid-column:1 / -1; display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin:14px 0 0; padding:0; list-style:none; }
+.bx-journey-benefits li { display:inline-flex; align-items:center; gap:8px; padding:10px 15px; border:1px solid #dfe6f2; border-radius:99px; background:#ffffffc9; color:#2b3f58; font:700 13px/1.2 var(--bx-body),sans-serif; }
+.bx-journey-benefits svg { flex:0 0 auto; width:16px; height:16px; color:#5a4fe0; }
 
-/* Pestañas de historias (how-it-works-stories.tsx): solo aparecen con más de una lista. */
-.bx-journey-tabs { display:flex; gap:6px; margin-bottom:-14px; padding:4px; border:1px solid #dfe6f2; border-radius:99px; background:#ffffffb0; }
-.bx-journey-tabs button { padding:9px 16px; border:0; border-radius:99px; background:transparent; color:#4b5d75; font:700 13px/1 var(--bx-body),sans-serif; cursor:pointer; }
-.bx-journey-tabs button.is-active { background:#14263d; color:#fff; }
-@media (max-width: 800px) {
-  .bx-journey-tabs { max-width:calc(100% - 40px); margin-bottom:-8px; overflow-x:auto; scrollbar-width:none; }
-  .bx-journey-tabs::-webkit-scrollbar { display:none; }
-  .bx-journey-tabs button { flex:0 0 auto; padding:8px 13px; font-size:12px; }
+@media (max-width: 860px) {
+  .bx-journey-container { grid-template-columns:1fr; gap:22px; width:calc(100% - 32px); max-width:560px; padding-block:44px 48px; }
+  /* Celular: el título va primero, después la foto, los pasos, los beneficios y el botón. */
+  .bx-journey-body { display:contents; }
+  .bx-journey-eyebrow { order:0; justify-self:center; }
+  .bx-journey-body h2 { order:1; margin-top:-10px; font-size:clamp(30px,8.4vw,38px); text-align:center; }
+  .bx-journey-photo { order:2; aspect-ratio:4/3.1; border-radius:22px; }
+  .bx-journey-photo figcaption { left:12px; bottom:12px; padding:8px 12px; font-size:12px; }
+  .bx-journey-steps { order:3; gap:14px; margin-top:0; }
+  .bx-journey-steps::before { left:15px; }
+  .bx-journey-steps > li { grid-template-columns:32px 1fr; gap:12px; }
+  .bx-journey-number { width:32px; height:32px; font-size:13px; }
+  .bx-journey-steps h3 { margin-top:5px; font-size:17px; }
+  .bx-journey-steps p { font-size:13.5px; }
+  .bx-journey-options li { padding:6px 10px; font-size:12px; }
+  .bx-journey-benefits { order:4; display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:0; }
+  .bx-journey-benefits li { padding:9px 11px; border-radius:14px; font-size:12px; }
+  .bx-journey-cta { order:5; display:grid; justify-items:center; margin-top:0; }
+  .bx-journey-btn { width:100%; }
 }

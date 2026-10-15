@@ -546,3 +546,10 @@ html:has(.bx) { scroll-behavior: smooth; }
   .bx-gallery-controls > span { gap: 4px; }
 }
 @media (prefers-reduced-motion: reduce) { .bx-gallery-track.is-ready, .bx-gallery-slide { transition: none; } .bx-gallery-tag::after { animation: none; display: none; } }
+/* "ver ejemplos" (precios) baja hasta acá: las pestañas quedan justo debajo del menú fijo, con los celulares completos a la vista. */
+#ejemplos { scroll-margin-top: 88px; }
+
+/* Texto con degradé (background-clip:text): el degradé solo pinta dentro de la caja de la línea,
+   y con interlineado ajustado cortaba lo que baja de la línea (la "p", la "g", la "q"). Un poco de
+   relleno abajo, compensado con margen negativo, le da lugar sin mover nada. */
+.bx-grad, .bx-journey-body h2 span { padding-bottom: .14em; margin-bottom: -.14em; }

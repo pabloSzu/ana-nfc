@@ -44,7 +44,8 @@ const COMBOS = [
     products: ["Mostrador grande", "Mostrador pequeño", "Tarjeta personal", "Llavero personalizado"],
     images: [
       { src: "/marketing/combos/combo-negocio-burger-v5.webp", label: "Hamburguesería", alt: "Combo Fuego Burger: mostrador grande para pedidos por WhatsApp, mostrador pequeño para reseñas, tarjeta NFC sin QR para pedidos y delivery y llavero NFC de marca" },
-      { src: "/marketing/combos/combo-negocio-cerrajeria-v2.webp", label: "Cerrajería", alt: "Combo Llave Maestra: mostrador grande para urgencias por WhatsApp, mostrador pequeño para reseñas, tarjeta de servicio y llavero de marca" },
+      { src: "/marketing/combos/combo-negocio-cerrajeria-v10.webp", label: "Cerrajería", alt: "Combo Llave Maestra ilustrado: mostrador grande para urgencias por WhatsApp, mostrador pequeño para reseñas, tarjeta de servicio a domicilio y llavero con símbolo NFC" },
+      { src: "/marketing/combos/combo-negocio-tu-marca-v7.webp", label: "Tu marca", alt: "Combo Tu Marca minimalista: mostrador grande con QR y NFC, mostrador pequeño para reseñas de Google, tarjeta de contacto sin QR y llavero NFC" },
     ],
   },
   {
@@ -105,7 +106,7 @@ function PriceBlock({ listPrice, pagePrice, directPrice, includes, directNote, d
     <div className="bx-price-main">
       <div className="bx-price-head"><span>Con página BIONFC</span><em>{dark ? `Ahorrás $${new Intl.NumberFormat("es-AR").format(comboSaving)}` : "Precio de lanzamiento"}</em></div>
       <p className="bx-price-amount"><s aria-label={`Precio de lista ${listPrice}`}>{listPrice}</s><strong>{pagePrice}</strong></p>
-      <ul>{includes.map((item) => <li key={item}><FiCheck aria-hidden="true" />{item}</li>)}<li><FiCheck aria-hidden="true" /><span>Primer año incluido · <a href="#renovacion" onClick={showRenewal}>¿y después?</a></span></li></ul>
+      <ul>{includes.map((item) => <li key={item}><FiCheck aria-hidden="true" />{/página/i.test(item) && !/link que elijas/.test(item) ? <span>{item} · <a href="#ejemplos" onClick={() => { if (window.location.hash === "#ejemplos") window.dispatchEvent(new HashChangeEvent("hashchange")); }}>ver ejemplos</a></span> : item}</li>)}<li><FiCheck aria-hidden="true" /><span>Primer año incluido · <a href="#renovacion" onClick={showRenewal}>¿y después?</a></span></li></ul>
     </div>
     <a className="bx-price-alt" href={directHref} target="_blank" rel="noreferrer"><span>{dark ? "Sin página" : "Sin página BIONFC"}<small>{directNote}</small></span><strong>{directPrice}</strong><em>Quiero esta opción <FiArrowUpRight aria-hidden="true" /></em></a>
   </div>;
