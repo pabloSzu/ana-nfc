@@ -93,11 +93,11 @@
   .bx-makers-tap-help { align-self: start; text-align: left; margin: 12px 0 0; padding-left: 15px; }
   .bx-makers-flow-arrow { display: none; }
   .bx-makers-mobile-arrow { display: block; position: absolute; bottom: 12px; left: calc(50% - 12px); width: 24px; height: 24px; color: #aa8bc0; }
-  .bx-makers-phones { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 430px; margin-inline: auto; gap: 24px 18px; }
-  .bx-makers-phone-custom { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: center; }
-  .bx-makers-phone-custom figcaption { text-align: left; margin-top: 0; }
-  .bx-makers-phone-custom figcaption strong { font-size: 19px; line-height: 1.3; color: #594865; letter-spacing: -.03em; }
-  .bx-makers-phone-custom figcaption span { font-size: 12px; margin-top: 10px; }
+  .bx-makers-phones { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 430px; margin-inline: auto; gap: 8px; }
+  .bx-makers-phone-art { border-radius: 10px; }
+  .bx-makers-phones figcaption { margin-top: 8px; }
+  .bx-makers-phones figcaption strong { font-size: 11px; line-height: 1.3; text-wrap: balance; }
+  .bx-makers-phones figcaption span { display: none; }
   .bx-makers-digital .bx-makers-stage-title { justify-content: center; }
   .bx-makers-pack-list { justify-content: center; margin-top: -4px; }
   .bx-makers-closing { flex-direction: column; align-items: stretch; padding: 20px; }
