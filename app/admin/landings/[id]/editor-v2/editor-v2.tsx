@@ -18,6 +18,8 @@ import { FontLinks, getFontWeights, LogoInitials, recommendedButtonTypography, r
 import IconPicker from "../icon-picker";
 import { buttonsMissingLink, withoutLinks, type BusinessTemplate } from "@/lib/business-templates";
 import TemplatePreview from "@/components/template-preview";
+import CopyButton from "@/components/copy-button";
+import { phoneFromInput } from "@/lib/contact-card";
 import { DAY_SHORT, DEFAULT_STATUS, defaultHours, openStatus, type ButtonExtra, type DayHours } from "@/lib/button-extras";
 import { DESIGN_PRESETS_V2, buttonCollectionStyle, buttonIconStyle, instagramAssetMode, recommendedIconAppearance, resolveButtonColors, shouldUseBrandMark, youtubeMarkSurfaceColor, type DesignPreset } from "@/lib/design-presets";
 import { ThemeSceneLayer, useSharedTheme } from "@/components/theme-scene";
@@ -1554,6 +1556,7 @@ function SettingsControls({ draft, buttons, dirty, onTypeChange, publishAction, 
       {!isPublished && dirty && <p className="v2-help" role="status">Primero guardá los cambios con el botón de arriba.</p>}
       {!isPublished && missingContact && <p className="v2-help" role="status">Agregá un teléfono, email o WhatsApp en Datos.</p>}
       {isPublished && <a className="v2-suggested" href={`/${draft.slug}`} target="_blank" rel="noreferrer"><IconEye /> Abrir tarjeta publicada</a>}
+      {isPublished && <CopyButton text={`/${draft.slug}`} label="Copiar link de la tarjeta" />}
       <Link className="v2-suggested" href={`/admin/landings/${draft.id}/qr`}><IconQrCode /> Ver código QR y NFC</Link>
     </EditorSection>
     <details className="v2-contact-more"><summary>Más ajustes <span>Tipo de página y eliminación</span></summary><div className="v2-contact-more-body">
@@ -1581,6 +1584,7 @@ function SettingsControls({ draft, buttons, dirty, onTypeChange, publishAction, 
     {!isPublished && missingContact && <p className="v2-help" role="status">Agregá un teléfono, email o WhatsApp para poder publicar la tarjeta.</p>}
     <PublishCheck missing={missingLinks.map((button) => button.title || "Un botón")} />
     <a className="v2-suggested" href={`/${draft.slug}`} target="_blank" rel="noreferrer" style={{ display: "flex", alignItems: "center", gap: 8 }}><IconEye /> Ver {draft.business_type === "contact" ? "tarjeta" : "landing"} publicada</a>
+    {isPublished && <CopyButton text={`/${draft.slug}`} label="Copiar link" />}
     <Link className="v2-suggested" href={`/admin/landings/${draft.id}/qr`} style={{ display: "flex", alignItems: "center", gap: 8 }}><IconQrCode /> Código QR para el tag NFC</Link>
 </EditorSection>    <DeleteLandingButton action={deleteLandingAction} landingId={draft.id} label={draft.business_type === "contact" ? "Eliminar tarjeta" : "Eliminar landing"} isContact={draft.business_type === "contact"} />
   </div>;
@@ -1726,7 +1730,8 @@ function ContactControls({ draft, buttons, onChange, onActionChange, onEditPhoto
     <EditorSection title="Cómo te contactan" tone="green">
       <label>Teléfono<input type="tel" value={actionValue("phone")} placeholder="Ej: +54 9 351 123 4567" onChange={(event) => onActionChange("phone", event.target.value)} /></label>
       <label>Email<input type="email" value={actionValue("email")} placeholder="hola@tuempresa.com" onChange={(event) => onActionChange("email", event.target.value)} /></label>
-      <label>WhatsApp<input type="tel" value={actionValue("whatsapp")} placeholder="Ej: 5493511234567" onChange={(event) => onActionChange("whatsapp", event.target.value)} /></label>
+      <label>WhatsApp<input type="tel" value={actionValue("whatsapp")} placeholder="Ej: 549 351 123 4567" onChange={(event) => onActionChange("whatsapp", event.target.value)} /></label>
+      <p className="v2-help" style={{ margin: "-4px 0 0", fontSize: 11 }}>Con código de país (54 y 9 para celulares de Argentina). Si pegás el link de WhatsApp, lo convertimos solo en número.{actionValue("whatsapp") && phoneFromInput(actionValue("whatsapp")).replace(/\D/g, "").length >= 8 && <> <a href={`https://wa.me/${phoneFromInput(actionValue("whatsapp")).replace(/\D/g, "")}`} target="_blank" rel="noreferrer">Probar el chat</a></>}</p>
       <p className="v2-help" style={{ margin: 0 }}>Con uno alcanza para empezar. Podés agregar los demás después.</p>
       {!actionValue("phone") && !actionValue("email") && !actionValue("whatsapp") && <p className="v2-help" role="status" style={{ margin: 0, color: "#9b4d23" }}>Agregá al menos un medio de contacto para que la tarjeta sea útil.</p>}
     </EditorSection>
@@ -1744,14 +1749,17 @@ function ContactControls({ draft, buttons, onChange, onActionChange, onEditPhoto
         <span>Nombre: {draft.business_name || "Sin completar"}</span>
         {draft.titleStyle.eyebrow && <span>Cargo: {draft.titleStyle.eyebrow}</span>}
         {draft.description && <span>Empresa: {draft.description}</span>}
-        {(actionValue("phone") || actionValue("whatsapp")) && <span>Teléfono: {actionValue("phone") || actionValue("whatsapp")}</span>}
+        {actionValue("phone") && <span>Teléfono: {actionValue("phone")}</span>}
+        {actionValue("whatsapp") && phoneFromInput(actionValue("whatsapp")).replace(/\D/g, "") !== phoneFromInput(actionValue("phone")).replace(/\D/g, "") && <span>WhatsApp: +{phoneFromInput(actionValue("whatsapp")).replace(/\D/g, "")}</span>}
         {draft.buttonZone.contactSecondPhone && <span>Segundo teléfono: {draft.buttonZone.contactSecondPhone}</span>}
         {actionValue("email") && <span>Email: {actionValue("email")}</span>}
         {draft.buttonZone.contactAddress && <span>Dirección: {draft.buttonZone.contactAddress}</span>}
-        {actionValue("website") && <span>Web: {actionValue("website")}</span>}
-        <span>Enlace permanente a esta tarjeta</span>
+        {draft.buttonZone.contactBio && <span>Sobre mí (como nota)</span>}
+        {actionValue("website") && <span>Sitio web: {actionValue("website")}</span>}
+        {buttons.filter((button) => ["instagram", "linkedin", "facebook", "tiktok", "youtube", "telegram"].includes(button.type) && button.url.trim()).map((button) => <span key={button.id}>{getAllActions().find((item) => item.type === button.type)?.label || button.type}: {button.url}</span>)}
+        <span>Enlace a esta tarjeta digital</span>
       </div>
-      <p className="v2-help" style={{ margin: 0 }}>Si cargás teléfono y WhatsApp diferentes, el contacto guarda el teléfono; WhatsApp sigue como acceso rápido. El CV y los demás enlaces se abren desde la tarjeta, no se adjuntan a la agenda.</p>
+      <p className="v2-help" style={{ margin: 0 }}>Cada dato se guarda con su nombre (WhatsApp, Instagram, Tarjeta digital…). Si el teléfono y el WhatsApp son el mismo número, se guarda una sola vez. El CV y los demás botones se abren desde la tarjeta, no van a la agenda.</p>
     </div></details>
     </>}
   </div>;

@@ -3095,3 +3095,12 @@ dialog.confirm-modal { width: min(400px, calc(100vw - 32px)); }
   .manage-summary { position: static; grid-template-columns: 130px minmax(0, 1fr); align-items: start; }
   .manage-summary-preview, .manage-summary-direct { height: 230px; }
 }
+
+/* Botón "Copiar" (components/copy-button.tsx): chico, al lado de cada dirección. */
+.copy-button { display: inline-flex; align-items: center; gap: 6px; justify-self: start; width: fit-content; padding: 5px 10px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text); font: inherit; font-size: 0.75rem; font-weight: 700; line-height: 1.2; cursor: pointer; transition: background .15s ease, border-color .15s ease, color .15s ease; }
+.copy-button svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.copy-button:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); color: var(--accent); }
+.copy-button.is-copied { border-color: #16a34a66; background: #ecfdf3; color: #15803d; }
+.pl-menu-items .copy-button.pl-menu-copy { width: 100%; justify-self: stretch; border: 0; border-radius: 8px; background: none; padding: 8px 10px; font-size: 0.8125rem; font-weight: 600; }
+.pl-menu-items .copy-button.pl-menu-copy:hover { background: var(--surface-2); }
+.pl-menu-items .copy-button.pl-menu-copy.is-copied { background: #ecfdf3; }

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { buttonsMissingLink } from "@/lib/business-templates";
 import { parseButtonExtra } from "@/lib/button-extras";
+import { phoneFromInput } from "@/lib/contact-card";
 import { normalizeUrl, isPlausiblePhone, AUTO_COLORS, businessProfiles } from "@/lib/landing-catalog";
 
 const hexColor = /^#[0-9a-f]{6}$/i;
@@ -214,6 +215,11 @@ export async function saveDesignStyle(fd: FormData) {
     if (!isOwnedButtonIconUrl(iconUrl, user.id, landingId)) saveFail(`El ícono propio del botón “${title}” no es válido.`);
     if (type === "cv" && !value && !landing?.template_name) saveFail("Subí un PDF o agregá un enlace para el documento.");
     if (type === "email" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) saveFail(`El email del botón “${title}” no parece válido.`);
+    // WhatsApp se guarda solo como número (aunque peguen un link wa.me o api.whatsapp.com): si no,
+    // el link terminaba como "número" en el contacto descargable. El teléfono conserva el formato
+    // que escribieron, salvo que hayan pegado un link (tel:, wa.me…).
+    if (type === "whatsapp" && value) value = phoneFromInput(value).replace(/^\+/, "");
+    if (type === "phone" && /^(tel:|https?:)/i.test(value)) value = phoneFromInput(value);
     if (["whatsapp", "phone"].includes(type) && value && !isPlausiblePhone(value)) saveFail(`El número del botón “${title}” parece incompleto.`);
     // Una promo puede llevar a un número de WhatsApp (ver promoHref): ese número no se toca.
     const isPromoPhone = type === "promo" && /^[+\d\s()-]+$/.test(value);

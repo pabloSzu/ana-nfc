@@ -9,6 +9,7 @@ import RenameLandingButton from "../rename-landing-button";
 import ViewLandingButton from "../view-landing-button";
 import DeleteLandingButton from "../delete-landing-button";
 import AssignClientButton from "../assign-client-button";
+import CopyButton from "@/components/copy-button";
 import type { PlanTone } from "@/lib/landing-plan";
 import { PAGE_SORTS, relativeDay, shortDate, sortPages, type PageSort } from "@/lib/page-sort";
 
@@ -163,6 +164,7 @@ export default function PagesList({ rows, clients, initialKind, initialView, ini
             : <ViewLandingButton slug={row.slug} landingId={row.id} published={row.published} publishAction={actions.publish} className="pl-icon" isContact={row.kind === "contact"} returnTo={returnTo} />}
           <Link className="pl-icon" href={`/admin/landings/${row.id}/qr`} title="QR y NFC" aria-label="QR y NFC"><IconQrCode /></Link>
           <RowMenu>
+            <CopyButton text={`/${row.slug}`} label="Copiar link" className="pl-menu-copy" />
             <RenameLandingButton action={actions.rename} landingId={row.id} currentName={row.name} currentSlug={row.slug} isContact={row.kind === "contact"} returnTo={returnTo} />
             {row.kind !== "direct" && <form action={actions.publish}>
               <input type="hidden" name="id" value={row.id} />

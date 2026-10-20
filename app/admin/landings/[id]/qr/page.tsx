@@ -5,6 +5,7 @@ import { IconExternalLink, IconEye } from "@/components/icons";
 import { getSiteOrigin, isLocalSite } from "@/lib/site-url";
 import { editHref, planOf } from "@/lib/landing-plan";
 import Toast from "@/components/toast";
+import CopyButton from "@/components/copy-button";
 import { Suspense } from "react";
 
 export default async function QR({ params }: { params: Promise<{ id: string }> }) {
@@ -57,8 +58,8 @@ export default async function QR({ params }: { params: Promise<{ id: string }> }
           style={{ width: "min(320px, 100%)", margin: "0 auto var(--space-4)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-sm)" }}
         />
         <div className="qr-addresses">
-          <div><span>Dirección pública</span><strong>{publicUrl}</strong><small>Es el enlace legible para compartir. Puede cambiar si renombrás la página.</small></div>
-          <div><span>Dirección permanente del QR</span><strong>{qrUrl}</strong><small>El código usa este identificador técnico para seguir funcionando aunque cambie el enlace público.</small></div>
+          <div><span>Dirección pública</span><strong>{publicUrl}</strong><CopyButton text={publicUrl} /><small>Es el enlace legible para compartir. Puede cambiar si renombrás la página.</small></div>
+          <div><span>Dirección permanente del QR</span><strong>{qrUrl}</strong><CopyButton text={qrUrl} /><small>El código usa este identificador técnico para seguir funcionando aunque cambie el enlace público.</small></div>
         </div>
         <div className="row-actions" style={{ justifyContent: "center", marginTop: "var(--space-4)" }}>
           {isLocal
@@ -68,12 +69,13 @@ export default async function QR({ params }: { params: Promise<{ id: string }> }
         </div>
         {planOf(landing) === "direct" && <div className="qr-direct-target">
           <span>Link directo · abre</span>
-          <strong>{landing.redirect_url || "Todavía no tiene link"}</strong>
+          <strong>{landing.redirect_url || "Todavía no tiene link"}</strong>{landing.redirect_url && <CopyButton text={landing.redirect_url} />}
           <Link href={`/admin/landings/${landing.id}/gestion`}>Cambiar el link</Link>
         </div>}
         <div className="qr-nfc-instructions">
           <strong>Dirección para grabar en el chip NFC</strong>
           <code>{nfcUrl}</code>
+          <CopyButton text={nfcUrl} label="Copiar dirección del chip" />
           <p>Usá la dirección completa, incluyendo <code>?s=nfc</code>. Así el Admin puede distinguir NFC, QR y enlaces directos.</p>
         </div>
       </div>
