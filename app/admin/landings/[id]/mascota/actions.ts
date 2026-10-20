@@ -3,8 +3,8 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { isPlausiblePhone } from "@/lib/landing-catalog";
-import { cleanPet, parsePet, petLook } from "@/lib/pet";
+import { revalidateLandingPage } from "@/lib/landing-cache";
+import { cleanPet, parsePet, petLook, petPhoneProblem } from "@/lib/pet";
 
 // Único punto de guardado del editor de la chapita: nombre, foto y todos los datos de la mascota
 // (button_style.pet) juntos, al tocar "Guardar".
@@ -26,8 +26,9 @@ export async function savePet(fd: FormData) {
   let raw: unknown = {};
   try { raw = JSON.parse(String(fd.get("pet") || "{}")); } catch { fail("No se pudieron leer los datos de la mascota."); }
   const pet = cleanPet(parsePet({ pet: raw }));
-  const badPhone = pet.family.find((member) => member.phone && !isPlausiblePhone(member.phone));
-  if (badPhone) fail(`El número ${badPhone.name ? `de ${badPhone.name} ` : ""}parece incompleto. Cargalo con código de país, por ejemplo 54 9 351 123 4567.`);
+  // Se guarda normalizado (549 + característica + número, ver lib/pet.ts); si no se puede, se avisa.
+  const badPhone = pet.family.find((member) => member.phone && petPhoneProblem(member.phone));
+  if (badPhone) fail(`Revisá el número ${badPhone.name ? `de ${badPhone.name}` : "de WhatsApp"}: ${petPhoneProblem(badPhone.phone)}`);
 
   const update: Record<string, unknown> = {
     business_name: name,
@@ -38,7 +39,7 @@ export async function savePet(fd: FormData) {
   };
   const photo = fd.get("photo");
   if (photo instanceof File && photo.size > 0) {
-    if (photo.size > 5 * 1024 * 1024) fail("La foto no puede superar 5 MB.");
+    if (photo.size > 5 * 1024 * 1024) fail("La foto es muy pesada (más de 5 MB). Probá con otra o sacale una captura.");
     if (!["image/jpeg", "image/png", "image/webp"].includes(photo.type)) fail("La foto debe ser JPG, PNG o WEBP.");
     const path = `${userId}/${landingId}/logo-${Date.now()}.${photo.type.split("/")[1].replace("jpeg", "jpg")}`;
     const { error: uploadError } = await supabase.storage.from("landing-assets").upload(path, photo, { contentType: photo.type, upsert: false });
@@ -54,6 +55,6 @@ export async function savePet(fd: FormData) {
   revalidatePath("/admin");
   revalidatePath("/admin/paginas");
   // La página pública se guarda en caché (app/[slug]/page.tsx): sin esto el cambio tardaría en verse.
-  if (landing!.slug) revalidatePath(`/${landing!.slug}`);
+  if (landing!.slug) revalidateLandingPage(landing!.slug);
   redirect(`${back}?saved=${encodeURIComponent("Cambios guardados")}`);
 }

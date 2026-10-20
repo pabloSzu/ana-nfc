@@ -18,16 +18,14 @@ export default async function BatchesPage() {
   const { data: authData } = await supabase.auth.getClaims();
   const userId = String(authData?.claims?.sub || "");
   if (!userId) redirect("/admin/login");
-  const [{ data: batches }, { data: tags }] = await Promise.all([
+  const [{ data: batches }, { data: batchCounts }] = await Promise.all([
     supabase.from("tag_batches").select("id,name,reseller,created_at").eq("owner_id", userId).order("created_at", { ascending: false }),
-    supabase.from("landings").select("batch_id,activated_at").eq("owner_id", userId).not("batch_id", "is", null),
+    // Contado en la base: traer todas las chapitas para contarlas se cortaría a las 1.000.
+    supabase.rpc("tag_batch_counts"),
   ]);
   const counts = new Map<string, { total: number; active: number }>();
-  for (const tag of tags || []) {
-    const count = counts.get(tag.batch_id) || { total: 0, active: 0 };
-    count.total += 1;
-    if (tag.activated_at) count.active += 1;
-    counts.set(tag.batch_id, count);
+  for (const row of (batchCounts || []) as { batch_id: string; total: number; active: number }[]) {
+    counts.set(row.batch_id, { total: Number(row.total), active: Number(row.active) });
   }
 
   return <main className="shell admin-shell admin-library-page">
@@ -41,7 +39,6 @@ export default async function BatchesPage() {
             <label className="label">Nombre del lote<input name="name" maxLength={60} required placeholder="Ej. Calle · octubre" /></label>
             <label className="label">Veterinaria o revendedor (opcional)<input name="reseller" maxLength={60} placeholder="Ej. Veterinaria Patitas" /><small className="field-help">Para saber cuántas vendió cada uno.</small></label>
             <label className="label">Cantidad<input name="count" type="number" min={1} max={BATCH_MAX} defaultValue={10} required /></label>
-            <label className="label">Plan<select name="plan" defaultValue="lifetime"><option value="lifetime">Sin vencimiento</option><option value="annual">Anual · se renueva cada año</option></select></label>
             <PendingSubmitButton className="btn full" pendingText="Generando…">Generar</PendingSubmitButton>
           </form>
         </ModalTrigger>

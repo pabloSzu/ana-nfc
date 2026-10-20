@@ -9,6 +9,7 @@ import { parseTitleStyle } from "@/lib/landing-catalog";
 import { normalizeSource, trackLandingView } from "@/lib/track-view";
 import { effectiveRedirect } from "@/lib/landing-plan";
 import { firstButtonLink } from "@/lib/landing-fallback";
+import { landingTag } from "@/lib/landing-cache";
 import "../globals.css";
 
 const publicSupabase = createClient(
@@ -17,20 +18,20 @@ const publicSupabase = createClient(
   { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } },
 );
 
+// La página se lee de a una con public_landing (la tabla ya no se puede listar desde afuera; ver
+// supabase/migrations/20261021120000_chapitas_seguridad.sql). Trae los botones habilitados en orden.
+// Se cachea por slug con su etiqueta, así guardar invalida justo esta página (revalidateTag).
+// Las columnas de landings (sin las internas) más sus botones. Se deja abierto como antes con select("*").
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type PublicLanding = any;
 const getLanding = cache((slug: string) => unstable_cache(
   async () => {
-    const { data } = await publicSupabase
-      .from("landings")
-      .select("*, actions(*)")
-      .eq("slug", slug)
-      .eq("published", true)
-      .eq("actions.enabled", true)
-      .order("position", { referencedTable: "actions" })
-      .maybeSingle();
-    return data;
+    const { data, error } = await publicSupabase.rpc("public_landing", { p_slug: slug });
+    if (error) console.error("public_landing falló", { slug, message: error.message });
+    return (data as PublicLanding | null) || null;
   },
   ["public-landing", slug],
-  { revalidate: 300 },
+  { revalidate: 300, tags: [landingTag(slug)] },
 )());
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {

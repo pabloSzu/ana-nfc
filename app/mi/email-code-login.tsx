@@ -4,6 +4,7 @@
 // por mail. Lo usan "Entrar" (/mi/entrar) y "Activar" (/activar).
 import { useState, type FormEvent } from "react";
 import { sendLoginCode, verifyLoginCode } from "./auth-actions";
+import { CONTACT_EMAIL, CONTACT_WHATSAPP } from "@/lib/terms";
 
 export default function EmailCodeLogin({ tagCode = "", submitLabel = "Entrar", onDone }: { tagCode?: string; submitLabel?: string; onDone: () => void | Promise<void> }) {
   const [email, setEmail] = useState("");
@@ -11,13 +12,14 @@ export default function EmailCodeLogin({ tagCode = "", submitLabel = "Entrar", o
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [sends, setSends] = useState(0);
 
   async function send(event?: FormEvent) {
     event?.preventDefault();
     setBusy(true); setError("");
     const result = await sendLoginCode(email, tagCode);
     setBusy(false);
-    if (result.ok) setSent(true); else setError(result.error);
+    if (result.ok) { setSent(true); setSends((count) => count + 1); } else setError(result.error);
   }
 
   async function verify(event: FormEvent) {
@@ -42,5 +44,6 @@ export default function EmailCodeLogin({ tagCode = "", submitLabel = "Entrar", o
         {error && <p className="mi-error" role="alert">{error}</p>}
         <button className="mi-button" type="submit" disabled={busy || code.replace(/\D/g, "").length < 6}>{busy ? "Entrando…" : submitLabel}</button>
         <p className="mi-hint"><button type="button" className="mi-link" onClick={() => send()} disabled={busy}>Mandar otro código</button> · <button type="button" className="mi-link" onClick={() => { setSent(false); setCode(""); setError(""); }}>Cambiar email</button></p>
+        {sends >= 2 && <p className="mi-hint">¿Sigue sin llegar? Revisá que el email esté bien escrito y la carpeta de spam. Si no, escribinos por <a className="mi-link" href={CONTACT_WHATSAPP} target="_blank" rel="noopener noreferrer">WhatsApp</a> o a {CONTACT_EMAIL} y te ayudamos.</p>}
       </form>;
 }

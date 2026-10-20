@@ -13,7 +13,7 @@ export default async function OwnerHome() {
   const { data: memberships } = await supabase.from("client_members").select("client_id").eq("user_id", userId);
   const clientIds = (memberships || []).map((row) => row.client_id);
   const { data: pages } = clientIds.length
-    ? await supabase.from("landings").select("id,slug,business_name,business_type,logo_url,published,button_style").in("client_id", clientIds).eq("business_type", "pet").order("activated_at")
+    ? await supabase.from("landings").select("id,slug,business_name,business_type,logo_url,published,button_style,blocked_at").in("client_id", clientIds).eq("business_type", "pet").order("activated_at")
     : { data: [] };
 
   return <main className="mi-main">
@@ -27,7 +27,7 @@ export default async function OwnerHome() {
       return <li key={page.id} className={pet.lost ? "is-lost" : ""}>
         <Link href={`/mi/chapita/${page.id}`}>
           <span className="mi-pet-photo">{/* eslint-disable-next-line @next/next/no-img-element -- foto de la mascota */}{photo ? <img src={photo} alt="" /> : "🐾"}</span>
-          <span className="mi-pet-copy"><strong>{page.business_name}</strong><small>{pet.lost ? "🚨 Modo perdido prendido" : page.published ? "Publicada" : "Falta cargar el WhatsApp para publicarla"}</small></span>
+          <span className="mi-pet-copy"><strong>{page.business_name || "Sin nombre todavía"}</strong><small>{page.blocked_at ? "Pausada por BIONFC" : pet.lost ? "🚨 Modo perdido prendido" : page.published ? "Funcionando" : "Falta cargar tu WhatsApp"}</small></span>
           <em>Editar →</em>
         </Link>
       </li>;

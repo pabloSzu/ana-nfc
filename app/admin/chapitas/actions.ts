@@ -18,7 +18,9 @@ export async function createBatch(fd: FormData) {
   const name = String(fd.get("name") || "").trim().slice(0, 60);
   const reseller = String(fd.get("reseller") || "").trim().slice(0, 60);
   const count = Math.floor(Number(fd.get("count")));
-  const plan = fd.get("plan") === "annual" ? "annual" : "lifetime";
+  // Las chapitas no vencen: "anual" no tiene sentido sin botones a los que pasar (ver
+  // lib/landing-plan.ts) y llenaría el Resumen de alertas que no se pueden resolver.
+  const plan = "lifetime";
   if (!name) fail("Poné un nombre para el lote.");
   if (!Number.isFinite(count) || count < 1 || count > BATCH_MAX) fail(`La cantidad tiene que ser entre 1 y ${BATCH_MAX}.`);
 

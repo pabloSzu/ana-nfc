@@ -1,4 +1,4 @@
-"use server";import {createClient} from "@/lib/supabase/server";import {redirect} from "next/navigation";import {revalidatePath} from "next/cache";
+"use server";import {createClient} from "@/lib/supabase/server";import { revalidateLandingPage } from "@/lib/landing-cache";import {redirect} from "next/navigation";import {revalidatePath} from "next/cache";
 import { businessProfiles, isPlausiblePhone } from "@/lib/landing-catalog";
 import { BUSINESS_TEMPLATES, buttonsMissingLink, sortTemplateRows, templateActionRows, templateFromLanding, withoutLinks, type BusinessTemplate } from "@/lib/business-templates";
 import { phoneFromInput } from "@/lib/contact-card";
@@ -99,7 +99,7 @@ export async function publish(fd: FormData) {
   const returnTo = String(fd.get("return_to") || "/admin");
   const target = returnTo.startsWith("/admin") ? returnTo : "/admin";
   const desired = String(fd.get("published")) === "true";
-  const { data: landing, error: lookupError } = await s.from("landings").select("id,slug,business_type,plan,expires_at,template_name,button_style").eq("id", id).eq("owner_id", user.id).maybeSingle();
+  const { data: landing, error: lookupError } = await s.from("landings").select("id,slug,business_type,plan,expires_at,template_name,button_style,client_id").eq("id", id).eq("owner_id", user.id).maybeSingle();
   if (lookupError) redirect(target + "?error=" + encodeURIComponent(lookupError.message));
   if (!landing) redirect(target + "?error=Página inexistente o sin permisos");
   if (desired && landing.template_name) redirect(target + "?error=" + encodeURIComponent("Una plantilla no se publica: creá una página desde ella."));
@@ -117,16 +117,20 @@ export async function publish(fd: FormData) {
     if (!actions?.some((action) => String(action.url || "").trim())) redirect(target + "?error=" + encodeURIComponent("Agregá un teléfono, email o WhatsApp antes de publicar la tarjeta."));
   }
   // Publicar por primera vez una página anual arranca su año (ver publishUpdate).
-  const { error } = await s.from("landings").update(publishUpdate(landing, desired)).eq("id", id).eq("owner_id", user.id);
+  // Una chapita que ya es de un dueño y se despublica desde acá (por ejemplo, por una denuncia) queda
+  // bloqueada: el dueño no la puede volver a publicar al guardar (ver save_my_pet). Publicarla
+  // desde acá la desbloquea.
+  const moderation = landing.business_type === "pet" ? { blocked_at: !desired && landing.client_id ? new Date().toISOString() : null } : {};
+  const { error } = await s.from("landings").update({ ...publishUpdate(landing, desired), ...moderation }).eq("id", id).eq("owner_id", user.id);
   if (error) redirect(target + "?error=" + encodeURIComponent(error.message));
   revalidatePath("/admin");
   revalidatePath("/admin/paginas");
   revalidatePath("/admin/landings/" + id);
-  if (landing.slug) revalidatePath("/" + landing.slug);
+  if (landing.slug) revalidateLandingPage(landing.slug);
   const label = landing.business_type === "contact" ? "Tarjeta" : "Landing";
   redirect(target + "?saved=" + encodeURIComponent(`${label} ${desired ? "publicada" : "despublicada"}`));
 }
-export async function renameLanding(fd:FormData){const {s,user}=await auth();const id=String(fd.get("id")||"");const requestedReturnTo=String(fd.get("return_to")||"/admin");const returnTo=requestedReturnTo.startsWith("/admin")?requestedReturnTo:"/admin";const fail=(message:string):never=>redirect(returnTo+"?error="+encodeURIComponent(message));const businessName=String(fd.get("business_name")||"").trim();if(!businessName)fail("El nombre de la landing es obligatorio.");const slug=slugify(String(fd.get("slug")||""));if(!slug)fail("El link de la landing es obligatorio.");const {data:landing,error:lookupError}=await s.from("landings").select("id,slug,business_name,business_type,title_style").eq("id",id).eq("owner_id",user.id).maybeSingle();if(lookupError)fail(lookupError.message);if(!landing)redirect(returnTo+"?error="+encodeURIComponent("Landing inexistente o sin permisos"));const slugChanged=slug!==landing.slug;if(slugChanged){const {data:ex,error:slugError}=await s.from("landings").select("id").eq("slug",slug).maybeSingle();if(slugError)fail(slugError.message);if(ex)fail("Ese link ya está en uso por otra landing.")}const currentTitleStyle=landing.title_style&&typeof landing.title_style==="object"&&!Array.isArray(landing.title_style)?landing.title_style as Record<string,unknown>:{};const update:Record<string,unknown>={business_name:businessName,slug};if(landing.business_type!=="contact"&&typeof currentTitleStyle.headline!=="string")update.title_style={...currentTitleStyle,headline:landing.business_name};const {error}=await s.from("landings").update(update).eq("id",id).eq("owner_id",user.id);if(error)fail(error.message);revalidatePath("/admin");revalidatePath("/admin/paginas");revalidatePath("/admin/landings/"+id+"/editor-v2");if(landing.slug)revalidatePath("/"+landing.slug);if(slugChanged)revalidatePath("/"+slug);redirect(returnTo+"?saved="+encodeURIComponent(slugChanged?"Nombre y link actualizados":"Nombre actualizado"))}
+export async function renameLanding(fd:FormData){const {s,user}=await auth();const id=String(fd.get("id")||"");const requestedReturnTo=String(fd.get("return_to")||"/admin");const returnTo=requestedReturnTo.startsWith("/admin")?requestedReturnTo:"/admin";const fail=(message:string):never=>redirect(returnTo+"?error="+encodeURIComponent(message));const businessName=String(fd.get("business_name")||"").trim();if(!businessName)fail("El nombre de la landing es obligatorio.");const slug=slugify(String(fd.get("slug")||""));if(!slug)fail("El link de la landing es obligatorio.");const {data:landing,error:lookupError}=await s.from("landings").select("id,slug,business_name,business_type,title_style").eq("id",id).eq("owner_id",user.id).maybeSingle();if(lookupError)fail(lookupError.message);if(!landing)redirect(returnTo+"?error="+encodeURIComponent("Landing inexistente o sin permisos"));const slugChanged=slug!==landing.slug;if(slugChanged){const {data:ex,error:slugError}=await s.from("landings").select("id").eq("slug",slug).maybeSingle();if(slugError)fail(slugError.message);if(ex)fail("Ese link ya está en uso por otra landing.")}const currentTitleStyle=landing.title_style&&typeof landing.title_style==="object"&&!Array.isArray(landing.title_style)?landing.title_style as Record<string,unknown>:{};const update:Record<string,unknown>={business_name:businessName,slug};if(landing.business_type!=="contact"&&typeof currentTitleStyle.headline!=="string")update.title_style={...currentTitleStyle,headline:landing.business_name};const {error}=await s.from("landings").update(update).eq("id",id).eq("owner_id",user.id);if(error)fail(error.message);revalidatePath("/admin");revalidatePath("/admin/paginas");revalidatePath("/admin/landings/"+id+"/editor-v2");if(landing.slug)revalidateLandingPage(landing.slug);if(slugChanged)revalidateLandingPage(slug);redirect(returnTo+"?saved="+encodeURIComponent(slugChanged?"Nombre y link actualizados":"Nombre actualizado"))}
 export async function deleteLanding(fd: FormData) {
   const { s, user } = await auth();
   const id = String(fd.get("id") || "");
@@ -139,7 +143,7 @@ export async function deleteLanding(fd: FormData) {
   if (error) redirect(returnTo + "?error=" + encodeURIComponent(error.message));
   revalidatePath("/admin");
   revalidatePath("/admin/paginas");
-  if (landing.slug) revalidatePath("/" + landing.slug);
+  if (landing.slug) revalidateLandingPage(landing.slug);
   redirect(returnTo + "?saved=" + encodeURIComponent(landing.business_type === "contact" ? "Tarjeta eliminada correctamente" : "Landing eliminada correctamente"));
 }
 
@@ -185,7 +189,7 @@ async function applyManagement(fd: FormData, decide: (landing: Record<string, un
   revalidatePath("/admin");
   revalidatePath("/admin/paginas");
   revalidatePath("/admin/landings/" + id + "/editor-v2");
-  if (landing.slug) revalidatePath("/" + landing.slug);
+  if (landing.slug) revalidateLandingPage(landing.slug);
   redirect(target + "?saved=" + encodeURIComponent(result.message));
 }
 

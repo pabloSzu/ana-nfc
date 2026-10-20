@@ -18,7 +18,10 @@ export async function compressImage(file: File, maxDimension = 1600, quality = 0
     const blob: Blob | null = await new Promise((resolve) => canvas.toBlob(resolve, outputType, quality));
     bitmap.close();
     if (!blob || blob.size >= file.size) return file;
-    return new File([blob], file.name.replace(/\.\w+$/, ".webp"), { type: outputType });
+    // Algunos navegadores (Safari viejo) no saben generar WebP y devuelven PNG: se usa el tipo real.
+    const type = blob.type || outputType;
+    const extension = type === "image/png" ? ".png" : type === "image/jpeg" ? ".jpg" : ".webp";
+    return new File([blob], file.name.replace(/\.\w+$/, "") + extension, { type });
   } catch {
     return file;
   }

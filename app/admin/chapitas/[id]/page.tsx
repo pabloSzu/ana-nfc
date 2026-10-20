@@ -58,7 +58,7 @@ export default async function BatchPage({ params }: { params: Promise<{ id: stri
             <td className="ch-number">{tag.tag_number}</td>
             <td><span className={`ch-state is-${state}`}>{STATE_LABEL[state]}</span></td>
             <td>{tag.activated_at
-              ? <><strong>{tag.business_name}</strong><small>{emailOf.get(tag.client_id) || "—"}{tag.published ? "" : " · sin publicar"}</small></>
+              ? <><strong>{tag.business_name || "Sin nombre todavía"}</strong><small>{emailOf.get(tag.client_id) || "—"}{tag.published ? "" : " · sin publicar"}</small></>
               : <code className="ch-code">{codeOf.has(tag.id) ? formatCode(codeOf.get(tag.id)!) : "—"}</code>}</td>
             <td><div className="ch-link"><code>{nfc.replace(/^https?:\/\//, "")}</code><CopyButton text={nfc} label="Copiar" /></div></td>
             <td className="ch-actions">

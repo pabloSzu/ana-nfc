@@ -73,3 +73,9 @@
   .pet-editor-preview { position: static; }
   .pet-editor-phone { height: 640px; }
 }
+/* Teléfono: aviso en vivo de cómo queda o qué le falta. */
+.pet-field small.pet-phone-ok { color: #17803d; font-weight: 700; }
+.pet-field small.pet-phone-warn, .pet-photo-field small.pet-phone-warn { color: #b42318; font-weight: 700; }
+.pet-editor-note.is-danger { background: #fde4e1; color: #a1271b; }
+/* En iPhone, un campo de menos de 16px hace zoom al tocarlo y la pantalla queda corrida. */
+.pet-field input, .pet-field textarea { font-size: 16px; }

@@ -26,15 +26,17 @@ apunta a localhost. Las variables reales de producción viven en el dashboard de
 ## Despliegue
 
 Vercel está conectado al repo. **Mergear a `main` despliega a producción.** No hay
-`vercel.json` ni GitHub Actions: la configuración vive en el dashboard de Vercel.
+GitHub Actions; `vercel.json` solo fija la región (`gru1`, San Pablo). El resto vive en el dashboard de Vercel.
 
 Orden correcto al cambiar el esquema:
 
 1. Aplicar la migración en PROD.
 2. Recién después mergear a `main`.
 
-Al revés también es seguro —el código está escrito para tolerar que la tabla no exista—
-pero perdés los datos del intervalo.
+**No al revés.** El código nuevo usa funciones de la base (`is_staff`, `public_landing`,
+`activate_tag`…): si llega a producción antes que la migración, las páginas públicas y la
+activación fallan. El Admin no te echa (si `is_staff` falla, deja pasar), pero el resto sí se rompe.
+Probá siempre primero en DEV y en un preview de Vercel apuntando a DEV.
 
 ## Los datos
 
@@ -63,6 +65,16 @@ restringida a landings publicadas y a sus botones habilitados.
 Eso importa porque la `PUBLISHABLE_KEY` es pública por diseño: cualquiera puede pegarle a
 Supabase directo desde el navegador salteándose las Server Actions. Cuando lo hace, la RLS
 lo frena igual.
+
+Las páginas publicadas **no** se pueden listar desde afuera: se leen de a una, por su link, con
+la función `public_landing(slug)` (y `/go/[id]` con `public_landing_slug`). Antes cualquiera con la
+clave pública podía bajarse todas las chapitas con los teléfonos de las familias. Ver
+`supabase/migrations/20261021120000_chapitas_seguridad.sql`.
+
+Lo que el público no puede hacer solo (validar un código de activación, crear la cuenta de quien
+activa, contar intentos para frenar abusos) lo hace el servidor con la **clave secreta**
+(`SUPABASE_SECRET_KEY`, `lib/supabase/admin.ts`). Esa variable va solo en `.env.local` y en Vercel,
+**nunca** con prefijo `NEXT_PUBLIC_`.
 
 Hay dos tipos de usuario (migración `20261020120000_pet_tags_and_members`):
 

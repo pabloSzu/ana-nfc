@@ -5,7 +5,7 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import EmailCodeLogin from "../mi/email-code-login";
-import { activateTag, checkTagCode } from "../mi/auth-actions";
+import { activateTag, checkTagCode, switchAccount } from "../mi/auth-actions";
 import { formatCode } from "@/lib/pet-tags";
 
 export default function ActivateFlow({ initialCode, signedInEmail }: { initialCode: string; signedInEmail: string }) {
@@ -14,11 +14,13 @@ export default function ActivateFlow({ initialCode, signedInEmail }: { initialCo
   const [step, setStep] = useState<"code" | "login">("code");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  // Si ya entró con su email y la activación falló, al reintentar no se le vuelve a pedir el mail.
+  const [signedIn, setSignedIn] = useState(Boolean(signedInEmail));
 
   async function activate() {
     setBusy(true); setError("");
     // Si sale bien, activateTag redirige al editor; si vuelve, es que falló.
-    const result = await activateTag(code);
+    const result = await activateTag(code, terms);
     setBusy(false);
     if (!result.ok) { setError(result.error); setStep("code"); }
   }
@@ -29,14 +31,14 @@ export default function ActivateFlow({ initialCode, signedInEmail }: { initialCo
     const result = await checkTagCode(code);
     setBusy(false);
     if (!result.ok) { setError(result.error); return; }
-    if (signedInEmail) await activate();
+    if (signedIn) await activate();
     else setStep("login");
   }
 
   if (step === "login") return <div className="mi-card">
     <p className="mi-step">Paso 2 de 2 · Tu email</p>
     <p className="mi-hint">Con este email vas a entrar después para editar los datos o avisar si se pierde.</p>
-    <EmailCodeLogin tagCode={code} submitLabel="Activar mi chapita" onDone={activate} />
+    <EmailCodeLogin tagCode={code} submitLabel="Activar mi chapita" onDone={async () => { setSignedIn(true); await activate(); }} />
     {error && <p className="mi-error" role="alert">{error}</p>}
   </div>;
 
@@ -46,6 +48,6 @@ export default function ActivateFlow({ initialCode, signedInEmail }: { initialCo
     <label className="mi-check"><input type="checkbox" checked={terms} onChange={(event) => setTerms(event.target.checked)} required /><span>Acepto los <Link href="/terminos" target="_blank">términos y condiciones</Link> y entiendo que los datos que cargue en la chapita (como el WhatsApp de la familia) se muestran a quien la escanee.</span></label>
     {error && <p className="mi-error" role="alert">{error}</p>}
     <button className="mi-button" type="submit" disabled={busy || !terms}>{busy ? "Revisando…" : "Seguir"}</button>
-    {signedInEmail && <p className="mi-hint">Vas a activarla con <strong>{signedInEmail}</strong>.</p>}
+    {signedInEmail && <p className="mi-hint">Vas a activarla con <strong>{signedInEmail}</strong>. <button type="button" className="mi-link" onClick={() => switchAccount(code)}>No soy yo, usar otro email</button></p>}
   </form>;
 }

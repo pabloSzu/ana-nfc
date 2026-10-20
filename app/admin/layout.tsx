@@ -24,8 +24,11 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   // El Admin es solo del staff. Un dueño de chapita que entra acá va a su panel (/mi). La base
   // igual lo frena (RLS): esto es para que no vea un Admin vacío.
   if (email) {
-    const { data: isStaff } = await supabase.rpc("is_staff");
-    if (!isStaff) redirect("/mi");
+    // Si la función no existe o falla (por ejemplo, el código llegó a producción antes que la
+    // migración), no se echa a nadie: la base igual protege los datos.
+    const { data: isStaff, error } = await supabase.rpc("is_staff");
+    if (error) console.error("is_staff falló", error.message);
+    else if (!isStaff) redirect("/mi");
   }
 
   return (

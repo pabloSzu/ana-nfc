@@ -3,11 +3,12 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { isPlausiblePhone } from "@/lib/landing-catalog";
-import { cleanPet, parsePet, petHasContact, petLook } from "@/lib/pet";
+import { revalidateLandingPage } from "@/lib/landing-cache";
+import { cleanPet, parsePet, petHasContact, petLook, petPhoneProblem } from "@/lib/pet";
 
 const ERRORS: Record<string, string> = {
   sin_permiso: "Esta chapita no es tuya o ya no tenés acceso.",
+  datos_invalidos: "No se pudieron leer los datos. Probá de nuevo.",
   nombre_invalido: "Poné el nombre de tu mascota.",
   foto_invalida: "No se pudo usar esa foto. Subila de nuevo.",
 };
@@ -18,25 +19,28 @@ export async function saveMyPet(fd: FormData) {
   const supabase = await createClient();
   const { data: claims } = await supabase.auth.getClaims();
   const userId = String(claims?.claims?.sub || "");
-  if (!userId) redirect("/mi/entrar");
   const landingId = String(fd.get("landing_id") || "");
   const back = `/mi/chapita/${landingId}`;
+  // Sesión vencida: vuelve acá después de entrar. Lo que no guardó queda como borrador en el
+  // celular (ver pet-editor.tsx) y se ofrece recuperarlo.
+  if (!userId) redirect(`/mi/entrar?next=${encodeURIComponent(back)}`);
   const fail = (message: string): never => redirect(`${back}?error=${encodeURIComponent(message)}`);
 
-  const { data: landing } = await supabase.from("landings").select("id,slug,logo_url").eq("id", landingId).maybeSingle();
+  const { data: landing } = await supabase.from("landings").select("id,slug,logo_url,blocked_at").eq("id", landingId).maybeSingle();
   if (!landing) fail(ERRORS.sin_permiso);
   const name = String(fd.get("business_name") || "").trim().slice(0, 60);
   if (!name) fail(ERRORS.nombre_invalido);
   let raw: unknown = {};
   try { raw = JSON.parse(String(fd.get("pet") || "{}")); } catch { fail("No se pudieron leer los datos."); }
   const pet = cleanPet(parsePet({ pet: raw }));
-  const badPhone = pet.family.find((member) => member.phone && !isPlausiblePhone(member.phone));
-  if (badPhone) fail(`El número ${badPhone.name ? `de ${badPhone.name} ` : ""}parece incompleto. Cargalo con código de país, por ejemplo 54 9 351 123 4567.`);
+  // Se guarda normalizado (549 + característica + número, ver lib/pet.ts); si no se puede, se avisa.
+  const badPhone = pet.family.find((member) => member.phone && petPhoneProblem(member.phone));
+  if (badPhone) fail(`Revisá el número ${badPhone.name ? `de ${badPhone.name}` : "de WhatsApp"}: ${petPhoneProblem(badPhone.phone)}`);
 
   let logoUrl: string = landing!.logo_url || "";
   const photo = fd.get("photo");
   if (photo instanceof File && photo.size > 0) {
-    if (photo.size > 5 * 1024 * 1024) fail("La foto no puede superar 5 MB.");
+    if (photo.size > 5 * 1024 * 1024) fail("La foto es muy pesada (más de 5 MB). Probá con otra o sacale una captura.");
     if (!["image/jpeg", "image/png", "image/webp"].includes(photo.type)) fail("La foto debe ser JPG, PNG o WEBP.");
     // A la carpeta del dueño: es la única donde la base le deja subir.
     const path = `${userId}/${landingId}/logo-${Date.now()}.${photo.type.split("/")[1].replace("jpeg", "jpg")}`;
@@ -57,6 +61,9 @@ export async function saveMyPet(fd: FormData) {
   revalidatePath("/mi");
   // La página pública se guarda en caché (app/[slug]/page.tsx): sin esto, el cartel de perdido
   // tardaría minutos en aparecer.
-  if (landing!.slug) revalidatePath(`/${landing!.slug}`);
-  redirect(`${back}?saved=${encodeURIComponent(pet.lost ? "Guardado: el cartel de perdido ya se ve en la chapita" : "Cambios guardados")}`);
+  if (landing!.slug) revalidateLandingPage(landing!.slug);
+  const message = landing!.blocked_at ? "Cambios guardados. La chapita sigue pausada por BIONFC."
+    : !petHasContact(pet) ? "Guardado. Falta el WhatsApp para que la chapita funcione."
+    : pet.lost ? "Guardado: el cartel de perdido ya se ve en la chapita" : "Cambios guardados";
+  redirect(`${back}?saved=${encodeURIComponent(message)}`);
 }

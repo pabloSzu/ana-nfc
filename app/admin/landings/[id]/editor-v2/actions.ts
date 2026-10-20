@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { revalidateLandingPage } from "@/lib/landing-cache";
 import { buttonsMissingLink } from "@/lib/business-templates";
 import { parseButtonExtra } from "@/lib/button-extras";
 import { phoneFromInput } from "@/lib/contact-card";
@@ -278,7 +279,7 @@ export async function saveDesignStyle(fd: FormData) {
   // así una tarjeta escaneada carga rápido. Sin esta línea, cada cambio guardado tardaba hasta
   // esos 5 minutos en verse publicado, en cualquier navegador. Publicar y renombrar ya lo hacían;
   // el editor era el único que no.
-  if (landing?.slug) revalidatePath(`/${landing.slug}`);
+  if (landing?.slug) revalidateLandingPage(landing.slug);
   // Se guarda igual, pero si quedaron botones sin link se avisa (no se publican hasta completarlos).
   const missing = businessType === "contact" || landing?.template_name ? 0 : buttonsMissingLink(requestedButtons.map((button) => ({ type: String(button.type || ""), url: String(button.url || "") }))).length;
   const savedMessage = missing ? `Cambios guardados · ${missing === 1 ? "1 botón sigue" : `${missing} botones siguen`} sin link` : "Cambios guardados";

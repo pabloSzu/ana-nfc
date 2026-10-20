@@ -14,7 +14,8 @@ export default async function ReportPage({ params, searchParams }: { params: Pro
   const { slug } = await params;
   const { enviada, error } = await searchParams;
   const supabase = await createClient();
-  const { data: landing } = await supabase.from("landings").select("id,business_name").eq("slug", slug).eq("published", true).maybeSingle();
+  const { data } = await supabase.rpc("public_landing", { p_slug: slug });
+  const landing = data as { id: string; business_name: string } | null;
   if (!landing) notFound();
   return <div className="mi-shell">
     <header className="mi-top"><Link href="/" className="mi-brand" aria-label="BIONFC"><BioNFCLogo /></Link></header>
@@ -23,6 +24,7 @@ export default async function ReportPage({ params, searchParams }: { params: Pro
       {enviada ? <div className="mi-card"><p>Gracias. Recibimos tu denuncia sobre <strong>{landing.business_name}</strong> y la vamos a revisar.</p><Link className="mi-link" href={`/${slug}`}>Volver a la página</Link></div>
         : <form action={sendReport} className="mi-card mi-form">
           <input type="hidden" name="slug" value={slug} />
+          <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", left: "-9999px", width: 1, height: 1 }} />
           <p className="mi-hint">Contanos qué está mal en la página <strong>{landing.business_name}</strong>: contenido ofensivo, datos de otra persona, una estafa…</p>
           <label className="mi-field"><span>Qué pasa</span><textarea name="reason" required maxLength={1000} rows={5} /></label>
           <label className="mi-field"><span>Tu email o teléfono (opcional)</span><input name="contact" maxLength={200} placeholder="Por si necesitamos consultarte" /></label>
