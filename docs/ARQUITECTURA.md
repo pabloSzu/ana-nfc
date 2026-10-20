@@ -38,34 +38,44 @@ pero perdés los datos del intervalo.
 
 ## Los datos
 
-Cuatro tablas, todas en `public`:
+Las tablas, todas en `public`:
 
 - **`landings`** — una fila por tarjeta digital. Identidad, estilo, `slug`, `published`,
   y `redirect_url` opcional.
 - **`actions`** — los botones de una landing. Ver el README para la distinción entre
   catálogo y personalizados.
-- **`clients`** — ficha de CRM del cliente (nombre, email, teléfono). **No es un usuario
-  de auth**: los clientes no tienen login. El `owner_id` de todo sos vos.
+- **`clients`** — ficha de CRM del cliente (nombre, email, teléfono). El `owner_id` de todo
+  sos vos. Un cliente puede tener **miembros** con login (ver abajo).
 - **`landing_views`** — una fila por visita. Ver abajo.
+- **`staff`**, **`client_members`**, **`tag_batches`**, **`tag_activations`**, **`reports`** —
+  quién usa el Admin, quién es dueño de qué chapita, los lotes de chapitas, sus códigos de
+  activación y las denuncias. Ver [CHAPITAS.md](CHAPITAS.md).
 
 ### El modelo de permisos
 
 Hay dos capas, y las dos están puestas.
 
 Las Server Actions filtran por `.eq("owner_id", user.id)` en cada consulta, pero eso es
-conveniencia, no la defensa: **la defensa está en la base**. Las cuatro tablas tienen RLS
-habilitada y 18 políticas, acotadas por `owner_id = auth.uid()` para el usuario logueado,
-más lectura pública restringida a landings publicadas y a sus botones habilitados.
+conveniencia, no la defensa: **la defensa está en la base**. Todas las tablas tienen RLS,
+acotada por `owner_id = auth.uid()` para el usuario logueado, más lectura pública
+restringida a landings publicadas y a sus botones habilitados.
 
 Eso importa porque la `PUBLISHABLE_KEY` es pública por diseño: cualquiera puede pegarle a
 Supabase directo desde el navegador salteándose las Server Actions. Cuando lo hace, la RLS
 lo frena igual.
 
-El día que un cliente tenga su propio login **no hay un agujero que tapar, hay políticas
-que agregar**: hoy su `auth.uid()` no coincide con ningún `owner_id`, así que no vería
-nada. Es lo contrario de un problema de seguridad — es una funcionalidad que falta.
+Hay dos tipos de usuario (migración `20261020120000_pet_tags_and_members`):
 
-El esquema completo, con sus políticas, está en `supabase/baseline/`.
+- **Staff** (tabla `staff`): usa el Admin. Solo el staff puede crear clientes, páginas y
+  lotes (`is_staff()` en las políticas de inserción). El Admin manda a `/mi` a quien no lo es.
+- **Miembro de un cliente** (tabla `client_members`): el dueño de una chapita. **Lee** las
+  páginas de su cliente, pero **no escribe en ninguna tabla**: guarda con la función
+  `save_my_pet`, que revisa que sea suya y toca solo nombre, foto, colores y datos de la
+  mascota. Así no puede cambiarse el plan, el vencimiento ni nada más.
+
+Un registro nuevo sin código de chapita no puede hacer nada: no es staff ni miembro.
+
+El esquema completo, con sus políticas, está en `supabase/baseline/` más las migraciones.
 
 ## Contador de escaneos
 
@@ -148,3 +158,19 @@ esa, el botón se guarda silenciosamente como `url`.
 **Tocar `landing-renderer.tsx` sin cuidado.** Es el mismo componente que pinta la landing
 pública y el canvas editable del admin. Por eso la vista previa no puede desincronizarse
 de lo publicado. Si eso se rompe, vuelve el bug de "en el editor se veía bien".
+
+## Costos y límites de los servicios
+
+Todo puede arrancar en planes gratis; estos son los límites que importan (verificar en cada
+servicio, cambian):
+
+| Servicio | Gratis | Cuándo pagar |
+|---|---|---|
+| Supabase | 500 MB de base, 1 GB de archivos, 5 GB de tráfico por mes, 50.000 usuarios activos. Un proyecto gratis **se pausa tras una semana sin uso** | Pro (USD 25/mes) cuando PROD no pueda pausarse nunca o se acerque a los límites |
+| Vercel | Hobby: gratis, pero sus condiciones lo limitan a uso personal y no comercial | Pro (USD 20/mes) para un negocio que vende |
+| Resend | 3.000 mails por mes, 100 por día | Cuando haya más de ~100 activaciones o entradas por día |
+| api.qrserver.com | Gratis, sin cuenta | — (genera los QR de las pantallas de QR y de impresión) |
+
+Las fotos ya se achican en el navegador antes de subirlas (`lib/compress-image.ts`: logo
+900 px, fondo 1600 px, portada 2000 px, en WebP) y las páginas públicas las sirven
+optimizadas (`lib/landing-image.ts`), así que el tráfico por visita es bajo.

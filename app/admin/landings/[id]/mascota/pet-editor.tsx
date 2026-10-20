@@ -14,11 +14,14 @@ import { compressImage } from "@/lib/compress-image";
 import { getFontFamily, FontLinks } from "@/lib/fonts";
 import { PET_ABOUT_FIELDS, PET_FAMILY_MAX, PET_HEALTH_FIELDS, PET_LOOKS, petHasContact, type PetData, type PetFamily } from "@/lib/pet";
 
+// "owner": el dueño, desde su panel (/mi). Sin QR, sin publicar a mano (se publica sola al
+// guardar con un WhatsApp, ver saveMyPet) y volviendo a sus chapitas.
 type Props = {
   landing: { id: string; slug: string; name: string; photoUrl: string; published: boolean };
   initialPet: PetData;
   saveAction: (formData: FormData) => void | Promise<void>;
-  publishAction: (formData: FormData) => void | Promise<void>;
+  publishAction?: (formData: FormData) => void | Promise<void>;
+  mode?: "admin" | "owner";
 };
 
 const SECTIONS: { id: PetSection; label: string; icon: string }[] = [
@@ -31,7 +34,8 @@ const SECTIONS: { id: PetSection; label: string; icon: string }[] = [
   { id: "design", label: "Diseño", icon: "🎨" },
 ];
 
-export default function PetEditor({ landing, initialPet, saveAction, publishAction }: Props) {
+export default function PetEditor({ landing, initialPet, saveAction, publishAction, mode = "admin" }: Props) {
+  const isOwner = mode === "owner";
   const [pet, setPet] = useState(initialPet);
   const [name, setName] = useState(landing.name);
   const [section, setSection] = useState<PetSection>(landing.published ? "lost" : "pet");
@@ -91,26 +95,26 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
   return <div className="pet-editor">
     <FontLinks ids={PET_LOOKS.map((look) => look.titleFont)} />
     <header className="pet-editor-top">
-      <Link className="pet-editor-back" href="/admin/paginas">← Páginas</Link>
+      <Link className="pet-editor-back" href={isOwner ? "/mi" : "/admin/paginas"}>{isOwner ? "← Mis chapitas" : "← Páginas"}</Link>
       <div className="pet-editor-title"><small>Chapita de mascota</small><strong>{name.trim() || "Sin nombre"}</strong></div>
-      <span className={`pet-editor-status${landing.published ? " is-live" : ""}`}>{landing.published ? "Publicada" : "Borrador"}</span>
+      <span className={`pet-editor-status${landing.published ? " is-live" : ""}`}>{landing.published ? "Publicada" : isOwner ? "Sin publicar" : "Borrador"}</span>
       <div className="pet-editor-actions">
         {landing.published && <>
           <a className="pet-editor-ghost" href={`/${landing.slug}`} target="_blank" rel="noopener noreferrer">Ver chapita</a>
           <CopyButton text={`/${landing.slug}`} label="Copiar link" />
         </>}
-        <Link className="pet-editor-ghost" href={`/admin/landings/${landing.id}/qr`}>QR y NFC</Link>
-        <form action={publishAction}>
+        {!isOwner && <Link className="pet-editor-ghost" href={`/admin/landings/${landing.id}/qr`}>QR y NFC</Link>}
+        {!isOwner && publishAction && <form action={publishAction}>
           <input type="hidden" name="id" value={landing.id} />
           <input type="hidden" name="published" value={landing.published ? "false" : "true"} />
           <input type="hidden" name="return_to" value={`/admin/landings/${landing.id}/mascota`} />
           <PendingSubmitButton className="pet-editor-ghost" pendingText={landing.published ? "Despublicando…" : "Publicando…"} disabled={dirty || (!landing.published && !hasContact)}>{landing.published ? "Despublicar" : "Publicar"}</PendingSubmitButton>
-        </form>
+        </form>}
         <button type="submit" form="pet-save" className="pet-editor-save" disabled={!dirty || saving}>{saving ? "Guardando…" : dirty ? "Guardar cambios" : "Guardado"}</button>
       </div>
     </header>
-    {dirty && <p className="pet-editor-note">Tenés cambios sin guardar. Guardá antes de publicar o salir.</p>}
-    {!dirty && !landing.published && !hasContact && <p className="pet-editor-note">Para publicar, cargá el WhatsApp de la familia.</p>}
+    {dirty && <p className="pet-editor-note">Tenés cambios sin guardar. {isOwner ? "Tocá “Guardar cambios” para que se vean en la chapita." : "Guardá antes de publicar o salir."}</p>}
+    {!dirty && !landing.published && !hasContact && <p className="pet-editor-note">{isOwner ? "Cargá tu WhatsApp en “Familia” y guardá: ahí la chapita empieza a funcionar." : "Para publicar, cargá el WhatsApp de la familia."}</p>}
 
     <form id="pet-save" action={saveAction} onSubmit={handleSave} className="pet-editor-body">
       <input type="hidden" name="landing_id" value={landing.id} />

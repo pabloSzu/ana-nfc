@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { logout } from "./login/actions";
 import { AdminThemeButton } from "@/components/admin-theme";
@@ -20,6 +21,12 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const supabase = await createClient();
   const { data: claims } = await supabase.auth.getClaims();
   const email = (claims?.claims as { email?: string } | undefined)?.email;
+  // El Admin es solo del staff. Un dueño de chapita que entra acá va a su panel (/mi). La base
+  // igual lo frena (RLS): esto es para que no vea un Admin vacío.
+  if (email) {
+    const { data: isStaff } = await supabase.rpc("is_staff");
+    if (!isStaff) redirect("/mi");
+  }
 
   return (
     <div className="admin-shell-frame">

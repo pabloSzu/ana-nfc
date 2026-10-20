@@ -3,4 +3,4 @@ export async function proxy(req:NextRequest){let res=NextResponse.next({request:
 // Solo el admin necesita refrescar la sesión. Antes corría en cada visita (páginas públicas de los
 // clientes, imágenes de la home…) sin ninguna necesidad. Las páginas públicas no dependen de esto: lo
 // único que miran de la sesión es si quien la ve es el dueño, para no contar esa visita.
-export const config={matcher:["/admin/:path*"]};
+export const config={matcher:["/admin/:path*","/mi/:path*","/activar"]};

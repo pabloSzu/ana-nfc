@@ -329,3 +329,13 @@ export async function updateTemplate(fd: FormData) {
   refreshTemplates();
   redirect(TEMPLATES_PATH + "?saved=" + encodeURIComponent(message));
 }
+
+// Una denuncia revisada (ver /denunciar): deja de aparecer en el Resumen. Si la página tenía que
+// bajarse, se despublica aparte, desde su Gestión o su editor.
+export async function resolveReport(fd: FormData) {
+  const { s } = await auth();
+  const { error } = await s.from("reports").update({ resolved_at: new Date().toISOString() }).eq("id", String(fd.get("id") || ""));
+  if (error) redirect("/admin?error=" + encodeURIComponent(error.message));
+  revalidatePath("/admin");
+  redirect("/admin?saved=" + encodeURIComponent("Denuncia marcada como resuelta"));
+}

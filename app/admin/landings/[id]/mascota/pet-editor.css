@@ -67,6 +67,9 @@
   .pet-editor-actions { width: 100%; margin-left: 0; }
   .pet-editor-body { grid-template-columns: minmax(0, 1fr); padding: 14px 14px 32px; gap: 16px; }
   .pet-editor-panel { padding: 18px 16px; }
+  .pet-editor-nav { flex-wrap: wrap; gap: 6px; overflow: visible; }
+  .pet-editor-nav button { padding: 8px 12px; border: 1px solid #e4e6ec; border-radius: 999px; background: #fff; font-size: 13.5px; }
+  .pet-editor-nav button.active { border-color: #1d2130; background: #1d2130; color: #fff; }
   .pet-editor-preview { position: static; }
   .pet-editor-phone { height: 640px; }
 }

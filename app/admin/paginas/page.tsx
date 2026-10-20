@@ -32,7 +32,8 @@ export default async function PagesPage({ searchParams }: { searchParams: Search
 
   const [{ data: clients }, { data: allPages }, { data: viewCounts, error: viewCountsError }] = await Promise.all([
     supabase.from("clients").select("id,name").eq("owner_id", userId).order("name"),
-    supabase.from("landings").select("*, actions(type,url,enabled,position)").eq("owner_id", userId).order("created_at", { ascending: false }),
+    // Las chapitas de un lote que todavía no se vendieron no son páginas: se ven en Chapitas.
+    supabase.from("landings").select("*, actions(type,url,enabled,position)").eq("owner_id", userId).or("batch_id.is.null,activated_at.not.is.null").order("created_at", { ascending: false }),
     supabase.from("landing_view_counts").select("landing_id,total,last_30_days"),
   ]);
   // Las plantillas viven en su propio panel (/admin/plantillas), no en esta lista.

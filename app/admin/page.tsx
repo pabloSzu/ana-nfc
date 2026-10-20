@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { newClient, newLanding } from "./actions";
+import { newClient, newLanding, resolveReport } from "./actions";
 import LandingCreationForm from "./landing-creation-form";
 import ClientCreationForm from "./client-creation-form";
 import ModalTrigger from "./modal-trigger";
@@ -18,9 +18,11 @@ export default async function Admin() {
   const { data: authData } = await supabase.auth.getClaims();
   const userId = String(authData?.claims?.sub || "");
   if (!userId) return <main className="auth-shell"><div className="auth-card" style={{ textAlign: "center" }}><div className="auth-mark" style={{ margin: "0 auto 16px" }}>M</div><h1>Mi Landing Web Fácil</h1><p className="muted">Iniciá sesión para gestionar tus clientes y landings.</p><Link className="btn full" href="/admin/login">Ingresar</Link></div></main>;
-  const [{ data: clients }, { data: allLandings }] = await Promise.all([
+  const [{ data: clients }, { data: allLandings }, { data: reports }] = await Promise.all([
     supabase.from("clients").select("*").eq("owner_id", userId).order("created_at", { ascending: false }),
-    supabase.from("landings").select("*, actions(type,url,enabled,position)").eq("owner_id", userId).order("created_at", { ascending: false }),
+    // Las chapitas de un lote que todavía no se vendieron no son páginas: se ven en Chapitas.
+    supabase.from("landings").select("*, actions(type,url,enabled,position)").eq("owner_id", userId).or("batch_id.is.null,activated_at.not.is.null").order("created_at", { ascending: false }),
+    supabase.from("reports").select("id,reason,contact,created_at,landing:landings(id,slug,business_name,business_type,plan)").is("resolved_at", null).order("created_at", { ascending: false }),
   ]);
   // Las plantillas son landings propias pero no páginas de clientes: no cuentan acá.
   const landings = (allLandings || []).filter((landing) => !landing.template_name);
@@ -67,6 +69,14 @@ export default async function Admin() {
           say why the two cards matched — this one names the actual condition instead. */}
       <div className="stat-card"><span className="stat-icon"><IconQrCode /></span><small>Tags listos</small><strong>{published}</strong><span>= publicadas (el QR solo funciona así)</span></div>
     </section>
+
+    {!!reports?.length && <section className="elevated-section renewals-card">
+      <div className="section-heading rich-heading"><span className="step warm"><IconAlertCircle /></span><div><p className="eyebrow warm-text">Denuncias</p><h2>{reports.length === 1 ? "1 página denunciada" : `${reports.length} páginas denunciadas`}</h2></div></div>
+      <ul className="report-list">{reports.map((report) => { const page = (Array.isArray(report.landing) ? report.landing[0] : report.landing) as { id: string; slug: string; business_name: string; business_type: string; plan: string } | null; return <li key={report.id}>
+        <div><strong>{page?.business_name || "Página"}</strong><p>{report.reason}</p><small>{new Date(report.created_at).toLocaleDateString("es-AR")}{report.contact ? ` · ${report.contact}` : ""}</small></div>
+        <div className="report-actions">{page && <a className="icon-text-button" href={`/${page.slug}`} target="_blank" rel="noopener noreferrer">Ver</a>}{page && <Link className="icon-text-button" href={editHref(page)}>Editar</Link>}<form action={resolveReport}><input type="hidden" name="id" value={report.id} /><button type="submit" className="icon-text-button accent">Resuelta</button></form></div>
+      </li>; })}</ul>
+    </section>}
 
     {renewals.length > 0 && <section className="elevated-section renewals-card">
       <div className="section-heading rich-heading"><span className="step warm"><IconAlertCircle /></span><div><p className="eyebrow warm-text">Renovaciones</p><h2>{renewals.length === 1 ? "1 página vence pronto" : `${renewals.length} páginas vencen pronto`}</h2></div><Link className="text-button" href="/admin/paginas?view=attention">Ver en la lista →</Link></div>

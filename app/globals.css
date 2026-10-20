@@ -3161,3 +3161,11 @@ dialog.confirm-modal { width: min(400px, calc(100vw - 32px)); }
 .pet-editable { cursor: pointer; border-radius: 20px; outline: 2px solid transparent; outline-offset: 4px; transition: outline-color .15s; }
 .pet-editable:hover { outline-color: color-mix(in srgb, var(--pet-accent) 45%, transparent); }
 .pet-editable.is-selected { outline-color: var(--pet-accent); }
+.pet-report { display: block; width: fit-content; margin: 14px auto 0; color: var(--pet-ink); font-size: 11px; opacity: .45; text-decoration: underline; }
+.report-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.report-list li { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 12px 0; border-top: 1px solid var(--border); }
+.report-list li:first-child { border-top: 0; }
+.report-list p { margin: 4px 0; white-space: pre-line; }
+.report-list small { color: var(--text-muted); }
+.report-actions { display: flex; flex-wrap: wrap; gap: 6px; flex: none; }
+.report-actions form { display: contents; }

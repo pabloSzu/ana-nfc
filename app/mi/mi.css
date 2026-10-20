@@ -1,0 +1,44 @@
+/* Panel de los dueños (/mi) y Activar (/activar): pensado primero para el celular. */
+.mi-shell { min-height: 100vh; min-height: 100svh; background: linear-gradient(170deg, #fff6ec, #fde9d8); color: #2d1d12; font-family: "Poppins", system-ui, sans-serif; }
+.mi-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 18px; }
+.mi-brand { display: inline-flex; color: inherit; text-decoration: none; }
+.mi-top-user { display: flex; align-items: center; gap: 10px; min-width: 0; font-size: 13px; }
+.mi-top-user span { overflow: hidden; color: #7a5a44; text-overflow: ellipsis; white-space: nowrap; }
+.mi-main { width: min(100%, 560px); margin: 0 auto; padding: 18px 18px 48px; }
+.mi-narrow { width: min(100%, 440px); text-align: center; }
+.mi-main h1 { margin: 6px 0 8px; font-size: 30px; font-weight: 800; letter-spacing: -.01em; }
+.mi-lead { margin: 0 auto 22px; color: #7a5a44; font-size: 15px; line-height: 1.5; }
+.mi-emoji { margin: 10px 0 0; font-size: 44px; }
+.mi-card { display: grid; gap: 14px; padding: 20px; border-radius: 22px; background: #fff; box-shadow: 0 10px 30px rgba(120, 70, 30, .1); text-align: left; }
+.mi-step { margin: 0; color: #e07a3f; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.mi-form { display: grid; gap: 14px; text-align: left; }
+.mi-field { display: grid; gap: 6px; font-size: 14px; font-weight: 700; }
+.mi-field input { width: 100%; padding: 13px 14px; border: 1.5px solid #ead9ca; border-radius: 14px; background: #fff; color: inherit; font: inherit; font-size: 16px; font-weight: 500; }
+.mi-field input:focus { outline: none; border-color: #e07a3f; box-shadow: 0 0 0 3px #e07a3f33; }
+.mi-code-input { font-family: "Courier New", monospace !important; font-size: 22px !important; font-weight: 700 !important; letter-spacing: .14em; text-align: center; }
+.mi-check { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; line-height: 1.45; color: #6b4a33; }
+.mi-check input { flex: none; width: 20px; height: 20px; margin-top: 1px; accent-color: #e07a3f; }
+.mi-check a { color: #c25e22; font-weight: 700; }
+.mi-button { display: inline-flex; align-items: center; justify-content: center; min-height: 54px; padding: 0 22px; border: 0; border-radius: 16px; background: #e07a3f; color: #fff; font: inherit; font-size: 16px; font-weight: 800; text-decoration: none; cursor: pointer; box-shadow: 0 10px 22px #e07a3f44; }
+.mi-button:disabled { opacity: .55; cursor: not-allowed; box-shadow: none; }
+.mi-link { padding: 0; border: 0; background: none; color: #c25e22; font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
+.mi-hint { margin: 0; color: #8a6a52; font-size: 13px; line-height: 1.5; }
+.mi-hint a { color: #c25e22; font-weight: 700; }
+.mi-center { margin-top: 22px; text-align: center; }
+.mi-error { margin: 0; padding: 11px 13px; border-radius: 12px; background: #fde4e1; color: #a1271b; font-size: 13.5px; font-weight: 600; line-height: 1.45; text-align: left; }
+.mi-empty { display: grid; justify-items: center; gap: 16px; padding: 30px 20px; border-radius: 22px; background: #fff; text-align: center; }
+.mi-empty p { margin: 0; color: #7a5a44; }
+.mi-pets { display: grid; gap: 12px; margin: 18px 0 0; padding: 0; list-style: none; }
+.mi-pets a { display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 20px; background: #fff; color: inherit; text-decoration: none; box-shadow: 0 6px 18px rgba(120, 70, 30, .08); }
+.mi-pets li.is-lost a { box-shadow: 0 0 0 2px #d92d20; }
+.mi-pet-photo { display: grid; place-items: center; flex: none; width: 64px; height: 64px; overflow: hidden; border-radius: 50%; background: #f6e2d2; font-size: 28px; }
+.mi-pet-photo img { width: 100%; height: 100%; object-fit: cover; }
+.mi-pet-copy { display: grid; flex: 1; min-width: 0; }
+.mi-pet-copy strong { font-size: 18px; }
+.mi-pet-copy small { color: #8a6a52; font-size: 13px; }
+.mi-pets em { color: #c25e22; font-style: normal; font-weight: 700; font-size: 14px; }
+/* El editor de la chapita dentro del panel: su barra queda debajo de la del panel. */
+.mi-shell .pet-editor { background: transparent; }
+.terms h2 { margin: 26px 0 6px; font-size: 18px; }
+.terms p { margin: 0 0 10px; color: #4a3424; font-size: 15px; line-height: 1.6; }
+.terms a { color: #c25e22; font-weight: 700; }

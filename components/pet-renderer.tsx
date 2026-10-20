@@ -13,7 +13,7 @@ export type PetSection = "design" | "pet" | "family" | "about" | "health" | "fin
 
 export type PetEditControls = { selected: PetSection; onSelect: (section: PetSection) => void };
 
-type PetLanding = { business_name?: string | null; logo_url?: string | null; button_style?: unknown };
+type PetLanding = { slug?: string | null; business_name?: string | null; logo_url?: string | null; button_style?: unknown };
 
 export default function PetRenderer({ landing, pet: draft, photoUrl, edit }: { landing: PetLanding; pet?: PetData; photoUrl?: string; edit?: PetEditControls }) {
   const pet = draft || parsePet(landing.button_style);
@@ -73,6 +73,7 @@ export default function PetRenderer({ landing, pet: draft, photoUrl, edit }: { l
           <span className="landing-branding-label">Creado con</span><BioNFCLogo />
         </a>
       </footer>
+      {landing.slug && !edit && <a className="pet-report" href={`/denunciar/${encodeURIComponent(landing.slug)}`}>Denunciar esta página</a>}
     </main>
   );
 }
