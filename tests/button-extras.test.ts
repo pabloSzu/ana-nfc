@@ -1,7 +1,7 @@
 // Reglas de los botones especiales (lib/button-extras.ts). `npm test`.
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { defaultHours, formatRating, formatReviews, localClock, openStatus, parseButtonExtra, type DayHours } from "../lib/button-extras.ts";
+import { defaultHours, formatRating, formatReviews, infoRows, infoText, localClock, openStatus, parseButtonExtra, type DayHours } from "../lib/button-extras.ts";
 
 // Fechas en hora de Argentina (UTC-3). El 13/10/2026 es martes.
 const at = (isoLocal: string) => new Date(`${isoLocal}-03:00`);
@@ -115,5 +115,25 @@ describe("promociones", () => {
     assert.equal(promoHref("5493511234567", "Quiero el {codigo} para mi turno", { code: "X1" }), `https://wa.me/5493511234567?text=${encodeURIComponent("Quiero el X1 para mi turno")}`);
     assert.equal(promoHref("https://tienda.com/otono", "", {}), "https://tienda.com/otono");
     assert.equal(promoHref("", "", {}), "");
+  });
+});
+
+describe("bloque de texto en formato ficha", () => {
+  test("cada renglón \"Dato: valor\" es una fila; sin dos puntos es solo texto", () => {
+    assert.deepEqual(infoRows("Raza: Caniche\nRespondo a mi nombre\nEdad:   \n\nVeterinaria: Patitas: 351 555"), [
+      { label: "Raza", value: "Caniche" },
+      { label: "", value: "Respondo a mi nombre" },
+      { label: "Veterinaria", value: "Patitas: 351 555" },
+    ]);
+  });
+
+  test("el editor no pierde el renglón que se está escribiendo", () => {
+    const rows = [{ label: "Raza", value: "" }, { label: "", value: "" }];
+    assert.deepEqual(infoRows(infoText(rows), true), rows);
+  });
+
+  test("solo se guarda el formato ficha, nada raro", () => {
+    assert.equal(parseButtonExtra({ layout: "rows" }).layout, "rows");
+    assert.equal(parseButtonExtra({ layout: "grid" }).layout, undefined);
   });
 });

@@ -2,13 +2,14 @@ import LandingSeparator from "@/components/landing-separator";
 import { FiTrash2, FiSliders, FiArrowUpRight, FiUser, FiPhone, FiMapPin } from "react-icons/fi";
 import ContactSaveIcon from "@/components/contact-save-icon";
 import BioNFCLogo from "@/components/bionfc-logo";
+import PetRenderer from "@/components/pet-renderer";
 import {
   QUICK_SOCIALS, quickSocialHref, buildActionLink, buttonZoneShadow, resolveBackgroundTint, contrastTextColor,
   parseDistribution, parseTitleStyle, parseSubtitleStyle, parseLogoStyle, parseBackgroundPosition, parseButtonZone, parseCoverStyle, headerCardOn, COVER_SIZE_EXTRA, CONTACT_COVER_HEIGHT, hexToRgba, logoBorderRadius, logoFrameStyle, logoInitials, logoLetterSize,
 } from "@/lib/landing-catalog";
 import { getFontFamily, resolveFontWeight, resolveTextFont, FontLinks, LogoInitials } from "@/lib/fonts";
 import { buttonCollectionStyle, buttonCollectionWidth, buttonIconStyle, instagramAssetMode, resolveButtonColors, shouldUseBrandMark, youtubeMarkSurfaceColor } from "@/lib/design-presets";
-import { DEFAULT_STATUS, formatRating, formatReviews, openStatus, parseButtonExtra, promoExpired, promoHref, promoValidity, type ButtonExtra } from "@/lib/button-extras";
+import { DEFAULT_STATUS, formatRating, formatReviews, infoRows, openStatus, parseButtonExtra, promoExpired, promoHref, promoValidity, type ButtonExtra } from "@/lib/button-extras";
 import PromoCode from "@/components/promo-code";
 import { ActionTypeIcon, hasCustomActionIcon } from "@/components/action-icons";
 import { IconEdit, IconImage } from "@/components/icons";
@@ -176,6 +177,8 @@ function actionHref(action: LandingAction) {
 
 export default function LandingRenderer({ landing, actions, edit, externalPhotoBackground = false, editorPreview = false }: { landing: Landing; actions: LandingAction[]; edit?: LandingEditControls; externalPhotoBackground?: boolean; editorPreview?: boolean }) {
   const isContact = landing.business_type === "contact";
+  // La chapita de mascota es un producto propio, con su página (components/pet-renderer.tsx).
+  if (landing.business_type === "pet") return <PetRenderer landing={landing} />;
   const primary = landing.primary_color || "#1f2937";
   const title = parseTitleStyle(landing);
   // Logo repetido de fondo (como un papel con estampado), apenas inclinado y transparente.
@@ -191,7 +194,7 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
   const isSampleButtons = Boolean(edit) && actions.length === 0 && !isContact;
   // En la página publicada, un botón sin link no se muestra (no llevaría a ningún lado). La
   // promoción sí, porque muestra su código igual. En el editor y las miniaturas se ven todos.
-  const shownActions = isSampleButtons ? SAMPLE_ACTIONS : edit || editorPreview ? actions : actions.filter((action) => action.type === "promo" || String(action.url || "").trim());
+  const shownActions = isSampleButtons ? SAMPLE_ACTIONS : edit || editorPreview ? actions : actions.filter((action) => action.type === "promo" || action.type === "info" || String(action.url || "").trim());
   const contactQuickActions = isContact ? ["phone", "email", "whatsapp"].flatMap((type) => {
     const action = actions.find((item) => item.type === type && item.url);
     return action ? [action] : [];
@@ -420,6 +423,30 @@ export default function LandingRenderer({ landing, actions, edit, externalPhotoB
           {contentActions.map((action, index) => {
             // Promoción: una tarjeta propia (cartelito, foto, código y vencimiento) en lugar de un
             // botón. Vencida, desaparece de la página pública; en el editor se ve marcada.
+            // Bloque de texto: una tarjeta con información y sin link (los datos de una mascota,
+            // aclaraciones, horarios). Título y texto en varias líneas.
+            if (action.type === "info" && !isContact) {
+              const isSelectedInfo = Boolean(edit && typeof edit.selected === "object" && edit.selected?.buttonId === action.id);
+              return (
+                <div key={action.id} ref={edit && !isSampleButtons ? (el) => edit.onButtonRef(action.id, el) : undefined} className={`landing-action-row${edit ? " editor-action-row" : ""}${edit?.draggingId === action.id ? " is-dragging" : ""}`} style={{ position: "relative", width: "100%", margin: "0 auto" }}>
+                  <div
+                    data-button-id={edit ? action.id : undefined}
+                    className={`info-card${edit ? " editor-hit" : ""}${isSelectedInfo ? " is-selected" : ""}`}
+                    onClick={edit ? () => edit.onSelectButton(action.id) : undefined}
+                    style={{ "--info-accent": primary, "--info-ink": title.color, borderRadius: Math.max(14, zone.radius), fontFamily: buttonFont } as CSSProperties}
+                  >
+                    {action.title && <strong className="info-title">{action.title}</strong>}
+                    {parseButtonExtra(action.extra).layout === "rows"
+                      ? <dl className="info-rows">{infoRows(action.message || "").map((row, index) => row.label
+                        ? <div key={index}><dt>{row.label}</dt><dd>{row.value}</dd></div>
+                        : <p key={index}>{row.value}</p>)}</dl>
+                      : (action.message || action.subtitle) && <p className="info-text">{action.message || action.subtitle}</p>}
+                    {edit && !isSampleButtons && <span className="editor-drag" title="Arrastrar para cambiar el orden" aria-label="Mover" onClick={(event) => event.stopPropagation()} onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); edit.onDragStart(event.clientY, action.id); }}>⠿</span>}
+                  </div>
+                  {edit && !isSampleButtons && <button type="button" className="editor-delete-action" aria-label={`Eliminar bloque: ${action.title}`} title={`Eliminar ${action.title}`} disabled={Boolean(edit.draggingId)} onClick={() => edit.onDeleteButton(action.id)}><FiTrash2 aria-hidden="true" /></button>}
+                </div>
+              );
+            }
             if (action.type === "promo" && !isContact) {
               const promo = parseButtonExtra(action.extra);
               const expired = promoExpired(promo);

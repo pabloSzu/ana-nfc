@@ -29,6 +29,8 @@ export default async function EditorV2Page({ params, searchParams }: { params: P
     supabase.from("landings").select("*, actions(*)").eq("owner_id", userId).eq("business_type", "custom").not("template_name", "is", null),
   ]);
   if (!landing) notFound();
+  // La chapita de mascota tiene su propio editor.
+  if (landing.business_type === "pet") redirect(`/admin/landings/${id}/mascota`);
 
   const buttonZone = parseButtonZone(landing.button_style);
   if (!landing.button_style || !Object.keys(landing.button_style).length) buttonZone.oneColor = landing.primary_color || "#1f2937";

@@ -20,7 +20,7 @@ import { buttonsMissingLink, withoutLinks, type BusinessTemplate } from "@/lib/b
 import TemplatePreview from "@/components/template-preview";
 import CopyButton from "@/components/copy-button";
 import { phoneFromInput } from "@/lib/contact-card";
-import { DAY_SHORT, DEFAULT_STATUS, defaultHours, openStatus, type ButtonExtra, type DayHours } from "@/lib/button-extras";
+import { DAY_SHORT, DEFAULT_STATUS, defaultHours, infoRows, infoText, openStatus, type ButtonExtra, type DayHours, type InfoRow } from "@/lib/button-extras";
 import { DESIGN_PRESETS_V2, buttonCollectionStyle, buttonIconStyle, instagramAssetMode, recommendedIconAppearance, resolveButtonColors, shouldUseBrandMark, youtubeMarkSurfaceColor, type DesignPreset } from "@/lib/design-presets";
 import { ThemeSceneLayer, useSharedTheme } from "@/components/theme-scene";
 import ImageAdjustDialog, { type ImageKind, type ImagePlacement } from "./image-adjust-dialog";
@@ -658,7 +658,8 @@ export default function EditorV2({ landing, initialButtons, templates = [], isTe
     const def = actionDefs.find((item) => item.type === type) || actionDefs[actionDefs.length - 1];
     const id = `new-${crypto.randomUUID()}`;
     const isPromo = type === "promo";
-    const button: ButtonItem = { id, type: def.type, title: type === "cv" ? "Ver archivo PDF" : isPromo ? "Tu primera compra con descuento" : def.label, subtitle: isPromo ? "Válido hasta fin de mes" : "", url: "", message: def.message && !isPromo ? "Hola, quiero hacer una consulta." : "", icon: "", icon_url: "", icon_fit: "contain", icon_scale: 1, icon_background_color: "", background_color: "#1f2937", background_gradient_to: "", text_color: "#ffffff", use_auto_color: true, position: buttons.length, extra: isPromo ? { badge: "20 % OFF", code: "BIENVENIDA" } : {} };
+    const isInfo = type === "info";
+    const button: ButtonItem = { id, type: def.type, title: type === "cv" ? "Ver archivo PDF" : isPromo ? "Tu primera compra con descuento" : isInfo ? "Mis datos" : def.label, subtitle: isPromo ? "Válido hasta fin de mes" : "", url: "", message: isInfo ? "Escribí acá la información.\nCada renglón va en una línea." : def.message && !isPromo ? "Hola, quiero hacer una consulta." : "", icon: "", icon_url: "", icon_fit: "contain", icon_scale: 1, icon_background_color: "", background_color: "#1f2937", background_gradient_to: "", text_color: "#ffffff", use_auto_color: true, position: buttons.length, extra: isPromo ? { badge: "20 % OFF", code: "BIENVENIDA" } : {} };
     commitDiscrete();
     patchButtons((current) => [...current, button]); setPanel({ buttonId: id });
   }
@@ -1363,6 +1364,40 @@ const SEPARATOR_DESIGNS = [
   ['circle','Círculo','Simple y equilibrado'], ['star','Estrella','Un pequeño acento'],
   ['flower','Flor','Suave y orgánico'], ['trio','Tres puntos','Una pausa minimalista'],
 ] as const;
+
+// Bloque de texto: como ficha (un renglón "Dato: valor" por línea, ver infoRows) o como texto
+// libre. Los dos se guardan en message, así que se puede pasar de uno al otro sin perder nada.
+function InfoControls({ button, onChange, onDelete }: { button: ButtonItem; onChange: (patch: Partial<ButtonItem>) => void; onDelete: () => void }) {
+  const extra = (button.extra || {}) as ButtonExtra;
+  const isRows = extra.layout === "rows";
+  const rows = infoRows(button.message || "", true);
+  const setRows = (next: InfoRow[]) => onChange({ message: infoText(next) });
+  const setRow = (index: number, patch: Partial<InfoRow>) => setRows(rows.map((row, current) => current === index ? { ...row, ...patch } : row));
+  return <div className="v2-fields">
+    <EditorSection title="Bloque de texto" tone="blue">
+      <label>Título<input value={button.title} maxLength={80} placeholder="Ej: Sobre mí" onChange={(event) => onChange({ title: event.target.value })} /></label>
+      <div className="v2-segment" aria-label="Formato del bloque">
+        <button type="button" className={isRows ? "active" : ""} aria-pressed={isRows} onClick={() => onChange({ extra: { ...extra, layout: "rows" } })}>Ficha</button>
+        <button type="button" className={!isRows ? "active" : ""} aria-pressed={!isRows} onClick={() => { const { layout: _layout, ...rest } = extra; onChange({ extra: rest }); }}>Texto libre</button>
+      </div>
+      {isRows ? <>
+        <div className="v2-info-rows">
+          {rows.map((row, index) => <div key={index} className="v2-info-row">
+            <input value={row.label} maxLength={30} placeholder="Dato" aria-label="Dato" onChange={(event) => setRow(index, { label: event.target.value })} />
+            <input value={row.value} maxLength={120} placeholder="Valor" aria-label="Valor" onChange={(event) => setRow(index, { value: event.target.value })} />
+            <button type="button" aria-label="Quitar renglón" onClick={() => setRows(rows.filter((_, current) => current !== index))}>×</button>
+          </div>)}
+        </div>
+        <button type="button" className="v2-ghost" onClick={() => setRows([...rows.filter((row) => row.label || row.value), { label: "", value: "" }])}>+ Agregar renglón</button>
+        <p className="v2-help" style={{ margin: 0 }}>Los renglones sin valor no se muestran en la página.</p>
+      </> : <>
+        <label>Texto<textarea rows={6} maxLength={800} value={button.message} placeholder={"Ej: Soy manso pero un poco miedoso.\nAcercate despacio y llamame por mi nombre."} onChange={(event) => onChange({ message: event.target.value })} /></label>
+        <p className="v2-help" style={{ margin: 0 }}>Cada renglón se muestra en una línea aparte. No lleva link: es solo información.</p>
+      </>}
+    </EditorSection>
+    <button type="button" className="v2-delete" onClick={onDelete}>Quitar bloque</button>
+  </div>;
+}
 
 function EditorSection({title,tone,children}: {title:string;tone:"blue"|"purple"|"peach"|"green"|"rose";children:ReactNode}) {
   return <fieldset className="v2-editor-section" data-tone={tone}><legend>{title}</legend><div className="v2-section-content">{children}</div></fieldset>;
@@ -2099,6 +2134,8 @@ function ButtonControls({ button,draft,linksOptional=false,cvFileName,cvFileErro
     <EditorSection title="Ícono" tone="purple"><IconPicker type={button.type} value={button.icon} customImageUrl={button.icon_url} customImageFit={button.icon_fit} customImageScale={button.icon_scale} previewStyle={iconPreviewStyle} uploading={iconUploading} error={iconUploadError} onUpload={onIconFile} onChange={(icon) => onChange({ icon, icon_url: "", icon_fit: "contain", icon_scale: 1 })} onRemoveCustom={() => onChange({ icon_url: "", icon_fit: "contain", icon_scale: 1 })} onImageFitChange={(icon_fit) => onChange({ icon_fit })} onImageScaleChange={(icon_scale) => onChange({ icon_scale })} /></EditorSection>
     <button type="button" className="v2-delete" onClick={onDelete}>Quitar enlace</button>
   </div>;
+  // Bloque de texto: solo título y texto (varias líneas). No tiene link, ni colores, ni ícono.
+  if (button.type === "info") return <InfoControls button={button} onChange={onChange} onDelete={onDelete} />;
   const brandColor = AUTO_COLORS[button.type] || draft.primary_color || "#1f2937";
   const globalColor = resolveButtonColors({ zone: draft.buttonZone, type: button.type, position: 0, primary: draft.primary_color || "#1f2937", customColor: null, useAutoColor: true }).background;
   const globalDescription = draft.buttonZone.colorMode === "one"

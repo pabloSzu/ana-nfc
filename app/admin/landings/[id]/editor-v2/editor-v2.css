@@ -429,3 +429,10 @@
 .v2-publish-check ul { margin: 2px 0 2px 16px; padding: 0; font-size: 12px; color: #4a3a12; }
 .v2-publish-check.has-missing { border-color: #f3dfb4; background: #fffaf0; }
 .v2-publish-check.has-missing strong { color: #8a5a00; }
+
+/* Bloque de texto en formato ficha: un renglón dato/valor por fila. */
+.v2-info-rows { display: grid; gap: 6px; }
+.v2-info-row { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr) 30px; gap: 6px; align-items: center; }
+.v2-info-row input { min-width: 0; }
+.v2-info-row button { width: 30px; height: 30px; border: 0; border-radius: 8px; background: transparent; color: #8a8f98; font-size: 18px; line-height: 1; cursor: pointer; }
+.v2-info-row button:hover { background: #fde8e8; color: #c0392b; }

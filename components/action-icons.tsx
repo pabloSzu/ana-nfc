@@ -129,6 +129,7 @@ const actionIcons: Record<string, IconType> = {
   review: SiGoogle,
   cv: FiFileText,
   promo: FiTag,
+  info: FiInfo,
   url: FiLink,
 };
 

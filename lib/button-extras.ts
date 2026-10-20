@@ -20,6 +20,8 @@ export type ButtonExtra = {
   badge?: string;
   code?: string;
   until?: string;
+  // Bloque de texto: "rows" lo muestra como ficha, un renglón "Dato: valor" por línea (ver infoRows).
+  layout?: "rows";
 };
 
 export const DAY_NAMES = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"];
@@ -44,6 +46,7 @@ export function parseButtonExtra(raw: unknown): ButtonExtra {
   if (typeof source.status === "string" && source.status.trim()) extra.status = source.status.trim().slice(0, 40);
   if (typeof source.badge === "string" && source.badge.trim()) extra.badge = source.badge.trim().slice(0, 20);
   if (typeof source.code === "string" && source.code.trim()) extra.code = source.code.trim().replace(/\s+/g, "").slice(0, 24).toUpperCase();
+  if (source.layout === "rows") extra.layout = "rows";
   if (typeof source.until === "string" && /^\d{4}-\d{2}-\d{2}$/.test(source.until) && !Number.isNaN(Date.parse(source.until))) extra.until = source.until;
   if (Array.isArray(source.hours) && source.hours.length === 7) {
     extra.hours = source.hours.map((day) => {
@@ -137,4 +140,22 @@ export function promoHref(url: string | null | undefined, message: string | null
     return `https://wa.me/${digits}?text=${encodeURIComponent(base.replace(/\{codigo\}/gi, extra.code || ""))}`;
   }
   return value;
+}
+
+export type InfoRow = { label: string; value: string };
+
+// Los renglones de un bloque de texto en formato ficha: "Raza: Caniche" es dato y valor; un
+// renglón sin dos puntos es solo texto. Se guardan así, como texto, en el message del botón.
+// Para mostrar se saltean los vacíos; el editor usa keepEmpty para no perder el que se está
+// escribiendo.
+export function infoRows(text: string, keepEmpty = false): InfoRow[] {
+  const rows = text.split("\n").map((line) => {
+    const colon = line.indexOf(":");
+    return colon > 0 && colon <= 30 ? { label: line.slice(0, colon).trim(), value: line.slice(colon + 1).replace(/^ /, "") } : { label: "", value: line };
+  });
+  return keepEmpty ? rows : rows.map((row) => ({ label: row.label, value: row.value.trim() })).filter((row) => row.value);
+}
+
+export function infoText(rows: InfoRow[]): string {
+  return rows.map((row) => row.label.replace(/[:\n]/g, "").trim() ? `${row.label.replace(/[:\n]/g, "").trim()}: ${row.value.replace(/\n/g, " ")}` : row.value.replace(/\n/g, " ")).join("\n");
 }

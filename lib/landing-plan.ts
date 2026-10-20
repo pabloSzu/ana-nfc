@@ -214,12 +214,13 @@ export function managementUpdate(landing: PlanFields, input: ManagementInput, no
 // muestra, pero para Pablo es otro producto: no tiene diseño que editar.
 export function pageKindLabel(landing: PlanFields & { business_type?: string | null }) {
   if (planOf(landing) === "direct") return "Link directo";
-  return landing.business_type === "contact" ? "Tarjeta personal" : "Landing";
+  return landing.business_type === "contact" ? "Tarjeta personal" : landing.business_type === "pet" ? "Chapita de mascota" : "Landing";
 }
 
 // Adónde lleva "Editar": el editor de diseño, o Gestión si es un link directo.
-export function editHref(landing: PlanFields & { id: string }) {
-  return planOf(landing) === "direct" ? `/admin/landings/${landing.id}/gestion` : `/admin/landings/${landing.id}/editor-v2`;
+export function editHref(landing: PlanFields & { id: string; business_type?: string | null }) {
+  if (planOf(landing) === "direct") return `/admin/landings/${landing.id}/gestion`;
+  return landing.business_type === "pet" ? `/admin/landings/${landing.id}/mascota` : `/admin/landings/${landing.id}/editor-v2`;
 }
 
 export type ButtonLike = { type?: string | null; url?: string | null; enabled?: boolean | null; position?: number | null };

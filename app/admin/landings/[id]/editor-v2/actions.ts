@@ -48,7 +48,7 @@ async function ownedLanding(landingId: string, userId: string) {
   return { supabase, data, error };
 }
 
-const validTypes = ["promo", "whatsapp", "instagram", "tiktok", "facebook", "linkedin", "website", "email", "phone", "maps", "review", "youtube", "spotify", "mercadopago", "calendar", "telegram", "cv", "url"];
+const validTypes = ["promo", "info", "whatsapp", "instagram", "tiktok", "facebook", "linkedin", "website", "email", "phone", "maps", "review", "youtube", "spotify", "mercadopago", "calendar", "telegram", "cv", "url"];
 
 const validFontsIdentity = ["modern", "classic", "friendly", "minimal"];
 const validFonts = ["modern", "classic", "friendly", "minimal"];

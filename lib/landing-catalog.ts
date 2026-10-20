@@ -589,6 +589,7 @@ export const businessProfiles: {
 }[] = [
   { value: "custom", label: "Personalizado", description: "Armá tu landing desde cero.", icon: "✨", templates: ["professional", "hotel", "tourism", "restaurant", "business"] },
   { value: "contact", label: "Tarjeta personal", description: "Compartí tus datos y permití guardar tu contacto.", icon: "👤", templates: ["professional", "business"] },
+  { value: "pet", label: "Chapita de mascota", description: "Si se pierde, quien la encuentra avisa a la familia.", icon: "🐾", templates: ["professional"] },
   { value: "hotel", label: "Hotelería", description: "Hoteles, cabañas y alojamientos.", icon: "🏨", templates: ["hotel", "professional"] },
   { value: "tourism", label: "Turismo", description: "Agencias y excursiones.", icon: "🧭", templates: ["tourism", "professional"] },
   { value: "restaurant", label: "Gastronomía", description: "Restaurantes, bares y cafeterías.", icon: "🍽️", templates: ["restaurant", "professional"] },
@@ -599,7 +600,7 @@ export function getBusinessProfile(value: string) {
   return businessProfiles.find((profile) => profile.value === value) || businessProfiles[0];
 }
 
-type ActionType = "whatsapp" | "instagram" | "tiktok" | "facebook" | "linkedin" | "website" | "email" | "phone" | "maps" | "review" | "youtube" | "spotify" | "mercadopago" | "calendar" | "telegram" | "cv" | "promo" | "url";
+type ActionType = "whatsapp" | "instagram" | "tiktok" | "facebook" | "linkedin" | "website" | "email" | "phone" | "maps" | "review" | "youtube" | "spotify" | "mercadopago" | "calendar" | "telegram" | "cv" | "promo" | "info" | "url";
 
 type ActionDef = {
   type: ActionType;
@@ -611,7 +612,7 @@ type ActionDef = {
   prefix?: string;
 };
 
-const ACTION_ORDER: ActionType[] = ["whatsapp", "instagram", "tiktok", "facebook", "linkedin", "website", "maps", "review", "promo", "email", "phone", "youtube", "spotify", "mercadopago", "calendar", "telegram", "cv", "url"];
+const ACTION_ORDER: ActionType[] = ["whatsapp", "instagram", "tiktok", "facebook", "linkedin", "website", "maps", "review", "promo", "info", "email", "phone", "youtube", "spotify", "mercadopago", "calendar", "telegram", "cv", "url"];
 
 const ACTION_DEFS: Record<ActionType, ActionDef> = {
   whatsapp: { type: "whatsapp", label: "WhatsApp", icon: "💬", input: "phone", placeholder: "549351XXXXXXXX", message: true },
@@ -633,6 +634,9 @@ const ACTION_DEFS: Record<ActionType, ActionDef> = {
   // Tarjeta de promoción (ver lib/button-extras.ts): cartelito, código para copiar, foto y fecha
   // de vencimiento. El destino puede ser un WhatsApp (con el código en el mensaje) o un enlace.
   promo: { type: "promo", label: "Promoción", icon: "🏷️", input: "url", placeholder: "549351XXXXXXXX o https://...", message: true },
+  // Bloque de texto: una tarjeta con información y sin link (datos de una mascota, horarios,
+  // aclaraciones). El título va en "title" y el texto, en varias líneas, en "message".
+  info: { type: "info", label: "Bloque de texto", icon: "📝", input: "text", placeholder: "", message: false },
   url: { type: "url", label: "Enlace", icon: "🔗", input: "url", placeholder: "https://...", message: false },
 };
 

@@ -1598,7 +1598,7 @@ export function withoutLinks(template: BusinessTemplate): BusinessTemplate {
 }
 
 // Botones de una página que todavía no tienen link. La promoción puede ir sin link (muestra el
-// código igual), así que no cuenta.
+// código igual) y el bloque de texto nunca lleva, así que no cuentan.
 export function buttonsMissingLink<T extends { type: string; url?: string | null }>(actions: T[]): T[] {
-  return actions.filter((action) => action.type !== "promo" && !String(action.url || "").trim());
+  return actions.filter((action) => action.type !== "promo" && action.type !== "info" && !String(action.url || "").trim());
 }

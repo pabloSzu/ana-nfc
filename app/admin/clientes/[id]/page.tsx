@@ -29,8 +29,8 @@ type Landing = {
   actions?: { type: string | null; url: string | null; enabled: boolean | null; position: number | null }[] | null;
 };
 
-function PageList({ items, kind }: { items: Landing[]; kind: "landing" | "contact" | "direct" }) {
-  const singular = kind === "contact" ? "tarjeta personal" : kind === "direct" ? "link directo" : "landing";
+function PageList({ items, kind }: { items: Landing[]; kind: "landing" | "contact" | "pet" | "direct" }) {
+  const singular = kind === "contact" ? "tarjeta personal" : kind === "pet" ? "chapita de mascota" : kind === "direct" ? "link directo" : "landing";
   if (!items.length) return <div className="client-page-empty">
     {kind === "contact" ? <IconUser /> : <IconFileText />}
     <div><strong>Todavía no hay {singular}</strong><p>Creá la primera con el botón de arriba.</p></div>
@@ -62,7 +62,8 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const templates = templateChoices(ownTemplates || []);
   const directLinks = landings.filter((landing) => planOf(landing) === "direct");
   const contactCards = landings.filter((landing) => planOf(landing) !== "direct" && landing.business_type === "contact");
-  const landingPages = landings.filter((landing) => planOf(landing) !== "direct" && landing.business_type !== "contact");
+  const petTags = landings.filter((landing) => planOf(landing) !== "direct" && landing.business_type === "pet");
+  const landingPages = landings.filter((landing) => planOf(landing) !== "direct" && landing.business_type !== "contact" && landing.business_type !== "pet");
   const returnTo = `/admin/clientes/${id}`;
 
   return <main className="shell client-detail-shell">
@@ -76,6 +77,9 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         </ModalTrigger>
         <ModalTrigger label="Nueva tarjeta personal" icon={<IconPlus />} title="Nueva tarjeta personal" description={`Va a quedar guardada directamente dentro de ${client.name}.`} variant="secondary">
           <LandingCreationForm clients={[]} action={newLanding} kind="contact" clientId={id} clientName={client.name} returnTo={returnTo} />
+        </ModalTrigger>
+        <ModalTrigger label="Nueva chapita de mascota" icon={<IconPlus />} title="Nueva chapita de mascota" description={`Va a quedar guardada directamente dentro de ${client.name}.`} variant="secondary">
+          <LandingCreationForm clients={[]} action={newLanding} kind="pet" clientId={id} clientName={client.name} returnTo={returnTo} />
         </ModalTrigger>
         <ModalTrigger label="Nuevo link directo" icon={<IconPlus />} title="Nuevo link directo" description={`El producto abre un solo link. Queda dentro de ${client.name}, publicado y listo para grabar el NFC.`} variant="secondary">
           <LandingCreationForm clients={[]} action={newLanding} kind="direct" clientId={id} clientName={client.name} returnTo={returnTo} />
@@ -98,6 +102,10 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           <div className="client-page-group-heading"><div><p className="eyebrow">Para personas</p><h2>Tarjetas personales <span>{contactCards.length}</span></h2><p className="muted">Una tarjeta independiente para cada persona que la necesite.</p></div><ModalTrigger label="Agregar" icon={<IconPlus />} title="Nueva tarjeta personal" description={`Va a quedar guardada directamente dentro de ${client.name}.`} variant="secondary"><LandingCreationForm clients={[]} action={newLanding} kind="contact" clientId={id} clientName={client.name} returnTo={returnTo} /></ModalTrigger></div>
           <PageList items={contactCards} kind="contact" />
         </section>
+        {petTags.length > 0 && <section className="card client-page-group">
+          <div className="client-page-group-heading"><div><p className="eyebrow">Para mascotas</p><h2>Chapitas <span>{petTags.length}</span></h2><p className="muted">Si se pierde, quien la encuentra avisa a la familia.</p></div><ModalTrigger label="Agregar" icon={<IconPlus />} title="Nueva chapita de mascota" description={`Va a quedar guardada directamente dentro de ${client.name}.`} variant="secondary"><LandingCreationForm clients={[]} action={newLanding} kind="pet" clientId={id} clientName={client.name} returnTo={returnTo} /></ModalTrigger></div>
+          <PageList items={petTags} kind="pet" />
+        </section>}
         {directLinks.length > 0 && <section className="card client-page-group">
           <div className="client-page-group-heading"><div><p className="eyebrow">Sin página</p><h2>Links directos <span>{directLinks.length}</span></h2><p className="muted">Productos que abren un solo link. No vencen.</p></div></div>
           <PageList items={directLinks} kind="direct" />

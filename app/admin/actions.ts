@@ -1,6 +1,8 @@
 "use server";import {createClient} from "@/lib/supabase/server";import {redirect} from "next/navigation";import {revalidatePath} from "next/cache";
 import { businessProfiles, isPlausiblePhone } from "@/lib/landing-catalog";
 import { BUSINESS_TEMPLATES, buttonsMissingLink, sortTemplateRows, templateActionRows, templateFromLanding, withoutLinks, type BusinessTemplate } from "@/lib/business-templates";
+import { phoneFromInput } from "@/lib/contact-card";
+import { DEFAULT_PET_MESSAGE, newPet, parsePet, petHasContact, petLook } from "@/lib/pet";
 import { manualRedirectUpdate, managementUpdate, normalizeLink, parsePlan, publishUpdate, renewalUpdate, type UpdateResult } from "@/lib/landing-plan";
 const slugify=(v:string)=>v.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"").slice(0,60);
 const emailPattern=/^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -25,6 +27,7 @@ export async function newLanding(fd: FormData) {
   if (isDirect && !directUrl) onError(directUrl === null ? "El link del producto no parece válido. Revisalo y probá de nuevo." : "Cargá el link que abre el producto.");
   const doneUrl = (id: string, type?: string | null) => isDirect
     ? "/admin/landings/" + id + "/qr?saved=" + encodeURIComponent("Link directo listo: grabalo en el NFC")
+    : type === "pet" ? "/admin/landings/" + id + "/mascota?saved=" + encodeURIComponent("Chapita creada")
     : "/admin/landings/" + id + "/editor-v2?saved=" + encodeURIComponent(type === "contact" ? "Tarjeta creada" : "Landing creada");
   let slug = slugify(String(fd.get("slug") || businessName));
   const clientId = String(fd.get("client_id") || "") || null;
@@ -44,16 +47,22 @@ export async function newLanding(fd: FormData) {
   if (clientError) onError(clientError.message);
   if (clientId && !client) onError("Cliente inexistente o sin permisos");
   const isContact = businessType === "contact";
+  const isPet = businessType === "pet";
   // Plantilla elegida al crear: una propia ("mine-<id>", ver Plantillas más abajo) o, si todavía
   // no tiene ninguno, uno de BIONFC.
   const requestedTemplate = String(fd.get("rubro_template") || "");
-  let rubroTemplate = !isContact && !isDirect ? BUSINESS_TEMPLATES.find((template) => template.id === requestedTemplate) : undefined;
-  if (!isContact && !isDirect && requestedTemplate.startsWith("mine-")) {
+  let rubroTemplate = !isContact && !isDirect && !isPet ? BUSINESS_TEMPLATES.find((template) => template.id === requestedTemplate) : undefined;
+  if (!isContact && !isDirect && !isPet && requestedTemplate.startsWith("mine-")) {
     const { data: own } = await s.from("landings").select("*, actions(*)").eq("id", requestedTemplate.slice(5)).eq("owner_id", user.id).not("template_name", "is", null).maybeSingle();
     if (own) rubroTemplate = templateFromLanding(own);
   }
   // Los links de la plantilla son de ejemplo: la página nueva arranca sin ninguno (ver withoutLinks).
   if (rubroTemplate) rubroTemplate = withoutLinks(rubroTemplate);
+  // La chapita de mascota no usa botones ni plantillas: arranca con sus datos vacíos (lib/pet.ts)
+  // y, si se cargó, el WhatsApp de la familia.
+  const petPhone = isPet ? phoneFromInput(String(fd.get("pet_phone") || "")) : "";
+  if (petPhone && !isPlausiblePhone(petPhone)) onError("El teléfono de la familia no parece válido. Revisalo y probá de nuevo.");
+  const look = petLook(undefined);
   const { data, error } = await s.from("landings").insert({
     owner_id: user.id, client_id: clientId, request_key: requestKey, business_name: businessName, slug,
     template: String(fd.get("template") || "professional"), business_type: businessType,
@@ -62,6 +71,7 @@ export async function newLanding(fd: FormData) {
     primary_color: client?.primary_color || (isContact ? "#343d31" : "#1f2937"),
     background_color: client?.background_color || (isContact ? "#e9eae2" : "#f7f5f0"),
     ...(isContact ? { button_style: { contactTheme: "essential", contactLayout: "card" } } : {}),
+    ...(isPet ? { primary_color: look.accent, background_color: look.background, description: DEFAULT_PET_MESSAGE, button_style: { pet: newPet(petPhone) } } : {}),
     // Una landing creada desde una plantilla por rubro arranca idéntica a ella, con los datos de
     // ejemplo, salvo el nombre visible, que es el que se escribió al crearla.
     ...(rubroTemplate ? { ...rubroTemplate.landing, business_name: businessName, title_style: { ...rubroTemplate.landing.title_style, headline: businessName } } : {}),
@@ -89,12 +99,13 @@ export async function publish(fd: FormData) {
   const returnTo = String(fd.get("return_to") || "/admin");
   const target = returnTo.startsWith("/admin") ? returnTo : "/admin";
   const desired = String(fd.get("published")) === "true";
-  const { data: landing, error: lookupError } = await s.from("landings").select("id,slug,business_type,plan,expires_at,template_name").eq("id", id).eq("owner_id", user.id).maybeSingle();
+  const { data: landing, error: lookupError } = await s.from("landings").select("id,slug,business_type,plan,expires_at,template_name,button_style").eq("id", id).eq("owner_id", user.id).maybeSingle();
   if (lookupError) redirect(target + "?error=" + encodeURIComponent(lookupError.message));
   if (!landing) redirect(target + "?error=Página inexistente o sin permisos");
   if (desired && landing.template_name) redirect(target + "?error=" + encodeURIComponent("Una plantilla no se publica: creá una página desde ella."));
   // Un botón sin link no llevaría a ningún lado (por ejemplo, recién copiado de una plantilla).
-  if (desired && landing.business_type !== "contact") {
+  if (desired && landing.business_type === "pet" && !petHasContact(parsePet(landing.button_style))) redirect(target + "?error=" + encodeURIComponent("Cargá el WhatsApp de la familia antes de publicar la chapita."));
+  if (desired && landing.business_type !== "contact" && landing.business_type !== "pet") {
     const { data: actions, error: actionsError } = await s.from("actions").select("type,url,title").eq("landing_id", id).eq("enabled", true);
     if (actionsError) redirect(target + "?error=" + encodeURIComponent(actionsError.message));
     const missing = buttonsMissingLink(actions || []);

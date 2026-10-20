@@ -80,6 +80,9 @@ export default async function Admin() {
       {!!clients?.length && <ModalTrigger label="Nueva tarjeta personal" icon={<IconPlus />} title="Nueva tarjeta personal" description="Elegí el cliente y después completá la foto y los datos en el editor." variant="secondary">
         <LandingCreationForm clients={clients} action={newLanding} kind="contact" />
       </ModalTrigger>}
+      {!!clients?.length && <ModalTrigger label="Nueva chapita de mascota" icon={<IconPlus />} title="Nueva chapita de mascota" description="Elegí el cliente (la familia) y después completá la foto y los datos en el editor." variant="secondary">
+        <LandingCreationForm clients={clients} action={newLanding} kind="pet" />
+      </ModalTrigger>}
       {!!clients?.length && <ModalTrigger label="Nuevo link directo" icon={<IconPlus />} title="Nuevo link directo" description="El producto abre un solo link. Queda publicado y vas directo a grabar el NFC." variant="secondary">
         <LandingCreationForm clients={clients} action={newLanding} kind="direct" />
       </ModalTrigger>}
