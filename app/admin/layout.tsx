@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { logout } from "./login/actions";
 import { AdminThemeButton } from "@/components/admin-theme";
-import { IconLogOut, IconRocket } from "@/components/icons";
+import { IconLogOut } from "@/components/icons";
+import BioNFCLogo from "@/components/bionfc-logo";
 import AdminNavLinks from "./admin-nav-links";
 import "../globals.css";
 
@@ -34,7 +35,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   return (
     <div className="admin-shell-frame">
       <nav className="global-nav">
-        <Link href="/admin" className="global-nav-brand"><span className="global-nav-mark"><IconRocket /></span><span className="global-nav-brand-name">Mi Landing Web Fácil</span></Link>
+        <Link href="/admin" className="global-nav-brand" aria-label="BIONFC · Inicio del administrador"><BioNFCLogo /></Link>
         {email && <AdminNavLinks />}
         <div className="global-nav-right">
           <AdminThemeButton />

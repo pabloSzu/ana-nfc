@@ -3,7 +3,8 @@ import { newClient, newLanding, resolveReport } from "./actions";
 import LandingCreationForm from "./landing-creation-form";
 import ClientCreationForm from "./client-creation-form";
 import ModalTrigger from "./modal-trigger";
-import { IconAlertCircle, IconPlus, IconQrCode, IconUsers, IconFileText, IconCheckCircle, IconRocket, IconWifi, IconDroplet } from "@/components/icons";
+import { IconAlertCircle, IconPlus, IconQrCode, IconUsers, IconFileText, IconCheckCircle, IconPaw, IconWifi, IconDroplet } from "@/components/icons";
+import BioNFCLogo from "@/components/bionfc-logo";
 import Toast from "@/components/toast";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -17,7 +18,7 @@ export default async function Admin() {
   const supabase = await createClient();
   const { data: authData } = await supabase.auth.getClaims();
   const userId = String(authData?.claims?.sub || "");
-  if (!userId) return <main className="auth-shell"><div className="auth-card" style={{ textAlign: "center" }}><div className="auth-mark" style={{ margin: "0 auto 16px" }}>M</div><h1>Mi Landing Web Fácil</h1><p className="muted">Iniciá sesión para gestionar tus clientes y landings.</p><Link className="btn full" href="/admin/login">Ingresar</Link></div></main>;
+  if (!userId) return <main className="auth-shell"><div className="auth-card" style={{ textAlign: "center" }}><div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}><BioNFCLogo /></div><h1>Administrador</h1><p className="muted">Ingresá con la cuenta autorizada para gestionar chapitas, clientes y páginas.</p><Link className="btn full" href="/admin/login">Ingresar</Link></div></main>;
   const [{ data: clients }, { data: allLandings }, { data: reports }] = await Promise.all([
     supabase.from("clients").select("*").eq("owner_id", userId).order("created_at", { ascending: false }),
     // Las chapitas de un lote que todavía no se vendieron no son páginas: se ven en Chapitas.
@@ -47,14 +48,15 @@ export default async function Admin() {
     <AdminThemeBackdrop />
     <header className="app-header admin-hero">
       <div className="hero-copy">
-        <div className="brand-lockup"><span className="brand-mark"><IconRocket /></span><p className="eyebrow">Mi Landing Web Fácil</p></div>
+        <div className="brand-lockup"><span className="brand-mark"><IconPaw /></span><p className="eyebrow">BIONFC · Administrador</p></div>
         <h1>Tu centro de comando</h1>
-        <p className="muted">Landings, tarjetas personales, clientes y tags NFC en un solo lugar.</p>
+        <p className="muted">Gestioná chapitas de mascotas, clientes y páginas desde un solo lugar.</p>
         <div className="hero-pills">
           <span><IconWifi /> NFC ready</span>
           <span><IconDroplet /> Colores por marca</span>
           <span><IconCheckCircle /> {publishRate}% publicadas</span>
         </div>
+        <Link className="btn admin-hero-primary" href="/admin/chapitas"><IconPaw /> Gestionar chapitas</Link>
       </div>
     </header>
     <Suspense fallback={null}><Toast /></Suspense>

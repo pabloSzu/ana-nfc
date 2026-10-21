@@ -111,6 +111,10 @@ export function IconHeart(props: IconProps) {
   return <svg {...base} {...props}><path d="M12 20.5s-7.5-4.7-10-9.3C.5 7.8 2.3 4.5 5.8 4c2.1-.3 4.1.8 6.2 3 2.1-2.2 4.1-3.3 6.2-3 3.5.5 5.3 3.8 3.8 7.2-2.5 4.6-10 9.3-10 9.3Z" /></svg>;
 }
 
+export function IconPaw(props: IconProps) {
+  return <svg {...base} {...props} fill="currentColor" stroke="none"><ellipse cx="12" cy="15.3" rx="5.1" ry="4.2" /><ellipse cx="5.6" cy="10" rx="2.1" ry="2.7" transform="rotate(-24 5.6 10)" /><ellipse cx="9.6" cy="6.5" rx="2.1" ry="2.7" transform="rotate(-7 9.6 6.5)" /><ellipse cx="14.5" cy="6.5" rx="2.1" ry="2.7" transform="rotate(7 14.5 6.5)" /><ellipse cx="18.5" cy="10" rx="2.1" ry="2.7" transform="rotate(24 18.5 10)" /></svg>;
+}
+
 export function IconTrendingUp(props: IconProps) {
   return <svg {...base} {...props}><polyline points="3 17 10 10 14 14 21 6" /><polyline points="15 6 21 6 21 12" /></svg>;
 }

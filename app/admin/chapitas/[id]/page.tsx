@@ -43,11 +43,17 @@ export default async function BatchPage({ params }: { params: Promise<{ id: stri
     <header className="library-page-header">
       <div><p className="eyebrow">{batch.reseller || "Venta directa"}</p><h1>{batch.name}</h1><p className="muted">{active} de {tags?.length || 0} activadas. Grabá en cada chapita su link NFC y su QR, y poné en el paquete la tarjetita con su código.</p></div>
       <div className="library-page-actions">
-        <Link className="btn" href={`/admin/chapitas/${id}/imprimir?que=tarjetas`} target="_blank">Imprimir tarjetitas</Link>
-        <Link className="btn secondary" href={`/admin/chapitas/${id}/imprimir?que=qr`} target="_blank">Imprimir QR</Link>
+        <Link className="btn" href={`/admin/chapitas/${id}/imprimir?que=tarjetas`} target="_blank">1. Imprimir tarjetas del paquete</Link>
+        <Link className="btn secondary" href={`/admin/chapitas/${id}/imprimir?que=qr`} target="_blank">2. Imprimir QR de las chapitas</Link>
       </div>
     </header>
     {isLocalSite(origin) && <aside className="admin-assignment-warning"><IconExternalLink /><p><strong>Estás en desarrollo ({new URL(origin).host}).</strong><span>Los links y QR de esta pantalla apuntan a tu computadora: no los grabes en chapitas reales. Grabalas desde el Admin de bionfc.com.</span></p></aside>}
+
+    <section className="ch-batch-next" aria-label="Qué hacer con este lote">
+      <div><span>1</span><p><strong>Tarjeta del paquete</strong><small>QR privado + código de activación.</small></p></div>
+      <div><span>2</span><p><strong>Chapita física</strong><small>Grabá el link NFC e imprimí su QR.</small></p></div>
+      <div><span>3</span><p><strong>Control de ventas</strong><small>Volvé acá para ver cuáles se activaron.</small></p></div>
+    </section>
 
     <section className="elevated-section">
       <table className="ch-table">

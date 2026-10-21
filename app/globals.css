@@ -2543,6 +2543,8 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
 .admin-shell-frame:has(> .v2-shell) { overflow: hidden; }
 .global-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 16px; min-height: var(--global-nav-h); background: #14152b; color: #fff; position: sticky; top: 0; z-index: 80; }
 .global-nav-brand { display: flex; align-items: center; gap: 8px; color: #fff; text-decoration: none; font-size: 13px; font-weight: 800; letter-spacing: -.01em; }
+.global-nav-brand .bx-logo-word { color: #fff; font-size: 17px; }
+.global-nav-brand .bx-logo-waves { width: 14px; height: 14px; }
 .global-nav-mark { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 7px; background: #6657e8; }
 .global-nav-mark svg { width: 13px; height: 13px; }
 .global-nav-links { display: flex; align-items: center; align-self: stretch; gap: 4px; margin-inline: auto; }
@@ -2561,6 +2563,11 @@ dialog.modal[open] { animation: modal-in var(--dur-base) var(--ease-spring); }
 .global-nav-user { font-size: 11.5px; color: rgba(255,255,255,.7); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .global-nav-logout { display: inline-grid; place-items: center; width: 32px; height: 32px; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.08); border-radius: 9px; color: #fff; cursor: pointer; }
 .global-nav-logout svg { width: 14px; height: 14px; }
+.admin-hero-primary { width: fit-content; margin-top: 18px; }
+.admin-login-brand { display: flex; margin-bottom: 18px; }
+.admin-login-brand .bx-logo-word { font-size: 26px; }
+.admin-login-note { margin: 18px 0 0; color: var(--text-muted); font-size: 12px; line-height: 1.5; text-align: center; }
+.admin-login-note a { color: var(--accent); font-weight: 750; text-decoration: underline; }
 @media (max-width: 720px) {
   .global-nav-user { display: none; }
   .global-nav-links a { padding-inline: 10px; }
