@@ -35,7 +35,7 @@ export default function PetRenderer({ landing, pet: draft, photoUrl, edit }: { l
   const card = (section: PetSection, title: string, body: ReactNode) => <section {...part(section, "pet-card")}><h2>{title}</h2>{body}</section>;
 
   return (
-    <main className={`pet-page${look.dark ? " is-dark" : ""}`} style={style}>
+    <main className={`pet-page look-${look.id}${look.dark ? " is-dark" : ""}`} style={style}>
       <FontLinks ids={[look.titleFont, look.bodyFont]} />
       {pet.lost && <section {...part("lost", "pet-lost")} role="alert">
         <strong>¡Estoy perdido!</strong>
@@ -63,9 +63,9 @@ export default function PetRenderer({ landing, pet: draft, photoUrl, edit }: { l
         {!contacts.length && edit && <p className="pet-empty">Tocá acá para cargar el WhatsApp de la familia.</p>}
       </section>
 
-      {about.length > 0 && card("about", "Sobre mí", <dl>{about.map((row) => <div key={row.label}><dt>{row.label}</dt><dd>{row.value}</dd></div>)}</dl>)}
       {pet.finder.trim() && card("finder", "Si me encontrás", <p>{pet.finder.trim()}</p>)}
       {health.length > 0 && card("health", "Mi salud", <dl>{health.map((row) => <div key={row.label}><dt>{row.label}</dt><dd>{row.value}</dd></div>)}</dl>)}
+      {about.length > 0 && card("about", "Sobre mí", <dl>{about.map((row) => <div key={row.label}><dt>{row.label}</dt><dd>{row.value}</dd></div>)}</dl>)}
       {edit && !about.length && !health.length && !pet.finder.trim() && <p {...part("about", "pet-empty")}>Sumá raza, edad, salud o lo que quieras contar.</p>}
 
       <footer className="landing-branding pet-branding" data-tone={look.dark ? "dark" : undefined}>

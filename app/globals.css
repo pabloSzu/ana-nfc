@@ -3143,7 +3143,7 @@ dialog.confirm-modal { width: min(400px, calc(100vw - 32px)); }
 
 /* Chapita de mascota (components/pet-renderer.tsx). Colores y letras vienen del diseño elegido
    (PET_LOOKS en lib/pet.ts) como variables. */
-.pet-page { container-type: inline-size; min-height: 100vh; min-height: 100svh; padding: 34px 18px 28px; background: linear-gradient(170deg, var(--pet-bg), var(--pet-bg-to)); color: var(--pet-ink); font-family: var(--pet-body-font); text-align: center; }
+.pet-page { container-type: inline-size; display: flex; flex-direction: column; min-height: 100vh; min-height: 100svh; padding: 34px 18px 28px; background: linear-gradient(170deg, var(--pet-bg), var(--pet-bg-to)); color: var(--pet-ink); font-family: var(--pet-body-font); text-align: center; }
 .pet-page > * { width: min(100%, 400px); margin-left: auto; margin-right: auto; }
 .landing-page-shell > .pet-page { width: 100%; }
 @media (min-width: 768px) {
@@ -3179,11 +3179,43 @@ dialog.confirm-modal { width: min(400px, calc(100vw - 32px)); }
 .pet-card dd { margin: 0; font-weight: 700; text-align: right; }
 .pet-page.is-dark .pet-card, .pet-page.is-dark .pet-call { box-shadow: none; border: 1px solid #ffffff14; }
 .pet-empty { margin: 12px auto 0; padding: 14px; border: 1.5px dashed color-mix(in srgb, var(--pet-ink) 30%, transparent); border-radius: 16px; font-size: 13.5px; opacity: .75; }
-.pet-branding { margin-top: 26px; }
+.pet-branding { flex-shrink: 0; margin-top: auto; padding-top: 26px; }
 .pet-editable { cursor: pointer; border-radius: 20px; outline: 2px solid transparent; outline-offset: 4px; transition: outline-color .15s; }
 .pet-editable:hover { outline-color: color-mix(in srgb, var(--pet-accent) 45%, transparent); }
 .pet-editable.is-selected { outline-color: var(--pet-accent); }
 .pet-report { display: block; width: fit-content; margin: 14px auto 0; color: var(--pet-ink); font-size: 11px; opacity: .45; text-decoration: underline; }
+/* Cada prediseño conserva las mismas acciones y datos, pero tiene una composición reconocible. */
+.pet-page.look-calido .pet-hero { padding: 23px 18px 27px; border: 1px solid #f5d9c3; border-radius: 34px; background: var(--pet-card); box-shadow: 0 17px 42px #9a54211c; }
+.pet-page.look-calido .pet-photo { border-color: #fff; box-shadow: 0 10px 25px #b9531e36; }
+.pet-page.look-calido .pet-card { border: 1px solid #f2ddca; }
+.pet-page.look-pastel .pet-hero { padding: 24px 16px 28px; border: 1px solid #ffffffbd; border-radius: 110px 110px 30px 30px; background: linear-gradient(165deg, #fff9, #ffffffdf); }
+.pet-page.look-pastel .pet-photo { border-radius: 44% 56% 57% 43%; transform: rotate(-5deg); box-shadow: 0 10px 30px #7465e833; }
+.pet-page.look-pastel .pet-whatsapp, .pet-page.look-pastel .pet-call { border-radius: 28px; }
+.pet-page.look-pastel .pet-card { border: 1px solid #ffffffd9; border-radius: 28px; }
+.pet-page.look-campo .pet-hero { justify-items: start; padding: 20px 4px 22px; border-top: 2px solid #3c652b50; border-bottom: 1px solid #3c652b50; text-align: left; }
+.pet-page.look-campo .pet-photo { width: 122px; height: 122px; border: 3px solid var(--pet-card); border-radius: 24px; box-shadow: 8px 8px 0 #3c652b2b; }
+.pet-page.look-campo .pet-name { letter-spacing: -.045em; }
+.pet-page.look-campo .pet-message { margin-left: 0; }
+.pet-page.look-campo .pet-card { border: 1px solid #3c652b30; border-radius: 8px; box-shadow: none; }
+.pet-page.look-campo .pet-whatsapp, .pet-page.look-campo .pet-call { border-radius: 10px; box-shadow: none; }
+.pet-page.look-divertido .pet-hero { padding: 22px 17px 27px; border: 3px solid var(--pet-ink); border-radius: 28px; background: var(--pet-card); box-shadow: 8px 8px 0 #3b1d2b; }
+.pet-page.look-divertido .pet-photo { width: 132px; height: 132px; border: 4px solid var(--pet-ink); border-radius: 28px; transform: rotate(-6deg); box-shadow: 7px 7px 0 #ffd6e6; }
+.pet-page.look-divertido .pet-card { border: 2px solid var(--pet-ink); box-shadow: 4px 4px 0 #3b1d2b; }
+.pet-page.look-divertido .pet-whatsapp { border: 2px solid var(--pet-ink); box-shadow: 5px 5px 0 #3b1d2b; }
+.pet-page.look-oceano .pet-hero { justify-items: start; padding: 8px 2px 24px; text-align: left; }
+.pet-page.look-oceano .pet-photo { width: 112px; height: 112px; border: 0; border-radius: 24px; box-shadow: 0 12px 24px #066b7726; }
+.pet-page.look-oceano .pet-name { letter-spacing: -.055em; }
+.pet-page.look-oceano .pet-message { margin-left: 0; }
+.pet-page.look-oceano .pet-card { border: 1px solid #066b7730; border-radius: 14px; box-shadow: none; }
+.pet-page.look-oceano .pet-whatsapp, .pet-page.look-oceano .pet-call { border-radius: 12px; box-shadow: none; }
+.pet-page.look-lavanda .pet-hero { padding: 24px 18px 28px; border: 1px solid #78449f55; border-radius: 100px 100px 18px 18px; background: #fffaffbb; }
+.pet-page.look-lavanda .pet-photo { width: 136px; height: 136px; border: 5px double var(--pet-accent); box-shadow: none; }
+.pet-page.look-lavanda .pet-name { font-weight: 700; }
+.pet-page.look-lavanda .pet-card { border-left: 3px solid var(--pet-accent); border-radius: 10px; box-shadow: none; }
+.pet-page.look-noche .pet-hero { padding: 24px 18px 28px; border: 1px solid #f4b74055; border-radius: 26px; background: #222738; box-shadow: 0 18px 40px #0004; }
+.pet-page.look-noche .pet-photo { border-color: #f4b740; box-shadow: 0 0 32px #f4b74038; }
+.pet-page.look-noche .pet-card { border-color: #f4b7403d; }
+.pet-page.look-noche .pet-whatsapp { box-shadow: 0 0 25px #f4b74032; }
 .report-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
 .report-list li { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 12px 0; border-top: 1px solid var(--border); }
 .report-list li:first-child { border-top: 0; }

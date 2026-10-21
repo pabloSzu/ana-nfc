@@ -1,48 +1,99 @@
-/* Editor de la chapita de mascota (pet-editor.tsx): partes a la izquierda, formulario en el medio
-   y la chapita a la derecha. En el celular va todo en una columna. */
+/* Editor de la chapita de mascota (pet-editor.tsx). En el celular: la chapita a pantalla completa,
+   chips arriba y un panel que sube desde abajo. Desde 900px: la chapita en un celular de muestra
+   y el panel siempre al costado. */
 .pet-editor { min-height: 100vh; background: #f4f5f8; color: #1d2130; }
-.pet-editor-top { position: sticky; top: 0; z-index: 20; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 12px 20px; border-bottom: 1px solid #e4e6ec; background: #fff; }
-.pet-editor-back { color: #5b6170; font-size: 14px; font-weight: 600; text-decoration: none; }
-.pet-editor-title { display: grid; line-height: 1.2; }
-.pet-editor-title small { color: #8a8f9c; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
-.pet-editor-title strong { font-size: 17px; }
-.pet-editor-status { padding: 4px 10px; border-radius: 999px; background: #eef0f4; color: #5b6170; font-size: 12px; font-weight: 700; }
-.pet-editor-status.is-live { background: #e3f6ea; color: #17803d; }
-.pet-editor-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-left: auto; }
-.pet-editor-actions form { display: contents; }
-.pet-editor-ghost { display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 0 14px; border: 1px solid #dfe2e8; border-radius: 10px; background: #fff; color: #1d2130; font: inherit; font-size: 14px; font-weight: 600; text-decoration: none; cursor: pointer; }
+
+/* Barra de arriba */
+.pet-editor-top { position: sticky; top: 0; z-index: 25; display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid #e4e6ec; background: #fff; }
+.pet-editor-back { flex: none; display: inline-flex; align-items: center; color: #5b6170; font-size: 14px; font-weight: 600; text-decoration: none; }
+.pet-editor-title { display: grid; flex: 1; min-width: 0; line-height: 1.2; }
+.pet-editor-title small { color: #8a8f9c; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.pet-editor-title strong { overflow: hidden; font-size: 17px; text-overflow: ellipsis; white-space: nowrap; }
+.pet-editor-actions { display: flex; flex: none; align-items: center; gap: 8px; }
+.pet-editor-ghost { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 0 14px; border: 1px solid #dfe2e8; border-radius: 10px; background: #fff; color: #1d2130; font: inherit; font-size: 14px; font-weight: 600; text-decoration: none; cursor: pointer; }
 .pet-editor-ghost:hover:not(:disabled) { border-color: #b9bdc8; }
 .pet-editor-ghost:disabled { opacity: .5; cursor: not-allowed; }
-.pet-editor-save { min-height: 38px; padding: 0 18px; border: 0; border-radius: 10px; background: #1d2130; color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+.pet-editor-help-trigger { width: 40px; padding: 0; font-size: 17px; font-weight: 800; }
+.pet-editor-save { min-height: 40px; padding: 0 18px; border: 0; border-radius: 10px; background: #1d2130; color: #fff; font: inherit; font-size: 14.5px; font-weight: 800; cursor: pointer; }
 .pet-editor-save:disabled { background: #c9ccd4; cursor: default; }
-.pet-editor-link { padding: 0; border: 0; background: none; color: #c0392b; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
-.pet-editor-note { margin: 0; padding: 9px 20px; background: #fff7e0; color: #7a5a00; font-size: 13.5px; font-weight: 600; }
-.pet-editor-note.is-privacy { background: #eaf3ff; color: #244b75; line-height: 1.45; }
-.pet-public-ack { display: inline-flex; align-items: center; gap: 8px; max-width: 260px; color: #3b4050; font-size: 11px; font-weight: 700; line-height: 1.3; }
-.pet-public-ack input { flex: none; width: 17px; height: 17px; accent-color: #1d2130; }
-.pet-public-ack.is-owner { grid-column: 1 / -1; max-width: 800px; padding: 12px 15px; border: 1px solid #b7d3ee; border-radius: 12px; background: #eaf3ff; color: #244b75; font-size: 13px; }
-.pet-editor-body { display: grid; grid-template-columns: 200px minmax(0, 420px) 1fr; gap: 24px; align-items: start; padding: 24px 20px 40px; }
-.pet-editor-nav { position: sticky; top: 86px; display: grid; gap: 4px; }
-.pet-editor-nav button { position: relative; display: flex; align-items: center; gap: 10px; padding: 11px 12px; border: 0; border-radius: 12px; background: transparent; color: #3b4050; font: inherit; font-size: 14.5px; font-weight: 600; text-align: left; cursor: pointer; }
-.pet-editor-nav button:hover { background: #e9ebf0; }
-.pet-editor-nav button.active { background: #fff; color: #1d2130; box-shadow: 0 2px 10px rgba(20, 24, 40, .08); }
-.pet-editor-dot { width: 8px; height: 8px; margin-left: auto; border-radius: 50%; background: #d92d20; }
-.pet-editor-panel { display: grid; gap: 14px; padding: 22px; border-radius: 18px; background: #fff; box-shadow: 0 2px 14px rgba(20, 24, 40, .06); }
-.pet-editor-panel h2 { margin: 0; font-size: 19px; }
+/* "Publicar" listo para tocar al terminar la guía: late suave para que se vea. */
+.pet-editor-save.is-ready { background: #17803d; animation: pet-ready 1.8s ease-in-out infinite; }
+@keyframes pet-ready { 0%, 100% { box-shadow: 0 0 0 0 #17803d55; } 50% { box-shadow: 0 0 0 7px #17803d00; } }
+@media (prefers-reduced-motion: reduce) { .pet-editor-save.is-ready { animation: none; } }
+.pet-editor-link { padding: 0; border: 0; background: none; color: #b42318; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.pet-editor-publish { display: flex; align-items: center; gap: 8px; }
+.pet-public-ack { display: inline-flex; align-items: center; gap: 6px; max-width: 170px; color: #3b4050; font-size: 11px; font-weight: 700; line-height: 1.25; }
+.pet-public-ack input { flex: none; width: 16px; height: 16px; accent-color: #1d2130; }
+.pet-editor-more { position: relative; }
+.pet-editor-more summary { display: grid; place-items: center; width: 40px; min-height: 40px; border: 1px solid #dfe2e8; border-radius: 10px; background: #fff; font-size: 20px; font-weight: 800; line-height: 1; list-style: none; cursor: pointer; }
+.pet-editor-more summary::-webkit-details-marker { display: none; }
+.pet-editor-more-menu { position: absolute; z-index: 40; top: calc(100% + 6px); right: 0; display: grid; min-width: 210px; padding: 6px; border: 1px solid #e4e6ec; border-radius: 14px; background: #fff; box-shadow: 0 16px 40px rgba(20, 24, 40, .18); }
+.pet-editor-more-menu > a, .pet-editor-more-menu > .copy-button { display: flex; align-items: center; gap: 8px; width: 100%; padding: 11px 12px; border: 0; border-radius: 9px; background: none; color: #1d2130; font: inherit; font-size: 14.5px; font-weight: 600; text-align: left; text-decoration: none; cursor: pointer; }
+.pet-editor-more-menu > a:hover, .pet-editor-more-menu > .copy-button:hover { background: #f2f3f6; }
+
+/* Chips: una línea con iconos, deslizable; el borde derecho se desvanece para que se note. */
+.pet-editor-nav { position: sticky; top: 61px; z-index: 24; display: flex; gap: 6px; padding: 10px 16px; overflow-x: auto; border-bottom: 1px solid #eceef2; background: #f4f5f8f2; scrollbar-width: none; -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent); mask-image: linear-gradient(90deg, #000 88%, transparent); }
+.pet-editor-nav::-webkit-scrollbar { display: none; }
+.pet-editor-nav button { display: inline-flex; flex: none; align-items: center; gap: 6px; min-height: 38px; padding: 0 13px; border: 1px solid #e1e4ea; border-radius: 999px; background: #fff; color: #3b4050; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+.pet-editor-nav button.active { border-color: #1d2130; background: #1d2130; color: #fff; }
+.pet-editor-nav button.is-lost-tab { border-color: #f3b3ad; color: #b42318; }
+.pet-editor-nav button.is-lost-tab.is-on { background: #fde4e1; }
+.pet-editor-nav button.is-lost-tab.active { border-color: #b42318; background: #b42318; color: #fff; }
+
+/* Un solo aviso a la vez */
+.pet-editor-note { margin: 0; padding: 9px 16px; background: #fff7e0; color: #7a5a00; font-size: 13.5px; font-weight: 600; line-height: 1.45; }
+.pet-editor-note.is-tip { background: #e8f6ee; color: #145c30; }
+.pet-editor-note.is-danger { background: #fde4e1; color: #a1271b; }
+
+/* La chapita: en el celular ocupa el ancho; al abrir el panel, cada parte se acomoda arriba. */
+.pet-editor-body { display: block; }
+.pet-stage-frame { overflow: hidden; }
+.pet-stage-frame .pet-page { min-height: 0; padding-bottom: 30px; }
+.pet-stage :is(.pet-hero, .pet-family, .pet-card, .pet-lost) { scroll-margin-top: 120px; }
+.pet-stage-hint { margin: 0; padding: 10px 16px 24px; color: #8a8f9c; font-size: 12.5px; text-align: center; }
+.pet-editor.has-panel .pet-stage { padding-bottom: 62vh; }
+
+/* El panel: sube desde abajo, con su título, sus campos y Listo / Siguiente. */
+.pet-sheet { position: fixed; z-index: 30; right: 0; bottom: 0; left: 0; display: grid; grid-template-rows: auto 1fr auto; max-height: 62vh; border-radius: 22px 22px 0 0; background: #fff; box-shadow: 0 -12px 40px rgba(20, 24, 40, .2); animation: pet-sheet-in .22s ease-out; }
+@keyframes pet-sheet-in { from { transform: translateY(30px); opacity: .4; } }
+@media (prefers-reduced-motion: reduce) { .pet-sheet { animation: none; } }
+.pet-sheet-head { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 16px 16px 8px; }
+.pet-sheet-head::before { content: ""; position: absolute; top: 6px; left: 50%; width: 38px; height: 4px; border-radius: 99px; background: #dcdfe5; transform: translateX(-50%); }
+.pet-sheet-head div { display: grid; }
+.pet-sheet-head small { color: #6d5dfc; font-size: 11.5px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+.pet-sheet-head strong { font-size: 18px; }
+.pet-sheet-close { display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 50%; background: #f2f3f6; color: #3b4050; font-size: 15px; cursor: pointer; }
+.pet-sheet-body { display: grid; align-content: start; gap: 12px; padding: 4px 16px 14px; overflow-y: auto; overscroll-behavior: contain; }
+.pet-sheet-foot { display: flex; gap: 8px; padding: 10px 16px max(12px, env(safe-area-inset-bottom)); border-top: 1px solid #eceef2; }
+.pet-sheet-foot .pet-editor-ghost { min-height: 48px; }
+.pet-sheet-done { flex: 1; min-height: 48px; border: 0; border-radius: 12px; background: #1d2130; color: #fff; font: inherit; font-size: 15.5px; font-weight: 800; cursor: pointer; }
+.pet-sheet-done:disabled { background: #c9ccd4; cursor: not-allowed; }
+.pet-sheet-empty { display: none; }
+
+/* Campos */
 .pet-editor-help { margin: 0; color: #6b7080; font-size: 13.5px; line-height: 1.5; }
-.pet-field { display: grid; gap: 6px; font-size: 13.5px; font-weight: 700; color: #3b4050; }
-.pet-field input, .pet-field textarea { width: 100%; padding: 10px 12px; border: 1px solid #dfe2e8; border-radius: 10px; background: #fff; color: #1d2130; font: inherit; font-size: 15px; font-weight: 500; }
-.pet-field textarea { resize: vertical; line-height: 1.5; }
-.pet-field input:focus, .pet-field textarea:focus { outline: 2px solid #8b5cf6; outline-offset: 0; border-color: transparent; }
+.pet-field { display: grid; gap: 5px; min-width: 0; color: #3b4050; font-size: 13.5px; font-weight: 700; }
+/* En iPhone, un campo de menos de 16px hace zoom al tocarlo. */
+.pet-field input, .pet-field textarea { width: 100%; padding: 10px 12px; border: 1px solid #dfe2e8; border-radius: 10px; background: #fff; color: #1d2130; font: inherit; font-size: 16px; font-weight: 500; }
+.pet-field textarea { resize: vertical; line-height: 1.45; }
+.pet-field input:focus, .pet-field textarea:focus { outline: 2px solid #6d5dfc; outline-offset: 0; border-color: transparent; }
 .pet-field small { color: #8a8f9c; font-size: 12px; font-weight: 500; }
-.pet-photo-field { display: flex; align-items: center; gap: 16px; }
-.pet-photo-field > div:last-child { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.pet-field small.pet-phone-ok { color: #17803d; font-weight: 700; }
+.pet-phone-warn, .pet-field small.pet-phone-warn { margin: 0; color: #b42318; font-size: 12.5px; font-weight: 700; }
+.pet-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pet-group { display: grid; gap: 10px; margin: 0; padding: 12px; border: 1px solid #eceef2; border-radius: 14px; }
+.pet-group legend { padding: 0 6px; color: #3b4050; font-size: 13px; font-weight: 800; }
+.pet-choice { display: flex; flex-wrap: wrap; gap: 6px; }
+.pet-choice button { flex: 1; min-height: 40px; padding: 0 10px; border: 1.5px solid #dfe2e8; border-radius: 999px; background: #fff; color: #3b4050; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.pet-choice button.active { border-color: #1d2130; background: #1d2130; color: #fff; }
+.pet-photo-field { display: flex; align-items: center; gap: 14px; }
+.pet-photo-field > div { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
 .pet-photo-field small { flex-basis: 100%; color: #8a8f9c; font-size: 12px; }
-.pet-photo-thumb { display: grid; place-items: center; flex: none; width: 84px; height: 84px; overflow: hidden; border-radius: 50%; background: #f1e6dc; font-size: 34px; }
+.pet-photo-thumb { display: grid; place-items: center; flex: none; width: 72px; height: 72px; overflow: hidden; padding: 0; border: 2px dashed #d6d9e0; border-radius: 50%; background: #f6f7f9; font-size: 26px; cursor: pointer; }
 .pet-photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
-.pet-member { display: grid; gap: 12px; padding: 14px; border: 1px solid #eceef2; border-radius: 14px; background: #fafbfc; }
+.pet-member { display: grid; gap: 10px; padding: 12px; border: 1px solid #eceef2; border-radius: 14px; background: #fafbfc; }
 .pet-member-head { display: flex; justify-content: space-between; align-items: center; }
-.pet-switch { display: flex; align-items: flex-start; gap: 12px; padding: 14px; border: 1px solid #eceef2; border-radius: 14px; background: #fafbfc; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.pet-switch { display: flex; align-items: flex-start; gap: 12px; padding: 13px; border: 1px solid #eceef2; border-radius: 14px; background: #fafbfc; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .pet-switch.is-on { border-color: #f3b3ad; background: #fff3f2; }
 .pet-switch-track { position: relative; flex: none; width: 44px; height: 26px; margin-top: 2px; border-radius: 999px; background: #cfd3db; transition: background .15s; }
 .pet-switch-track::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .2); transition: transform .15s; }
@@ -50,43 +101,72 @@
 .pet-switch.is-on .pet-switch-track::after { transform: translateX(18px); }
 .pet-switch strong { display: block; font-size: 15px; }
 .pet-switch small { display: block; margin-top: 3px; color: #6b7080; font-size: 12.5px; line-height: 1.45; }
-.pet-looks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.pet-looks button { display: grid; gap: 8px; padding: 14px 12px; border: 2px solid transparent; border-radius: 16px; font: inherit; text-align: left; cursor: pointer; box-shadow: 0 2px 8px rgba(20, 24, 40, .08); }
-.pet-looks button.active { border-color: #1d2130; }
-.pet-look-name { font-size: 18px; font-weight: 800; }
-.pet-look-pill { padding: 7px 10px; border-radius: 10px; font-size: 11.5px; font-weight: 800; }
-.pet-look-card { height: 22px; border-radius: 8px; }
-.pet-editor-preview { position: sticky; top: 86px; display: grid; justify-items: center; gap: 10px; }
-.pet-editor-preview > small { color: #8a8f9c; font-size: 12.5px; }
-.pet-editor-phone { width: 375px; max-width: 100%; height: min(760px, calc(100vh - 150px)); overflow-y: auto; border: 10px solid #15171f; border-radius: 44px; background: #fff; box-shadow: 0 24px 60px rgba(20, 24, 40, .22); scrollbar-width: none; }
-.pet-editor-phone::-webkit-scrollbar { display: none; }
-.pet-editor-phone .pet-page { min-height: 100%; }
-@media (max-width: 1100px) {
-  .pet-editor-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-  .pet-editor-nav { position: static; grid-column: 1 / -1; display: flex; overflow-x: auto; }
-  .pet-editor-nav button { flex: none; }
+
+/* Diseños: miniaturas de un toque, la chapita de arriba cambia al instante. */
+.pet-looks { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.pet-look-option { display: grid; gap: 5px; min-width: 0; padding: 4px; border: 2px solid #e5e7ec; border-radius: 14px; background: #fff; color: #1d2130; font: inherit; cursor: pointer; }
+.pet-look-option.active { border-color: #1d2130; box-shadow: 0 0 0 2px #1d213022; }
+.pet-look-mini { display: grid; justify-items: center; align-content: center; gap: 5px; height: 64px; padding: 6px; border-radius: 10px; background: linear-gradient(155deg, var(--look-bg), var(--look-bg-to)); color: var(--look-ink); }
+.pet-look-mini-name { max-width: 100%; overflow: hidden; font-family: var(--look-title-font); font-size: 14px; font-weight: 800; line-height: 1; text-overflow: ellipsis; white-space: nowrap; }
+.pet-look-mini-cta { width: 100%; padding: 3px 2px; border-radius: 6px; background: var(--look-accent); color: var(--look-accent-ink); font-size: 8px; font-weight: 800; text-align: center; }
+.pet-look-caption { padding: 0 2px 2px; font-size: 12px; text-align: center; }
+
+/* Globitos del recorrido de ayuda y bienvenida (driver.js) */
+.driver-popover.pet-tour { max-width: 290px; padding: 18px; border-radius: 16px; color: #1d2130; font-family: inherit; box-shadow: 0 18px 50px rgba(0, 0, 0, .3); }
+.driver-popover.pet-tour .driver-popover-title { font-size: 17px; font-weight: 800; }
+.driver-popover.pet-tour .driver-popover-description { color: #4b5160; font-size: 14.5px; line-height: 1.5; }
+.driver-popover.pet-tour .driver-popover-footer button { padding: 8px 14px; border: 1px solid #dfe2e8; border-radius: 10px; font: inherit; font-size: 13.5px; font-weight: 700; text-shadow: none; }
+.driver-popover.pet-tour .driver-popover-next-btn { border-color: #1d2130; background: #1d2130; color: #fff; }
+.driver-popover.pet-tour .driver-popover-progress-text { color: #8a8f9c; font-size: 12.5px; }
+
+/* Celular */
+@media (max-width: 899px) {
+  .pet-editor-back { justify-content: center; width: 36px; height: 36px; font-size: 20px; }
+  .pet-editor-back-text { display: none; }
+  .pet-editor-nav { top: 59px; padding: 8px 12px; }
+  .pet-editor-top { padding: 9px 12px; }
 }
-@media (max-width: 760px) {
-  .pet-editor-top { gap: 8px 12px; padding: 10px 14px; }
-  .pet-editor-title { flex: 1; min-width: 0; }
-  .pet-editor-title strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .pet-editor-status { order: 3; }
-  .pet-editor-actions { width: 100%; margin-left: 0; }
-  .pet-editor-actions .pet-editor-ghost { flex: 1; }
-  .pet-editor-save { position: fixed; z-index: 30; right: 14px; bottom: max(14px, env(safe-area-inset-bottom)); left: 14px; min-height: 54px; border-radius: 16px; box-shadow: 0 12px 30px rgba(29, 33, 48, .28); }
-  .pet-editor-body { grid-template-columns: minmax(0, 1fr); padding: 14px 14px 32px; gap: 16px; }
-  .pet-editor-panel { padding: 18px 16px; }
-  .pet-editor-nav { margin: 0 -14px; padding: 2px 14px 6px; flex-wrap: nowrap; gap: 6px; overflow-x: auto; scrollbar-width: none; }
-  .pet-editor-nav::-webkit-scrollbar { display: none; }
-  .pet-editor-nav button { padding: 8px 12px; border: 1px solid #e4e6ec; border-radius: 999px; background: #fff; font-size: 13.5px; }
-  .pet-editor-nav button.active { border-color: #1d2130; background: #1d2130; color: #fff; }
-  .pet-editor-preview { position: static; }
-  .pet-editor-phone { height: 620px; border-width: 7px; border-radius: 34px; }
-  .pet-editor-preview { padding-bottom: 70px; }
+
+/* Compu: la chapita en un celular de muestra y el panel siempre al costado. */
+@media (min-width: 900px) {
+  .pet-editor-nav { justify-content: center; -webkit-mask-image: none; mask-image: none; }
+  .pet-editor-body { display: grid; grid-template-columns: minmax(0, 1fr) 420px; gap: 28px; align-items: start; max-width: 1080px; margin: 0 auto; padding: 24px 24px 40px; }
+  .pet-editor.has-panel .pet-stage { padding-bottom: 0; }
+  .pet-stage { position: sticky; top: 130px; }
+  .pet-stage-frame { width: 375px; max-width: 100%; height: min(720px, calc(100vh - 190px)); margin: 0 auto; overflow-y: auto; border: 10px solid #15171f; border-radius: 44px; background: #fff; box-shadow: 0 24px 60px rgba(20, 24, 40, .22); scrollbar-width: none; }
+  .pet-stage-frame::-webkit-scrollbar { display: none; }
+  .pet-stage-frame .pet-page { min-height: 100%; }
+  .pet-sheet { position: sticky; top: 130px; right: auto; bottom: auto; left: auto; max-height: calc(100vh - 160px); border-radius: 20px; box-shadow: 0 2px 14px rgba(20, 24, 40, .08); animation: none; }
+  .pet-sheet-head::before { display: none; }
+  .pet-sheet-close { display: none; }
+  .pet-sheet-foot:has(> .pet-sheet-done:only-child) { display: none; }
+  .pet-sheet-empty { display: grid; place-items: center; min-height: 200px; padding: 24px; border: 2px dashed #dcdfe5; border-radius: 20px; color: #8a8f9c; font-size: 14.5px; text-align: center; }
 }
-/* Teléfono: aviso en vivo de cómo queda o qué le falta. */
-.pet-field small.pet-phone-ok { color: #17803d; font-weight: 700; }
-.pet-field small.pet-phone-warn, .pet-photo-field small.pet-phone-warn { color: #b42318; font-weight: 700; }
-.pet-editor-note.is-danger { background: #fde4e1; color: #a1271b; }
-/* En iPhone, un campo de menos de 16px hace zoom al tocarlo y la pantalla queda corrida. */
-.pet-field input, .pet-field textarea { font-size: 16px; }
+.pet-editor-back-text { margin-left: 5px; }
+/* Celular con el teclado abierto: el panel queda apoyado arriba del teclado (--kb) y usa todo el
+   alto visible (--vvh), con Siguiente/Listo siempre a la vista. */
+@media (max-width: 899px) {
+  .pet-sheet { bottom: var(--kb, 0px); max-height: min(62vh, calc(var(--vvh, 100vh) - 64px)); transition: bottom .12s ease-out; }
+  .pet-sheet.is-typing { max-height: calc(var(--vvh, 100vh) - 8px); border-radius: 16px 16px 0 0; }
+  .pet-sheet.is-typing .pet-sheet-head { padding-top: 10px; }
+  .pet-sheet.is-typing .pet-sheet-head::before, .pet-sheet.is-typing .pet-editor-help { display: none; }
+  .pet-sheet-body { scroll-padding: 16px; }
+}
+/* Guía a medias: invitación a retomarla. */
+.pet-editor-note.is-resume { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #efeaff; color: #3d2f8f; }
+.pet-editor-resume { flex: none; min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: #5b4cc7; color: #fff; font: inherit; font-size: 13.5px; font-weight: 800; cursor: pointer; }
+.pet-editor-nav button:disabled { opacity: .45; cursor: not-allowed; }
+/* Celular con panel abierto: la chapita entera en miniatura, entre los chips y el panel. */
+@media (max-width: 899px) {
+  .pet-sheet { max-height: min(54vh, calc(var(--vvh, 100vh) - 64px)); }
+  .pet-editor.has-panel .pet-stage { padding-bottom: 0; }
+  .pet-stage.is-mini { position: fixed; z-index: 20; top: var(--mini-top); right: 0; left: 0; display: flex; justify-content: center; height: var(--mini-height); overflow: hidden; }
+  .pet-stage.is-mini .pet-stage-frame { flex: none; align-self: flex-start; width: 390px; zoom: var(--mini); border: 9px solid #15171f; border-radius: 44px; box-shadow: 0 18px 40px rgba(20, 24, 40, .25); }
+  .pet-stage.is-mini .pet-stage-frame .pet-page { padding-top: 26px; }
+  .pet-stage.is-mini .pet-stage-hint { display: none; }
+}
+@media (max-width: 899px) {
+  /* Con un panel abierto, la barra de BIONFC del panel del dueño se esconde: más lugar para la miniatura. */
+  .mi-shell:has(.pet-editor.has-panel) > .mi-top { display: none; }
+  .pet-sheet { max-height: min(50vh, calc(var(--vvh, 100vh) - 64px)); }
+}

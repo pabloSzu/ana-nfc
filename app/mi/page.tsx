@@ -25,11 +25,13 @@ export default async function OwnerHome() {
       const pet = parsePet(page.button_style);
       const photo = landingImageUrl(page.logo_url, 384);
       return <li key={page.id} className={pet.lost ? "is-lost" : ""}>
-        <Link href={`/mi/chapita/${page.id}`}>
+        <Link className="mi-pet-card" href={`/mi/chapita/${page.id}`}>
           <span className="mi-pet-photo">{/* eslint-disable-next-line @next/next/no-img-element -- foto de la mascota */}{photo ? <img src={photo} alt="" /> : "🐾"}</span>
           <span className="mi-pet-copy"><strong>{page.business_name || "Sin nombre todavía"}</strong><small>{page.blocked_at ? "Pausada por BIONFC" : pet.lost ? "🚨 Modo perdido prendido" : page.published ? "Funcionando" : "Falta cargar tu WhatsApp"}</small></span>
           <em>Editar →</em>
         </Link>
+        {/* Lo urgente, a un toque: abre el editor directo en "¿Se perdió?". */}
+        {page.published && !page.blocked_at && <Link className={`mi-lost-button${pet.lost ? " is-on" : ""}`} href={`/mi/chapita/${page.id}?seccion=lost`}>{pet.lost ? "✓ Ya apareció: sacar el cartel" : "🚨 Avisar que se perdió"}</Link>}
       </li>;
     })}</ul>}
     {!!pages?.length && <p className="mi-hint mi-center">¿Compraste otra? <Link href="/activar">Activala acá</Link>.</p>}

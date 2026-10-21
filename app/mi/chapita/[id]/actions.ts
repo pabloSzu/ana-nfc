@@ -67,6 +67,7 @@ export async function saveMyPet(fd: FormData) {
   if (savedLanding?.pet_slug) revalidateLandingPage(savedLanding.pet_slug);
   const message = landing!.blocked_at ? "Cambios guardados. La chapita sigue pausada por BIONFC."
     : !petHasContact(pet) ? "Guardado. Falta el WhatsApp para que la chapita funcione."
+    : !landing!.published ? "¡Listo! Tu chapita ya funciona. Probala acercando tu celular o escaneando el QR."
     : pet.lost ? "Guardado: el cartel de perdido ya se ve en la chapita" : "Cambios guardados";
   redirect(`${back}?saved=${encodeURIComponent(message)}`);
 }

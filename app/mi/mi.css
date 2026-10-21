@@ -1,5 +1,5 @@
 /* Panel de los dueños (/mi) y Activar (/activar): pensado primero para el celular. */
-.mi-shell { display: flex; flex-direction: column; min-height: 100vh; min-height: 100svh; overflow-x: hidden; background: radial-gradient(circle at 8% -8%, #fff 0, transparent 34%), linear-gradient(165deg, #fff9f2 0%, #fdebdc 52%, #f9deca 100%); color: #2d1d12; font-family: "Poppins", system-ui, sans-serif; }
+.mi-shell { display: flex; flex-direction: column; min-height: 100vh; min-height: 100svh; overflow-x: clip; background: radial-gradient(circle at 8% -8%, #fff 0, transparent 34%), linear-gradient(165deg, #fff9f2 0%, #fdebdc 52%, #f9deca 100%); color: #2d1d12; font-family: "Poppins", system-ui, sans-serif; }
 .mi-content { display: contents; }
 .mi-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: min(100%, 960px); margin: 0 auto; padding: 18px; }
 .mi-brand { display: inline-flex; color: inherit; text-decoration: none; }
@@ -47,8 +47,8 @@
 .mi-empty { display: grid; justify-items: center; gap: 16px; padding: 30px 20px; border-radius: 22px; background: #fff; text-align: center; }
 .mi-empty p { margin: 0; color: #7a5a44; }
 .mi-pets { display: grid; gap: 12px; margin: 18px 0 0; padding: 0; list-style: none; }
-.mi-pets a { display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 20px; background: #fff; color: inherit; text-decoration: none; box-shadow: 0 6px 18px rgba(120, 70, 30, .08); }
-.mi-pets li.is-lost a { box-shadow: 0 0 0 2px #d92d20; }
+.mi-pets .mi-pet-card { display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 20px; background: #fff; color: inherit; text-decoration: none; box-shadow: 0 6px 18px rgba(120, 70, 30, .08); }
+.mi-pets li.is-lost .mi-pet-card { box-shadow: 0 0 0 2px #d92d20; }
 .mi-pet-photo { display: grid; place-items: center; flex: none; width: 64px; height: 64px; overflow: hidden; border-radius: 50%; background: #f6e2d2; font-size: 28px; }
 .mi-pet-photo img { width: 100%; height: 100%; object-fit: cover; }
 .mi-pet-copy { display: grid; flex: 1; min-width: 0; }
@@ -65,3 +65,7 @@
 .terms h2 { margin: 26px 0 6px; font-size: 18px; }
 .terms p { margin: 0 0 10px; color: #4a3424; font-size: 15px; line-height: 1.6; }
 .terms a { color: #c25e22; font-weight: 700; }
+.mi-pets li { display: grid; gap: 8px; }
+.mi-lost-button { display: flex; align-items: center; justify-content: center; min-height: 50px; border: 2px solid #d92d20; border-radius: 16px; background: #fff; color: #b42318; font-size: 15px; font-weight: 800; text-decoration: none; }
+.mi-lost-button:active { transform: scale(.98); }
+.mi-lost-button.is-on { border-color: #17803d; color: #17803d; }

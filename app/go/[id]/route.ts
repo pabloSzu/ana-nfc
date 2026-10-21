@@ -11,12 +11,19 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const { data: slug } = valid ? await supabase.rpc("public_landing_slug", { p_landing: id }) : { data: null };
   if (!slug) {
     const { data: pending } = valid ? await supabase.rpc("tag_pending", { p_landing: id }) : { data: false };
-    return Response.redirect(new URL(pending ? "/activar" : "/sin-datos", request.url), 307);
+    return redirectTo(pending ? "/activar" : "/sin-datos");
   }
 
   const source = new URL(request.url).searchParams.get("s");
-  const destination = new URL(`/mascota/${encodeURIComponent(String(slug))}`, request.url);
+  const destination = new URL(`/mascota/${encodeURIComponent(String(slug))}`, "http://x");
   if (source === "nfc" || source === "qr") destination.searchParams.set("s", source);
   // Temporal: una redirección permanente cacheada podría apuntar a un slug viejo.
-  return Response.redirect(destination, 307);
+  return redirectTo(destination.pathname + destination.search);
+}
+
+// Redirección relativa: el navegador sigue en la misma dirección por la que entró. Con una
+// absoluta armada desde request.url, en desarrollo quedaba en "localhost" aunque se entrara
+// por la IP de la red (otro celular o compu del WiFi) y ahí se cortaba.
+function redirectTo(path: string) {
+  return new Response(null, { status: 307, headers: { Location: path } });
 }
