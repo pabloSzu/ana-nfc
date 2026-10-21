@@ -46,3 +46,27 @@ export async function createBatch(fd: FormData) {
   revalidatePath("/admin/chapitas");
   redirect(`/admin/chapitas/${batch!.id}?saved=${encodeURIComponent(`Lote creado: ${count} ${count === 1 ? "chapita" : "chapitas"}`)}`);
 }
+
+// Si se perdió la tarjetita antes de activar, invalida el código anterior y crea otro. La
+// operación real es transaccional en la base: nunca queda una chapita sin código por un fallo a
+// mitad de camino, y una chapita ya activada no se puede tocar desde acá.
+export async function regenerateTagCode(fd: FormData) {
+  const supabase = await createClient();
+  const { data: claims } = await supabase.auth.getClaims();
+  if (!claims?.claims?.sub) redirect("/admin/login");
+
+  const landingId = String(fd.get("landingId") || "");
+  const batchId = String(fd.get("batchId") || "");
+  const validId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (!validId.test(landingId) || !validId.test(batchId)) redirect("/admin/chapitas");
+
+  const { data, error } = await supabase.rpc("regenerate_tag_code", {
+    p_landing: landingId,
+    p_code: newActivationCode(),
+  });
+  if (error || !data) {
+    redirect(`/admin/chapitas/${batchId}?error=${encodeURIComponent("No se pudo cambiar el código. Solo se puede hacer antes de activar la chapita.")}`);
+  }
+  revalidatePath(`/admin/chapitas/${batchId}`);
+  redirect(`/admin/chapitas/${batchId}?saved=${encodeURIComponent("Código anterior anulado. Imprimí o copiá el nuevo código.")}`);
+}

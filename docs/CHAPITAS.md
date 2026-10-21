@@ -61,6 +61,11 @@ se conoce al fabricar y el segundo permitiría apropiarse de una chapita encontr
 
 Si activa una segunda chapita con el mismo email, quedan las dos en su panel.
 
+Si la tarjetita se pierde **antes** de activar, el staff entra al lote y usa **Cambiar código**.
+El anterior deja de funcionar en el mismo instante y aparece uno nuevo para imprimir o copiar. La
+base rechaza esta operación si la chapita ya fue activada; perder el papel después de activarla no
+afecta en nada al dueño.
+
 Quien escanea una chapita activada pero sin publicar (o pausada) cae en `/sin-datos`, que le explica
 al dueño cómo cargarla y al que la encontró cómo escribirnos.
 

@@ -22,6 +22,7 @@
 .ch-link { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .ch-link code { overflow: hidden; color: var(--text-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; max-width: 260px; }
 .ch-actions { display: flex; justify-content: flex-end; gap: 6px; white-space: nowrap; }
+.ch-actions form { margin: 0; }
 @media (max-width: 760px) {
   .ch-batches a { grid-template-columns: 1fr; gap: 8px; }
   .ch-table thead { display: none; }

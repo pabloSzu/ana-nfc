@@ -9,6 +9,8 @@ import { IconEdit, IconExternalLink } from "@/components/icons";
 import { getSiteOrigin, isLocalSite } from "@/lib/site-url";
 import { parsePet } from "@/lib/pet";
 import { formatCode, tagState } from "@/lib/pet-tags";
+import { regenerateTagCode } from "../actions";
+import RegenerateCodeButton from "../regenerate-code-button";
 import "../chapitas.css";
 
 const STATE_LABEL = { stock: "Sin activar", active: "Activada", lost: "¡Perdida!" } as const;
@@ -62,6 +64,7 @@ export default async function BatchPage({ params }: { params: Promise<{ id: stri
               : <code className="ch-code">{codeOf.has(tag.id) ? formatCode(codeOf.get(tag.id)!) : "—"}</code>}</td>
             <td><div className="ch-link"><code>{nfc.replace(/^https?:\/\//, "")}</code><CopyButton text={nfc} label="Copiar" /></div></td>
             <td className="ch-actions">
+              {!tag.activated_at && codeOf.has(tag.id) && <RegenerateCodeButton action={regenerateTagCode} landingId={tag.id} batchId={batch.id} />}
               {tag.activated_at && <Link className="icon-text-button accent" href={`/admin/landings/${tag.id}/mascota`}><IconEdit /> Editar</Link>}
               {tag.published && <a className="icon-text-button" href={`/${tag.slug}`} target="_blank" rel="noopener noreferrer"><IconExternalLink /> Ver</a>}
             </td>

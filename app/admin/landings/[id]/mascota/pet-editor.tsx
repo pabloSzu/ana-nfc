@@ -169,7 +169,7 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
         <button type="submit" form="pet-save" className="pet-editor-save" disabled={!dirty || saving}>{saving ? "Guardando…" : dirty ? "Guardar cambios" : "Guardado"}</button>
       </div>
     </header>
-    {landing.blocked && <p className="pet-editor-note is-danger">BIONFC pausó esta chapita y por ahora no se muestra. Si creés que es un error, escribinos a bionfc.contacto@gmail.com.</p>}
+    {landing.blocked && <p className="pet-editor-note is-danger">BIONFC pausó esta chapita y por ahora no se muestra. Si creés que es un error, escribinos a contacto.bionfc@gmail.com.</p>}
     {draft && <p className="pet-editor-note">Tenés cambios que no llegaste a guardar. <button type="button" className="pet-editor-link" onClick={restoreDraft}>Recuperarlos</button> · <button type="button" className="pet-editor-link" onClick={discardDraft}>Descartar</button></p>}
     {dirty && <p className="pet-editor-note">Tenés cambios sin guardar. {isOwner ? "Tocá “Guardar cambios” para que se vean en la chapita." : "Guardá antes de publicar o salir."}</p>}
     {!dirty && !landing.published && !hasContact && <p className="pet-editor-note">{isOwner ? "Cargá tu WhatsApp en “Familia” y guardá: ahí la chapita empieza a funcionar." : "Para publicar, cargá el WhatsApp de la familia."}</p>}
