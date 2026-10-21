@@ -26,7 +26,7 @@ export async function saveMyPet(fd: FormData) {
   if (!userId) redirect(`/mi/entrar?next=${encodeURIComponent(back)}`);
   const fail = (message: string): never => redirect(`${back}?error=${encodeURIComponent(message)}`);
 
-  const { data: landing } = await supabase.from("landings").select("id,slug,logo_url,blocked_at").eq("id", landingId).maybeSingle();
+  const { data: landing } = await supabase.from("landings").select("id,slug,pet_slug,logo_url,blocked_at").eq("id", landingId).maybeSingle();
   if (!landing) fail(ERRORS.sin_permiso);
   const name = String(fd.get("business_name") || "").trim().slice(0, 60);
   if (!name) fail(ERRORS.nombre_invalido);
@@ -62,6 +62,8 @@ export async function saveMyPet(fd: FormData) {
   // La página pública se guarda en caché (app/[slug]/page.tsx): sin esto, el cartel de perdido
   // tardaría minutos en aparecer.
   if (landing!.slug) revalidateLandingPage(landing!.slug);
+  const { data: savedLanding } = await supabase.from("landings").select("pet_slug").eq("id", landingId).maybeSingle();
+  if (savedLanding?.pet_slug) revalidateLandingPage(savedLanding.pet_slug);
   const message = landing!.blocked_at ? "Cambios guardados. La chapita sigue pausada por BIONFC."
     : !petHasContact(pet) ? "Guardado. Falta el WhatsApp para que la chapita funcione."
     : pet.lost ? "Guardado: el cartel de perdido ya se ve en la chapita" : "Cambios guardados";

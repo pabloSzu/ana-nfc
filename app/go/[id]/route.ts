@@ -15,7 +15,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   }
 
   const source = new URL(request.url).searchParams.get("s");
-  const destination = new URL(`/${encodeURIComponent(String(slug))}`, request.url);
+  const destination = new URL(`/mascota/${encodeURIComponent(String(slug))}`, request.url);
   if (source === "nfc" || source === "qr") destination.searchParams.set("s", source);
   // Temporal: una redirección permanente cacheada podría apuntar a un slug viejo.
   return Response.redirect(destination, 307);

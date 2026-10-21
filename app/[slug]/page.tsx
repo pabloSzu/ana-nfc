@@ -42,11 +42,12 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const title = ((landing.business_type === "contact" ? landing.business_name : titleStyle.headline || landing.business_name) || "Mi Landing Web Fácil").replace(/\s+/g, " ").trim();
   const description = landing.description || "Mirá todos mis links y contactos en un solo lugar.";
   const images = landing.logo_url ? [landing.logo_url] : undefined;
+  const publicPath = landing.business_type === "pet" ? `/mascota/${slug}` : `/${slug}`;
   return {
     title,
     description,
-    alternates: { canonical: `/${slug}` },
-    openGraph: { title, description, images, url: `/${slug}`, type: "website", locale: "es_AR" },
+    alternates: { canonical: publicPath },
+    openGraph: { title, description, images, url: publicPath, type: "website", locale: "es_AR" },
     twitter: { card: "summary", title, description, images },
   };
 }

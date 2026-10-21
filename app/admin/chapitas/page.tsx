@@ -1,10 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Suspense } from "react";
 import Toast from "@/components/toast";
 import { AdminThemeBackdrop } from "@/components/admin-theme";
-import { IconCheckCircle, IconFileText, IconPlus, IconPaw, IconQrCode, IconShieldCheck, IconSmartphone } from "@/components/icons";
+import { IconCheckCircle, IconFileText, IconPlay, IconPlus, IconPaw, IconQrCode } from "@/components/icons";
 import PendingSubmitButton from "@/components/pending-submit-button";
 import { BATCH_MAX } from "@/lib/pet-tags";
 import ModalTrigger from "../modal-trigger";
@@ -36,7 +37,7 @@ export default async function BatchesPage() {
     <header className="library-page-header">
       <div><p className="eyebrow ch-eyebrow"><IconPaw /> BIONFC Mascotas</p><h1>Chapitas</h1><p className="muted">Acá preparás los lotes, imprimís el material y ves cuáles ya activaron los compradores.</p></div>
       <div className="library-page-actions">
-        <a className="btn secondary" href="#guia">Ver cómo funciona</a>
+        <Link className="btn secondary" href="/admin/chapitas/tutorial"><IconPlay /> Ver tutorial</Link>
         <ModalTrigger label="Generar lote" icon={<IconPlus />} title="Generar lote de chapitas" description="Se crean vacías y sin publicar, cada una con su código de activación.">
           <form action={createBatch} className="stack">
             <label className="label">Nombre del lote<input name="name" maxLength={60} required placeholder="Ej. Calle · octubre" /></label>
@@ -54,34 +55,14 @@ export default async function BatchesPage() {
       <article><span className="ch-overview-icon is-active"><IconCheckCircle /></span><small>Activadas por clientes</small><strong>{totals.active}</strong></article>
     </section>
 
-    <section className="elevated-section ch-guide" id="guia">
-      <header className="ch-section-heading"><div><p className="eyebrow">Guía rápida</p><h2>De una chapita vacía a una mascota protegida</h2></div><span>Vos preparás el producto. El comprador carga sus propios datos.</span></header>
-      <ol className="ch-flow">
-        <li><span>1</span><div><strong>Generá un lote</strong><p>Elegí cuántas chapitas vas a fabricar y, si corresponde, qué veterinaria las venderá.</p></div></li>
-        <li><span>2</span><div><strong>Grabá e imprimí</strong><p>Cada chapita lleva su link permanente en el NFC y el QR. En el paquete va otra tarjeta privada para activarla.</p></div></li>
-        <li><span>3</span><div><strong>Vendé la chapita</strong><p>No necesitás pedirle datos al comprador. Le entregás el producto cerrado con su tarjeta de activación.</p></div></li>
-        <li><span>4</span><div><strong>El comprador la activa</strong><p>Escanea la tarjeta del paquete, confirma su email y carga la foto, el WhatsApp y los datos de su mascota.</p></div></li>
-      </ol>
-
-      <div className="ch-user-journey">
-        <article><IconShieldCheck /><div><strong>Primera vez: activar</strong><p>Usa el QR privado del paquete o entra a <b>bionfc.com/activar</b>. El código de 8 caracteres se usa una sola vez.</p></div></article>
-        <article><IconSmartphone /><div><strong>Después: editar o marcar perdida</strong><p>Entra a <b>bionfc.com/mi/entrar</b>, escribe su email y recibe un código de 6 números. No tiene contraseña para recordar.</p></div></article>
-        <article><IconPaw /><div><strong>Si alguien encuentra la mascota</strong><p>Escanea el QR o acerca el celular al NFC y ve la ficha pública. No necesita cuenta, email ni código.</p></div></article>
+    <section className="elevated-section ch-tutorial-card" aria-labelledby="tutorial-title">
+      <div className="ch-tutorial-copy">
+        <p className="eyebrow">¿Es tu primera vez?</p>
+        <h2 id="tutorial-title">Mirá el recorrido completo antes de fabricar</h2>
+        <p>Te mostramos qué imprimís, qué grabás en el NFC, qué recibe el comprador y qué ve quien encuentra la mascota.</p>
+        <Link className="btn" href="/admin/chapitas/tutorial"><IconPlay /> Ver tutorial paso a paso</Link>
       </div>
-
-      <aside className="ch-code-explainer">
-        <div><span className="ch-code-sample">ABCD-2346</span><p><strong>Código de activación</strong><br />8 caracteres · está en el paquete · se usa una sola vez.</p></div>
-        <div><span className="ch-code-sample is-otp">906438</span><p><strong>Código de acceso</strong><br />6 números · llega por email · vence y se pide uno nuevo cada vez.</p></div>
-      </aside>
-
-      <div className="ch-faq">
-        <h3>Dudas comunes</h3>
-        <details><summary>¿Qué pasa si el dueño pierde su contraseña?</summary><p>No existe contraseña. Siempre entra desde <b>bionfc.com/mi/entrar</b> y recibe un código nuevo de 6 números en su email.</p></details>
-        <details><summary>¿Qué pasa si no le llega el email?</summary><p>Puede revisar Spam o Promociones y tocar “Mandar otro código”. Si sigue sin llegar, te contacta para que revises que esté usando el mismo email con el que activó.</p></details>
-        <details><summary>¿Qué pasa si pierde la tarjeta de activación?</summary><p>Si todavía no activó, desde el lote tocás “Cambiar código” y le das una tarjeta nueva. Si ya activó, no pasa nada: ese código ya fue consumido y no se necesita otra vez.</p></details>
-        <details><summary>¿Qué pasa si cambia o pierde el acceso a su email?</summary><p>Por seguridad no se cambia automáticamente. La familia te contacta y vos verificás el caso antes de transferir la chapita a otro email.</p></details>
-        <details><summary>¿El QR y el NFC se vencen?</summary><p>No. Ambos apuntan al enlace permanente de esa chapita. La familia puede cambiar los datos y el diseño sin volver a grabarla.</p></details>
-      </div>
+      <Image src="/images/bionfc/tutorial-chapitas.webp" alt="Chapita NFC, paquete de activación y ficha de la mascota en un celular" width={1600} height={534} priority />
     </section>
 
     {!batches?.length ? <section className="elevated-section ch-empty">

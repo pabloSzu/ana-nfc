@@ -10,4 +10,5 @@ export function revalidateLandingPage(slug: string | null | undefined) {
   // updateTag (no revalidateTag): se llama desde Server Actions y vence la caché en el acto.
   updateTag(landingTag(slug));
   revalidatePath(`/${slug}`);
+  revalidatePath(`/mascota/${slug}`);
 }

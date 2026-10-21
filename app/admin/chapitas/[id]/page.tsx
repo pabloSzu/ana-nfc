@@ -24,7 +24,7 @@ export default async function BatchPage({ params }: { params: Promise<{ id: stri
   if (!userId) redirect("/admin/login");
   const { data: batch } = await supabase.from("tag_batches").select("id,name,reseller,created_at").eq("id", id).eq("owner_id", userId).maybeSingle();
   if (!batch) notFound();
-  const { data: tags } = await supabase.from("landings").select("id,slug,business_name,tag_number,activated_at,published,client_id,button_style").eq("batch_id", id).eq("owner_id", userId).order("tag_number");
+  const { data: tags } = await supabase.from("landings").select("id,slug,pet_slug,business_name,tag_number,activated_at,published,client_id,button_style").eq("batch_id", id).eq("owner_id", userId).order("tag_number");
   const ids = (tags || []).map((tag) => tag.id);
   const clientIds = (tags || []).map((tag) => tag.client_id).filter(Boolean) as string[];
   const [{ data: codes }, { data: members }] = await Promise.all([
@@ -72,7 +72,7 @@ export default async function BatchPage({ params }: { params: Promise<{ id: stri
             <td className="ch-actions">
               {!tag.activated_at && codeOf.has(tag.id) && <RegenerateCodeButton action={regenerateTagCode} landingId={tag.id} batchId={batch.id} />}
               {tag.activated_at && <Link className="icon-text-button accent" href={`/admin/landings/${tag.id}/mascota`}><IconEdit /> Editar</Link>}
-              {tag.published && <a className="icon-text-button" href={`/${tag.slug}`} target="_blank" rel="noopener noreferrer"><IconExternalLink /> Ver</a>}
+              {tag.published && <a className="icon-text-button" href={`/mascota/${tag.pet_slug || tag.slug}`} target="_blank" rel="noopener noreferrer"><IconExternalLink /> Ver</a>}
             </td>
           </tr>;
         })}</tbody>

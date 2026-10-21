@@ -156,8 +156,8 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
       <span className={`pet-editor-status${landing.published ? " is-live" : ""}`}>{landing.published ? "Publicada" : isOwner ? "Sin publicar" : "Borrador"}</span>
       <div className="pet-editor-actions">
         {landing.published && <>
-          <a className="pet-editor-ghost" href={`/${landing.slug}`} target="_blank" rel="noopener noreferrer">Ver chapita</a>
-          <CopyButton text={`/${landing.slug}`} label="Copiar link" />
+          <a className="pet-editor-ghost" href={`/mascota/${landing.slug}`} target="_blank" rel="noopener noreferrer">Ver chapita</a>
+          <CopyButton text={`/mascota/${landing.slug}`} label="Copiar link" />
         </>}
         {!isOwner && <Link className="pet-editor-ghost" href={`/admin/landings/${landing.id}/qr`}>QR y NFC</Link>}
         {!isOwner && publishAction && <form action={publishAction}>

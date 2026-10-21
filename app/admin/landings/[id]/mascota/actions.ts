@@ -17,7 +17,7 @@ export async function savePet(fd: FormData) {
   const back = `/admin/landings/${landingId}/mascota`;
   const fail = (message: string): never => redirect(`${back}?error=${encodeURIComponent(message)}`);
 
-  const { data: landing, error: lookupError } = await supabase.from("landings").select("id,slug,business_type,button_style").eq("id", landingId).eq("owner_id", userId).maybeSingle();
+  const { data: landing, error: lookupError } = await supabase.from("landings").select("id,slug,pet_slug,business_type,button_style").eq("id", landingId).eq("owner_id", userId).maybeSingle();
   if (lookupError) fail(lookupError.message);
   if (!landing || landing.business_type !== "pet") fail("Chapita inexistente o sin permisos.");
 
@@ -56,5 +56,7 @@ export async function savePet(fd: FormData) {
   revalidatePath("/admin/paginas");
   // La página pública se guarda en caché (app/[slug]/page.tsx): sin esto el cambio tardaría en verse.
   if (landing!.slug) revalidateLandingPage(landing!.slug);
+  const { data: savedLanding } = await supabase.from("landings").select("pet_slug").eq("id", landingId).eq("owner_id", userId).maybeSingle();
+  if (savedLanding?.pet_slug) revalidateLandingPage(savedLanding.pet_slug);
   redirect(`${back}?saved=${encodeURIComponent("Cambios guardados")}`);
 }

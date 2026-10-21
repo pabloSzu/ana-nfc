@@ -27,9 +27,10 @@ Cada chapita tiene tres identificadores con funciones distintas:
 - **ID interno (UUID):** es estable y va dentro de `/go/[id]`; no se muestra como nombre comercial.
 - **Número de lote:** `Chapita 1`, `Chapita 2`, etc.; sirve para emparejar el grabado con su
   tarjetita de activación mientras está en stock.
-- **Página pública:** antes de activarse usa un slug aleatorio interno (`m-xxxxxxx`). Cuando el
-  comprador carga la mascota, el título visible es su nombre. El QR/NFC sigue apuntando a `/go/id`,
-  por lo que un cambio futuro de slug no rompe la chapita.
+- **Página pública:** antes de activarse usa un slug técnico aleatorio (`m-xxxxxxx`). Cuando el
+  comprador carga el nombre, BIONFC crea una dirección amigable y única, por ejemplo
+  `/mascota/toby-a7k3f2`. El slug técnico anterior sigue siendo válido como respaldo y el QR/NFC
+  continúa apuntando a `/go/id`, por lo que el objeto físico nunca se rompe.
 
 No poner el nombre de la mascota ni el código de activación en el QR/NFC: el primero todavía no
 se conoce al fabricar y el segundo permitiría apropiarse de una chapita encontrada.
