@@ -24,6 +24,8 @@ export const PET_LOOKS: PetLook[] = [
   { id: "pastel", label: "Pastel", background: "#f4f1ff", backgroundTo: "#e3f1ff", accent: "#7465e8", accentInk: "#ffffff", ink: "#2c2856", card: "#ffffff", titleFont: "friendly", bodyFont: "friendly" },
   { id: "campo", label: "Campo", background: "#f1f5ea", backgroundTo: "#dce8cf", accent: "#4d7a38", accentInk: "#ffffff", ink: "#22351a", card: "#fbfcf8", titleFont: "fraunces", bodyFont: "manrope" },
   { id: "divertido", label: "Divertido", background: "#fff4b8", backgroundTo: "#ffd6e6", accent: "#f2508a", accentInk: "#ffffff", ink: "#3b1d2b", card: "#fffdf6", titleFont: "chango", bodyFont: "friendly" },
+  { id: "oceano", label: "Océano", background: "#eaf8fb", backgroundTo: "#cdeaf2", accent: "#087f8c", accentInk: "#ffffff", ink: "#163d43", card: "#f8feff", titleFont: "sora", bodyFont: "manrope" },
+  { id: "lavanda", label: "Lavanda", background: "#faf3ff", backgroundTo: "#eadcf8", accent: "#8753b4", accentInk: "#ffffff", ink: "#3d294d", card: "#fffaff", titleFont: "fraunces", bodyFont: "manrope" },
   { id: "noche", label: "Noche", background: "#171b29", backgroundTo: "#0d1019", accent: "#f4b740", accentInk: "#1b1405", ink: "#f5f1e8", card: "#222738", titleFont: "sora", bodyFont: "sora", dark: true },
 ];
 

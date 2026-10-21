@@ -152,7 +152,7 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
     <FontLinks ids={PET_LOOKS.map((look) => look.titleFont)} />
     <header className="pet-editor-top">
       <Link className="pet-editor-back" href={isOwner ? "/mi" : "/admin/paginas"}>{isOwner ? "← Mis chapitas" : "← Páginas"}</Link>
-      <div className="pet-editor-title"><small>Chapita de mascota</small><strong>{name.trim() || "Sin nombre"}</strong></div>
+      <div className="pet-editor-title"><small>{isOwner && !landing.published ? "Paso 3 de 3 · Completá los datos" : "Chapita de mascota"}</small><strong>{name.trim() || "Sin nombre"}</strong></div>
       <span className={`pet-editor-status${landing.published ? " is-live" : ""}`}>{landing.published ? "Publicada" : isOwner ? "Sin publicar" : "Borrador"}</span>
       <div className="pet-editor-actions">
         {landing.published && <>

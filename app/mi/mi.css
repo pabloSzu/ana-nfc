@@ -1,15 +1,30 @@
 /* Panel de los dueños (/mi) y Activar (/activar): pensado primero para el celular. */
-.mi-shell { min-height: 100vh; min-height: 100svh; background: linear-gradient(170deg, #fff6ec, #fde9d8); color: #2d1d12; font-family: "Poppins", system-ui, sans-serif; }
-.mi-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 18px; }
+.mi-shell { display: flex; flex-direction: column; min-height: 100vh; min-height: 100svh; overflow-x: hidden; background: radial-gradient(circle at 8% -8%, #fff 0, transparent 34%), linear-gradient(165deg, #fff9f2 0%, #fdebdc 52%, #f9deca 100%); color: #2d1d12; font-family: "Poppins", system-ui, sans-serif; }
+.mi-content { display: contents; }
+.mi-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: min(100%, 960px); margin: 0 auto; padding: 18px; }
 .mi-brand { display: inline-flex; color: inherit; text-decoration: none; }
+.mi-brand .bx-logo-word { font-size: 23px; }
+.mi-brand .bx-logo-waves { width: 19px; height: 19px; }
 .mi-top-user { display: flex; align-items: center; gap: 10px; min-width: 0; font-size: 13px; }
 .mi-top-user span { overflow: hidden; color: #7a5a44; text-overflow: ellipsis; white-space: nowrap; }
-.mi-main { width: min(100%, 560px); margin: 0 auto; padding: 18px 18px 48px; }
+.mi-main { width: min(100%, 560px); margin: 0 auto; padding: 12px 18px 36px; }
 .mi-narrow { width: min(100%, 440px); text-align: center; }
-.mi-main h1 { margin: 6px 0 8px; font-size: 30px; font-weight: 800; letter-spacing: -.01em; }
+.mi-main h1 { margin: 10px 0 8px; font-size: clamp(30px, 9vw, 42px); font-weight: 800; line-height: 1.08; letter-spacing: -.04em; text-wrap: balance; }
 .mi-lead { margin: 0 auto 22px; color: #7a5a44; font-size: 15px; line-height: 1.5; }
-.mi-emoji { margin: 10px 0 0; font-size: 44px; }
-.mi-card { display: grid; gap: 14px; padding: 20px; border-radius: 22px; background: #fff; box-shadow: 0 10px 30px rgba(120, 70, 30, .1); text-align: left; }
+.mi-hero-mark { display: grid; place-items: center; width: 72px; height: 72px; margin: 2px auto 0; border: 1px solid #fff8; border-radius: 24px; background: linear-gradient(145deg, #fff, #ffe6d2); box-shadow: 0 18px 42px rgba(137, 75, 31, .16), inset 0 1px #fff; transform: rotate(-4deg); }
+.mi-hero-mark span { font-size: 36px; transform: rotate(4deg); }
+.mi-hero-mark.is-small { width: 60px; height: 60px; border-radius: 20px; }
+.mi-hero-mark.is-small span { font-size: 29px; }
+.mi-progress { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0 0 18px; padding: 0; list-style: none; color: #8a6a52; font-size: 11px; font-weight: 700; }
+.mi-progress li { display: grid; justify-items: center; gap: 5px; position: relative; }
+.mi-progress li:not(:last-child)::after { content: ""; position: absolute; top: 13px; left: calc(50% + 18px); width: calc(100% - 28px); height: 2px; background: #e5cdb9; }
+.mi-progress span { display: grid; place-items: center; position: relative; z-index: 1; width: 28px; height: 28px; border: 2px solid #dfc4ae; border-radius: 50%; background: #fffaf5; }
+.mi-progress .is-current { color: #a94d1a; }
+.mi-progress .is-current span { border-color: #e07a3f; background: #e07a3f; color: #fff; box-shadow: 0 5px 14px #e07a3f44; }
+.mi-progress .is-done { color: #287345; }
+.mi-progress .is-done span { border-color: #2f8a53; background: #2f8a53; color: #fff; }
+.mi-progress .is-done::after { background: #91c8a5 !important; }
+.mi-card { display: grid; gap: 15px; padding: 22px; border: 1px solid rgba(255, 255, 255, .85); border-radius: 24px; background: rgba(255, 255, 255, .94); box-shadow: 0 18px 50px rgba(120, 70, 30, .12), inset 0 1px #fff; text-align: left; backdrop-filter: blur(12px); }
 .mi-step { margin: 0; color: #e07a3f; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .mi-form { display: grid; gap: 14px; text-align: left; }
 .mi-field { display: grid; gap: 6px; font-size: 14px; font-weight: 700; }
@@ -19,7 +34,8 @@
 .mi-check { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; line-height: 1.45; color: #6b4a33; }
 .mi-check input { flex: none; width: 20px; height: 20px; margin-top: 1px; accent-color: #e07a3f; }
 .mi-check a { color: #c25e22; font-weight: 700; }
-.mi-button { display: inline-flex; align-items: center; justify-content: center; min-height: 54px; padding: 0 22px; border: 0; border-radius: 16px; background: #e07a3f; color: #fff; font: inherit; font-size: 16px; font-weight: 800; text-decoration: none; cursor: pointer; box-shadow: 0 10px 22px #e07a3f44; }
+.mi-button { display: inline-flex; align-items: center; justify-content: center; min-height: 56px; padding: 0 22px; border: 0; border-radius: 17px; background: linear-gradient(135deg, #ea874d, #cf6125); color: #fff; font: inherit; font-size: 16px; font-weight: 800; text-decoration: none; cursor: pointer; box-shadow: 0 12px 26px #cf612544; transition: transform .15s ease, box-shadow .15s ease; }
+.mi-button:active:not(:disabled) { transform: translateY(1px) scale(.99); box-shadow: 0 7px 16px #cf612538; }
 .mi-button:disabled { opacity: .55; cursor: not-allowed; box-shadow: none; }
 .mi-button-secondary { background: #fff; color: #1d7f45; border: 1.5px solid #1d7f45; box-shadow: none; }
 .mi-link { padding: 0; border: 0; background: none; color: #c25e22; font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
@@ -39,6 +55,11 @@
 .mi-pet-copy strong { font-size: 18px; }
 .mi-pet-copy small { color: #8a6a52; font-size: 13px; }
 .mi-pets em { color: #c25e22; font-style: normal; font-weight: 700; font-size: 14px; }
+.mi-signature { margin-top: auto; padding: 12px 18px 24px; }
+@media (min-width: 640px) {
+  .mi-main { padding-top: 24px; }
+  .mi-card { padding: 26px; }
+}
 /* El editor de la chapita dentro del panel: su barra queda debajo de la del panel. */
 .mi-shell .pet-editor { background: transparent; }
 .terms h2 { margin: 26px 0 6px; font-size: 18px; }

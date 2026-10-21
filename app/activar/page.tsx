@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import BioNFCLogo from "@/components/bionfc-logo";
+import BioNFCSignature from "@/components/bionfc-signature";
 import { createClient } from "@/lib/supabase/server";
 import ActivateFlow from "./activate-flow";
 import "../globals.css";
@@ -21,12 +22,13 @@ export default async function ActivatePage({ searchParams }: { searchParams: Pro
   return <div className="mi-shell">
     <header className="mi-top"><Link href="/" className="mi-brand" aria-label="BIONFC"><BioNFCLogo /></Link></header>
     <main className="mi-main mi-narrow">
-      <p className="mi-emoji" aria-hidden="true">🐾</p>
+      <div className="mi-hero-mark" aria-hidden="true"><span>🐾</span></div>
       <h1>Activá tu chapita</h1>
-      <p className="mi-lead">En 2 minutos: ponés el código, entrás con tu email y cargás los datos de tu mascota.</p>
+      <p className="mi-lead">En dos minutos queda lista para ayudar a tu mascota a volver a casa.</p>
       {isStaff
         ? <p className="mi-error">Estás con tu cuenta de administrador ({email}): si activás acá, la chapita queda a tu nombre. Que la active el comprador desde su celular, o abrí esta página en una ventana de incógnito.</p>
         : <ActivateFlow initialCode={c || ""} signedInEmail={email} />}
     </main>
+    <BioNFCSignature className="mi-signature" />
   </div>;
 }

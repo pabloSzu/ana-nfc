@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import BioNFCLogo from "@/components/bionfc-logo";
+import BioNFCSignature from "@/components/bionfc-signature";
 import { createClient } from "@/lib/supabase/server";
 import { logoutOwner } from "./auth-actions";
 import "../globals.css";
@@ -22,6 +23,7 @@ export default async function OwnerLayout({ children }: { children: ReactNode })
       <Link href="/mi" className="mi-brand" aria-label="Mis chapitas"><BioNFCLogo /></Link>
       {email && <form action={logoutOwner} className="mi-top-user"><span>{email}</span><button type="submit" className="mi-link">Salir</button></form>}
     </header>
-    {children}
+    <div className="mi-content">{children}</div>
+    <BioNFCSignature className="mi-signature" />
   </div>;
 }

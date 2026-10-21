@@ -69,8 +69,8 @@ export default function PetRenderer({ landing, pet: draft, photoUrl, edit }: { l
       {edit && !about.length && !health.length && !pet.finder.trim() && <p {...part("about", "pet-empty")}>Sumá raza, edad, salud o lo que quieras contar.</p>}
 
       <footer className="landing-branding pet-branding" data-tone={look.dark ? "dark" : undefined}>
-        <a href="/?utm_source=bionfc_pet&utm_medium=referral&utm_campaign=footer" target="_blank" rel="noopener noreferrer" aria-label="Creado con BioNFC. Conocé BioNFC (abre en otra pestaña)" onClick={edit ? (event) => event.preventDefault() : undefined}>
-          <span className="landing-branding-label">Creado con</span><BioNFCLogo />
+        <a href="/?utm_source=bionfc_pet&utm_medium=referral&utm_campaign=footer" target="_blank" rel="noopener noreferrer" aria-label="Hecho con BIONFC. Conocé BIONFC (abre en otra pestaña)" onClick={edit ? (event) => event.preventDefault() : undefined}>
+          <span className="landing-branding-label">Hecho con</span><BioNFCLogo />
         </a>
       </footer>
       {landing.slug && !edit && <a className="pet-report" href={`/denunciar/${encodeURIComponent(landing.slug)}`}>Denunciar esta página</a>}

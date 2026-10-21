@@ -12,9 +12,10 @@ export default async function EnterPage({ searchParams }: { searchParams: Promis
   const { data: claims } = await supabase.auth.getClaims();
   if (claims?.claims?.sub) redirect(next);
   return <main className="mi-main mi-narrow">
-    <h1>Entrar</h1>
+    <div className="mi-hero-mark is-small" aria-hidden="true"><span>🐾</span></div>
+    <h1>Tu chapita, siempre con vos</h1>
     <p className="mi-lead">{next === "/mi" ? "Para editar los datos de tu mascota o avisar que se perdió." : "Se cerró tu sesión. Entrá de nuevo para guardar tus cambios: no se perdieron."}</p>
-    <OwnerLogin next={next} />
+    <div className="mi-card"><p className="mi-step">Acceso seguro</p><OwnerLogin next={next} /></div>
     <p className="mi-hint mi-center">¿Todavía no activaste tu chapita? <Link href="/activar">Activala acá</Link> con el código de la tarjetita.</p>
   </main>;
 }

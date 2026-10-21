@@ -63,15 +63,22 @@
   .pet-editor-nav button { flex: none; }
 }
 @media (max-width: 760px) {
-  .pet-editor-top { padding: 10px 14px; }
+  .pet-editor-top { gap: 8px 12px; padding: 10px 14px; }
+  .pet-editor-title { flex: 1; min-width: 0; }
+  .pet-editor-title strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pet-editor-status { order: 3; }
   .pet-editor-actions { width: 100%; margin-left: 0; }
+  .pet-editor-actions .pet-editor-ghost { flex: 1; }
+  .pet-editor-save { position: fixed; z-index: 30; right: 14px; bottom: max(14px, env(safe-area-inset-bottom)); left: 14px; min-height: 54px; border-radius: 16px; box-shadow: 0 12px 30px rgba(29, 33, 48, .28); }
   .pet-editor-body { grid-template-columns: minmax(0, 1fr); padding: 14px 14px 32px; gap: 16px; }
   .pet-editor-panel { padding: 18px 16px; }
-  .pet-editor-nav { flex-wrap: wrap; gap: 6px; overflow: visible; }
+  .pet-editor-nav { margin: 0 -14px; padding: 2px 14px 6px; flex-wrap: nowrap; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+  .pet-editor-nav::-webkit-scrollbar { display: none; }
   .pet-editor-nav button { padding: 8px 12px; border: 1px solid #e4e6ec; border-radius: 999px; background: #fff; font-size: 13.5px; }
   .pet-editor-nav button.active { border-color: #1d2130; background: #1d2130; color: #fff; }
   .pet-editor-preview { position: static; }
-  .pet-editor-phone { height: 640px; }
+  .pet-editor-phone { height: 620px; border-width: 7px; border-radius: 34px; }
+  .pet-editor-preview { padding-bottom: 70px; }
 }
 /* Teléfono: aviso en vivo de cómo queda o qué le falta. */
 .pet-field small.pet-phone-ok { color: #17803d; font-weight: 700; }

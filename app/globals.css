@@ -64,6 +64,18 @@
   --v2-radius-modal: clamp(16px, 4vw, 22px);
 }
 
+/* Wordmark compartido: marketing, panel del dueño, activación y firma pública. */
+.bx-logo { display: inline-flex; align-items: center; gap: 4px; }
+.bx-logo-word { font: 800 24px/1 var(--font-display, "Poppins"), system-ui, sans-serif; letter-spacing: -.045em; }
+.bx-logo-nfc { background: linear-gradient(100deg, #22c7e0, #4b6bff 60%, #8a5cf7); color: transparent; -webkit-background-clip: text; background-clip: text; }
+.bx-logo-waves { flex: none; width: 20px; height: 20px; stroke: #3aa0ff; }
+.bionfc-signature { display: flex; justify-content: center; }
+.bionfc-signature a { display: inline-flex; align-items: center; gap: 6px; color: #604632; font-size: 10px; font-weight: 700; text-decoration: none; opacity: .76; transition: opacity .15s ease; }
+.bionfc-signature a:hover { opacity: 1; }
+.bionfc-signature .bx-logo { gap: 2px; }
+.bionfc-signature .bx-logo-word { font-size: 14px; }
+.bionfc-signature .bx-logo-waves { width: 12px; height: 12px; }
+
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: oklch(17% 0.01 260);
