@@ -146,6 +146,12 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
     return () => { viewport.removeEventListener("resize", update); viewport.removeEventListener("scroll", update); };
   }, []);
 
+
+  // El chip de la parte abierta queda siempre a la vista en la fila (que se desliza de costado).
+  useEffect(() => {
+    const active = document.querySelector(".pet-form-chips button.active");
+    if (active) active.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+  }, [view]);
   // La miniatura se mueve sola a la parte que se está editando.
   useEffect(() => {
     const screen = screenRef.current;
@@ -370,10 +376,12 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
         </>}
 
         {setup === null && view !== "menu" && <section className="pet-form">
-          <header className="pet-form-head">
-            <button type="button" className="pet-form-back" onClick={() => setView("menu")}>← Volver</button>
-            <strong>{view === "ficha" ? `La ficha de ${petName}` : TITLES[view].label}</strong>
-          </header>
+          {/* ← vuelve al menú; los chips saltan directo a otra parte sin pasar por él. */}
+          <nav className="pet-form-chips" aria-label="Partes de la chapita">
+            <button type="button" className="pet-form-back" onClick={() => setView("menu")} aria-label="Volver al menú">←</button>
+            {orderedRows.map((row) => <button type="button" key={row.id} className={`${view === row.id ? "active" : ""}${row.id === "lost" ? " is-lost" : ""}`} aria-pressed={view === row.id} aria-label={TITLES[row.id].label} title={TITLES[row.id].label} onClick={() => setView(row.id)}><span aria-hidden="true">{TITLES[row.id].icon}</span>{view === row.id && TITLES[row.id].label}</button>)}
+          </nav>
+          <strong className="pet-form-title">{view === "ficha" ? `La ficha de ${petName}` : TITLES[view].label}</strong>
 
           {view === "pet" && <>
             <div className="pet-photo-field">

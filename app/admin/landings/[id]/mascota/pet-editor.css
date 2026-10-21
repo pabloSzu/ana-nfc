@@ -74,9 +74,6 @@
 .pet-swatches button.active { box-shadow: 0 0 0 2px #1d2130; }
 
 /* Formulario de una parte */
-.pet-form-head { display: flex; align-items: center; gap: 10px; }
-.pet-form-head strong { font-size: 17px; }
-.pet-form-back { padding: 6px 10px 6px 0; border: 0; background: none; color: #5b4cc7; font: inherit; font-size: 14.5px; font-weight: 800; cursor: pointer; }
 .pet-form-done { margin-top: 4px; }
 
 /* Campos */
@@ -150,3 +147,18 @@
   .pet-mini { border-width: 10px; border-radius: 44px; }
   .pet-ed-controls { overflow: visible; padding: 18px 20px 24px; border-radius: 20px; box-shadow: 0 2px 14px rgba(20, 24, 40, .08); }
 }
+/* Adentro de un formulario: ← al menú y chips para saltar directo a otra parte. */
+.pet-form-chips { position: sticky; top: -8px; z-index: 2; display: flex; gap: 6px; margin: -8px -14px 0; padding: 10px 14px 8px; overflow-x: auto; background: #fff; scrollbar-width: none; -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent); mask-image: linear-gradient(90deg, #000 88%, transparent); }
+.pet-form-chips::-webkit-scrollbar { display: none; }
+.pet-form-chips button { display: inline-flex; flex: none; align-items: center; gap: 5px; min-height: 36px; padding: 0 12px; border: 1px solid #e1e4ea; border-radius: 999px; background: #fff; color: #3b4050; font: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; }
+.pet-form-chips button.active { border-color: #1d2130; background: #1d2130; color: #fff; }
+.pet-form-chips button.is-lost:not(.active) { border-color: #f3b3ad; color: #b42318; }
+.pet-form-chips .pet-form-back { width: 36px; padding: 0; justify-content: center; border-color: #d9dbe2; background: #f4f5f8; color: #1d2130; font-size: 17px; }
+.pet-form-title { font-size: 17px; }
+@media (min-width: 900px) {
+  .pet-form-chips { top: 0; margin: -6px -20px 0; padding: 8px 20px; -webkit-mask-image: none; mask-image: none; flex-wrap: wrap; }
+}
+/* Todo en una línea sin deslizar: las otras partes solo con su ícono, la abierta con su nombre. */
+.pet-form-chips { overflow: visible; -webkit-mask-image: none; mask-image: none; flex-wrap: nowrap; }
+.pet-form-chips button:not(.active):not(.pet-form-back) { width: 40px; padding: 0; justify-content: center; font-size: 17px; }
+.pet-form-chips button.active { flex: 1; justify-content: center; }
