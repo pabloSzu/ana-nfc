@@ -39,11 +39,15 @@
 .ch-print-bar span { color: #6b7080; font-size: 13px; }
 .ch-sheet { display: grid; max-width: 210mm; margin: 0 auto; padding: 10mm; background: #fff; box-shadow: 0 4px 24px rgba(0, 0, 0, .1); }
 .ch-sheet-cards { grid-template-columns: repeat(2, 1fr); gap: 6mm; }
-.ch-card { display: grid; align-content: start; gap: 2mm; min-height: 55mm; padding: 5mm 6mm; border: 1px dashed #b9bdc8; border-radius: 3mm; break-inside: avoid; font-family: Arial, sans-serif; }
+.ch-card { display: grid; align-content: start; gap: 1.5mm; min-height: 75mm; padding: 4mm 5mm; border: 1px dashed #b9bdc8; border-radius: 3mm; break-inside: avoid; font-family: Arial, sans-serif; }
 .ch-card-brand { margin: 0; color: #8a8f9c; font-size: 7.5pt; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .ch-card h2 { margin: 0; font: 700 14pt Arial, sans-serif; }
-.ch-card ol { margin: 0; padding-left: 4mm; font-size: 8.5pt; line-height: 1.4; }
-.ch-card-code { margin: 1mm 0; padding: 2mm 0; border-radius: 2mm; background: #f2f3f6; font-family: "Courier New", monospace; font-size: 20pt; font-weight: 700; letter-spacing: .12em; text-align: center; }
+.ch-card-activation { display: grid; grid-template-columns: 28mm 1fr; align-items: center; gap: 4mm; }
+.ch-card-activation img { width: 28mm; height: 28mm; }
+.ch-card-activation div { display: grid; gap: 1.8mm; font-size: 8.5pt; line-height: 1.3; }
+.ch-card-activation span, .ch-card-activation strong { display: block; }
+.ch-card-backup { margin: 0; font-size: 7.5pt; line-height: 1.35; }
+.ch-card-code { margin: 0; padding: 1.5mm 0; border-radius: 2mm; background: #f2f3f6; font-family: "Courier New", monospace; font-size: 17pt; font-weight: 700; letter-spacing: .12em; text-align: center; }
 .ch-card-foot { margin: 0; color: #6b7080; font-size: 7pt; line-height: 1.35; }
 .ch-sheet-qr { grid-template-columns: repeat(5, 1fr); gap: 6mm; }
 .ch-sheet-qr figure { display: grid; justify-items: center; gap: 1.5mm; margin: 0; break-inside: avoid; }

@@ -8,8 +8,8 @@ Cómo se venden, cómo las activa el comprador y qué pasa por dentro. Complemen
 ## La idea
 
 La chapita se vende ya grabada. El que vende (vos en la calle, una veterinaria, un pet shop)
-no configura nada: adentro del paquete va una **tarjetita con un código de activación**. El
-comprador escanea la chapita, pone el código, entra con su email y carga los datos de su
+no configura nada: adentro del paquete va una **tarjetita con un QR secreto y un código de respaldo**. El
+comprador escanea ese QR (o pone el código), entra con su email y carga los datos de su
 mascota. Desde ese momento la edita él solo, incluido prender "¡Estoy perdido!".
 
 El código va en la tarjetita y **nunca en la chapita**: si alguien encuentra al perro, no
@@ -41,16 +41,17 @@ se conoce al fabricar y el segundo permitiría apropiarse de una chapita encontr
 2. **Grabar cada chapita.** En el lote, cada fila tiene su link para el chip NFC (botón
    Copiar). "Imprimir QR" da los QR numerados para grabar o hacer stickers. Hacelo desde el
    Admin de **bionfc.com**, nunca desde DEV: en DEV los links apuntan a tu computadora.
-3. **Imprimir tarjetitas.** "Imprimir tarjetitas" da una hoja A4 con 8 por página, cada una
-   con el número y el código de su chapita. Juntá chapita N° 5 con tarjetita N° 5.
+3. **Imprimir tarjetitas.** "Imprimir tarjetitas" da una hoja A4 con 6 por página. Cada una
+   tiene un QR secreto que abre la activación con el código ya cargado, el código escrito como
+   respaldo y el número de su chapita. Juntá chapita N° 5 con tarjetita N° 5.
 4. **Vender.** El comprador hace todo desde **su** celular. Si abrís /activar con tu sesión
    de Admin, la página te frena: la chapita quedaría a tu nombre.
 
 ## Lo que hace el comprador
 
-1. Escanea la chapita (o entra a `bionfc.com/activar`). Una chapita sin activar no da error:
-   `/go/[id]` lo manda a Activar.
-2. Pone el código y acepta los [términos](../app/terminos/page.tsx).
+1. Escanea el QR secreto del packaging. La activación se abre con su código ya cargado. También
+   puede acercar/escanear la chapita o entrar a `bionfc.com/activar` y escribir el código.
+2. Confirma el código y acepta los [términos](../app/terminos/page.tsx).
 3. Pone su email y le llega un código de 6 números. No hay contraseñas.
 4. Cae en el editor de su chapita (`/mi/chapita/[id]`): nombre, foto y su WhatsApp en la misma
    pantalla. El número se escribe como siempre ("351 555 1234", "0351 15…") y se guarda en formato
@@ -60,6 +61,15 @@ se conoce al fabricar y el segundo permitiría apropiarse de una chapita encontr
    perdió.
 
 Si activa una segunda chapita con el mismo email, quedan las dos en su panel.
+
+## Email de acceso
+
+Supabase verifica el código y un proveedor SMTP lo entrega. La plantilla versionada está en
+`supabase/templates/magic_link.html`: usa `{{ .Token }}` para mostrar 6 números y nunca manda al
+comprador a `localhost`. En el proyecto alojado hay que copiar esa plantilla en Authentication →
+Email Templates → Magic Link y configurar un SMTP verificado (por ejemplo, Resend) desde un
+subdominio de BIONFC. Primero se prueba en DEV con un email externo al equipo y recién después se
+repite la configuración en PROD.
 
 Si la tarjetita se pierde **antes** de activar, el staff entra al lote y usa **Cambiar código**.
 El anterior deja de funcionar en el mismo instante y aparece uno nuevo para imprimir o copiar. La

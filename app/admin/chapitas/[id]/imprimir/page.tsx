@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
 import { getSiteOrigin } from "@/lib/site-url";
-import { formatCode } from "@/lib/pet-tags";
+import { activationPath, formatCode } from "@/lib/pet-tags";
+import QRCode from "qrcode";
 import PrintButton from "./print-button";
 import "../../chapitas.css";
 
@@ -26,6 +27,14 @@ export default async function PrintBatch({ params, searchParams }: { params: Pro
   const host = new URL(origin).host;
   const isQr = que === "qr";
   const qrImage = (url: string) => "https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=0&data=" + encodeURIComponent(url);
+  // El QR de activación contiene un secreto de un solo uso: se genera dentro del servidor y
+  // nunca se manda a un generador externo. El QR físico solo contiene un enlace público.
+  const cards = isQr ? [] : await Promise.all((tags || []).map(async (tag) => {
+    const code = codeOf.get(tag.id);
+    const activationUrl = code ? `${origin}${activationPath(code)}` : "";
+    const activationQr = activationUrl ? await QRCode.toDataURL(activationUrl, { width: 400, margin: 0, errorCorrectionLevel: "M" }) : "";
+    return { ...tag, code, activationQr };
+  }));
 
   return <div className="ch-print">
     <header className="ch-print-bar">
@@ -38,15 +47,17 @@ export default async function PrintBatch({ params, searchParams }: { params: Pro
           <img src={qrImage(`${origin}/go/${tag.id}?s=qr`)} alt={`QR chapita ${tag.tag_number}`} />
           <figcaption>N° {tag.tag_number}</figcaption>
         </figure>)}</div>
-      : <div className="ch-sheet ch-sheet-cards">{(tags || []).map((tag) => <article key={tag.id} className="ch-card">
+      : <div className="ch-sheet ch-sheet-cards">{cards.map((tag) => <article key={tag.id} className="ch-card">
           <p className="ch-card-brand">BIONFC · chapita de mascota</p>
           <h2>Activá tu chapita</h2>
-          <ol>
-            <li>Acercá el celular a la chapita o escaneá su QR. También podés entrar a <strong>{host}/activar</strong></li>
-            <li>Poné este código:</li>
-          </ol>
-          <p className="ch-card-code">{codeOf.has(tag.id) ? formatCode(codeOf.get(tag.id)!) : "—"}</p>
-          <p className="ch-card-foot">Cargá los datos de tu mascota y listo. Guardá esta tarjetita: el código se usa una sola vez. · N° {tag.tag_number}</p>
+          <div className="ch-card-activation">
+            {/* eslint-disable-next-line @next/next/no-img-element -- QR secreto generado en el servidor */}
+            {tag.activationQr && <img src={tag.activationQr} alt={`QR secreto para activar la chapita ${tag.tag_number}`} />}
+            <div><strong>1. Escaneá este QR</strong><span>2. Confirmá tu email</span><span>3. Cargá los datos de tu mascota</span></div>
+          </div>
+          <p className="ch-card-backup">Si no podés escanearlo, entrá a <strong>{host}/activar</strong> y escribí:</p>
+          <p className="ch-card-code">{tag.code ? formatCode(tag.code) : "—"}</p>
+          <p className="ch-card-foot">Este QR y código son privados y se usan una sola vez. Guardá la tarjeta hasta terminar la activación. · N° {tag.tag_number}</p>
         </article>)}</div>}
   </div>;
 }

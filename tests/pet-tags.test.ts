@@ -1,7 +1,7 @@
 // Lotes y códigos de activación de chapitas (lib/pet-tags.ts). `npm test`.
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { CODE_LENGTH, formatCode, newActivationCode, newTagSlug, normalizeCode, tagState } from "../lib/pet-tags.ts";
+import { activationPath, CODE_LENGTH, formatCode, newActivationCode, newTagSlug, normalizeCode, tagState } from "../lib/pet-tags.ts";
 
 describe("códigos de activación", () => {
   test("8 caracteres fáciles de leer: sin 0, O, 1, I, L, 5 ni S", () => {
@@ -16,6 +16,10 @@ describe("códigos de activación", () => {
     assert.equal(normalizeCode(" abcd-2346 "), "ABCD2346");
     assert.equal(normalizeCode("ab cd 23 46"), "ABCD2346");
     assert.equal(formatCode("abcd2346"), "ABCD-2346");
+  });
+
+  test("el QR secreto abre la activación con el código precargado", () => {
+    assert.equal(activationPath("abcd-2346"), "/activar?c=ABCD2346");
   });
 
   test("el link de la chapita es corto y al azar", () => {

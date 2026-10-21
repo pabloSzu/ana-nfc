@@ -22,6 +22,12 @@ export function formatCode(code: string): string {
   return clean.length === CODE_LENGTH ? `${clean.slice(0, 4)}-${clean.slice(4)}` : clean;
 }
 
+// QR secreto que va adentro del paquete. Precarga el código para que el comprador no tenga
+// que copiarlo; el texto impreso queda como respaldo si su cámara no puede leer el QR.
+export function activationPath(code: string): string {
+  return `/activar?c=${encodeURIComponent(normalizeCode(code))}`;
+}
+
 // El link de una chapita de lote no lleva el nombre de la mascota (todavía no existe): es un
 // slug corto y al azar. Lo que se graba en el chip y en el QR es igual el link permanente /go/id.
 export function newTagSlug(random: (max: number) => number = secureRandom): string {

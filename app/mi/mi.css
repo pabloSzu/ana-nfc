@@ -27,6 +27,7 @@
 .mi-hint a { color: #c25e22; font-weight: 700; }
 .mi-center { margin-top: 22px; text-align: center; }
 .mi-error { margin: 0; padding: 11px 13px; border-radius: 12px; background: #fde4e1; color: #a1271b; font-size: 13.5px; font-weight: 600; line-height: 1.45; text-align: left; }
+.mi-success { margin: 0; padding: 11px 13px; border-radius: 12px; background: #e4f6e9; color: #176a38; font-size: 13.5px; font-weight: 600; line-height: 1.45; text-align: left; }
 .mi-empty { display: grid; justify-items: center; gap: 16px; padding: 30px 20px; border-radius: 22px; background: #fff; text-align: center; }
 .mi-empty p { margin: 0; color: #7a5a44; }
 .mi-pets { display: grid; gap: 12px; margin: 18px 0 0; padding: 0; list-style: none; }
