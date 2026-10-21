@@ -12,7 +12,7 @@ export default function ActivateFlow({ initialCode, signedInEmail }: { initialCo
   const cameFromPackagingQr = Boolean(initialCode);
   const [code, setCode] = useState(initialCode ? formatCode(initialCode) : "");
   const [terms, setTerms] = useState(false);
-  const [step, setStep] = useState<"code" | "login">("code");
+  const [step, setStep] = useState<"code" | "login" | "confirm">("code");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   // Si ya entró con su email y la activación falló, al reintentar no se le vuelve a pedir el mail.
@@ -32,9 +32,21 @@ export default function ActivateFlow({ initialCode, signedInEmail }: { initialCo
     const result = await checkTagCode(code);
     setBusy(false);
     if (!result.ok) { setError(result.error); return; }
-    if (signedIn) await activate();
+    // Una sesión vieja puede pertenecer a otra persona o al dueño de otra chapita. No activamos
+    // con un solo toque: mostramos el email en grande y exigimos una confirmación explícita.
+    if (signedInEmail) setStep("confirm");
+    else if (signedIn) await activate();
     else setStep("login");
   }
+
+  if (step === "confirm") return <div className="mi-card">
+    <p className="mi-step">Paso 2 de 2 · Confirmá tu cuenta</p>
+    <p className="mi-success">Esta chapita quedará a nombre de <strong>{signedInEmail}</strong>.</p>
+    <p className="mi-hint">Después vas a usar ese email para editar los datos de tu mascota.</p>
+    {error && <p className="mi-error" role="alert">{error}</p>}
+    <button className="mi-button" type="button" disabled={busy} onClick={activate}>{busy ? "Activando…" : "Sí, activar con este email"}</button>
+    <button className="mi-link" type="button" disabled={busy} onClick={() => switchAccount(code)}>No es mi email · usar otro</button>
+  </div>;
 
   if (step === "login") return <div className="mi-card">
     <p className="mi-step">Paso 2 de 2 · Tu email</p>
