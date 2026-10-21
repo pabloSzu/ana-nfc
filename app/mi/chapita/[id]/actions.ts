@@ -26,13 +26,14 @@ export async function saveMyPet(fd: FormData) {
   if (!userId) redirect(`/mi/entrar?next=${encodeURIComponent(back)}`);
   const fail = (message: string): never => redirect(`${back}?error=${encodeURIComponent(message)}`);
 
-  const { data: landing } = await supabase.from("landings").select("id,slug,pet_slug,logo_url,blocked_at").eq("id", landingId).maybeSingle();
+  const { data: landing } = await supabase.from("landings").select("id,slug,pet_slug,logo_url,blocked_at,published").eq("id", landingId).maybeSingle();
   if (!landing) fail(ERRORS.sin_permiso);
   const name = String(fd.get("business_name") || "").trim().slice(0, 60);
   if (!name) fail(ERRORS.nombre_invalido);
   let raw: unknown = {};
   try { raw = JSON.parse(String(fd.get("pet") || "{}")); } catch { fail("No se pudieron leer los datos."); }
   const pet = cleanPet(parsePet({ pet: raw }));
+  if (!landing!.published && !landing!.blocked_at && petHasContact(pet) && fd.get("public_visibility_ack") !== "yes") fail("Confirmá que entendés qué datos se verán públicamente.");
   // Se guarda normalizado (549 + característica + número, ver lib/pet.ts); si no se puede, se avisa.
   const badPhone = pet.family.find((member) => member.phone && petPhoneProblem(member.phone));
   if (badPhone) fail(`Revisá el número ${badPhone.name ? `de ${badPhone.name}` : "de WhatsApp"}: ${petPhoneProblem(badPhone.phone)}`);

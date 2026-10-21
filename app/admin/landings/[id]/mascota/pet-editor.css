@@ -17,6 +17,10 @@
 .pet-editor-save:disabled { background: #c9ccd4; cursor: default; }
 .pet-editor-link { padding: 0; border: 0; background: none; color: #c0392b; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .pet-editor-note { margin: 0; padding: 9px 20px; background: #fff7e0; color: #7a5a00; font-size: 13.5px; font-weight: 600; }
+.pet-editor-note.is-privacy { background: #eaf3ff; color: #244b75; line-height: 1.45; }
+.pet-public-ack { display: inline-flex; align-items: center; gap: 8px; max-width: 260px; color: #3b4050; font-size: 11px; font-weight: 700; line-height: 1.3; }
+.pet-public-ack input { flex: none; width: 17px; height: 17px; accent-color: #1d2130; }
+.pet-public-ack.is-owner { grid-column: 1 / -1; max-width: 800px; padding: 12px 15px; border: 1px solid #b7d3ee; border-radius: 12px; background: #eaf3ff; color: #244b75; font-size: 13px; }
 .pet-editor-body { display: grid; grid-template-columns: 200px minmax(0, 420px) 1fr; gap: 24px; align-items: start; padding: 24px 20px 40px; }
 .pet-editor-nav { position: sticky; top: 86px; display: grid; gap: 4px; }
 .pet-editor-nav button { position: relative; display: flex; align-items: center; gap: 10px; padding: 11px 12px; border: 0; border-radius: 12px; background: transparent; color: #3b4050; font: inherit; font-size: 14.5px; font-weight: 600; text-align: left; cursor: pointer; }

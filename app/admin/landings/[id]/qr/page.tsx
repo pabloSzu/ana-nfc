@@ -19,7 +19,7 @@ export default async function QR({ params }: { params: Promise<{ id: string }> }
   // La URL física usa el ID estable, no el slug editable: una tarjeta o un QR ya entregado
   // deben seguir abriendo la landing aunque se cambie su nombre o enlace público.
   const siteOrigin = getSiteOrigin();
-  const publicUrl = `${siteOrigin}/${encodeURIComponent(landing.slug)}`;
+  const publicUrl = landing.business_type === "pet" ? `${siteOrigin}/mascota/${encodeURIComponent(landing.pet_slug || landing.slug)}` : `${siteOrigin}/${encodeURIComponent(landing.slug)}`;
   const permanentUrl = `${siteOrigin}/go/${landing.id}`;
   // El QR apunta a la misma URL pero marcada, para poder separar después cuántos escaneos
   // vinieron del código impreso y cuántos del chip. Es la única forma de distinguirlos, y solo
@@ -58,7 +58,7 @@ export default async function QR({ params }: { params: Promise<{ id: string }> }
           style={{ width: "min(320px, 100%)", margin: "0 auto var(--space-4)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-sm)" }}
         />
         <div className="qr-addresses">
-          <div><span>Dirección pública</span><strong>{publicUrl}</strong><CopyButton text={publicUrl} /><small>Es el enlace legible para compartir. Puede cambiar si renombrás la página.</small></div>
+          <div><span>Dirección pública</span><strong>{publicUrl}</strong><CopyButton text={publicUrl} /><small>Es el enlace legible para compartir. {landing.business_type === "pet" ? "Se conserva aunque cambie el nombre de la mascota." : "Puede cambiar si renombrás la página."}</small></div>
           <div><span>Dirección permanente del QR</span><strong>{qrUrl}</strong><CopyButton text={qrUrl} /><small>El código usa este identificador técnico para seguir funcionando aunque cambie el enlace público.</small></div>
         </div>
         <div className="row-actions" style={{ justifyContent: "center", marginTop: "var(--space-4)" }}>

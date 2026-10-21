@@ -1,15 +1,15 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { Suspense } from "react";
 import Toast from "@/components/toast";
 import { AdminThemeBackdrop } from "@/components/admin-theme";
-import { IconCheckCircle, IconFileText, IconPlay, IconPlus, IconPaw, IconQrCode } from "@/components/icons";
+import { IconCheckCircle, IconFileText, IconPlus, IconPaw, IconQrCode } from "@/components/icons";
 import PendingSubmitButton from "@/components/pending-submit-button";
 import { BATCH_MAX } from "@/lib/pet-tags";
 import ModalTrigger from "../modal-trigger";
 import { createBatch } from "./actions";
+import MascotasNav from "./mascotas-nav";
 import "./chapitas.css";
 
 // Admin → Chapitas: lotes de chapitas para vender en la calle o dejar en veterinarias. Cada
@@ -35,9 +35,9 @@ export default async function BatchesPage() {
     <AdminThemeBackdrop />
     <Suspense fallback={null}><Toast /></Suspense>
     <header className="library-page-header">
-      <div><p className="eyebrow ch-eyebrow"><IconPaw /> BIONFC Mascotas</p><h1>Chapitas</h1><p className="muted">Acá preparás los lotes, imprimís el material y ves cuáles ya activaron los compradores.</p></div>
+      <div><p className="eyebrow ch-eyebrow"><IconPaw /> BIONFC Mascotas</p><h1>Chapitas y stock</h1><p className="muted">Prepará tandas para vender, imprimí el material y controlá cuáles chapitas se activaron.</p></div>
       <div className="library-page-actions">
-        <Link className="btn secondary" href="/admin/chapitas/tutorial"><IconPlay /> Ver tutorial</Link>
+        <Link className="btn secondary" href="/admin/chapitas/tutorial">Leer guía completa</Link>
         <ModalTrigger label="Generar lote" icon={<IconPlus />} title="Generar lote de chapitas" description="Se crean vacías y sin publicar, cada una con su código de activación.">
           <form action={createBatch} className="stack">
             <label className="label">Nombre del lote<input name="name" maxLength={60} required placeholder="Ej. Calle · octubre" /></label>
@@ -48,6 +48,7 @@ export default async function BatchesPage() {
         </ModalTrigger>
       </div>
     </header>
+    <MascotasNav active="stock" />
 
     <section className="ch-overview" aria-label="Resumen de chapitas">
       <article><span className="ch-overview-icon"><IconQrCode /></span><small>Total preparadas</small><strong>{totals.total}</strong></article>
@@ -56,13 +57,8 @@ export default async function BatchesPage() {
     </section>
 
     <section className="elevated-section ch-tutorial-card" aria-labelledby="tutorial-title">
-      <div className="ch-tutorial-copy">
-        <p className="eyebrow">¿Es tu primera vez?</p>
-        <h2 id="tutorial-title">Mirá el recorrido completo antes de fabricar</h2>
-        <p>Te mostramos qué imprimís, qué grabás en el NFC, qué recibe el comprador y qué ve quien encuentra la mascota.</p>
-        <Link className="btn" href="/admin/chapitas/tutorial"><IconPlay /> Ver tutorial paso a paso</Link>
-      </div>
-      <Image src="/images/bionfc/tutorial-chapitas.webp" alt="Chapita NFC, paquete de activación y ficha de la mascota en un celular" width={1600} height={534} priority />
+      <div><p className="eyebrow">Después de la venta</p><h2 id="tutorial-title">Las fichas no son el stock</h2><p>Acá ves cada unidad física y su código privado. Cuando un comprador la activa, su ficha aparece en «Fichas de mascotas»; puede cambiar los datos sin regrabar el NFC.</p></div>
+      <Link className="btn secondary" href="/admin/chapitas/fichas">Ver fichas</Link>
     </section>
 
     {!batches?.length ? <section className="elevated-section ch-empty">

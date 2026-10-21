@@ -78,9 +78,6 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         <ModalTrigger label="Nueva tarjeta personal" icon={<IconPlus />} title="Nueva tarjeta personal" description={`Va a quedar guardada directamente dentro de ${client.name}.`} variant="secondary">
           <LandingCreationForm clients={[]} action={newLanding} kind="contact" clientId={id} clientName={client.name} returnTo={returnTo} />
         </ModalTrigger>
-        <ModalTrigger label="Nueva chapita de mascota" icon={<IconPlus />} title="Nueva chapita de mascota" description={`Va a quedar guardada directamente dentro de ${client.name}.`} variant="secondary">
-          <LandingCreationForm clients={[]} action={newLanding} kind="pet" clientId={id} clientName={client.name} returnTo={returnTo} />
-        </ModalTrigger>
         <ModalTrigger label="Nuevo link directo" icon={<IconPlus />} title="Nuevo link directo" description={`El producto abre un solo link. Queda dentro de ${client.name}, publicado y listo para grabar el NFC.`} variant="secondary">
           <LandingCreationForm clients={[]} action={newLanding} kind="direct" clientId={id} clientName={client.name} returnTo={returnTo} />
         </ModalTrigger>
@@ -103,7 +100,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           <PageList items={contactCards} kind="contact" />
         </section>
         {petTags.length > 0 && <section className="card client-page-group">
-          <div className="client-page-group-heading"><div><p className="eyebrow">Para mascotas</p><h2>Chapitas <span>{petTags.length}</span></h2><p className="muted">Si se pierde, quien la encuentra avisa a la familia.</p></div><ModalTrigger label="Agregar" icon={<IconPlus />} title="Nueva chapita de mascota" description={`Va a quedar guardada directamente dentro de ${client.name}.`} variant="secondary"><LandingCreationForm clients={[]} action={newLanding} kind="pet" clientId={id} clientName={client.name} returnTo={returnTo} /></ModalTrigger></div>
+          <div className="client-page-group-heading"><div><p className="eyebrow">Para mascotas</p><h2>Chapitas <span>{petTags.length}</span></h2><p className="muted">Estas fichas ya pertenecen a este cliente. Para preparar chapitas nuevas, usá «Mascotas → Chapitas y stock».</p></div><Link className="btn secondary" href="/admin/chapitas">Ver stock</Link></div>
           <PageList items={petTags} kind="pet" />
         </section>}
         {directLinks.length > 0 && <section className="card client-page-group">

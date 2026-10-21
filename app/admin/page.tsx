@@ -3,7 +3,7 @@ import { newClient, newLanding, resolveReport } from "./actions";
 import LandingCreationForm from "./landing-creation-form";
 import ClientCreationForm from "./client-creation-form";
 import ModalTrigger from "./modal-trigger";
-import { IconAlertCircle, IconPlus, IconQrCode, IconUsers, IconFileText, IconCheckCircle, IconPaw, IconWifi, IconDroplet } from "@/components/icons";
+import { IconAlertCircle, IconPlus, IconUsers, IconFileText, IconCheckCircle, IconPaw, IconWifi, IconDroplet } from "@/components/icons";
 import BioNFCLogo from "@/components/bionfc-logo";
 import Toast from "@/components/toast";
 import Link from "next/link";
@@ -27,12 +27,14 @@ export default async function Admin() {
   ]);
   // Las plantillas son landings propias pero no páginas de clientes: no cuentan acá.
   const landings = (allLandings || []).filter((landing) => !landing.template_name);
+  const pageLandings = landings.filter((landing) => landing.business_type !== "pet");
+  const petProfiles = landings.filter((landing) => landing.business_type === "pet");
   const templates = templateChoices(allLandings || []);
   const totalClients = clients?.length || 0;
-  const totalPages = landings?.length || 0;
-  const totalCards = landings?.filter((landing) => landing.business_type === "contact").length || 0;
+  const totalPages = pageLandings.length;
+  const totalCards = pageLandings.filter((landing) => landing.business_type === "contact").length;
   const totalLandings = totalPages - totalCards;
-  const published = landings?.filter((landing) => landing.published).length || 0;
+  const published = pageLandings.filter((landing) => landing.published).length;
   const drafts = totalPages - published;
   const landingCountByClient = new Map<string, number>();
   landings?.forEach((landing) => { if (landing.client_id) landingCountByClient.set(landing.client_id, (landingCountByClient.get(landing.client_id) || 0) + 1); });
@@ -65,11 +67,7 @@ export default async function Admin() {
       <div className="stat-card"><span className="stat-icon"><IconUsers /></span><small>Clientes</small><strong>{totalClients}</strong><span>{activeClients} con página</span></div>
       <div className="stat-card"><span className="stat-icon"><IconFileText /></span><small>Páginas</small><strong>{totalPages}</strong><span>{totalLandings} landings · {totalCards} tarjetas</span></div>
       <div className="stat-card"><span className="stat-icon"><IconCheckCircle /></span><small>Publicadas</small><strong>{published}</strong><span>{drafts} en borrador · {publishRate}% del total</span></div>
-      {/* Same number as "Publicadas" on purpose, not a bug: a tag/QR's URL 404s until the
-          landing behind it is published (app/[slug]/page.tsx filters on published:true), so
-          "ready" and "published" are the same set. The old subtitle ("con QR activo") didn't
-          say why the two cards matched — this one names the actual condition instead. */}
-      <div className="stat-card"><span className="stat-icon"><IconQrCode /></span><small>Tags listos</small><strong>{published}</strong><span>= publicadas (el QR solo funciona así)</span></div>
+      <div className="stat-card"><span className="stat-icon"><IconPaw /></span><small>Fichas de mascotas</small><strong>{petProfiles.length}</strong><span>{petProfiles.filter((pet) => pet.published).length} públicas · {petProfiles.filter((pet) => !pet.published).length} sin publicar</span></div>
     </section>
 
     {!!reports?.length && <section className="elevated-section renewals-card">
@@ -92,9 +90,6 @@ export default async function Admin() {
       {!!clients?.length && <ModalTrigger label="Nueva tarjeta personal" icon={<IconPlus />} title="Nueva tarjeta personal" description="Elegí el cliente y después completá la foto y los datos en el editor." variant="secondary">
         <LandingCreationForm clients={clients} action={newLanding} kind="contact" />
       </ModalTrigger>}
-      {!!clients?.length && <ModalTrigger label="Nueva chapita de mascota" icon={<IconPlus />} title="Nueva chapita de mascota" description="Elegí el cliente (la familia) y después completá la foto y los datos en el editor." variant="secondary">
-        <LandingCreationForm clients={clients} action={newLanding} kind="pet" />
-      </ModalTrigger>}
       {!!clients?.length && <ModalTrigger label="Nuevo link directo" icon={<IconPlus />} title="Nuevo link directo" description="El producto abre un solo link. Queda publicado y vas directo a grabar el NFC." variant="secondary">
         <LandingCreationForm clients={clients} action={newLanding} kind="direct" />
       </ModalTrigger>}
@@ -106,7 +101,7 @@ export default async function Admin() {
     <div className="dashboard-overview-grid">
       <section className="elevated-section dashboard-overview-card">
         <div className="section-heading rich-heading"><span className="step"><IconFileText /></span><div><p className="eyebrow">Actividad reciente</p><h2>Últimas páginas</h2></div><Link className="text-button" href="/admin/paginas">Ver todas →</Link></div>
-        {!landings?.length ? <div className="empty-state compact"><IconFileText /><strong>Todavía no hay páginas</strong><p className="muted">Primero creá un cliente y agregale una.</p></div> : <div className="dashboard-recent-list">{landings.slice(0, 5).map((landing) => <Link key={landing.id} href={editHref(landing)}><AdminPageAvatar page={landing} /><span><strong>{landing.business_name}</strong><small>{pageKindLabel(landing)}</small></span><em className={landing.published ? "is-live" : ""}>{landing.published ? "Publicada" : "Borrador"}</em></Link>)}</div>}
+        {!pageLandings.length ? <div className="empty-state compact"><IconFileText /><strong>Todavía no hay páginas</strong><p className="muted">Las fichas de mascotas se ven en «Mascotas».</p></div> : <div className="dashboard-recent-list">{pageLandings.slice(0, 5).map((landing) => <Link key={landing.id} href={editHref(landing)}><AdminPageAvatar page={landing} /><span><strong>{landing.business_name}</strong><small>{pageKindLabel(landing)}</small></span><em className={landing.published ? "is-live" : ""}>{landing.published ? "Publicada" : "Borrador"}</em></Link>)}</div>}
       </section>
       <section className="elevated-section dashboard-overview-card">
         <div className="section-heading rich-heading"><span className="step warm"><IconUsers /></span><div><p className="eyebrow warm-text">Organización</p><h2>Clientes recientes</h2></div><Link className="text-button" href="/admin/clientes">Ver todos →</Link></div>

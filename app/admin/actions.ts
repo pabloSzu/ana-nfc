@@ -105,6 +105,7 @@ export async function publish(fd: FormData) {
   if (desired && landing.template_name) redirect(target + "?error=" + encodeURIComponent("Una plantilla no se publica: creá una página desde ella."));
   // Un botón sin link no llevaría a ningún lado (por ejemplo, recién copiado de una plantilla).
   if (desired && landing.business_type === "pet" && !petHasContact(parsePet(landing.button_style))) redirect(target + "?error=" + encodeURIComponent("Cargá el WhatsApp de la familia antes de publicar la chapita."));
+  if (desired && landing.business_type === "pet" && fd.get("public_visibility_ack") !== "yes") redirect(target + "?error=" + encodeURIComponent("Confirmá qué datos de la chapita se harán públicos."));
   if (desired && landing.business_type !== "contact" && landing.business_type !== "pet") {
     const { data: actions, error: actionsError } = await s.from("actions").select("type,url,title").eq("landing_id", id).eq("enabled", true);
     if (actionsError) redirect(target + "?error=" + encodeURIComponent(actionsError.message));

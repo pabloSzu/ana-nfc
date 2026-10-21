@@ -46,6 +46,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return {
     title,
     description,
+    ...(landing.business_type === "pet" ? { robots: { index: false, follow: false, nocache: true } } : {}),
     alternates: { canonical: publicPath },
     openGraph: { title, description, images, url: publicPath, type: "website", locale: "es_AR" },
     twitter: { card: "summary", title, description, images },

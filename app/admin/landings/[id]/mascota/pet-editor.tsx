@@ -137,6 +137,7 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
 
   const photoUrl = photoPreview ?? (photoRemoved ? "" : landing.photoUrl);
   const hasContact = petHasContact(pet);
+  const canPublishAsOwner = isOwner && !landing.published && !landing.blocked && hasContact;
   // El primer WhatsApp también aparece en "La mascota" mientras la chapita no está publicada:
   // es lo único obligatorio y el dueño no tiene que ir a buscarlo a otra parte.
   const firstPhone = pet.family[0]?.phone || "";
@@ -151,7 +152,7 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
   return <div className="pet-editor">
     <FontLinks ids={PET_LOOKS.map((look) => look.titleFont)} />
     <header className="pet-editor-top">
-      <Link className="pet-editor-back" href={isOwner ? "/mi" : "/admin/paginas"}>{isOwner ? "← Mis chapitas" : "← Páginas"}</Link>
+      <Link className="pet-editor-back" href={isOwner ? "/mi" : "/admin/chapitas/fichas"}>{isOwner ? "← Mis chapitas" : "← Fichas de mascotas"}</Link>
       <div className="pet-editor-title"><small>{isOwner && !landing.published ? "Paso 3 de 3 · Completá los datos" : "Chapita de mascota"}</small><strong>{name.trim() || "Sin nombre"}</strong></div>
       <span className={`pet-editor-status${landing.published ? " is-live" : ""}`}>{landing.published ? "Publicada" : isOwner ? "Sin publicar" : "Borrador"}</span>
       <div className="pet-editor-actions">
@@ -164,21 +165,24 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
           <input type="hidden" name="id" value={landing.id} />
           <input type="hidden" name="published" value={landing.published ? "false" : "true"} />
           <input type="hidden" name="return_to" value={`/admin/landings/${landing.id}/mascota`} />
+          {!landing.published && <label className="pet-public-ack"><input type="checkbox" name="public_visibility_ack" value="yes" required /> La ficha y el WhatsApp serán públicos</label>}
           <PendingSubmitButton className="pet-editor-ghost" pendingText={landing.published ? "Despublicando…" : "Publicando…"} disabled={dirty || (!landing.published && !hasContact)}>{landing.published ? "Despublicar" : "Publicar"}</PendingSubmitButton>
         </form>}
-        <button type="submit" form="pet-save" className="pet-editor-save" disabled={!dirty || saving}>{saving ? "Guardando…" : dirty ? "Guardar cambios" : "Guardado"}</button>
+        <button type="submit" form="pet-save" className="pet-editor-save" disabled={(!dirty && !canPublishAsOwner) || saving}>{saving ? "Guardando…" : dirty ? "Guardar cambios" : canPublishAsOwner ? "Publicar chapita" : "Guardado"}</button>
       </div>
     </header>
     {landing.blocked && <p className="pet-editor-note is-danger">BIONFC pausó esta chapita y por ahora no se muestra. Si creés que es un error, escribinos a contacto.bionfc@gmail.com.</p>}
     {draft && <p className="pet-editor-note">Tenés cambios que no llegaste a guardar. <button type="button" className="pet-editor-link" onClick={restoreDraft}>Recuperarlos</button> · <button type="button" className="pet-editor-link" onClick={discardDraft}>Descartar</button></p>}
     {dirty && <p className="pet-editor-note">Tenés cambios sin guardar. {isOwner ? "Tocá “Guardar cambios” para que se vean en la chapita." : "Guardá antes de publicar o salir."}</p>}
     {!dirty && !landing.published && !hasContact && <p className="pet-editor-note">{isOwner ? "Cargá tu WhatsApp en “Familia” y guardá: ahí la chapita empieza a funcionar." : "Para publicar, cargá el WhatsApp de la familia."}</p>}
+    {!landing.published && <p className="pet-editor-note is-privacy">Cuando se publique, cualquier persona con el enlace podrá ver el nombre, la foto, los datos completados y llamar o escribir a los WhatsApp cargados. Tu email de acceso no aparece.</p>}
 
     <form id="pet-save" action={submit} onSubmit={handleSave} className="pet-editor-body">
       <input type="hidden" name="landing_id" value={landing.id} />
       <input type="hidden" name="business_name" value={name} />
       <input type="hidden" name="pet" value={JSON.stringify(pet)} />
       <input type="hidden" name="remove_photo" value={photoRemoved ? "true" : "false"} />
+      {canPublishAsOwner && <label className="pet-public-ack is-owner"><input type="checkbox" name="public_visibility_ack" value="yes" required /><span>Entiendo que al guardar se publicarán los datos y WhatsApp que cargué. Ya revisé la vista previa y tengo permiso de las otras personas de contacto.</span></label>}
       <input ref={photoInput} type="file" accept="image/*" hidden onChange={(event) => pickPhoto(event.target.files?.[0])} />
 
       <nav className="pet-editor-nav" aria-label="Partes de la chapita">

@@ -8,12 +8,12 @@ import PendingSubmitButton from "@/components/pending-submit-button";
 // A landing's public link only resolves once it's published (app/[slug]/page.tsx filters on
 // published:true), so "Ver" on a draft would just open a 404. Instead of a dead link, a draft
 // gets the same button that explains why and offers to publish it right there.
-export default function ViewLandingButton({ slug, landingId, published, publishAction, className = "", isContact = false, returnTo = "/admin" }: { slug: string; landingId: string; published: boolean; publishAction: (formData: FormData) => void | Promise<void>; className?: string; isContact?: boolean; returnTo?: string }) {
+export default function ViewLandingButton({ slug, landingId, published, publishAction, className = "", isContact = false, isPet = false, returnTo = "/admin" }: { slug: string; landingId: string; published: boolean; publishAction: (formData: FormData) => void | Promise<void>; className?: string; isContact?: boolean; isPet?: boolean; returnTo?: string }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const classes = `icon-text-button accent ${className}`.trim();
 
   if (published) {
-    return <Link className={classes} href={`/${slug}`} target="_blank" title="Ver" aria-label="Ver"><IconEye /> <span className="btn-label">Ver</span></Link>;
+    return <Link className={classes} href={isPet ? `/mascota/${slug}` : `/${slug}`} target="_blank" title="Ver" aria-label="Ver"><IconEye /> <span className="btn-label">Ver</span></Link>;
   }
 
   return (
@@ -25,11 +25,12 @@ export default function ViewLandingButton({ slug, landingId, published, publishA
         <div className="modal-content">
           <button type="button" className="modal-close" aria-label="Cerrar" onClick={() => dialogRef.current?.close()}>✕</button>
           <h2>Primero publicala</h2>
-          <p className="muted">Esta {isContact ? "tarjeta" : "landing"} está en borrador, así que <strong>/{slug}</strong> todavía no abre nada. Publicala para poder verla.</p>
+          <p className="muted">Esta {isPet ? "mascota" : isContact ? "tarjeta" : "landing"} está en borrador, así que <strong>{isPet ? `/mascota/${slug}` : `/${slug}`}</strong> todavía no abre nada. Publicala para poder verla.</p>
           <form action={publishAction} className="stack">
             <input type="hidden" name="id" value={landingId} />
             <input type="hidden" name="published" value="true" />
             <input type="hidden" name="return_to" value={returnTo} />
+            {isPet && <label className="label"><span><input type="checkbox" name="public_visibility_ack" value="yes" required /> Entiendo que los datos y WhatsApp de la ficha se harán públicos.</span></label>}
             <div className="rename-confirm-actions">
               <button type="button" className="btn secondary" onClick={() => dialogRef.current?.close()}>Ahora no</button>
               <PendingSubmitButton className="btn full" pendingText="Publicando…">Publicar ahora</PendingSubmitButton>

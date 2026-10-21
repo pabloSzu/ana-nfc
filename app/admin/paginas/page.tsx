@@ -20,6 +20,7 @@ const value = (item: string | string[] | undefined) => typeof item === "string" 
 
 export default async function PagesPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
+  if (value(params.type) === "pet") redirect("/admin/chapitas/fichas");
   const initialKind = (["landing", "contact", "direct"].includes(value(params.type)) ? value(params.type) : "all") as PageKind | "all";
   // renewal=due y type=unassigned son los links viejos (Inicio, aviso de páginas sin cliente).
   const initialView = (["attention", "published", "draft"].includes(value(params.view)) ? value(params.view) : value(params.renewal) === "due" || value(params.type) === "unassigned" ? "attention" : "all") as PageView;
@@ -33,7 +34,7 @@ export default async function PagesPage({ searchParams }: { searchParams: Search
   const [{ data: clients }, { data: allPages }, { data: viewCounts, error: viewCountsError }] = await Promise.all([
     supabase.from("clients").select("id,name").eq("owner_id", userId).order("name"),
     // Las chapitas de un lote que todavía no se vendieron no son páginas: se ven en Chapitas.
-    supabase.from("landings").select("*, actions(type,url,enabled,position)").eq("owner_id", userId).or("batch_id.is.null,activated_at.not.is.null").order("created_at", { ascending: false }),
+    supabase.from("landings").select("*, actions(type,url,enabled,position)").eq("owner_id", userId).or("business_type.is.null,business_type.neq.pet").order("created_at", { ascending: false }),
     supabase.from("landing_view_counts").select("landing_id,total,last_30_days"),
   ]);
   // Las plantillas viven en su propio panel (/admin/plantillas), no en esta lista.
@@ -45,7 +46,7 @@ export default async function PagesPage({ searchParams }: { searchParams: Search
   const rows: PageRow[] = (pages || []).map((raw) => {
     const page = withAutoFallback(raw);
     const plan = planOf(page);
-    const kind: PageKind = plan === "direct" ? "direct" : page.business_type === "contact" ? "contact" : "landing";
+    const kind: PageKind = plan === "direct" ? "direct" : page.business_type === "contact" ? "contact" : page.business_type === "pet" ? "pet" : "landing";
     const status = planStatus(page);
     const client = page.client_id ? clientsById.get(page.client_id) : null;
     const views = viewsById.get(page.id);
@@ -59,7 +60,7 @@ export default async function PagesPage({ searchParams }: { searchParams: Search
     return {
       id: page.id,
       name: page.business_name,
-      slug: page.slug,
+      slug: kind === "pet" ? page.pet_slug || page.slug : page.slug,
       kind,
       published: Boolean(page.published),
       clientId: client?.id || null,
@@ -80,15 +81,15 @@ export default async function PagesPage({ searchParams }: { searchParams: Search
     <AdminThemeBackdrop />
     <Suspense fallback={null}><Toast /></Suspense>
     <header className="library-page-header">
-      <div><p className="eyebrow">Experiencias digitales</p><h1>Páginas</h1><p className="muted">Landings, tarjetas personales y links directos de todos tus clientes.</p></div>
-      <div className="library-page-actions">{clients?.length ? <><ModalTrigger label="Nueva landing" icon={<IconPlus />} title="Nueva landing" description="Elegí el cliente al que pertenece."><LandingCreationForm clients={clients} action={newLanding} kind="custom" returnTo={returnTo} templates={templateChoices(allPages || [])} /></ModalTrigger><ModalTrigger label="Nueva tarjeta" icon={<IconPlus />} title="Nueva tarjeta personal" description="Elegí el cliente al que pertenece." variant="secondary"><LandingCreationForm clients={clients} action={newLanding} kind="contact" returnTo={returnTo} /></ModalTrigger><ModalTrigger label="Nueva chapita" icon={<IconPlus />} title="Nueva chapita de mascota" description="Elegí el cliente (la familia) al que pertenece." variant="secondary"><LandingCreationForm clients={clients} action={newLanding} kind="pet" returnTo={returnTo} /></ModalTrigger><ModalTrigger label="Nuevo link directo" icon={<IconPlus />} title="Nuevo link directo" description="El producto abre un solo link. Queda publicado y vas directo a grabar el NFC." variant="secondary"><LandingCreationForm clients={clients} action={newLanding} kind="direct" returnTo={returnTo} /></ModalTrigger></> : <Link className="btn" href="/admin/clientes"><IconUsers /> Primero creá un cliente</Link>}</div>
+      <div><p className="eyebrow">Experiencias digitales</p><h1>Páginas</h1><p className="muted">Landings, tarjetas personales y links directos. Las chapitas y las fichas de mascotas están en «Mascotas».</p></div>
+      <div className="library-page-actions">{clients?.length ? <><ModalTrigger label="Nueva landing" icon={<IconPlus />} title="Nueva landing" description="Elegí el cliente al que pertenece."><LandingCreationForm clients={clients} action={newLanding} kind="custom" returnTo={returnTo} templates={templateChoices(allPages || [])} /></ModalTrigger><ModalTrigger label="Nueva tarjeta" icon={<IconPlus />} title="Nueva tarjeta personal" description="Elegí el cliente al que pertenece." variant="secondary"><LandingCreationForm clients={clients} action={newLanding} kind="contact" returnTo={returnTo} /></ModalTrigger><ModalTrigger label="Nuevo link directo" icon={<IconPlus />} title="Nuevo link directo" description="El producto abre un solo link. Queda publicado y vas directo a grabar el NFC." variant="secondary"><LandingCreationForm clients={clients} action={newLanding} kind="direct" returnTo={returnTo} /></ModalTrigger></> : <Link className="btn" href="/admin/clientes"><IconUsers /> Primero creá un cliente</Link>}</div>
     </header>
 
     {viewCountsError && <aside className="admin-assignment-warning"><IconFileText /><p><strong>No se pudieron cargar las visitas.</strong><span>Las páginas siguen funcionando, pero las estadísticas no están disponibles en este momento.</span></p></aside>}
 
     <section className="elevated-section">
       {!rows.length
-        ? <div className="empty-state"><IconFileText /><strong>Todavía no hay páginas</strong><p className="muted">Creá un cliente y después agregale su primera landing, tarjeta o link directo.</p></div>
+        ? <div className="empty-state"><IconFileText /><strong>Todavía no hay páginas</strong><p className="muted">Creá un cliente y después agregale su primera landing, tarjeta o link directo. Las mascotas se ven en su propia sección.</p></div>
         : <PagesList rows={rows} clients={clients || []} initialKind={initialKind} initialView={initialView} initialQuery={initialQuery} initialSort={initialSort} actions={{ publish, rename: renameLanding, remove: deleteLanding, assign: assignLandingClient }} />}
     </section>
   </main>;

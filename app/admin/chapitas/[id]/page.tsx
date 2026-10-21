@@ -11,6 +11,7 @@ import { parsePet } from "@/lib/pet";
 import { formatCode, tagState } from "@/lib/pet-tags";
 import { regenerateTagCode } from "../actions";
 import RegenerateCodeButton from "../regenerate-code-button";
+import MascotasNav from "../mascotas-nav";
 import "../chapitas.css";
 
 const STATE_LABEL = { stock: "Sin activar", active: "Activada", lost: "¡Perdida!" } as const;
@@ -47,6 +48,7 @@ export default async function BatchPage({ params }: { params: Promise<{ id: stri
         <Link className="btn secondary" href={`/admin/chapitas/${id}/imprimir?que=qr`} target="_blank">2. Imprimir QR de las chapitas</Link>
       </div>
     </header>
+    <MascotasNav active="stock" />
     {isLocalSite(origin) && <aside className="admin-assignment-warning"><IconExternalLink /><p><strong>Estás en desarrollo ({new URL(origin).host}).</strong><span>Los links y QR de esta pantalla apuntan a tu computadora: no los grabes en chapitas reales. Grabalas desde el Admin de bionfc.com.</span></p></aside>}
 
     <section className="ch-batch-next" aria-label="Qué hacer con este lote">

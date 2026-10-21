@@ -14,7 +14,7 @@ import type { PlanTone } from "@/lib/landing-plan";
 import { PAGE_SORTS, relativeDay, shortDate, sortPages, type PageSort } from "@/lib/page-sort";
 
 type Action = (fd: FormData) => void | Promise<void>;
-export type PageKind = "landing" | "contact" | "direct";
+export type PageKind = "landing" | "contact" | "pet" | "direct";
 export type PageView = "all" | "attention" | "published" | "draft";
 
 export type PageRow = {
@@ -49,7 +49,7 @@ const VIEWS: { value: PageView; label: string }[] = [
   { value: "draft", label: "Borradores" },
 ];
 
-const KIND_LABEL: Record<PageKind, string> = { landing: "Landing", contact: "Tarjeta personal", direct: "Link directo" };
+const KIND_LABEL: Record<PageKind, string> = { landing: "Landing", contact: "Tarjeta personal", pet: "Mascota", direct: "Link directo" };
 
 const searchable = (text: string) => text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
@@ -145,7 +145,7 @@ export default function PagesList({ rows, clients, initialKind, initialView, ini
           <div className="pl-avatar">{row.kind === "direct" ? <span className="pl-direct-icon"><IconLink /></span> : <AdminPageAvatar page={row.avatar} />}</div>
           <div className="pl-copy">
             <div className="pl-name"><strong>{row.name}</strong><span className={`pl-kind is-${row.kind}`}>{KIND_LABEL[row.kind]}</span></div>
-            <small className="pl-sub">{row.kind === "direct" ? (row.destination ? <>→ {row.destination.replace(/^https?:\/\//, "")}</> : "Sin link cargado") : `/${row.slug}`}</small>
+            <small className="pl-sub">{row.kind === "direct" ? (row.destination ? <>→ {row.destination.replace(/^https?:\/\//, "")}</> : "Sin link cargado") : row.kind === "pet" ? `/mascota/${row.slug}` : `/${row.slug}`}</small>
             <small className="pl-client">{row.clientId ? <Link href={`/admin/clientes/${row.clientId}`}>{row.clientName}</Link> : <span className="pl-noclient">Sin cliente · <AssignClientButton action={actions.assign} landingId={row.id} clients={clients} returnTo={returnTo} /></span>}</small>
           </div>
         </div>
@@ -157,16 +157,16 @@ export default function PagesList({ rows, clients, initialKind, initialView, ini
         <div className="pl-actions">
           {row.kind === "direct"
             ? <Link className="btn pl-primary" href={`/admin/landings/${row.id}/gestion`}><IconLink /> Cambiar link</Link>
-            : <Link className="btn pl-primary" href={`/admin/landings/${row.id}/editor-v2`}><IconEdit /> Editar diseño</Link>}
+            : <Link className="btn pl-primary" href={row.kind === "pet" ? `/admin/landings/${row.id}/mascota` : `/admin/landings/${row.id}/editor-v2`}><IconEdit /> {row.kind === "pet" ? "Abrir ficha" : "Editar diseño"}</Link>}
           <Link className="pl-icon" href={`/admin/landings/${row.id}/gestion`} title="Gestión: plan y vencimiento" aria-label="Gestión"><IconCalendar /></Link>
           {row.kind === "direct"
             ? <a className="pl-icon" href={`/${row.slug}`} target="_blank" rel="noreferrer" title="Ver: abre el link para probarlo" aria-label="Ver el link"><IconEye /></a>
-            : <ViewLandingButton slug={row.slug} landingId={row.id} published={row.published} publishAction={actions.publish} className="pl-icon" isContact={row.kind === "contact"} returnTo={returnTo} />}
+            : <ViewLandingButton slug={row.slug} landingId={row.id} published={row.published} publishAction={actions.publish} className="pl-icon" isContact={row.kind === "contact"} isPet={row.kind === "pet"} returnTo={returnTo} />}
           <Link className="pl-icon" href={`/admin/landings/${row.id}/qr`} title="QR y NFC" aria-label="QR y NFC"><IconQrCode /></Link>
           <RowMenu>
-            <CopyButton text={`/${row.slug}`} label="Copiar link" className="pl-menu-copy" />
-            <RenameLandingButton action={actions.rename} landingId={row.id} currentName={row.name} currentSlug={row.slug} isContact={row.kind === "contact"} returnTo={returnTo} />
-            {row.kind !== "direct" && <form action={actions.publish}>
+            <CopyButton text={row.kind === "pet" ? `/mascota/${row.slug}` : `/${row.slug}`} label="Copiar link" className="pl-menu-copy" />
+            {row.kind !== "pet" && <RenameLandingButton action={actions.rename} landingId={row.id} currentName={row.name} currentSlug={row.slug} isContact={row.kind === "contact"} returnTo={returnTo} />}
+            {row.kind !== "direct" && row.kind !== "pet" && <form action={actions.publish}>
               <input type="hidden" name="id" value={row.id} />
               <input type="hidden" name="published" value={String(!row.published)} />
               <input type="hidden" name="return_to" value={returnTo} />
