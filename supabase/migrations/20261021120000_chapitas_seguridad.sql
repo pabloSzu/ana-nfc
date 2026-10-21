@@ -20,13 +20,70 @@ create or replace function public.is_published_landing(p_landing uuid) returns b
 revoke execute on function public.is_published_landing(uuid) from public;
 grant execute on function public.is_published_landing(uuid) to anon, authenticated, service_role;
 
--- La página publicada con sus botones habilitados, o null. Sin las columnas internas.
+-- La página publicada con sus botones habilitados, o null. La lista es deliberadamente
+-- explícita: una columna privada que se agregue a landings en el futuro no se vuelve pública
+-- por accidente.
 create or replace function public.public_landing(p_slug text) returns jsonb
   language sql stable security definer set search_path = ''
   as $$
-    select (to_jsonb(l) - 'request_key' - 'client_id' - 'batch_id' - 'tag_number' - 'activated_at' - 'blocked_at' - 'notes')
+    select jsonb_build_object(
+      'id', l.id,
+      'owner_id', l.owner_id,
+      'business_name', l.business_name,
+      'slug', l.slug,
+      'description', l.description,
+      'logo_url', l.logo_url,
+      'whatsapp', l.whatsapp,
+      'primary_color', l.primary_color,
+      'template', l.template,
+      'published', l.published,
+      'background_color', l.background_color,
+      'business_type', l.business_type,
+      'redirect_url', l.redirect_url,
+      'background_type', l.background_type,
+      'background_gradient_to', l.background_gradient_to,
+      'background_image_url', l.background_image_url,
+      'text_color', l.text_color,
+      'font_pair', l.font_pair,
+      'text_panel', l.text_panel,
+      'button_font', l.button_font,
+      'text_panel_color', l.text_panel_color,
+      'button_shape', l.button_shape,
+      'button_fill', l.button_fill,
+      'button_style', l.button_style,
+      'title_style', l.title_style,
+      'subtitle_style', l.subtitle_style,
+      'logo_style', l.logo_style,
+      'background_style', l.background_style,
+      'cover_image_url', l.cover_image_url,
+      'cover_style', l.cover_style,
+      'qr_style', l.qr_style,
+      'plan', l.plan,
+      'expires_at', l.expires_at,
+      'fallback_url', l.fallback_url
+    )
       || jsonb_build_object('actions', coalesce((
-        select jsonb_agg(to_jsonb(a) order by a.position)
+        select jsonb_agg(jsonb_build_object(
+          'id', a.id,
+          'title', a.title,
+          'type', a.type,
+          'message', a.message,
+          'url', a.url,
+          'icon', a.icon,
+          'enabled', a.enabled,
+          'position', a.position,
+          'background_color', a.background_color,
+          'background_gradient_to', a.background_gradient_to,
+          'text_color', a.text_color,
+          'icon_color', a.icon_color,
+          'use_auto_color', a.use_auto_color,
+          'subtitle', a.subtitle,
+          'icon_background_color', a.icon_background_color,
+          'icon_url', a.icon_url,
+          'icon_fit', a.icon_fit,
+          'icon_scale', a.icon_scale,
+          'extra', a.extra
+        ) order by a.position)
         from public.actions a where a.landing_id = l.id and a.enabled
       ), '[]'::jsonb))
     from public.landings l
@@ -42,10 +99,9 @@ create or replace function public.public_landing_slug(p_landing uuid) returns te
 revoke execute on function public.public_landing_slug(uuid) from public;
 grant execute on function public.public_landing_slug(uuid) to anon, authenticated, service_role;
 
-drop policy if exists "Public can read published landings" on public.landings;
-drop policy if exists "landing public" on public.landings;
-drop policy if exists "Public can read enabled actions of published landings" on public.actions;
-drop policy if exists "action public" on public.actions;
+-- Las políticas públicas viejas se conservan durante el despliegue: la versión que hoy está en
+-- producción todavía lee las tablas directamente. Se eliminan recién en la migración de cierre
+-- 20261022120000, después de comprobar que el código nuevo ya usa public_landing.
 
 -- Las políticas que miraban "landings publicadas" lo hacen ahora con la función, porque anon ya
 -- no ve la tabla.
@@ -72,6 +128,12 @@ create or replace function public.rate_limit_hit(p_key text, p_max integer, p_wi
 declare
   v_count integer;
 begin
+  if p_max < 1 or p_window_seconds < 1 then return false; end if;
+  -- Serializa los pedidos de una misma clave. Sin este lock, varias requests simultáneas podían
+  -- contar el mismo valor y atravesar juntas el límite.
+  perform pg_advisory_xact_lock(hashtextextended(p_key, 0));
+  delete from public.rate_limit_hits
+    where key = p_key and at <= now() - make_interval(secs => p_window_seconds);
   if random() < 0.02 then
     delete from public.rate_limit_hits where at < now() - interval '2 days';
   end if;
@@ -84,9 +146,8 @@ end $$;
 revoke execute on function public.rate_limit_hit(text, integer, integer) from public, anon, authenticated;
 grant execute on function public.rate_limit_hit(text, integer, integer) to service_role;
 
--- Validar un código ya no se puede desde el navegador: solo el servidor, después del límite por IP.
-revoke execute on function public.tag_code_valid(text) from anon, authenticated;
-grant execute on function public.tag_code_valid(text) to service_role;
+-- tag_code_valid conserva temporalmente sus permisos para que el deploy sea compatible con la
+-- versión anterior. La migración de cierre los revoca después de publicar el código nuevo.
 
 -- 3. Activar con límite de intentos ---------------------------------------------------------------
 alter table public.client_members add column if not exists terms_version text;
@@ -107,6 +168,7 @@ declare
 begin
   if v_user is null then raise exception 'sin_sesion'; end if;
   v_key := 'activate:' || v_user::text;
+  perform pg_advisory_xact_lock(hashtextextended(v_key, 0));
   if (select count(*) from public.rate_limit_hits where key = v_key and at > now() - interval '15 minutes') >= 10 then
     raise exception 'demasiados_intentos';
   end if;

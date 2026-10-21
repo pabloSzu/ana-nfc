@@ -30,13 +30,14 @@ GitHub Actions; `vercel.json` solo fija la región (`gru1`, San Pablo). El resto
 
 Orden correcto al cambiar el esquema:
 
-1. Aplicar la migración en PROD.
-2. Recién después mergear a `main`.
+1. Aplicar primero las migraciones **compatibles** que agregan tablas, columnas y funciones.
+2. Recién después mergear a `main` y comprobar el deploy.
+3. Si hay una migración de **cierre** que quita compatibilidad vieja, aplicarla al final.
 
-**No al revés.** El código nuevo usa funciones de la base (`is_staff`, `public_landing`,
-`activate_tag`…): si llega a producción antes que la migración, las páginas públicas y la
-activación fallan. El Admin no te echa (si `is_staff` falla, deja pasar), pero el resto sí se rompe.
-Probá siempre primero en DEV y en un preview de Vercel apuntando a DEV.
+Las chapitas usan exactamente este esquema: `20261021120000_chapitas_seguridad.sql` crea
+`public_landing` pero conserva temporalmente la lectura pública anterior; después del deploy,
+`20261022120000_chapitas_lockdown.sql` la elimina. Así la versión vieja y la nueva funcionan
+durante todo el cambio. Probá siempre primero en DEV y en un preview de Vercel apuntando a DEV.
 
 ## Los datos
 

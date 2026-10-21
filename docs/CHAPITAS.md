@@ -15,6 +15,25 @@ mascota. Desde ese momento la edita él solo, incluido prender "¡Estoy perdido!
 El código va en la tarjetita y **nunca en la chapita**: si alguien encuentra al perro, no
 tiene que poder quedarse con ella.
 
+## QR, NFC y nombre de cada página
+
+El QR y el chip NFC llevan **la misma URL permanente**: `https://bionfc.com/go/[id]`. Eso hace
+que los dos sean dinámicos: el objeto físico nunca se vuelve a grabar ni imprimir, aunque cambien
+el nombre de la mascota, su foto, el teléfono o incluso el slug público. No existe un “NFC
+dinámico” distinto que haya que comprar; lo dinámico es la redirección administrada por BIONFC.
+
+Cada chapita tiene tres identificadores con funciones distintas:
+
+- **ID interno (UUID):** es estable y va dentro de `/go/[id]`; no se muestra como nombre comercial.
+- **Número de lote:** `Chapita 1`, `Chapita 2`, etc.; sirve para emparejar el grabado con su
+  tarjetita de activación mientras está en stock.
+- **Página pública:** antes de activarse usa un slug aleatorio interno (`m-xxxxxxx`). Cuando el
+  comprador carga la mascota, el título visible es su nombre. El QR/NFC sigue apuntando a `/go/id`,
+  por lo que un cambio futuro de slug no rompe la chapita.
+
+No poner el nombre de la mascota ni el código de activación en el QR/NFC: el primero todavía no
+se conoce al fabricar y el segundo permitiría apropiarse de una chapita encontrada.
+
 ## Paso a paso para vender
 
 1. **Admin → Chapitas → Generar lote.** Cantidad (hasta 100), nombre del lote y veterinaria o
@@ -72,7 +91,8 @@ al dueño cómo cargarla y al que la encontró cómo escribirnos.
   `app/mi/auth-actions.ts`). "Entrar" no crea cuentas.
 - Límites (tabla `rate_limit_hits`): 20 códigos probados cada 10 minutos por IP, 10 mails por hora
   por IP y 6 por email, 10 activaciones fallidas cada 15 minutos por usuario, 5 denuncias por hora
-  por IP.
+  por IP. Las IP y los emails se guardan como hashes, no en texto legible, y cada clave se cuenta
+  de forma atómica para que pedidos simultáneos no atraviesen juntos el límite.
 - Si despublicás desde el Admin una chapita que ya tiene dueño (por una denuncia), queda
   **pausada** (`blocked_at`): el dueño no la puede volver a publicar. Publicarla desde el Admin la
   despausa.

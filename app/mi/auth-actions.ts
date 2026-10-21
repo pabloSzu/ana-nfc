@@ -31,9 +31,15 @@ function friendly(message: string): string {
 // límite alguien podría probar millones hasta dar con uno.
 async function codeIsValid(code: string): Promise<"ok" | "invalid" | "limit" | "error"> {
   if (!(await allow(`code:${await clientIp()}`, 20, 10 * 60))) return "limit";
-  const { data, error } = await createAdminClient().rpc("tag_code_valid", { p_code: normalizeCode(code) });
-  if (error) { console.error("tag_code_valid falló", error.message); return "error"; }
-  return data ? "ok" : "invalid";
+  try {
+    const { data, error } = await createAdminClient().rpc("tag_code_valid", { p_code: normalizeCode(code) });
+    if (error) { console.error("tag_code_valid falló", error.message); return "error"; }
+    return data ? "ok" : "invalid";
+  } catch (error) {
+    // Una variable de servidor faltante no debe voltear toda la pantalla de activación.
+    console.error("tag_code_valid no pudo iniciarse", error);
+    return "error";
+  }
 }
 
 export async function sendLoginCode(email: string, tagCode = ""): Promise<ActionResult> {
@@ -83,6 +89,7 @@ export async function activateTag(code: string, acceptedTerms: boolean): Promise
   if (error) {
     if (/demasiados_intentos/.test(error.message)) return { ok: false, error: TOO_MANY };
     if (/sin_sesion/.test(error.message)) return { ok: false, error: "Se cerró tu sesión. Volvé a poner tu email." };
+    if (/cuenta_staff/.test(error.message)) return { ok: false, error: "La cuenta administradora no puede activar chapitas. Usá el email del comprador." };
     console.error("activate_tag falló", error.message);
     return { ok: false, error: "No pudimos activar la chapita. Probá de nuevo." };
   }
