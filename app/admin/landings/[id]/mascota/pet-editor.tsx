@@ -1,14 +1,14 @@
 "use client";
 
-// Editor de la chapita de mascota (Admin y dueño). La chapita se ve entera, tal como se publica
-// (components/pet-renderer.tsx), y cada parte se edita en un panel: en el celular sube desde
-// abajo, en la compu queda al costado. Se abre tocando un chip de arriba o la parte de la chapita.
+// Editor de la chapita de mascota (Admin y dueño). Pantalla fija en dos partes, como una app:
+// arriba, la chapita en un celular en miniatura, siempre del mismo tamaño, que se mueve sola a la
+// parte que se está editando (y se ve en grande tocándola); abajo, las opciones.
 //
-// La primera vez del dueño (recién activada, sin publicar) la guía es este mismo panel, que va
-// pasando solo por Mascota → Ficha → Diseño; al terminar queda la chapita con "Publicar". Así hay
-// una sola forma de editar, que se aprende haciéndola. Todo queda en borrador hasta guardar
-// (savePet / saveMyPet).
-import { useEffect, useRef, useState, type CSSProperties, type FormEvent, type ReactNode } from "react";
+// La primera vez del dueño (recién activada, sin publicar) son dos pasos obligatorios: foto y
+// nombre, y su WhatsApp. Después, siempre, un menú como el de ajustes del celular (Mascota,
+// Familia, Ficha, Diseño, ¿Se perdió?) con el estado de cada cosa; tocar una fila abre su
+// formulario con "← Volver". Todo queda en borrador hasta guardar (savePet / saveMyPet).
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import PetRenderer, { type PetSection } from "@/components/pet-renderer";
@@ -16,11 +16,11 @@ import CopyButton from "@/components/copy-button";
 import PendingSubmitButton from "@/components/pending-submit-button";
 import "driver.js/dist/driver.css";
 import { compressImage } from "@/lib/compress-image";
-import { getFontFamily, FontLinks } from "@/lib/fonts";
-import { PET_FAMILY_MAX, PET_LOOKS, formatPhone, petHasContact, petPhoneProblem, type PetData, type PetFamily } from "@/lib/pet";
+import { FontLinks } from "@/lib/fonts";
+import { PET_ABOUT_FIELDS, PET_FAMILY_MAX, PET_HEALTH_FIELDS, PET_LOOKS, formatPhone, petHasContact, petLook, petPhoneProblem, petRows, type PetData, type PetFamily } from "@/lib/pet";
 
-// "owner": el dueño, desde su panel (/mi). Sin QR, sin publicar a mano desde el Admin y volviendo
-// a sus chapitas; publica con el botón de arriba (saveMyPet publica cuando hay un WhatsApp).
+// "owner": el dueño, desde su panel (/mi). Sin QR ni publicar desde el Admin; publica con el
+// botón de arriba (saveMyPet publica cuando hay un WhatsApp).
 type Props = {
   landing: { id: string; slug: string; name: string; photoUrl: string; published: boolean; blocked?: boolean };
   initialPet: PetData;
@@ -29,19 +29,20 @@ type Props = {
   mode?: "admin" | "owner";
 };
 
-type Panel = "pet" | "family" | "ficha" | "design" | "lost";
+type Panel = "pet" | "family" | "ficha" | "lost";
+type View = "menu" | Panel;
 
-const PANELS: { id: Panel; label: string; icon: string }[] = [
-  { id: "pet", label: "Mascota", icon: "🐶" },
-  { id: "family", label: "Familia", icon: "📞" },
-  { id: "ficha", label: "Ficha", icon: "📋" },
-  { id: "design", label: "Diseño", icon: "🎨" },
-  { id: "lost", label: "¿Se perdió?", icon: "🚨" },
-];
-const GUIDE: Panel[] = ["pet", "ficha", "design"];
+const TITLES: Record<Panel, { label: string; icon: string }> = {
+  pet: { label: "Mascota", icon: "🐶" },
+  family: { label: "Familia", icon: "📞" },
+  ficha: { label: "Ficha", icon: "📋" },
+  lost: { label: "¿Se perdió?", icon: "🚨" },
+};
 
-// La chapita tiene más partes que paneles: ficha agrupa "Sobre mí", "Mi salud" y "Si me encontrás".
-const panelOf = (section: PetSection): Panel => section === "about" || section === "health" || section === "finder" ? "ficha" : section;
+// Qué parte de la chapita muestra la miniatura mientras se edita cada cosa.
+const PART_OF: Record<View, string> = { menu: ".pet-page", pet: ".pet-hero", family: ".pet-family", ficha: ".pet-card, .pet-family", lost: ".pet-page" };
+// Las partes de la chapita que se tocan en la miniatura llevan a su formulario.
+const viewOf = (section: PetSection): View => section === "about" || section === "health" || section === "finder" ? "ficha" : section === "design" ? "menu" : section;
 
 // Opciones de un toque; tocar la elegida la desmarca.
 function Choice({ label, options, value, onPick }: { label: string; options: string[]; value: string; onPick: (value: string) => void }) {
@@ -56,41 +57,38 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
   const [pet, setPet] = useState(initialPet);
   const [name, setName] = useState(landing.name);
   const firstTime = isOwner && !landing.published && !landing.blocked;
-  // Guía de la primera vez: índice en GUIDE, o null si no hay guía (o ya terminó).
-  const [guide, setGuide] = useState<number | null>(firstTime ? 0 : null);
-  // Guía dejada a medias (en qué paso quedó), para ofrecer retomarla.
-  const [guidePaused, setGuidePaused] = useState<number | null>(null);
+  // Pasos obligatorios de la primera vez (0: foto y nombre, 1: WhatsApp), o null.
+  const [setup, setSetup] = useState<0 | 1 | null>(firstTime ? 0 : null);
+  const [justSetUp, setJustSetUp] = useState(false);
   // ?seccion=lost abre directo esa parte (lo usa "Avisar que se perdió" en /mi).
-  const requested = PANELS.find((item) => item.id === searchParams.get("seccion"))?.id;
-  const [panel, setPanel] = useState<Panel | null>(firstTime ? "pet" : requested || null);
+  const requested = searchParams.get("seccion");
+  const [view, setView] = useState<View>(requested === "lost" || requested === "pet" || requested === "family" || requested === "ficha" ? requested : "menu");
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoRemoved, setPhotoRemoved] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [typing, setTyping] = useState(false);
   // La foto elegida vive acá y se agrega al guardar: así no se pierde si el formulario se vacía
   // después de un error.
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoError, setPhotoError] = useState("");
   const [draft, setDraft] = useState<{ name: string; pet: PetData } | null>(null);
   const photoInput = useRef<HTMLInputElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
+  const screenRef = useRef<HTMLDivElement>(null);
+  const bigPreview = useRef<HTMLDialogElement>(null);
+  const [bigOpen, setBigOpen] = useState(false);
   const draftKey = `bionfc-pet-draft:${landing.id}`;
-  // Ya publicada, lo que más se usa es avisar que se perdió: va primero.
-  const panels = landing.published ? [PANELS[4], ...PANELS.slice(0, 4)] : PANELS;
 
-  // En la compu el panel siempre está a la vista (al costado); en el celular se abre a pedido.
-  useEffect(() => {
-    if (!panel && window.matchMedia("(min-width: 900px)").matches) setPanel(landing.published ? "lost" : "pet");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Al publicar después de la guía, una sola vez, los cartelitos de bienvenida (se recuerda en el
-  // celular para no repetirlos).
+  // Al publicar después de los pasos de la primera vez, una sola vez, los cartelitos de
+  // bienvenida (se recuerda en el celular para no repetirlos).
   const startedFirstTime = useRef(firstTime);
   useEffect(() => {
     if (!landing.published || !startedFirstTime.current) return;
     startedFirstTime.current = false;
-    setGuide(null);
-    setPanel(null);
+    setSetup(null);
+    setJustSetUp(false);
+    setView("menu");
     const key = `bionfc-pet-welcome:${landing.id}`;
     try { if (localStorage.getItem(key)) return; localStorage.setItem(key, "1"); } catch {}
     const timer = setTimeout(() => startTour("welcome"), 700);
@@ -131,6 +129,34 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty]);
+
+  // Teclado del celular: la pantalla usa solo el alto que queda libre (visualViewport) y, con el
+  // teclado abierto, la miniatura se esconde para dejarle todo el lugar a lo que se escribe.
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    const update = () => {
+      const keyboard = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
+      editorRef.current?.style.setProperty("--vvh", `${viewport.height}px`);
+      setTyping(keyboard > 120);
+    };
+    update();
+    viewport.addEventListener("resize", update);
+    viewport.addEventListener("scroll", update);
+    return () => { viewport.removeEventListener("resize", update); viewport.removeEventListener("scroll", update); };
+  }, []);
+
+  // La miniatura se mueve sola a la parte que se está editando.
+  useEffect(() => {
+    const screen = screenRef.current;
+    const part = screen?.querySelector(PART_OF[setup === 1 ? "family" : setup === 0 ? "pet" : view]);
+    if (!screen || !part) return;
+    const timer = setTimeout(() => {
+      const offset = (part as HTMLElement).offsetTop - 16;
+      screen.scrollTo({ top: view === "menu" && setup === null ? 0 : Math.max(0, offset), behavior: "smooth" });
+    }, 60);
+    return () => clearTimeout(timer);
+  }, [view, setup]);
 
   const change = (patch: Partial<PetData>) => { setPet((current) => ({ ...current, ...patch })); setDirty(true); };
   const setMember = (index: number, patch: Partial<PetFamily>) => change({ family: pet.family.map((member, current) => current === index ? { ...member, ...patch } : member) });
@@ -178,113 +204,24 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
     setDraft(null);
   }
 
-  // Teclado del celular: el panel se apoya justo arriba del teclado y usa solo el alto que queda
-  // libre (visualViewport), así no tapa lo que se escribe. Con el teclado abierto el panel ocupa
-  // todo ese alto y el campo elegido queda centrado.
-  const sheetRef = useRef<HTMLElement>(null);
-  const [typing, setTyping] = useState(false);
-  useEffect(() => {
-    const viewport = window.visualViewport;
-    if (!viewport || !panel) return;
-    const update = () => {
-      const keyboard = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
-      sheetRef.current?.style.setProperty("--kb", `${keyboard}px`);
-      sheetRef.current?.style.setProperty("--vvh", `${viewport.height}px`);
-      setTyping(keyboard > 120);
-    };
-    update();
-    viewport.addEventListener("resize", update);
-    viewport.addEventListener("scroll", update);
-    return () => { viewport.removeEventListener("resize", update); viewport.removeEventListener("scroll", update); };
-  }, [panel]);
-  const keepFieldVisible = (target: EventTarget) => {
-    if (!(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)) return;
-    setTimeout(() => target.scrollIntoView({ block: "center", behavior: "smooth" }), 300);
-  };
-
-  // Celular con un panel abierto: la chapita entera, achicada como un celular en miniatura, en el
-  // espacio que queda entre los chips y el panel. Así se ve el efecto completo de cada cambio
-  // (sobre todo del diseño). Con el panel cerrado vuelve a tamaño real.
-  const stageRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const stage = stageRef.current;
-    if (!stage) return;
-    const fit = () => {
-      const mobile = !window.matchMedia("(min-width: 900px)").matches;
-      const nav = document.querySelector(".pet-editor-nav")?.getBoundingClientRect();
-      const sheet = sheetRef.current?.getBoundingClientRect();
-      const page = stage.querySelector(".pet-page");
-      if (!panel || !mobile || typing || !nav || !sheet || !page) { stage.classList.remove("is-mini"); stage.style.removeProperty("--mini"); return; }
-      const top = Math.max(nav.bottom, 0) + 10;
-      const height = Math.max(90, sheet.top - top - 10);
-      const current = Number(stage.style.getPropertyValue("--mini")) || 1;
-      const natural = page.getBoundingClientRect().height / current + 16;
-      stage.classList.add("is-mini");
-      stage.style.setProperty("--mini-top", `${top}px`);
-      stage.style.setProperty("--mini-height", `${height}px`);
-      stage.style.setProperty("--mini", String(Math.min(0.62, Math.max(0.18, height / natural))));
-    };
-    const frame = requestAnimationFrame(fit);
-    // El panel entra con una animación corta: se vuelve a medir cuando terminó.
-    const later = setTimeout(fit, 260);
-    window.addEventListener("resize", fit);
-    return () => { cancelAnimationFrame(frame); clearTimeout(later); window.removeEventListener("resize", fit); };
-  }, [panel, typing, pet, name, photoPreview]);
-
-  // Avanzar en la guía; al pasar el último paso se cierra el panel y queda la chapita con
-  // "Publicar" resaltado.
-  function nextGuide() {
-    if (guide === null) return;
-    const next = guide + 1;
-    if (next < GUIDE.length) { setGuide(next); setPanel(GUIDE[next]); return; }
-    setGuide(null);
-    setGuidePaused(null);
-    setPanel(window.matchMedia("(min-width: 900px)").matches ? "design" : null);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  // Salir de la guía antes de terminarla (otra parte o ✕) la deja en pausa: arriba queda
-  // "Seguir con el armado" para retomarla donde quedó. El paso 1 (nombre y WhatsApp) es
-  // obligatorio: hasta completarlo no se puede salir.
-  function leaveGuide() {
-    if (guide === null) return;
-    setGuidePaused(guide);
-    setGuide(null);
-  }
-
-  function resumeGuide() {
-    if (guidePaused === null) return;
-    setGuide(guidePaused);
-    setPanel(GUIDE[guidePaused]);
-    setGuidePaused(null);
-  }
-
-  function openPanel(next: Panel) {
-    if (guide === 0 && !guideReady) return;
-    if (guide !== null && next !== GUIDE[guide]) leaveGuide();
-    setPanel(next);
-  }
-
-  function closePanel() {
-    if (guide === 0 && !guideReady) return;
-    leaveGuide();
-    setPanel(null);
+  function openView(next: View) {
+    if (setup !== null) return;
+    setView(next);
   }
 
   // Recorridos con la pantalla oscurecida y un cartelito por paso (driver.js):
-  //  · "welcome": una sola vez, al publicar después de la guía. Dónde se cambia todo, dónde se
-  //    avisa que se perdió y cómo volver a entrar.
+  //  · "welcome": una sola vez, al publicar después de los pasos de la primera vez.
   //  · "help": el botón "?", cuando la persona lo pide.
   async function startTour(kind: "welcome" | "help") {
     const { driver } = await import("driver.js");
     const steps = kind === "welcome" ? [
-      { element: ".pet-editor-nav", popover: { title: "¡Tu chapita ya funciona! 🎉", description: "Acá cambiás cualquier cosa cuando quieras: la foto, la familia, la ficha o el diseño. También podés tocar la chapita." } },
-      { element: "[data-tour='tab-lost']", popover: { title: "Si se pierde", description: "Tocás acá, prendés el modo perdido y en la chapita aparece un cartel rojo con la zona y la recompensa." } },
+      { element: ".pet-menu", popover: { title: "¡Tu chapita ya funciona! 🎉", description: "Acá cambiás cualquier cosa cuando quieras: la foto, la familia, la ficha o el diseño." } },
+      { element: "[data-tour='row-lost']", popover: { title: "Si se pierde", description: "Tocás acá, prendés el modo perdido y en la chapita aparece un cartel rojo con la zona y la recompensa." } },
       { element: ".pet-editor-back", popover: { title: "Para volver a entrar", description: "Entrá a bionfc.com/mi con tu email: te llega un código y listo. No hay contraseña." } },
     ] : [
-      { element: ".pet-editor-nav", popover: { title: "Cada parte de la chapita", description: "Tocá una para cambiarla. También podés tocar directo la parte en la chapita." } },
-      { element: "[data-tour='tab-lost']", popover: { title: "Si se pierde", description: "Acá prendés el cartel rojo de “¡Estoy perdido!”, con la zona y la recompensa. Lo apagás cuando aparece." } },
-      { element: "[data-tour='tab-design']", popover: { title: "Diseño", description: "Cambiá colores y letras. Los datos no se tocan." } },
+      { element: ".pet-mini", popover: { title: "Tu chapita", description: "Así la ve quien la escanea. Tocala para verla en grande, o tocá una parte para cambiarla." } },
+      { element: ".pet-menu", popover: { title: "Todo lo que podés cambiar", description: "Tocá una fila para editarla. A la derecha ves cómo está cada cosa." } },
+      { element: "[data-tour='row-lost']", popover: { title: "Si se pierde", description: "Acá prendés el cartel rojo de “¡Estoy perdido!”. Lo apagás cuando aparece." } },
       { element: ".pet-editor-save", popover: { title: "Guardar", description: "Los cambios se ven en la chapita recién cuando tocás este botón." } },
     ];
     driver({
@@ -312,7 +249,6 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
   const setFirstPhone = (phone: string) => change({ family: pet.family.length ? pet.family.map((member, index) => index === 0 ? { ...member, phone } : member) : [{ name: "", phone }] });
   const phoneOk = hasContact && !petPhoneProblem(firstPhone);
   const canPublishAsOwner = isOwner && !landing.published && !landing.blocked && Boolean(name.trim()) && hasContact;
-  const guideReady = guide !== 0 || (Boolean(name.trim()) && phoneOk);
   const phoneStatus = (phone: string) => {
     if (!phone.trim()) return null;
     const problem = petPhoneProblem(phone);
@@ -322,15 +258,25 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
   const petName = name.trim() || "tu mascota";
   const saveLabel = saving ? (isOwner && !landing.published ? "Publicando…" : "Guardando…")
     : isOwner && !landing.published ? "Publicar" : dirty ? "Guardar" : "Guardado";
-  const panelTitle = panel ? PANELS.find((item) => item.id === panel)!.label : "";
+  const contacts = pet.family.filter((member) => member.phone.trim()).length;
+  const fichaCount = petRows(pet.about, PET_ABOUT_FIELDS).length + petRows(pet.health, PET_HEALTH_FIELDS).length + (pet.finder.trim() ? 1 : 0);
+  const look = petLook(pet.look);
+  const rows: { id: Panel; status: string; warn?: boolean }[] = [
+    { id: "pet", status: name.trim() || "Sin nombre", warn: !name.trim() },
+    { id: "family", status: contacts ? `${contacts} ${contacts === 1 ? "contacto" : "contactos"}` : "Falta el WhatsApp", warn: !hasContact },
+    { id: "ficha", status: fichaCount ? `${fichaCount} ${fichaCount === 1 ? "dato" : "datos"}` : "Completar" },
+    { id: "lost", status: pet.lost ? "Prendido" : "Apagado", warn: pet.lost },
+  ];
+  // Ya publicada, lo que más se usa es avisar que se perdió: va primero.
+  const orderedRows = landing.published ? [rows[3], ...rows.slice(0, 3)] : rows;
 
-  return <div className={`pet-editor${panel ? " has-panel" : ""}`}>
-    <FontLinks ids={PET_LOOKS.map((look) => look.titleFont)} />
+  return <div ref={editorRef} className={`pet-editor${typing ? " is-typing" : ""}`}>
+    <FontLinks ids={PET_LOOKS.map((item) => item.titleFont)} />
     <header className="pet-editor-top">
-      <Link className="pet-editor-back" href={isOwner ? "/mi" : "/admin/chapitas/fichas"} aria-label={isOwner ? "Volver a Mis chapitas" : "Volver a Fichas de mascotas"}>←<span className="pet-editor-back-text"> {isOwner ? "Mis chapitas" : "Fichas de mascotas"}</span></Link>
+      <Link className="pet-editor-back" href={isOwner ? "/mi" : "/admin/chapitas/fichas"} aria-label={isOwner ? "Volver a Mis chapitas" : "Volver a Fichas de mascotas"}>←<span className="pet-editor-back-text">{isOwner ? "Mis chapitas" : "Fichas de mascotas"}</span></Link>
       <div className="pet-editor-title"><small>{landing.published ? "Publicada" : isOwner ? "Sin publicar" : "Borrador"}</small><strong>{name.trim() || "Tu chapita"}</strong></div>
       <div className="pet-editor-actions">
-        {guide === null && <button type="button" className="pet-editor-ghost pet-editor-help-trigger" onClick={() => startTour("help")} aria-label="Ayuda">?</button>}
+        {setup === null && <button type="button" className="pet-editor-ghost pet-editor-help-trigger" onClick={() => startTour("help")} aria-label="Ayuda">?</button>}
         {(landing.published || !isOwner) && <details className="pet-editor-more">
           <summary aria-label="Más opciones">⋯</summary>
           <div className="pet-editor-more-menu">
@@ -346,65 +292,104 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
           {!landing.published && <label className="pet-public-ack"><input type="checkbox" name="public_visibility_ack" value="yes" required /> Ficha y WhatsApp públicos</label>}
           <PendingSubmitButton className="pet-editor-ghost" pendingText={landing.published ? "Despublicando…" : "Publicando…"} disabled={dirty || (!landing.published && !hasContact)}>{landing.published ? "Despublicar" : "Publicar"}</PendingSubmitButton>
         </form>}
-        <button type="submit" form="pet-save" className={`pet-editor-save${canPublishAsOwner && guide === null ? " is-ready" : ""}`} disabled={saving || (isOwner && !landing.published ? !canPublishAsOwner : !dirty)}>{saveLabel}</button>
+        {setup === null && <button type="submit" form="pet-save" className={`pet-editor-save${canPublishAsOwner ? " is-ready" : ""}`} disabled={saving || (isOwner && !landing.published ? !canPublishAsOwner : !dirty)}>{saveLabel}</button>}
       </div>
     </header>
-
-    <nav className="pet-editor-nav" aria-label="Partes de la chapita">
-      {panels.map((item) => <button type="button" key={item.id} className={`${panel === item.id ? "active" : ""}${item.id === "lost" ? " is-lost-tab" : ""}${item.id === "lost" && pet.lost ? " is-on" : ""}`} aria-pressed={panel === item.id} disabled={guide === 0 && !guideReady && item.id !== "pet"} data-tour={`tab-${item.id}`} onClick={() => openPanel(item.id)}>
-        <span aria-hidden="true">{item.icon}</span>{item.label}
-      </button>)}
-    </nav>
 
     {/* Un solo aviso a la vez, el más importante. */}
     {landing.blocked ? <p className="pet-editor-note is-danger">BIONFC pausó esta chapita y por ahora no se muestra. Si creés que es un error, escribinos a contacto.bionfc@gmail.com.</p>
       : draft ? <p className="pet-editor-note">Quedaron cambios sin guardar de la otra vez. <button type="button" className="pet-editor-link" onClick={restoreDraft}>Recuperarlos</button> · <button type="button" className="pet-editor-link" onClick={discardDraft}>Descartar</button></p>
-      : isOwner && !landing.published && guide === null && guidePaused !== null ? <p className="pet-editor-note is-resume">Te falta terminar el armado (paso {guidePaused + 1} de {GUIDE.length}). <button type="button" className="pet-editor-resume" onClick={resumeGuide}>Seguir ▶</button></p>
-      : isOwner && !landing.published && guide === null ? <p className="pet-editor-note is-tip">{canPublishAsOwner ? <>¡Casi lista! Revisala y tocá <strong>Publicar</strong>. Tocá cualquier parte para cambiarla.</> : <>Falta {!name.trim() ? "el nombre" : "tu WhatsApp"} para publicarla. <button type="button" className="pet-editor-link" onClick={() => openPanel(!name.trim() ? "pet" : "family")}>Completar</button></>}</p>
       : null}
 
-    <form id="pet-save" action={submit} onSubmit={handleSave} className="pet-editor-body">
+    <form id="pet-save" action={submit} onSubmit={handleSave} className="pet-ed">
       <input type="hidden" name="landing_id" value={landing.id} />
       <input type="hidden" name="business_name" value={name} />
       <input type="hidden" name="pet" value={JSON.stringify(pet)} />
       <input type="hidden" name="remove_photo" value={photoRemoved ? "true" : "false"} />
-      {/* El dueño ya aceptó los términos al activar; el aviso de qué se publica está en la chapita. */}
+      {/* El dueño ya aceptó los términos al activar; el aviso de qué se publica está abajo. */}
       {isOwner && !landing.published && <input type="hidden" name="public_visibility_ack" value="yes" />}
       <input ref={photoInput} type="file" accept="image/*" hidden onChange={(event) => pickPhoto(event.target.files?.[0])} />
 
-      <div className="pet-stage" ref={stageRef}>
-        <div className="pet-stage-frame">
-          <PetRenderer landing={{ business_name: name }} pet={pet} photoUrl={photoUrl} edit={{ selected: panel === "ficha" ? "about" : panel || "design", onSelect: (section) => openPanel(panelOf(section)) }} />
+      {/* Arriba: la chapita en un celular en miniatura, siempre del mismo tamaño. */}
+      <div className="pet-ed-preview">
+        <div className="pet-mini" role="button" tabIndex={0} aria-label="Ver la chapita en grande" onClick={(event) => { if (!(event.target as HTMLElement).closest(".pet-editable")) { setBigOpen(true); bigPreview.current?.showModal(); } }} onKeyDown={(event) => { if (event.key === "Enter") { setBigOpen(true); bigPreview.current?.showModal(); } }}>
+          <div className="pet-mini-screen" ref={screenRef}>
+            <PetRenderer landing={{ business_name: name }} pet={pet} photoUrl={photoUrl} edit={{ selected: setup === 1 ? "family" : setup === 0 ? "pet" : view === "ficha" ? "about" : view === "menu" ? "design" : view, onSelect: (section) => openView(viewOf(section)) }} />
+          </div>
         </div>
-        <p className="pet-stage-hint">Tocá cualquier parte de la chapita para cambiarla.</p>
+        <button type="button" className="pet-mini-zoom" onClick={() => { setBigOpen(true); bigPreview.current?.showModal(); }}>🔍 Ver en grande</button>
       </div>
 
-      {panel ? <section ref={sheetRef} className={`pet-sheet${typing ? " is-typing" : ""}`} aria-label={`Editar: ${panelTitle}`}>
-        <header className="pet-sheet-head">
-          <div>{guide !== null && <small>Paso {guide + 1} de {GUIDE.length}</small>}<strong>{panel === "pet" && guide !== null ? `Tu mascota` : panel === "ficha" ? `La ficha de ${petName}` : panelTitle}</strong></div>
-          {!(guide === 0 && !guideReady) && <button type="button" className="pet-sheet-close" onClick={closePanel} aria-label="Cerrar">✕</button>}
-        </header>
+      {/* Abajo: los pasos de la primera vez, el menú o el formulario de una parte. */}
+      <div className="pet-ed-controls">
+        {setup === 0 && <section className="pet-step">
+          <p className="pet-step-count">Paso 1 de 2</p>
+          <h2>¿Cómo se llama tu mascota?</h2>
+          <div className="pet-photo-field">
+            <button type="button" className="pet-photo-thumb" onClick={() => photoInput.current?.click()} aria-label={photoUrl ? "Cambiar foto" : "Subir foto"}>{/* eslint-disable-next-line @next/next/no-img-element -- vista previa local */}{photoUrl ? <img src={photoUrl} alt="" /> : <span>📷</span>}</button>
+            <div>
+              <button type="button" className="pet-editor-ghost" onClick={() => photoInput.current?.click()}>{photoUrl ? "Cambiar foto" : "Subir foto"}</button>
+              <small>Opcional, pero ayuda a reconocerla.</small>
+            </div>
+          </div>
+          {photoError && <p className="pet-phone-warn">{photoError}</p>}
+          {field("Nombre", <input value={name} maxLength={60} placeholder="Ej: Toby" onChange={(event) => { setName(event.target.value); setDirty(true); }} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); if (name.trim()) setSetup(1); } }} />)}
+          <button type="button" className="pet-step-next" disabled={!name.trim()} onClick={() => setSetup(1)}>{name.trim() ? "Siguiente →" : "Escribí el nombre"}</button>
+        </section>}
 
-        <div className="pet-sheet-body" onFocusCapture={(event) => keepFieldVisible(event.target)}>
-          {panel === "pet" && <>
+        {setup === 1 && <section className="pet-step">
+          <p className="pet-step-count">Paso 2 de 2</p>
+          <h2>¿A qué WhatsApp te avisan?</h2>
+          <p className="pet-editor-help">Si alguien encuentra a {petName}, toca un botón y te escribe a este número con el mensaje ya armado.</p>
+          <label className="pet-field"><span>Tu WhatsApp</span><input type="tel" inputMode="tel" autoComplete="tel" value={firstPhone} maxLength={30} placeholder="351 555 1234" onChange={(event) => setFirstPhone(event.target.value)} /><small>Con la característica, como lo marcás siempre.</small>{phoneStatus(firstPhone)}</label>
+          <div className="pet-step-nav">
+            <button type="button" className="pet-editor-ghost" onClick={() => setSetup(0)}>← Atrás</button>
+            <button type="button" className="pet-step-next" disabled={!phoneOk} onClick={() => { setSetup(null); setJustSetUp(true); setView("menu"); }}>{phoneOk ? "Listo →" : "Falta un WhatsApp válido"}</button>
+          </div>
+        </section>}
+
+        {setup === null && view === "menu" && <>
+          {isOwner && !landing.published && <p className={`pet-ed-intro${canPublishAsOwner ? " is-ready" : ""}`}>{canPublishAsOwner
+            ? <>{justSetUp ? "🎉 ¡Ya está! " : ""}Personalizala si querés y tocá <strong>Publicar</strong>. Quien la escanee verá estos datos y tu WhatsApp.</>
+            : <>Para publicarla falta {!name.trim() ? "el nombre" : "tu WhatsApp"}.</>}</p>}
+          <ul className="pet-menu">
+            {orderedRows.map((row) => <li key={row.id}>
+              <button type="button" className={`pet-menu-row${row.id === "lost" ? " is-lost" : ""}${row.id === "lost" && pet.lost ? " is-on" : ""}`} data-tour={`row-${row.id}`} onClick={() => openView(row.id)}>
+                <span className="pet-menu-icon" aria-hidden="true">{TITLES[row.id].icon}</span>
+                <span className="pet-menu-label">{TITLES[row.id].label}</span>
+                <span className={`pet-menu-status${row.warn ? " is-warn" : ""}`}>{row.status}</span>
+                <span className="pet-menu-go" aria-hidden="true">›</span>
+              </button>
+            </li>)}
+            <li className="pet-menu-design" data-tour="row-design">
+              <span className="pet-menu-icon" aria-hidden="true">🎨</span>
+              <span className="pet-menu-label">Diseño <small>{look.label}</small></span>
+              <span className="pet-swatches" role="group" aria-label="Diseño">{PET_LOOKS.map((item) => <button type="button" key={item.id} className={pet.look === item.id ? "active" : ""} aria-pressed={pet.look === item.id} aria-label={item.label} title={item.label} onClick={() => change({ look: item.id })} style={{ background: `linear-gradient(135deg, ${item.background} 0 50%, ${item.accent} 50% 100%)` }} />)}</span>
+            </li>
+          </ul>
+        </>}
+
+        {setup === null && view !== "menu" && <section className="pet-form">
+          <header className="pet-form-head">
+            <button type="button" className="pet-form-back" onClick={() => setView("menu")}>← Volver</button>
+            <strong>{view === "ficha" ? `La ficha de ${petName}` : TITLES[view].label}</strong>
+          </header>
+
+          {view === "pet" && <>
             <div className="pet-photo-field">
               <button type="button" className="pet-photo-thumb" onClick={() => photoInput.current?.click()} aria-label={photoUrl ? "Cambiar foto" : "Subir foto"}>{/* eslint-disable-next-line @next/next/no-img-element -- vista previa local */}{photoUrl ? <img src={photoUrl} alt="" /> : <span>📷</span>}</button>
               <div>
                 <button type="button" className="pet-editor-ghost" onClick={() => photoInput.current?.click()}>{photoUrl ? "Cambiar foto" : "Subir foto"}</button>
                 {photoUrl && <button type="button" className="pet-editor-link" onClick={removePhoto}>Quitar</button>}
-                <small>De frente y con buena luz.</small>
               </div>
             </div>
             {photoError && <p className="pet-phone-warn">{photoError}</p>}
             {field("Nombre", <input value={name} maxLength={60} placeholder="Ej: Toby" onChange={(event) => { setName(event.target.value); setDirty(true); }} />)}
-            {(guide !== null || (isOwner && !landing.published && pet.family.length <= 1)) && <label className="pet-field"><span>Tu WhatsApp</span><input type="tel" inputMode="tel" autoComplete="tel" value={firstPhone} maxLength={30} placeholder="351 555 1234" onChange={(event) => setFirstPhone(event.target.value)} /><small>Con la característica. Si alguien encuentra a {petName}, te escribe acá con un toque.</small>{phoneStatus(firstPhone)}</label>}
-            {guide === null && <>
-              {field("Saludo", <input value={pet.greeting} maxLength={40} placeholder="¡Hola! Soy" onChange={(event) => change({ greeting: event.target.value })} />, "Va arriba del nombre. Vacío no se muestra.")}
-              {field("Mensaje", <textarea rows={2} value={pet.message} maxLength={200} onChange={(event) => change({ message: event.target.value })} />, "Lo primero que lee quien la encuentra.")}
-            </>}
+            {field("Saludo", <input value={pet.greeting} maxLength={40} placeholder="¡Hola! Soy" onChange={(event) => change({ greeting: event.target.value })} />, "Va arriba del nombre. Vacío no se muestra.")}
+            {field("Mensaje", <textarea rows={2} value={pet.message} maxLength={200} onChange={(event) => change({ message: event.target.value })} />, "Lo primero que lee quien la encuentra.")}
           </>}
 
-          {panel === "family" && <>
+          {view === "family" && <>
             <p className="pet-editor-help">Cada persona tiene su botón de WhatsApp, con el mensaje “¡Hola! Encontré a {petName} 🐾” ya escrito, y otro para llamar.</p>
             {pet.family.map((member, index) => <div className="pet-member" key={index}>
               <div className="pet-member-head"><strong>Persona {index + 1}</strong>{pet.family.length > 1 && <button type="button" className="pet-editor-link" onClick={() => change({ family: pet.family.filter((_, current) => current !== index) })}>Quitar</button>}</div>
@@ -414,7 +399,7 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
             {pet.family.length < PET_FAMILY_MAX && <button type="button" className="pet-editor-ghost" onClick={() => change({ family: [...pet.family, { name: "", phone: "" }] })}>+ Agregar {pet.family.length ? "otra persona" : "una persona"}</button>}
           </>}
 
-          {panel === "ficha" && <>
+          {view === "ficha" && <>
             <p className="pet-editor-help">Opcional, pero ayuda a que vuelva más rápido. Lo que dejes vacío no se muestra.</p>
             <fieldset className="pet-group"><legend>Sobre {petName}</legend>
               <div className="pet-row">
@@ -440,15 +425,7 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
             {field("Si alguien la encuentra…", <textarea rows={3} value={pet.finder} maxLength={500} placeholder={"Ej: Soy manso pero un poco miedoso.\nAcercate despacio y llamame por mi nombre."} onChange={(event) => change({ finder: event.target.value })} />)}
           </>}
 
-          {panel === "design" && <>
-            <p className="pet-editor-help">Tocá un estilo y mirá cómo queda. Solo cambia la apariencia.</p>
-            <div className="pet-looks">{PET_LOOKS.map((look) => <button type="button" key={look.id} className={`pet-look-option look-${look.id}${pet.look === look.id ? " active" : ""}`} aria-pressed={pet.look === look.id} onClick={() => change({ look: look.id })} style={{ "--look-bg": look.background, "--look-bg-to": look.backgroundTo, "--look-accent": look.accent, "--look-accent-ink": look.accentInk, "--look-ink": look.ink, "--look-card": look.card, "--look-title-font": getFontFamily(look.titleFont) } as CSSProperties}>
-              <span className="pet-look-mini" aria-hidden="true"><span className="pet-look-mini-name">{name.trim() || "Toby"}</span><span className="pet-look-mini-cta">Avisale</span></span>
-              <span className="pet-look-caption"><strong>{look.label}</strong></span>
-            </button>)}</div>
-          </>}
-
-          {panel === "lost" && <>
+          {view === "lost" && <>
             <button type="button" className={`pet-switch${pet.lost ? " is-on" : ""}`} role="switch" aria-checked={pet.lost} onClick={() => change({ lost: !pet.lost })}>
               <span className="pet-switch-track" aria-hidden="true" />
               <span><strong>{pet.lost ? "Modo perdido prendido" : "Modo perdido apagado"}</strong><small>Prendelo si se perdió: arriba de la chapita aparece un cartel rojo. Apagalo cuando aparezca. Se aplica al guardar.</small></span>
@@ -456,17 +433,17 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
             {field("Dónde se perdió (opcional)", <input value={pet.lostZone} maxLength={120} placeholder="Ej: Barrio Cofico, cerca de la plaza" onChange={(event) => change({ lostZone: event.target.value })} />)}
             {field("Recompensa (opcional)", <input value={pet.reward} maxLength={60} placeholder="Ej: $50.000" onChange={(event) => change({ reward: event.target.value })} />)}
           </>}
-        </div>
 
-        <footer className="pet-sheet-foot">
-          {guide === null
-            ? <button type="button" className="pet-sheet-done" onClick={closePanel}>Listo</button>
-            : <>
-              {guide > 0 && <button type="button" className="pet-editor-ghost" onClick={nextGuide}>Saltar</button>}
-              <button type="button" className="pet-sheet-done" onClick={nextGuide} disabled={!guideReady}>{!guideReady ? (!name.trim() ? "Falta el nombre" : "Falta un WhatsApp válido") : guide === GUIDE.length - 1 ? "Ver mi chapita →" : "Siguiente →"}</button>
-            </>}
-        </footer>
-      </section> : <div className="pet-sheet-empty">Tocá una parte de la chapita o elegí arriba qué cambiar.</div>}
+          <button type="button" className="pet-step-next pet-form-done" onClick={() => setView("menu")}>Listo</button>
+        </section>}
+      </div>
+
+      <dialog ref={bigPreview} className="pet-big" onClose={() => setBigOpen(false)} onClick={(event) => { if (event.target === bigPreview.current) bigPreview.current.close(); }} aria-label="La chapita en grande">
+        {bigOpen && <>
+          <div className="pet-big-bar"><strong>Así se ve tu chapita</strong><button type="button" onClick={() => bigPreview.current?.close()}>Cerrar ✕</button></div>
+          <div className="pet-big-content" onClickCapture={(event) => { if ((event.target as HTMLElement).closest("a")) event.preventDefault(); }}><PetRenderer landing={{ slug: landing.slug, business_name: name }} pet={pet} photoUrl={photoUrl} /></div>
+        </>}
+      </dialog>
     </form>
   </div>;
 }
