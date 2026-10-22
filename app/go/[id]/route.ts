@@ -35,7 +35,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   }
 
   const source = new URL(request.url).searchParams.get("s");
-  const destination = new URL(`/mascota/${encodeURIComponent(slug)}`, "http://x");
+  // Solo las chapitas van a /mascota/…; landings y tarjetas siguen en su dirección de siempre.
+  // Si la consulta falla, se va a la dirección directa, que abre cualquier página.
+  const { data: info } = await supabase.rpc("public_landing", { p_slug: slug });
+  const isPet = (info as { business_type?: string } | null)?.business_type === "pet";
+  const destination = new URL(`${isPet ? "/mascota" : ""}/${encodeURIComponent(slug)}`, "http://x");
   if (source === "nfc" || source === "qr") destination.searchParams.set("s", source);
   // Temporal: una redirección permanente cacheada podría apuntar a un slug viejo.
   return redirectTo(destination.pathname + destination.search);
