@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { readWithLegacyFallback } from "@/lib/public-read-compat";
 
 // Link permanente que se graba en el chip NFC y en el QR. Lleva a la página publicada; si no hay
 // ninguna, nunca a un error técnico:
@@ -8,14 +9,33 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const { id } = await params;
   const valid = /^[0-9a-f-]{36}$/i.test(id);
   const supabase = await createClient();
-  const { data: slug } = valid ? await supabase.rpc("public_landing_slug", { p_landing: id }) : { data: null };
+  // Puente de despliegue: el RPC existe después de las migraciones. Antes de aplicarlas,
+  // conservamos la consulta que usa hoy producción. Tras el lockdown el RPC será el camino
+  // exitoso y la lectura directa ya no será necesaria.
+  const { data: slug, rpcError, legacyError } = await readWithLegacyFallback(
+    async () => {
+      const result = await supabase.rpc("public_landing_slug", { p_landing: id });
+      return { data: result.data ? String(result.data) : null, error: result.error };
+    },
+    async () => {
+      const result = await supabase.from("landings").select("slug").eq("id", id).eq("published", true).maybeSingle();
+      return { data: result.data?.slug || null, error: result.error };
+    },
+  );
+  if (legacyError) {
+    console.error("No se pudo resolver /go por RPC ni por el esquema anterior", {
+      id,
+      rpc: rpcError?.message,
+      legacy: legacyError.message,
+    });
+  }
   if (!slug) {
     const { data: pending } = valid ? await supabase.rpc("tag_pending", { p_landing: id }) : { data: false };
     return redirectTo(pending ? "/activar" : "/sin-datos");
   }
 
   const source = new URL(request.url).searchParams.get("s");
-  const destination = new URL(`/mascota/${encodeURIComponent(String(slug))}`, "http://x");
+  const destination = new URL(`/mascota/${encodeURIComponent(slug)}`, "http://x");
   if (source === "nfc" || source === "qr") destination.searchParams.set("s", source);
   // Temporal: una redirección permanente cacheada podría apuntar a un slug viejo.
   return redirectTo(destination.pathname + destination.search);
