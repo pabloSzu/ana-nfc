@@ -6,6 +6,7 @@ import { createClient } from "@supabase/supabase-js";
 import { notFound, redirect } from "next/navigation";
 import LandingRenderer from "@/components/landing-renderer";
 import { parseTitleStyle } from "@/lib/landing-catalog";
+import { parsePet } from "@/lib/pet";
 import { normalizeSource, trackLandingView } from "@/lib/track-view";
 import { effectiveRedirect } from "@/lib/landing-plan";
 import { firstButtonLink } from "@/lib/landing-fallback";
@@ -58,6 +59,26 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const description = landing.description || "Mirá todos mis links y contactos en un solo lugar.";
   const images = landing.logo_url ? [landing.logo_url] : undefined;
   const publicPath = landing.business_type === "pet" ? `/mascota/${slug}` : `/${slug}`;
+  // Chapita: al compartir el link se ve una imagen con la foto, el nombre y, si está perdida,
+  // "¡ESTOY PERDIDO!" (app/api/og/mascota). ?p= cambia al prender o apagar el modo perdido, así
+  // WhatsApp no muestra la imagen vieja guardada.
+  if (landing.business_type === "pet") {
+    const pet = parsePet(landing.button_style);
+    const name = (landing.business_name || "Mi mascota").trim();
+    const petTitle = pet.lost ? `¡${name} está perdido! Ayudanos a encontrarlo` : `${name} · Chapita de mascota`;
+    const petDescription = pet.lost
+      ? [pet.lostZone.trim() && `Se perdió en ${pet.lostZone.trim()}.`, pet.reward.trim() && `Recompensa: ${pet.reward.trim()}.`, "Si lo ves, avisale a su familia."].filter(Boolean).join(" ")
+      : pet.message.trim() || description;
+    const image = `/api/og/mascota/${encodeURIComponent(slug)}?p=${pet.lost ? 1 : 0}`;
+    return {
+      title: petTitle,
+      description: petDescription,
+      robots: { index: false, follow: false, nocache: true },
+      alternates: { canonical: publicPath },
+      openGraph: { title: petTitle, description: petDescription, images: [{ url: image, width: 1200, height: 630 }], url: publicPath, type: "website", locale: "es_AR" },
+      twitter: { card: "summary_large_image", title: petTitle, description: petDescription, images: [image] },
+    };
+  }
   return {
     title,
     description,

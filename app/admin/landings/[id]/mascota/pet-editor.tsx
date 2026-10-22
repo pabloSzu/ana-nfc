@@ -10,9 +10,10 @@
 // formulario con "← Volver". Todo queda en borrador hasta guardar (savePet / saveMyPet).
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
+import { FiChevronLeft, FiEye, FiGrid } from "react-icons/fi";
 import { useSearchParams } from "next/navigation";
 import PetRenderer, { type PetSection } from "@/components/pet-renderer";
-import CopyButton from "@/components/copy-button";
+import CopyButton from "@/components/copy-button";import PetShareButton from "@/components/pet-share-button";
 import PendingSubmitButton from "@/components/pending-submit-button";
 import "driver.js/dist/driver.css";
 import { compressImage } from "@/lib/compress-image";
@@ -77,11 +78,12 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
   const editorRef = useRef<HTMLDivElement>(null);
   const screenRef = useRef<HTMLDivElement>(null);
   const bigPreview = useRef<HTMLDialogElement>(null);
+  const doneDialog = useRef<HTMLDialogElement>(null);
   const [bigOpen, setBigOpen] = useState(false);
   const draftKey = `bionfc-pet-draft:${landing.id}`;
 
-  // Al publicar después de los pasos de la primera vez, una sola vez, los cartelitos de
-  // bienvenida (se recuerda en el celular para no repetirlos).
+  // Al publicar después de los pasos de la primera vez, una sola vez, el cartel de "¡Listo!"
+  // (se recuerda en el celular para no repetirlo).
   const startedFirstTime = useRef(firstTime);
   useEffect(() => {
     if (!landing.published || !startedFirstTime.current) return;
@@ -91,7 +93,7 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
     setView("menu");
     const key = `bionfc-pet-welcome:${landing.id}`;
     try { if (localStorage.getItem(key)) return; localStorage.setItem(key, "1"); } catch {}
-    const timer = setTimeout(() => startTour("welcome"), 700);
+    const timer = setTimeout(() => doneDialog.current?.showModal(), 400);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [landing.published]);
@@ -215,20 +217,15 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
     setView(next);
   }
 
-  // Recorridos con la pantalla oscurecida y un cartelito por paso (driver.js):
-  //  · "welcome": una sola vez, al publicar después de los pasos de la primera vez.
-  //  · "help": el botón "?", cuando la persona lo pide.
-  async function startTour(kind: "welcome" | "help") {
+  // Ayuda del botón "?": la pantalla se oscurece y un cartelito por paso (driver.js).
+  async function startTour() {
     const { driver } = await import("driver.js");
-    const steps = kind === "welcome" ? [
-      { element: ".pet-menu", popover: { title: "¡Tu chapita ya funciona! 🎉", description: "Acá cambiás cualquier cosa cuando quieras: la foto, la familia, la ficha o el diseño." } },
-      { element: "[data-tour='row-lost']", popover: { title: "Si se pierde", description: "Tocás acá, prendés el modo perdido y en la chapita aparece un cartel rojo con la zona y la recompensa." } },
-      { element: ".pet-editor-back", popover: { title: "Para volver a entrar", description: "Entrá a bionfc.com/mi con tu email: te llega un código y listo. No hay contraseña." } },
-    ] : [
+    const steps = [
       { element: ".pet-mini", popover: { title: "Tu chapita", description: "Así la ve quien la escanea. Tocala para verla en grande, o tocá una parte para cambiarla." } },
       { element: ".pet-menu", popover: { title: "Todo lo que podés cambiar", description: "Tocá una fila para editarla. A la derecha ves cómo está cada cosa." } },
       { element: "[data-tour='row-lost']", popover: { title: "Si se pierde", description: "Acá prendés el cartel rojo de “¡Estoy perdido!”. Lo apagás cuando aparece." } },
       { element: ".pet-editor-save", popover: { title: "Guardar", description: "Los cambios se ven en la chapita recién cuando tocás este botón." } },
+      ...(isOwner ? [{ element: ".pet-editor-portal", popover: { title: "Todas tus chapitas", description: "Acá volvés a tu panel: compartir, ver o avisar si se perdió. Para entrar otro día: bionfc.com/mi con tu email." } }] : []),
     ];
     driver({
       showProgress: true,
@@ -278,12 +275,17 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
 
   return <div ref={editorRef} className={`pet-editor${typing ? " is-typing" : ""}`}>
     <FontLinks ids={PET_LOOKS.map((item) => item.titleFont)} />
-    <header className="pet-editor-top">
-      <Link className="pet-editor-back" href={isOwner ? "/mi" : "/admin/chapitas/fichas"} aria-label={isOwner ? "Volver a Mis chapitas" : "Volver a Fichas de mascotas"}>←<span className="pet-editor-back-text">{isOwner ? "Mis chapitas" : "Fichas de mascotas"}</span></Link>
-      <div className="pet-editor-title"><small>{landing.published ? "Publicada" : isOwner ? "Sin publicar" : "Borrador"}</small><strong>{name.trim() || "Tu chapita"}</strong></div>
+    <header className={`pet-editor-top${isOwner ? " is-owner" : ""}`}>
+      {isOwner
+        ? <Link className="pet-editor-portal" href="/mi" aria-label="Ir a Mis chapitas"><FiChevronLeft aria-hidden="true" /><FiGrid aria-hidden="true" /><span>Mis chapitas</span></Link>
+        : <Link className="pet-editor-back" href="/admin/chapitas/fichas" aria-label="Volver a Fichas de mascotas">←<span className="pet-editor-back-text">Fichas de mascotas</span></Link>}
+      {/* El dueño ya ve el nombre en la miniatura: la barra queda para volver al panel, ver y guardar. */}
+      {!isOwner && <div className="pet-editor-title"><small>{landing.published ? "Publicada" : "Borrador"}</small><strong>{name.trim() || "Tu chapita"}</strong></div>}
       <div className="pet-editor-actions">
-        {setup === null && <button type="button" className="pet-editor-ghost pet-editor-help-trigger" onClick={() => startTour("help")} aria-label="Ayuda">?</button>}
-        {(landing.published || !isOwner) && <details className="pet-editor-more">
+        {setup === null && <button type="button" className="pet-editor-ghost pet-editor-help-trigger" onClick={() => startTour()} aria-label="Ayuda">?</button>}
+        {/* El dueño ve su chapita publicada con un toque; compartirla está en "Mis chapitas". */}
+        {isOwner && landing.published && <a className="pet-editor-ghost pet-editor-view" href={`/mascota/${landing.slug}`} target="_blank" rel="noopener noreferrer"><FiEye aria-hidden="true" /><span>Ver</span></a>}
+        {!isOwner && <details className="pet-editor-more">
           <summary aria-label="Más opciones">⋯</summary>
           <div className="pet-editor-more-menu">
             {landing.published && <a href={`/mascota/${landing.slug}`} target="_blank" rel="noopener noreferrer">Ver chapita publicada</a>}
@@ -452,6 +454,22 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
           <div className="pet-big-content" onClickCapture={(event) => { if ((event.target as HTMLElement).closest("a")) event.preventDefault(); }}><PetRenderer landing={{ slug: landing.slug, business_name: name }} pet={pet} photoUrl={photoUrl} /></div>
         </>}
       </dialog>
+
+      {/* "¡Listo!" al publicar la primera vez: que quede claro cómo volver a entrar
+          (bionfc.com/mi) y que ya se puede compartir. Los cartelitos son opcionales. */}
+      {isOwner && <dialog ref={doneDialog} className="pet-done" aria-label="Tu chapita ya funciona">
+        <div className="pet-done-mark" aria-hidden="true">🎉</div>
+        <h2>¡{name.trim() || "Tu chapita"} ya tiene su chapita!</h2>
+        <p>Desde ahora, quien la escanee ve su página y puede avisarte por WhatsApp.</p>
+        <p className="pet-done-try">📱 <span><b>Probala:</b> acercá tu celular a la chapita o escaneá su QR.</span></p>
+        <div className="pet-done-box">
+          <strong>Para cambiar algo o avisar si se pierde</strong>
+          <span>Entrá a <b>bionfc.com/mi</b> con tu email. También podés escanear tu chapita y tocar “¿Es tu mascota? Editala”.</span>
+        </div>
+        <PetShareButton path={`/mascota/${landing.slug}`} petName={name} lost={false} className="pet-done-share" />
+        <button type="button" className="pet-done-tour" onClick={() => { doneDialog.current?.close(); setView("menu"); }}>Completar ficha y diseño</button>
+        <Link className="pet-done-close" href="/mi">Ir a Mis chapitas →</Link>
+      </dialog>}
     </form>
   </div>;
 }

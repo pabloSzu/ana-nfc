@@ -47,14 +47,19 @@
 .mi-empty { display: grid; justify-items: center; gap: 16px; padding: 30px 20px; border-radius: 22px; background: #fff; text-align: center; }
 .mi-empty p { margin: 0; color: #7a5a44; }
 .mi-pets { display: grid; gap: 12px; margin: 18px 0 0; padding: 0; list-style: none; }
-.mi-pets .mi-pet-card { display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 20px; background: #fff; color: inherit; text-decoration: none; box-shadow: 0 6px 18px rgba(120, 70, 30, .08); }
-.mi-pets li.is-lost .mi-pet-card { box-shadow: 0 0 0 2px #d92d20; }
+/* Cada chapita es una tarjeta: la mascota arriba, abajo Editar · Compartir · Ver y el botón de perdido. */
+.mi-pets .mi-pet { display: grid; gap: 10px; padding: 12px; border-radius: 22px; background: #fff; box-shadow: 0 6px 18px rgba(120, 70, 30, .08); }
+.mi-pets .mi-pet.is-lost { box-shadow: 0 0 0 2px #d92d20, 0 6px 18px rgba(120, 70, 30, .08); }
+.mi-pets .mi-pet-card { display: flex; align-items: center; gap: 14px; padding: 2px; color: inherit; text-decoration: none; }
+.mi-pet-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.mi-pet-actions > * { flex: 1 1 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 8px; border: 0; border-radius: 13px; background: #fbefe4; color: #8a3f13; font: inherit; font-size: 14px; font-weight: 700; text-decoration: none; white-space: nowrap; cursor: pointer; }
+.mi-pet-actions > *:active { transform: scale(.97); }
+.mi-pet-actions > .is-urgent { flex-basis: 100%; order: -1; min-height: 50px; background: #d92d20; color: #fff; font-size: 15px; font-weight: 800; }
 .mi-pet-photo { display: grid; place-items: center; flex: none; width: 64px; height: 64px; overflow: hidden; border-radius: 50%; background: #f6e2d2; font-size: 28px; }
 .mi-pet-photo img { width: 100%; height: 100%; object-fit: cover; }
 .mi-pet-copy { display: grid; flex: 1; min-width: 0; }
 .mi-pet-copy strong { font-size: 18px; }
 .mi-pet-copy small { color: #8a6a52; font-size: 13px; }
-.mi-pets em { color: #c25e22; font-style: normal; font-weight: 700; font-size: 14px; }
 .mi-signature { margin-top: auto; padding: 12px 18px 24px; }
 @media (min-width: 640px) {
   .mi-main { padding-top: 24px; }
@@ -65,8 +70,7 @@
 .terms h2 { margin: 26px 0 6px; font-size: 18px; }
 .terms p { margin: 0 0 10px; color: #4a3424; font-size: 15px; line-height: 1.6; }
 .terms a { color: #c25e22; font-weight: 700; }
-.mi-pets li { display: grid; gap: 8px; }
-.mi-lost-button { display: flex; align-items: center; justify-content: center; min-height: 50px; border: 2px solid #d92d20; border-radius: 16px; background: #fff; color: #b42318; font-size: 15px; font-weight: 800; text-decoration: none; }
+.mi-lost-button { display: flex; align-items: center; justify-content: center; min-height: 48px; border: 2px solid #d92d20; border-radius: 16px; background: #fff; color: #b42318; font-size: 15px; font-weight: 800; text-decoration: none; }
 .mi-lost-button:active { transform: scale(.98); }
 .mi-lost-button.is-on { border-color: #17803d; color: #17803d; }
 .terms-back { display: inline-flex; align-items: center; min-height: 44px; margin: 6px 0 12px; padding: 0 16px; border-radius: 12px; background: #2d1d12; color: #fff !important; font-weight: 800; text-decoration: none; }

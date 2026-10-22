@@ -3147,7 +3147,7 @@ dialog.confirm-modal { width: min(400px, calc(100vw - 32px)); }
 .pet-page > * { width: min(100%, 400px); margin-left: auto; margin-right: auto; }
 .landing-page-shell > .pet-page { width: 100%; }
 @media (min-width: 768px) {
-  .landing-page-shell > .pet-page { max-width: 520px; min-height: calc(100svh - 32px); border-radius: 20px 20px 0 0; }
+  .landing-page-shell > .pet-page { max-width: 520px; margin: 0 auto; min-height: calc(100svh - 32px); border-radius: 20px 20px 0 0; }
 }
 .pet-lost { display: grid; gap: 4px; margin-bottom: 24px; padding: 15px 18px; border-radius: 20px; background: #d92d20; color: #fff; box-shadow: 0 12px 30px rgba(217, 45, 32, .32); animation: pet-lost-pulse 2.4s ease-in-out infinite; }
 .pet-lost strong { font-family: var(--pet-title-font); font-size: 1.4rem; font-weight: 800; }
@@ -3183,7 +3183,8 @@ dialog.confirm-modal { width: min(400px, calc(100vw - 32px)); }
 .pet-editable { cursor: pointer; border-radius: 20px; outline: 2px solid transparent; outline-offset: 4px; transition: outline-color .15s; }
 .pet-editable:hover { outline-color: color-mix(in srgb, var(--pet-accent) 45%, transparent); }
 .pet-editable.is-selected { outline-color: var(--pet-accent); }
-.pet-report { display: block; width: fit-content; margin: 14px auto 0; color: var(--pet-ink); font-size: 11px; opacity: .45; text-decoration: underline; }
+.pet-report { display: flex; justify-content: center; gap: 8px; margin: 14px auto 0; color: var(--pet-ink); font-size: 11px; opacity: .5; }
+.pet-report a { color: inherit; text-decoration: underline; }
 /* Cada prediseño conserva las mismas acciones y datos, pero tiene una composición reconocible. */
 .pet-page.look-calido .pet-hero { padding: 23px 18px 27px; border: 1px solid #f5d9c3; border-radius: 34px; background: var(--pet-card); box-shadow: 0 17px 42px #9a54211c; }
 .pet-page.look-calido .pet-photo { border-color: #fff; box-shadow: 0 10px 25px #b9531e36; }
@@ -3223,3 +3224,11 @@ dialog.confirm-modal { width: min(400px, calc(100vw - 32px)); }
 .report-list small { color: var(--text-muted); }
 .report-actions { display: flex; flex-wrap: wrap; gap: 6px; flex: none; }
 .report-actions form { display: contents; }
+/* Chapita: "Mandar mi ubicación" (debajo de WhatsApp; arriba de todo y en rojo si está perdida). */
+.pet-location { display: grid; gap: 6px; margin-top: 2px; }
+.pet-location-button { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 52px; padding: 0 18px; border: 2px solid var(--pet-accent); border-radius: 18px; background: transparent; color: var(--pet-accent); font: inherit; font-size: 15.5px; font-weight: 800; cursor: pointer; }
+.pet-location-button svg { flex: none; font-size: 20px; }
+.pet-location-button:disabled { opacity: .7; cursor: progress; }
+.pet-location small { opacity: .6; font-size: 12px; line-height: 1.4; }
+.pet-location.is-urgent { margin: -12px auto 22px; }
+.pet-location.is-urgent .pet-location-button { min-height: 58px; border-color: #d92d20; background: #d92d20; color: #fff; box-shadow: 0 10px 24px rgba(217, 45, 32, .3); }

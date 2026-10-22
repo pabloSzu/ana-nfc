@@ -55,7 +55,7 @@ export default function ActivateFlow({ initialCode, signedInEmail }: { initialCo
 
   if (step === "login") return <>{progress}<div className="mi-card">
     <p className="mi-step">Paso 2 de 3 · Tu email</p>
-    <p className="mi-hint">Con este email vas a entrar después para editar los datos o avisar si se pierde.</p>
+    <p className="mi-hint">Con este email vas a entrar después en <strong>bionfc.com/mi</strong> para editar los datos o avisar si se pierde.</p>
     <EmailCodeLogin tagCode={code} submitLabel="Activar mi chapita" onDone={async () => { setSignedIn(true); await activate(); }} />
     {error && <p className="mi-error" role="alert">{error}</p>}
   </div></>;

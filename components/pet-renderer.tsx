@@ -4,6 +4,7 @@
 import { FaWhatsapp } from "react-icons/fa6";
 import { FiPhone } from "react-icons/fi";
 import BioNFCLogo from "@/components/bionfc-logo";
+import PetShareLocation from "@/components/pet-share-location";
 import { FontLinks, getFontFamily } from "@/lib/fonts";
 import { landingImageUrl } from "@/lib/landing-image";
 import { PET_ABOUT_FIELDS, PET_HEALTH_FIELDS, parsePet, petCallHref, petLook, petRows, petWhatsappHref, type PetData } from "@/lib/pet";
@@ -42,6 +43,8 @@ export default function PetRenderer({ landing, pet: draft, photoUrl, edit }: { l
         {pet.lostZone.trim() && <span>Me perdí en {pet.lostZone.trim()}</span>}
         {pet.reward.trim() && <em>Recompensa: {pet.reward.trim()}</em>}
       </section>}
+      {/* Perdida: lo más útil para quien la encontró va arriba de todo. */}
+      {pet.lost && contacts[0] && <PetShareLocation phone={contacts[0].phone} petName={name} urgent preview={Boolean(edit)} />}
 
       <header {...part("pet", "pet-hero")}>
         <div className="pet-photo">
@@ -60,6 +63,7 @@ export default function PetRenderer({ landing, pet: draft, photoUrl, edit }: { l
           </a>
           <a className="pet-call" href={petCallHref(member.phone)} aria-label={`Llamar${member.name.trim() ? ` a ${member.name.trim()}` : ""}`} onClick={edit ? (event) => event.preventDefault() : undefined}><FiPhone aria-hidden="true" /></a>
         </div>)}
+        {!pet.lost && contacts[0] && <PetShareLocation phone={contacts[0].phone} petName={name} preview={Boolean(edit)} />}
         {!contacts.length && edit && <p className="pet-empty">Tocá acá para cargar el WhatsApp de la familia.</p>}
       </section>
 
@@ -73,7 +77,10 @@ export default function PetRenderer({ landing, pet: draft, photoUrl, edit }: { l
           <span className="landing-branding-label">Hecho con</span><BioNFCLogo />
         </a>
       </footer>
-      {landing.slug && !edit && <a className="pet-report" href={`/denunciar/${encodeURIComponent(landing.slug)}`}>Denunciar esta página</a>}
+      {/* "¿Es tu mascota?": el dueño siempre tiene la chapita a mano; la escanea y entra a editarla. */}
+      {landing.slug && !edit && <nav className="pet-report">
+        <a href="/mi">¿Es tu mascota? Editala</a><span aria-hidden="true">·</span><a href={`/denunciar/${encodeURIComponent(landing.slug)}`}>Denunciar esta página</a>
+      </nav>}
     </main>
   );
 }

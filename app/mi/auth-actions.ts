@@ -46,7 +46,9 @@ export async function sendLoginCode(email: string, tagCode = ""): Promise<Action
   const clean = email.trim().toLowerCase();
   if (!emailPattern.test(clean)) return { ok: false, error: "Ese email no parece válido." };
   const ip = await clientIp();
-  if (!(await allow(`mail-ip:${ip}`, 10, 60 * 60)) || !(await allow(`mail:${clean}`, 6, 60 * 60))) return { ok: false, error: TOO_MANY };
+  // 5 mails por hora a un mismo email y 10 desde una misma conexión: alcanza para equivocarse o
+  // pedir otro, y nadie puede llenarle la casilla a un dueño ni gastarnos el cupo de mails.
+  if (!(await allow(`mail-ip:${ip}`, 10, 60 * 60)) || !(await allow(`mail:${clean}`, 5, 60 * 60))) return { ok: false, error: TOO_MANY };
 
   if (tagCode) {
     const valid = await codeIsValid(tagCode);
@@ -66,9 +68,15 @@ export async function sendLoginCode(email: string, tagCode = ""): Promise<Action
   return error ? { ok: false, error: friendly(error.message) } : { ok: true };
 }
 
+// El código del mail es de 6 números: sin límite, alguien podría probar hasta adivinarlo.
+// 10 intentos cada 15 minutos por email (y 30 por conexión) y después hay que esperar.
 export async function verifyLoginCode(email: string, token: string): Promise<ActionResult> {
+  const clean = email.trim().toLowerCase();
+  if (!(await allow(`verify:${clean}`, 10, 15 * 60)) || !(await allow(`verify-ip:${await clientIp()}`, 30, 15 * 60))) {
+    return { ok: false, error: "Probaste muchos códigos seguidos. Esperá 15 minutos y pedí uno nuevo." };
+  }
   const supabase = await createClient();
-  const { error } = await supabase.auth.verifyOtp({ email: email.trim().toLowerCase(), token: token.replace(/\D/g, ""), type: "email" });
+  const { error } = await supabase.auth.verifyOtp({ email: clean, token: token.replace(/\D/g, ""), type: "email" });
   return error ? { ok: false, error: friendly(error.message) } : { ok: true };
 }
 

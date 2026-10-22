@@ -10,6 +10,29 @@
 .pet-editor-title small { color: #8a8f9c; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
 .pet-editor-title strong { overflow: hidden; font-size: 17px; text-overflow: ellipsis; white-space: nowrap; }
 .pet-editor-actions { display: flex; flex: none; align-items: center; gap: 8px; }
+/* Dueño: la barra es una sola, también en la compu (la del panel se esconde). A la izquierda,
+   "Mis chapitas" bien visible como botón; a la derecha, ayuda, ver y guardar. */
+.mi-shell:has(.pet-editor-top.is-owner) > .mi-top { display: none; }
+.pet-editor-top.is-owner { gap: 8px; }
+.pet-editor-top.is-owner .pet-editor-actions { margin-left: auto; }
+.pet-editor-portal { display: inline-flex; flex: none; align-items: center; gap: 6px; height: 40px; padding: 0 14px 0 8px; border: 1px solid #dfe2e8; border-radius: 12px; background: #f4f5f8; color: #1d2130; font-size: 14px; font-weight: 800; text-decoration: none; white-space: nowrap; }
+.pet-editor-portal svg { flex: none; width: 17px; height: 17px; }
+.pet-editor-portal svg:first-child { width: 18px; height: 18px; margin-right: -4px; color: #8a8f9c; }
+.pet-editor-portal:hover { border-color: #b9bdc8; background: #fff; }
+@media (max-width: 899px) {
+  .pet-editor-top.is-owner { gap: 6px; }
+  .pet-editor-top.is-owner .pet-editor-actions { gap: 6px; }
+  .pet-editor-portal { padding: 0 12px 0 6px; }
+  .pet-editor-portal svg:nth-child(2) { display: none; }
+  .pet-editor-top.is-owner .pet-editor-help-trigger { width: 36px; }
+  .pet-editor-top.is-owner .pet-editor-save { padding: 0 14px; }
+}
+/* Celulares angostos: "Ver" queda solo con el ojito. */
+@media (max-width: 380px) {
+  .pet-editor-top .pet-editor-view { width: 40px; padding: 0; }
+  .pet-editor-view span { display: none; }
+  .pet-editor-view svg { width: 18px; height: 18px; }
+}
 .pet-editor-ghost { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 0 14px; border: 1px solid #dfe2e8; border-radius: 10px; background: #fff; color: #1d2130; font: inherit; font-size: 14px; font-weight: 600; text-decoration: none; cursor: pointer; }
 .pet-editor-ghost:hover:not(:disabled) { border-color: #b9bdc8; }
 .pet-editor-ghost:disabled { opacity: .5; cursor: not-allowed; }
@@ -115,6 +138,19 @@
 .pet-big-bar button { min-height: 40px; padding: 0 12px; border: 1px solid #dfe2e8; border-radius: 10px; background: #fff; font: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; }
 .pet-big-content { height: calc(100dvh - 58px); overflow-y: auto; }
 .pet-big-content .pet-page { min-height: 100%; }
+/* "¡Listo!" al publicar por primera vez. */
+.pet-done { width: min(calc(100% - 28px), 420px); max-height: calc(100dvh - 28px); padding: 24px 20px 16px; border: 0; border-radius: 24px; background: #fff; color: #1d2130; text-align: center; box-shadow: 0 30px 80px #0005; }
+.pet-done::backdrop { background: #111827b8; }
+.pet-done-mark { font-size: 42px; line-height: 1; }
+.pet-done h2 { margin: 10px 0 6px; font-size: 22px; line-height: 1.2; letter-spacing: -.02em; text-wrap: balance; }
+.pet-done > p { margin: 0 0 16px; color: #5b6170; font-size: 14px; line-height: 1.45; }
+.pet-done > .pet-done-try { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; padding: 12px 14px; border-radius: 16px; background: #e8f6ec; color: #145c2e; font-size: 13.5px; text-align: left; }
+.pet-done-box {display: grid; gap: 6px; margin-bottom: 12px; padding: 14px; border-radius: 16px; background: #f4f5f8; font-size: 13.5px; line-height: 1.4; text-align: left; }
+.pet-done-box > span { color: #5b6170; }
+.pet-done-share, .pet-done-tour, .pet-done-close { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 48px; border-radius: 14px; font: inherit; font-weight: 800; cursor: pointer; }
+.pet-done-share { border: 0; background: #17803d; color: #fff; font-size: 15px; }
+.pet-done-tour { margin-top: 8px; border: 1px solid #dfe2e8; background: #fff; color: #1d2130; font-size: 14px; }
+.pet-done-close { min-height: 40px; margin-top: 4px; border: 0; background: none; color: #5b6170; font-size: 13.5px; font-weight: 600; }
 
 /* Globitos del recorrido de ayuda y bienvenida (driver.js) */
 .driver-popover.pet-tour { max-width: 290px; padding: 18px; border-radius: 16px; color: #1d2130; font-family: inherit; box-shadow: 0 18px 50px rgba(0, 0, 0, .3); }
@@ -131,6 +167,7 @@
   .pet-editor-top { padding: 9px 12px; }
   .pet-editor-back { justify-content: center; width: 36px; height: 36px; font-size: 20px; }
   .pet-editor-back-text { display: none; }
+  .pet-editor-view { padding: 0 12px; }
   /* Con el teclado abierto, la miniatura se esconde y todo el lugar es para escribir. */
   .pet-editor.is-typing .pet-ed-preview { display: none; }
   .pet-editor.is-typing .pet-ed-controls { border-radius: 0; }

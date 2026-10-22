@@ -125,6 +125,9 @@ En **cada** proyecto de Supabase (DEV y PROD):
 - **Project Settings → API Keys → Secret key** (`sb_secret_…`): copiarla a `SUPABASE_SECRET_KEY`
   en `.env.local` (DEV) y en Vercel (PROD, solo entorno Production; Preview con la de DEV). Sin
   ella no se puede activar ninguna chapita.
+- **Resend → API Keys** (`re_…`, permiso "Sending access"): copiarla a `RESEND_API_KEY` en
+  `.env.local` y en Vercel. Manda el mail de bienvenida al publicar la chapita por primera vez
+  (`lib/welcome-email.ts`). Es opcional: sin ella no se manda y todo lo demás funciona igual.
 - **SMTP propio (Resend) en PROD.** El envío que trae Supabase solo manda a los emails del
   equipo del proyecto y muy pocos por hora: sirve para probar, no para vender.
 

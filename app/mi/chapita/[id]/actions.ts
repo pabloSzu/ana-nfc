@@ -2,6 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import { sendWelcomeEmail } from "@/lib/welcome-email";
 import { createClient } from "@/lib/supabase/server";
 import { revalidateLandingPage } from "@/lib/landing-cache";
 import { cleanPet, parsePet, petHasContact, petLook, petPhoneProblem } from "@/lib/pet";
@@ -63,8 +65,13 @@ export async function saveMyPet(fd: FormData) {
   // La página pública se guarda en caché (app/[slug]/page.tsx): sin esto, el cartel de perdido
   // tardaría minutos en aparecer.
   if (landing!.slug) revalidateLandingPage(landing!.slug);
-  const { data: savedLanding } = await supabase.from("landings").select("pet_slug").eq("id", landingId).maybeSingle();
+  const { data: savedLanding } = await supabase.from("landings").select("pet_slug,published").eq("id", landingId).maybeSingle();
   if (savedLanding?.pet_slug) revalidateLandingPage(savedLanding.pet_slug);
+  // Primera vez que queda publicada: mail de bienvenida, después de responder (no demora nada).
+  const email = (claims?.claims as { email?: string } | undefined)?.email || "";
+  if (!landing!.published && savedLanding?.published && email) {
+    after(() => sendWelcomeEmail({ to: email, petName: name, petSlug: savedLanding.pet_slug || landing!.slug }));
+  }
   const message = landing!.blocked_at ? "Cambios guardados. La chapita sigue pausada por BIONFC."
     : !petHasContact(pet) ? "Guardado. Falta el WhatsApp para que la chapita funcione."
     : !landing!.published ? "¡Listo! Tu chapita ya funciona. Probala acercando tu celular o escaneando el QR."
