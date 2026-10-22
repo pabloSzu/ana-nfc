@@ -9,6 +9,7 @@ import { parseTitleStyle } from "@/lib/landing-catalog";
 import { normalizeSource, trackLandingView } from "@/lib/track-view";
 import { effectiveRedirect } from "@/lib/landing-plan";
 import { firstButtonLink } from "@/lib/landing-fallback";
+import { readWithLegacyFallback } from "@/lib/public-read-compat";
 import "../globals.css";
 
 const publicSupabase = createClient(
@@ -17,16 +18,29 @@ const publicSupabase = createClient(
   { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } },
 );
 
+// Puente de despliegue: antes de las migraciones de chapitas, producción lee las tablas
+// directamente. Después del lockdown esa lectura deja de estar permitida y pasa por el RPC.
+// Mantener ambos caminos en este deploy permite migrar sin cortar las páginas existentes.
 const getLanding = cache((slug: string) => unstable_cache(
   async () => {
-    const { data } = await publicSupabase
-      .from("landings")
-      .select("*, actions(*)")
-      .eq("slug", slug)
-      .eq("published", true)
-      .eq("actions.enabled", true)
-      .order("position", { referencedTable: "actions" })
-      .maybeSingle();
+    const { data, rpcError, legacyError } = await readWithLegacyFallback(
+      () => publicSupabase.rpc("public_landing", { p_slug: slug }),
+      () => publicSupabase
+        .from("landings")
+        .select("*, actions(*)")
+        .eq("slug", slug)
+        .eq("published", true)
+        .eq("actions.enabled", true)
+        .order("position", { referencedTable: "actions" })
+        .maybeSingle(),
+    );
+    if (legacyError) {
+      console.error("No se pudo leer la landing por RPC ni por el esquema anterior", {
+        slug,
+        rpc: rpcError?.message,
+        legacy: legacyError.message,
+      });
+    }
     return data;
   },
   ["public-landing", slug],
