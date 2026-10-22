@@ -1,7 +1,7 @@
 // Chapita de mascota (lib/pet.ts). `npm test`.
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { cleanPet, formatPhone, newPet, normalizePhone, petPhoneProblem, parsePet, petCallHref, petHasContact, petLook, petRows, petWhatsappHref, PET_ABOUT_FIELDS, DEFAULT_PET_MESSAGE } from "../lib/pet.ts";
+import { cleanPet, formatPhone, newPet, normalizePhone, petPhoneProblem, parsePet, petCallHref, petGendered, petHasContact, petHealthFields, petIsFemale, petLook, petMissing, petRows, petWhatsappHref, PET_ABOUT_FIELDS, DEFAULT_PET_MESSAGE } from "../lib/pet.ts";
 
 describe("datos de la chapita", () => {
   test("una chapita nueva arranca con el saludo, el mensaje y el WhatsApp cargado", () => {
@@ -10,6 +10,7 @@ describe("datos de la chapita", () => {
     assert.deepEqual(pet.family, [{ name: "", phone: "5493511234567" }]);
     assert.equal(pet.lost, false);
     assert.equal(pet.look, "calido");
+    assert.deepEqual(pet.photo, { x: 50, y: 50, zoom: 1 });
   });
 
   test("lo raro guardado se descarta", () => {
@@ -20,6 +21,37 @@ describe("datos de la chapita", () => {
     assert.equal(pet.family[0].phone, "");
     assert.equal(pet.about.breed, "");
     assert.equal("extra" in pet.about, false);
+    assert.deepEqual(pet.photo, { x: 50, y: 50, zoom: 1 });
+  });
+
+  test("el encuadre de foto viejo o fuera de rango se normaliza sin migración", () => {
+    assert.deepEqual(parsePet({ pet: { photo: { x: -20, y: 180, zoom: 9 } } }).photo, { x: 0, y: 100, zoom: 2.5 });
+    assert.deepEqual(parsePet({ pet: {} }).photo, { x: 50, y: 50, zoom: 1 });
+  });
+
+  test("el mensaje viejo por defecto pasa al nuevo; uno escrito por el dueño se respeta", () => {
+    assert.equal(parsePet({ pet: { message: "Si me encontraste solito, avisale a mi familia, por favor 🐾" } }).message, DEFAULT_PET_MESSAGE);
+    assert.equal(parsePet({ pet: { message: "Soy re mimoso" } }).message, "Soy re mimoso");
+    assert.equal(parsePet({ pet: { message: "" } }).message, "");
+  });
+
+  test("los textos se adaptan si es hembra; sin sexo cargado quedan en masculino", () => {
+    const female = parsePet({ pet: { about: { sex: "Hembra" } } });
+    const male = parsePet({ pet: { about: { sex: "Macho" } } });
+    assert.equal(petIsFemale(female), true);
+    assert.equal(petIsFemale(male), false);
+    assert.equal(petIsFemale(parsePet({ pet: {} })), false);
+    assert.equal(petGendered(female, "perdido", "perdida"), "perdida");
+    assert.equal(petHealthFields(female).find((item) => item.key === "neutered")?.label, "Castrada");
+    assert.equal(petHealthFields(male).find((item) => item.key === "neutered")?.label, "Castrado");
+  });
+
+  test("lo que falta completar: foto, datos y segundo contacto", () => {
+    const empty = parsePet({ pet: { family: [{ name: "", phone: "5493511234567" }] } });
+    assert.deepEqual(petMissing(empty, false), ["photo", "about", "family"]);
+    const full = parsePet({ pet: { about: { sex: "Hembra" }, family: [{ name: "", phone: "5493511234567" }, { name: "Ana", phone: "5493517654321" }] } });
+    assert.deepEqual(petMissing(full, true), []);
+    assert.deepEqual(petMissing(parsePet({ pet: { health: { allergies: "Pollo" } } }), true), ["family"]);
   });
 
   test("al guardar se recortan espacios y se van las personas vacías", () => {

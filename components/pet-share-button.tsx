@@ -6,14 +6,14 @@
 import { useState } from "react";
 import { FiShare2 } from "react-icons/fi";
 
-export default function PetShareButton({ path, petName, lost, lostZone = "", className = "" }: { path: string; petName: string; lost: boolean; lostZone?: string; className?: string }) {
+export default function PetShareButton({ path, petName, lost, lostZone = "", female = false, className = "" }: { path: string; petName: string; lost: boolean; lostZone?: string; female?: boolean; className?: string }) {
   const [copied, setCopied] = useState(false);
   const name = petName.trim() || "mi mascota";
 
   async function share() {
     const url = new URL(path, window.location.origin).toString();
     const text = lost
-      ? `¡${name} se perdió${lostZone.trim() ? ` en ${lostZone.trim()}` : ""}! Si lo ves, avisá a su familia desde acá 🙏`
+      ? `¡${name} se perdió${lostZone.trim() ? ` en ${lostZone.trim()}` : ""}! Si ${female ? "la" : "lo"} ves, avisá a su familia desde acá 🙏`
       : `Esta es la chapita de ${name} 🐾`;
     if (navigator.share) {
       try { await navigator.share({ title: name, text, url }); return; } catch (error) { if ((error as Error).name === "AbortError") return; }

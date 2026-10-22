@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { landingImageUrl } from "@/lib/landing-image";
-import { parsePet } from "@/lib/pet";
+import { PET_MISSING_LABELS, parsePet, petIsFemale, petMissing, petPhotoStyle } from "@/lib/pet";
 import { FiEdit2, FiEye } from "react-icons/fi";
 import PetShareButton from "@/components/pet-share-button";
 // Las chapitas del dueño: las de los clientes de los que es miembro (ver client_members).
@@ -25,17 +25,22 @@ export default async function OwnerHome() {
       const pet = parsePet(page.button_style);
       const photo = landingImageUrl(page.logo_url, 384);
       const live = page.published && !page.blocked_at;
+      const missing = petMissing(pet, Boolean(page.logo_url));
       const publicPath = `/mascota/${encodeURIComponent(page.pet_slug || page.slug)}`;
       return <li key={page.id} className={`mi-pet${pet.lost ? " is-lost" : ""}`}>
         <Link className="mi-pet-card" href={`/mi/chapita/${page.id}`}>
-          <span className="mi-pet-photo">{/* eslint-disable-next-line @next/next/no-img-element -- foto de la mascota */}{photo ? <img src={photo} alt="" /> : "🐾"}</span>
+          <span className="mi-pet-photo">{/* eslint-disable-next-line @next/next/no-img-element -- foto de la mascota */}{photo ? <img src={photo} alt="" style={petPhotoStyle(pet.photo)} /> : "🐾"}</span>
           <span className="mi-pet-copy"><strong>{page.business_name || "Sin nombre todavía"}</strong><small>{page.blocked_at ? "Pausada por BIONFC" : pet.lost ? "🚨 Modo perdido prendido" : page.published ? "Funcionando" : "Falta cargar tu WhatsApp"}</small></span>
         </Link>
         <div className="mi-pet-actions">
           <Link href={`/mi/chapita/${page.id}`}><FiEdit2 aria-hidden="true" />Editar</Link>
-          {live && <PetShareButton path={publicPath} petName={page.business_name || ""} lost={pet.lost} lostZone={pet.lostZone} className={pet.lost ? "is-urgent" : ""} />}
+          {live && <PetShareButton path={publicPath} petName={page.business_name || ""} lost={pet.lost} lostZone={pet.lostZone} female={petIsFemale(pet)} className={pet.lost ? "is-urgent" : ""} />}
           {live && <a href={publicPath} target="_blank" rel="noopener noreferrer"><FiEye aria-hidden="true" />Ver</a>}
         </div>
+        {/* Lo opcional que falta (si no lo completó al activarla): abre los pasos que faltan. */}
+        {live && !pet.lost && missing.length > 0 && <Link className="mi-complete" href={`/mi/chapita/${page.id}${missing.some((item) => item !== "photo") ? "?completar=1" : "?seccion=pet"}`}>
+          <span>✨ Completá: {missing.map((item) => PET_MISSING_LABELS[item]).join(" · ")}</span><b>→</b>
+        </Link>}
         {/* Lo urgente, a un toque: abre el editor directo en "¿Se perdió?". */}
         {live && <Link className={`mi-lost-button${pet.lost ? " is-on" : ""}`} href={`/mi/chapita/${page.id}?seccion=lost`}>{pet.lost ? "✓ Ya apareció: sacar el cartel" : "🚨 Avisar que se perdió"}</Link>}
       </li>;

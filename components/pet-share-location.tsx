@@ -3,11 +3,13 @@
 // "Mandar mi ubicación": quien encuentra a la mascota toca, el celular pide permiso y se abre
 // WhatsApp con un mensaje ya escrito y un link de Google Maps al lugar donde está. Si no da
 // permiso o el celular no puede ubicarse, igual se abre WhatsApp, sin el mapa.
+// Se muestra siempre (no solo en modo perdido): casi siempre la encuentran antes de que la
+// familia se dé cuenta y prenda el cartel.
 import { useState } from "react";
 import { FiMapPin } from "react-icons/fi";
 import { petWhatsappHref } from "@/lib/pet";
 
-export default function PetShareLocation({ phone, petName, urgent = false, preview = false }: { phone: string; petName: string; urgent?: boolean; preview?: boolean }) {
+export default function PetShareLocation({ phone, petName, preview = false }: { phone: string; petName: string; preview?: boolean }) {
   const [state, setState] = useState<"idle" | "locating" | "denied">("idle");
   const name = petName.trim() || "tu mascota";
 
@@ -31,13 +33,11 @@ export default function PetShareLocation({ phone, petName, urgent = false, previ
     );
   }
 
-  return <div className={`pet-location${urgent ? " is-urgent" : ""}`}>
-    <button type="button" className="pet-location-button" onClick={share} disabled={state === "locating"}>
-      <FiMapPin aria-hidden="true" />
-      <span>{state === "locating" ? "Buscando tu ubicación…" : "Mandar mi ubicación a la familia"}</span>
+  return <>
+    {/* Con el estilo del botón de llamar (pet-call): toma la forma y los colores de cada diseño. */}
+    <button type="button" className="pet-call pet-location" onClick={share} disabled={state === "locating"}>
+      <FiMapPin aria-hidden="true" /><span>{state === "locating" ? "Buscando tu ubicación…" : "Mandar mi ubicación"}</span>
     </button>
-    {state === "denied"
-      ? <small>No pudimos ver tu ubicación. Contales por WhatsApp dónde estás.</small>
-      : <small>Abre WhatsApp con un mapa de dónde estás. Solo se manda si vos lo enviás.</small>}
-  </div>;
+    {state === "denied" && <small className="pet-location-note">No pudimos ver tu ubicación. Contales por WhatsApp dónde estás.</small>}
+  </>;
 }

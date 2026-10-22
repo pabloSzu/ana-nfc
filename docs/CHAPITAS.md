@@ -169,6 +169,6 @@ Plantilla sugerida para los dos mails:
 - Las listas de Páginas y Resumen del Admin traen todas las páginas de una vez: con más de 1.000
   (contando chapitas activadas) se cortan. Antes de llegar ahí, paginar o sacar las chapitas de
   esas listas (ya se cuentan bien en Chapitas).
-- QR propios en vez de `api.qrserver.com` para imprimir.
-- Botón "Mandar mi ubicación a la familia" para quien encuentra la mascota.
+- "¿Encontraste a…? Mandá tu ubicación" se muestra siempre (no solo en modo perdido: casi siempre
+  la encuentran antes de que la familia prenda el cartel). Ver con compradores reales si se usa.
 - Mover una chapita activada a otro cliente desde el Admin.

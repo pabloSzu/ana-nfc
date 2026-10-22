@@ -8,6 +8,8 @@ import EmailCodeLogin from "../mi/email-code-login";
 import { activateTag, checkTagCode, switchAccount } from "../mi/auth-actions";
 import { formatCode, normalizeCode } from "@/lib/pet-tags";
 
+const OFFLINE = "No pudimos conectarnos. Revisá tu internet y probá de nuevo.";
+
 export default function ActivateFlow({ initialCode, signedInEmail }: { initialCode: string; signedInEmail: string }) {
   const cameFromPackagingQr = Boolean(initialCode);
   const [code, setCode] = useState(initialCode ? formatCode(initialCode) : "");
@@ -25,8 +27,12 @@ export default function ActivateFlow({ initialCode, signedInEmail }: { initialCo
 
   async function activate() {
     setBusy(true); setError("");
-    // Si sale bien, activateTag redirige al editor; si vuelve, es que falló.
-    const result = await activateTag(code, terms);
+    // Si sale bien, activateTag redirige al editor; si vuelve, es que falló. Next avisa la
+    // redirección como un error (NEXT_REDIRECT): ese se deja pasar, no es falta de conexión.
+    const result = await activateTag(code, terms).catch((error) => {
+      if (String((error as { digest?: string })?.digest).startsWith("NEXT_REDIRECT")) throw error;
+      return { ok: false as const, error: OFFLINE };
+    });
     setBusy(false);
     if (!result.ok) { setError(result.error); setStep("code"); }
   }
@@ -34,7 +40,8 @@ export default function ActivateFlow({ initialCode, signedInEmail }: { initialCo
   async function submitCode(event: FormEvent) {
     event.preventDefault();
     setBusy(true); setError("");
-    const result = await checkTagCode(code);
+    // Si se corta internet o el servidor no responde, mejor un aviso que "Revisando…" para siempre.
+    const result = await checkTagCode(code).catch(() => ({ ok: false as const, error: OFFLINE }));
     setBusy(false);
     if (!result.ok) { setError(result.error); return; }
     // Una sesión vieja puede pertenecer a otra persona o al dueño de otra chapita. No activamos
@@ -64,7 +71,8 @@ export default function ActivateFlow({ initialCode, signedInEmail }: { initialCo
     <p className="mi-step">Paso 1 de 3 · {cameFromPackagingQr ? "Chapita encontrada" : "El código"}</p>
     {cameFromPackagingQr && <p className="mi-success" role="status">✓ Leímos el código del packaging. Solo falta confirmar que esta chapita es tuya.</p>}
     <label className="mi-field"><span>{cameFromPackagingQr ? "Código detectado" : "Código de la tarjetita"}</span><input className="mi-code-input" required autoCapitalize="characters" autoComplete="off" spellCheck={false} maxLength={12} value={code} placeholder="ABCD-2346" onChange={(event) => setCode(event.target.value.toUpperCase())} /></label>
-    <label className="mi-check"><input type="checkbox" checked={terms} onChange={(event) => setTerms(event.target.checked)} required /><span>Acepto los <Link href={`/terminos?volver=${encodeURIComponent(`/activar${normalizeCode(code) ? `?c=${normalizeCode(code)}` : ""}`)}`}>términos y condiciones</Link> y entiendo que los datos que cargue en la chapita (como el WhatsApp de la familia) se muestran a quien la escanee.</span></label>
+    <label className="mi-check"><input type="checkbox" checked={terms} onChange={(event) => setTerms(event.target.checked)} required /><span>Acepto los <Link href={`/terminos?volver=${encodeURIComponent(`/activar${normalizeCode(code) ? `?c=${normalizeCode(code)}` : ""}`)}`}>términos</Link> y que la ficha será pública.</span></label>
+    <details className="mi-public-details"><summary>¿Qué datos se muestran?</summary><p>Solo lo que cargues en la ficha: foto, nombre, información de la mascota y los teléfonos elegidos para que puedan avisarte. Tu email de acceso no se publica.</p></details>
     {error && <p className="mi-error" role="alert">{error}</p>}
     <button className="mi-button" type="submit" disabled={busy || !terms}>{busy ? "Revisando…" : "Seguir"}</button>
     {signedInEmail && <p className="mi-hint">Vas a activarla con <strong>{signedInEmail}</strong>. <button type="button" className="mi-link" onClick={() => switchAccount(code)}>No soy yo, usar otro email</button></p>}

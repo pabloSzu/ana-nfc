@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { cache } from "react";
 import type { CSSProperties } from "react";
 import type { Metadata } from "next";
@@ -6,7 +7,7 @@ import { createClient } from "@supabase/supabase-js";
 import { notFound, redirect } from "next/navigation";
 import LandingRenderer from "@/components/landing-renderer";
 import { parseTitleStyle } from "@/lib/landing-catalog";
-import { parsePet } from "@/lib/pet";
+import { parsePet, petGendered } from "@/lib/pet";
 import { normalizeSource, trackLandingView } from "@/lib/track-view";
 import { effectiveRedirect } from "@/lib/landing-plan";
 import { firstButtonLink } from "@/lib/landing-fallback";
@@ -60,16 +61,17 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const images = landing.logo_url ? [landing.logo_url] : undefined;
   const publicPath = landing.business_type === "pet" ? `/mascota/${slug}` : `/${slug}`;
   // Chapita: al compartir el link se ve una imagen con la foto, el nombre y, si está perdida,
-  // "¡ESTOY PERDIDO!" (app/api/og/mascota). ?p= cambia al prender o apagar el modo perdido, así
-  // WhatsApp no muestra la imagen vieja guardada.
+  // "¡ESTOY PERDIDO!" (app/api/og/mascota). ?v= cambia con todo lo que se ve en la imagen (modo
+  // perdido, zona, recompensa, nombre, foto y su encuadre), así WhatsApp no muestra una vieja.
   if (landing.business_type === "pet") {
     const pet = parsePet(landing.button_style);
     const name = (landing.business_name || "Mi mascota").trim();
-    const petTitle = pet.lost ? `¡${name} está perdido! Ayudanos a encontrarlo` : `${name} · Chapita de mascota`;
+    const petTitle = pet.lost ? petGendered(pet, `¡${name} está perdido! Ayudanos a encontrarlo`, `¡${name} está perdida! Ayudanos a encontrarla`) : `${name} · Chapita de mascota`;
     const petDescription = pet.lost
-      ? [pet.lostZone.trim() && `Se perdió en ${pet.lostZone.trim()}.`, pet.reward.trim() && `Recompensa: ${pet.reward.trim()}.`, "Si lo ves, avisale a su familia."].filter(Boolean).join(" ")
+      ? [pet.lostZone.trim() && `Se perdió en ${pet.lostZone.trim()}.`, pet.reward.trim() && `Recompensa: ${pet.reward.trim()}.`, petGendered(pet, "Si lo ves, avisale a su familia.", "Si la ves, avisale a su familia.")].filter(Boolean).join(" ")
       : pet.message.trim() || description;
-    const image = `/api/og/mascota/${encodeURIComponent(slug)}?p=${pet.lost ? 1 : 0}`;
+    const version = createHash("sha1").update(JSON.stringify([pet.lost, pet.about.sex, pet.lostZone, pet.reward, pet.greeting, pet.look, pet.photo, name, landing.logo_url])).digest("hex").slice(0, 10);
+    const image = `/api/og/mascota/${encodeURIComponent(slug)}?v=${version}`;
     return {
       title: petTitle,
       description: petDescription,

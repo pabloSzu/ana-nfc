@@ -6,6 +6,8 @@ import { useEffect, useState, type FormEvent } from "react";
 import { sendLoginCode, verifyLoginCode } from "./auth-actions";
 import { CONTACT_EMAIL, CONTACT_WHATSAPP } from "@/lib/terms";
 
+const OFFLINE = "No pudimos conectarnos. Revisá tu internet y probá de nuevo.";
+
 export default function EmailCodeLogin({ tagCode = "", submitLabel = "Entrar", onDone }: { tagCode?: string; submitLabel?: string; onDone: () => void | Promise<void> }) {
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -26,7 +28,8 @@ export default function EmailCodeLogin({ tagCode = "", submitLabel = "Entrar", o
   async function send(event?: FormEvent) {
     event?.preventDefault();
     setBusy(true); setError("");
-    const result = await sendLoginCode(email, tagCode);
+    // Si se corta internet o el servidor no responde, mejor un aviso que "Mandando…" para siempre.
+    const result = await sendLoginCode(email, tagCode).catch(() => ({ ok: false as const, error: OFFLINE }));
     setBusy(false);
     if (result.ok) { setSent(true); setSends((count) => count + 1); setWait(60); } else setError(result.error);
   }
@@ -34,7 +37,7 @@ export default function EmailCodeLogin({ tagCode = "", submitLabel = "Entrar", o
   async function verify(event: FormEvent) {
     event.preventDefault();
     setBusy(true); setError("");
-    const result = await verifyLoginCode(email, code);
+    const result = await verifyLoginCode(email, code).catch(() => ({ ok: false as const, error: OFFLINE }));
     if (!result.ok) { setBusy(false); setError(result.error); return; }
     await onDone();
     setBusy(false);

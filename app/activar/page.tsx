@@ -4,6 +4,7 @@ import BioNFCLogo from "@/components/bionfc-logo";
 import BioNFCSignature from "@/components/bionfc-signature";
 import { createClient } from "@/lib/supabase/server";
 import ActivateFlow from "./activate-flow";
+import { switchAccount } from "../mi/auth-actions";
 import "../globals.css";
 import "../mi/mi.css";
 
@@ -26,7 +27,7 @@ export default async function ActivatePage({ searchParams }: { searchParams: Pro
       <h1>Activá tu chapita</h1>
       <p className="mi-lead">En dos minutos queda lista para ayudar a tu mascota a volver a casa.</p>
       {isStaff
-        ? <p className="mi-error">Estás con tu cuenta de administrador ({email}): si activás acá, la chapita queda a tu nombre. Que la active el comprador desde su celular, o abrí esta página en una ventana de incógnito.</p>
+        ? <div className="mi-card mi-staff-warning"><p className="mi-error">Estás con tu cuenta de administrador ({email}). La chapita tiene que activarla el comprador desde su celular o una ventana de incógnito.</p><Link className="mi-button" href="/admin/chapitas">Volver al panel</Link><form action={switchAccount.bind(null, c || "")}><button className="mi-link" type="submit">Cerrar sesión y usar otra cuenta</button></form></div>
         : <ActivateFlow initialCode={c || ""} signedInEmail={email} />}
     </main>
     <BioNFCSignature className="mi-signature" />

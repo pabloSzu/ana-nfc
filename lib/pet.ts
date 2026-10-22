@@ -35,6 +35,15 @@ export function petLook(id: string | undefined): PetLook {
 }
 
 export type PetFamily = { name: string; phone: string };
+export type PetPhotoPlacement = { x: number; y: number; zoom: number };
+
+// Estilo de la foto encuadrada (para un <img> con object-fit: cover dentro de un marco con
+// overflow oculto). Lo usan la página, el editor, "Mis chapitas" y la imagen al compartir.
+export const petPhotoStyle = ({ x, y, zoom }: PetPhotoPlacement) => ({
+  objectPosition: `${x}% ${y}%`,
+  transform: `scale(${zoom})`,
+  transformOrigin: `${x}% ${y}%`,
+});
 
 export const PET_ABOUT_FIELDS = [
   { key: "breed", label: "Raza", placeholder: "Caniche toy" },
@@ -68,14 +77,40 @@ export type PetData = {
   lost: boolean;
   lostZone: string;
   reward: string;
+  // Encuadre no destructivo de la foto. Vive en el JSON existente: no necesita migración.
+  photo: PetPhotoPlacement;
 };
 
 export const PET_FAMILY_MAX = 2;
 export const DEFAULT_PET_GREETING = "¡Hola! Soy";
-export const DEFAULT_PET_MESSAGE = "Si me encontraste solito, avisale a mi familia, por favor 🐾";
+// Neutro a propósito: sirve igual para macho o hembra.
+export const DEFAULT_PET_MESSAGE = "Si me encontrás, avisale a mi familia 🐾";
+// El texto de antes quedó guardado en las chapitas que ya existían: se reemplaza al leerlo.
+const OLD_PET_MESSAGE = "Si me encontraste solito, avisale a mi familia, por favor 🐾";
+
+// Lo opcional que todavía le falta a una chapita publicada, en el orden en que se ofrece
+// completarlo (tarjeta "Completá la chapita" del editor y de "Mis chapitas").
+export type PetMissing = "photo" | "about" | "family";
+export function petMissing(pet: PetData, hasPhoto: boolean): PetMissing[] {
+  const missing: PetMissing[] = [];
+  if (!hasPhoto) missing.push("photo");
+  if (!Object.values(pet.about).some((value) => value.trim()) && !Object.values(pet.health).some((value) => value.trim())) missing.push("about");
+  if (pet.family.filter((member) => member.phone.trim()).length < 2) missing.push("family");
+  return missing;
+}
+export const PET_MISSING_LABELS: Record<PetMissing, string> = { photo: "Foto", about: "Datos y salud", family: "Segundo contacto" };
+
+// Hembra o macho, según lo elegido en "Sexo" (botones Macho/Hembra del editor). Si no lo
+// cargaron, se usa masculino, como en la mayoría de los textos de antes.
+export const petIsFemale = (pet: Pick<PetData, "about">) => /^hembra/i.test(pet.about.sex.trim());
+export const petGendered = (pet: Pick<PetData, "about">, male: string, female: string) => petIsFemale(pet) ? female : male;
+// Los datos de salud con "Castrado" o "Castrada" según corresponda.
+export const petHealthFields = (pet: Pick<PetData, "about">) =>
+  PET_HEALTH_FIELDS.map((item) => item.key === "neutered" ? { ...item, label: petGendered(pet, "Castrado", "Castrada") } : item);
 
 const text = (value: unknown, max: number) => typeof value === "string" ? value.slice(0, max) : "";
 const record = (value: unknown) => value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+const boundedNumber = (value: unknown, fallback: number, min: number, max: number) => typeof value === "number" && Number.isFinite(value) ? Math.max(min, Math.min(max, value)) : fallback;
 
 function fields<K extends string>(raw: unknown, keys: readonly { key: K }[], max: number): Record<K, string> {
   const source = record(raw);
@@ -87,10 +122,11 @@ function fields<K extends string>(raw: unknown, keys: readonly { key: K }[], max
 // cleanPet al guardar.
 export function parsePet(buttonStyle: unknown): PetData {
   const pet = record(record(buttonStyle).pet);
+  const photo = record(pet.photo);
   return {
     look: petLook(text(pet.look, 20)).id,
     greeting: typeof pet.greeting === "string" ? text(pet.greeting, 40) : DEFAULT_PET_GREETING,
-    message: typeof pet.message === "string" ? text(pet.message, 200) : DEFAULT_PET_MESSAGE,
+    message: typeof pet.message === "string" && pet.message !== OLD_PET_MESSAGE ? text(pet.message, 200) : DEFAULT_PET_MESSAGE,
     family: (Array.isArray(pet.family) ? pet.family : []).slice(0, PET_FAMILY_MAX).map((member) => ({ name: text(record(member).name, 40), phone: text(record(member).phone, 30) })),
     about: fields(pet.about, PET_ABOUT_FIELDS, 80),
     health: fields(pet.health, PET_HEALTH_FIELDS, 120),
@@ -98,6 +134,11 @@ export function parsePet(buttonStyle: unknown): PetData {
     lost: pet.lost === true,
     lostZone: text(pet.lostZone, 120),
     reward: text(pet.reward, 60),
+    photo: {
+      x: boundedNumber(photo.x, 50, 0, 100),
+      y: boundedNumber(photo.y, 50, 0, 100),
+      zoom: boundedNumber(photo.zoom, 1, 1, 2.5),
+    },
   };
 }
 

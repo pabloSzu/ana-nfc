@@ -34,6 +34,12 @@
 .mi-check { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; line-height: 1.45; color: #6b4a33; }
 .mi-check input { flex: none; width: 20px; height: 20px; margin-top: 1px; accent-color: #e07a3f; }
 .mi-check a { color: #c25e22; font-weight: 700; }
+.mi-public-details { margin: -4px 0 2px 30px; color: #7a5a44; font-size: 12.5px; line-height: 1.5; }
+.mi-public-details summary { color: #a14e20; font-weight: 750; cursor: pointer; }
+.mi-public-details p { margin: 7px 0 0; }
+.mi-staff-warning { text-align: center; }
+.mi-staff-warning .mi-button { width: 100%; }
+.mi-staff-warning form { margin: 0; }
 .mi-button { display: inline-flex; align-items: center; justify-content: center; min-height: 56px; padding: 0 22px; border: 0; border-radius: 17px; background: linear-gradient(135deg, #ea874d, #cf6125); color: #fff; font: inherit; font-size: 16px; font-weight: 800; text-decoration: none; cursor: pointer; box-shadow: 0 12px 26px #cf612544; transition: transform .15s ease, box-shadow .15s ease; }
 .mi-button:active:not(:disabled) { transform: translateY(1px) scale(.99); box-shadow: 0 7px 16px #cf612538; }
 .mi-button:disabled { opacity: .55; cursor: not-allowed; box-shadow: none; }
@@ -70,7 +76,8 @@
 .terms h2 { margin: 26px 0 6px; font-size: 18px; }
 .terms p { margin: 0 0 10px; color: #4a3424; font-size: 15px; line-height: 1.6; }
 .terms a { color: #c25e22; font-weight: 700; }
-.mi-lost-button { display: flex; align-items: center; justify-content: center; min-height: 48px; border: 2px solid #d92d20; border-radius: 16px; background: #fff; color: #b42318; font-size: 15px; font-weight: 800; text-decoration: none; }
+.mi-complete { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; padding: 0 14px; border-radius: 13px; background: #f5f3ff; color: #4b3fc4; font-size: 13.5px; font-weight: 700; text-decoration: none; }
+.mi-lost-button {display: flex; align-items: center; justify-content: center; min-height: 48px; border: 2px solid #d92d20; border-radius: 16px; background: #fff; color: #b42318; font-size: 15px; font-weight: 800; text-decoration: none; }
 .mi-lost-button:active { transform: scale(.98); }
 .mi-lost-button.is-on { border-color: #17803d; color: #17803d; }
 .terms-back { display: inline-flex; align-items: center; min-height: 44px; margin: 6px 0 12px; padding: 0 16px; border-radius: 12px; background: #2d1d12; color: #fff !important; font-weight: 800; text-decoration: none; }

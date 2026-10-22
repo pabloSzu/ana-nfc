@@ -15,6 +15,18 @@ export default function TagTutorialPage() {
     <header className="ch-tutorial-heading"><p className="eyebrow">BIONFC Mascotas</p><h1>Guía completa de chapitas</h1><p>Este es el recorrido desde la tanda hasta el aviso a la familia. Probalo primero con una unidad en DEV. Para fabricar productos reales, generá e imprimí los códigos desde el Admin publicado en bionfc.com.</p></header>
     <MascotasNav active="tutorial" />
 
+    <section className="ch-quick-guide" aria-labelledby="quick-guide-title">
+      <header><p className="eyebrow">Guía rápida</p><h2 id="quick-guide-title">Una unidad, tres piezas que trabajan juntas</h2><p>Buscá siempre el mismo número antes de cerrar el paquete.</p></header>
+      <div className="ch-pieces">
+        <article><span className="ch-piece-number">01</span><IconPaw /><strong>Chapita</strong><small>QR + NFC permanente</small></article>
+        <span className="ch-piece-link" aria-hidden="true">+</span>
+        <article><span className="ch-piece-number">01</span><IconQrCode /><strong>Tarjeta privada</strong><small>Activa una sola vez</small></article>
+        <span className="ch-piece-link" aria-hidden="true">→</span>
+        <article className="is-result"><IconSmartphone /><strong>Ficha de la mascota</strong><small>Se edita sin reimprimir</small></article>
+      </div>
+      <aside><IconShieldCheck /><span><strong>Chequeo antes de entregar:</strong> chapita 01 + tarjeta 01. El código privado nunca va grabado afuera.</span></aside>
+    </section>
+
     <section className="ch-tutorial-steps" aria-label="Recorrido paso a paso">
       {steps.map(({ icon: Icon, who, title, text }) => <article key={title}><span className="ch-tutorial-step-icon"><Icon /></span><small>{who}</small><h2>{title}</h2><p>{text}</p></article>)}
     </section>

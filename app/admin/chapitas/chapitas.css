@@ -20,6 +20,18 @@
 .ch-tutorial-heading { max-width: 850px; margin-bottom: 38px; }
 .ch-tutorial-heading h1 { margin: 7px 0 10px; font-size: clamp(30px, 5vw, 48px); }
 .ch-tutorial-heading > p:last-child { color: var(--text-muted); line-height: 1.6; }
+.ch-quick-guide { display: grid; gap: 18px; margin: 0 0 24px; padding: 22px; border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--border)); border-radius: 22px; background: linear-gradient(145deg, color-mix(in srgb, var(--accent-subtle) 72%, var(--surface)), var(--surface)); }
+.ch-quick-guide header h2 { margin: 4px 0 5px; font-size: clamp(20px, 3vw, 28px); }
+.ch-quick-guide header > p:last-child { margin: 0; color: var(--text-muted); font-size: 13px; }
+.ch-pieces { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr) auto minmax(0,1fr); align-items: center; gap: 12px; }
+.ch-pieces article { position: relative; display: grid; justify-items: center; gap: 7px; min-height: 150px; align-content: center; padding: 18px; border: 1px solid var(--border); border-radius: 18px; background: var(--surface); text-align: center; box-shadow: var(--shadow-sm); }
+.ch-pieces article > svg { width: 30px; height: 30px; color: var(--accent); }
+.ch-pieces article strong { font-size: 14px; }
+.ch-pieces article small { color: var(--text-muted); font-size: 11.5px; }
+.ch-piece-number { position: absolute; top: 10px; right: 10px; display: grid; place-items: center; min-width: 34px; height: 28px; padding: 0 7px; border-radius: 9px; background: #1d2130; color: #fff; font-size: 13px; font-weight: 900; }
+.ch-piece-link { color: var(--accent); font-size: 24px; font-weight: 900; }
+.ch-quick-guide > aside { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 13px; background: var(--surface); font-size: 13px; line-height: 1.45; }
+.ch-quick-guide > aside svg { flex: none; width: 21px; height: 21px; color: var(--success); }
 .ch-tutorial-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 24px; }
 .ch-tutorial-steps article { padding: 18px; border: 1px solid var(--border); border-radius: 17px; background: var(--surface); }
 .ch-tutorial-step-icon { display: grid; place-items: center; width: 38px; height: 38px; margin-bottom: 15px; border-radius: 12px; background: var(--accent-subtle); color: var(--accent); }
@@ -119,6 +131,10 @@
   .ch-section-nav { margin-top: -8px; }
   .ch-section-nav a { padding: 9px 11px; font-size: 11px; }
   .ch-tutorial-steps, .ch-link-map-grid { grid-template-columns: 1fr; }
+  .ch-quick-guide { padding: 17px; }
+  .ch-pieces { grid-template-columns: 1fr; }
+  .ch-pieces article { min-height: 112px; }
+  .ch-piece-link { transform: rotate(90deg); line-height: .7; }
   .ch-section-heading { align-items: flex-start; flex-direction: column; }
   .ch-section-heading > span { text-align: left; }
   .ch-flow, .ch-user-journey, .ch-code-explainer, .ch-batch-next { grid-template-columns: 1fr; }
@@ -142,6 +158,9 @@
 .ch-sheet-cards { grid-template-columns: repeat(2, 1fr); gap: 6mm; }
 .ch-card { display: grid; align-content: start; gap: 1.5mm; min-height: 75mm; padding: 4mm 5mm; border: 1px dashed #b9bdc8; border-radius: 3mm; break-inside: avoid; font-family: Arial, sans-serif; }
 .ch-card-brand { margin: 0; color: #8a8f9c; font-size: 7.5pt; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.ch-card-head { display: flex; align-items: center; justify-content: space-between; gap: 4mm; }
+.ch-unit { display: grid; place-items: center; min-width: 15mm; padding: 1.4mm 2mm; border: .5mm solid #1d2130; border-radius: 2mm; font: 800 13pt/1 Arial, sans-serif; }
+.ch-unit small { margin-bottom: 1mm; font-size: 5.5pt; letter-spacing: .08em; }
 .ch-card h2 { margin: 0; font: 700 14pt Arial, sans-serif; }
 .ch-card-activation { display: grid; grid-template-columns: 28mm 1fr; align-items: center; gap: 4mm; }
 .ch-card-activation img { width: 28mm; height: 28mm; }
@@ -153,7 +172,9 @@
 .ch-sheet-qr { grid-template-columns: repeat(5, 1fr); gap: 6mm; }
 .ch-sheet-qr figure { display: grid; justify-items: center; gap: 1.5mm; margin: 0; break-inside: avoid; }
 .ch-sheet-qr img { width: 30mm; height: 30mm; }
-.ch-sheet-qr figcaption { font: 700 8pt Arial, sans-serif; }
+.ch-sheet-qr figcaption { display: grid; place-items: center; min-width: 18mm; padding: 1.3mm 2mm; border: .45mm solid #1d2130; border-radius: 2mm; font-family: Arial, sans-serif; }
+.ch-sheet-qr figcaption span { font-size: 5.5pt; letter-spacing: .1em; }
+.ch-sheet-qr figcaption strong { font-size: 13pt; line-height: 1; }
 @media print {
   @page { size: A4; margin: 0; }
   .global-nav, .ch-print-bar { display: none !important; }

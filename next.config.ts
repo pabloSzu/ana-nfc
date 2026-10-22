@@ -27,8 +27,10 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
       bodySizeLimit: "6mb",
-      // El link de PORTS de VS Code llega con otro dominio; en producción no se habilita nada.
-      ...(isDev ? { allowedOrigins: ["*.devtunnels.ms", "*.*.devtunnels.ms"] } : {}),
+      // El link de PORTS de VS Code llega con otro dominio, y el túnel además reescribe el origen
+      // del pedido a localhost:3000; sin esto Next rechaza los formularios ("Invalid Server
+      // Actions request"). En producción no se habilita nada.
+      ...(isDev ? { allowedOrigins: ["*.devtunnels.ms", "*.*.devtunnels.ms", "localhost:3000"] } : {}),
     },
   },
 };

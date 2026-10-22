@@ -26,9 +26,9 @@ export default async function PrintBatch({ params, searchParams }: { params: Pro
   const origin = getSiteOrigin();
   const host = new URL(origin).host;
   const isQr = que === "qr";
-  const qrImage = (url: string) => "https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=0&data=" + encodeURIComponent(url);
-  // El QR de activación contiene un secreto de un solo uso: se genera dentro del servidor y
-  // nunca se manda a un generador externo. El QR físico solo contiene un enlace público.
+  // Los dos QR se generan dentro del servidor: la impresión no depende de un tercero ni envía
+  // enlaces (el de activación contiene además un secreto de un solo uso) fuera de BIONFC.
+  const exteriorQrs = isQr ? new Map(await Promise.all((tags || []).map(async (tag) => [tag.id, await QRCode.toDataURL(`${origin}/go/${tag.id}?s=qr`, { width: 400, margin: 0, errorCorrectionLevel: "M" })] as const))) : new Map<string, string>();
   const cards = isQr ? [] : await Promise.all((tags || []).map(async (tag) => {
     const code = codeOf.get(tag.id);
     const activationUrl = code ? `${origin}${activationPath(code)}` : "";
@@ -43,12 +43,12 @@ export default async function PrintBatch({ params, searchParams }: { params: Pro
     </header>
     {isQr
       ? <div className="ch-sheet ch-sheet-qr">{(tags || []).map((tag) => <figure key={tag.id}>
-          {/* eslint-disable-next-line @next/next/no-img-element -- imagen externa para imprimir */}
-          <img src={qrImage(`${origin}/go/${tag.id}?s=qr`)} alt={`QR chapita ${tag.tag_number}`} />
-          <figcaption>N° {tag.tag_number}</figcaption>
+          {/* eslint-disable-next-line @next/next/no-img-element -- QR generado en el servidor */}
+          <img src={exteriorQrs.get(tag.id)} alt={`QR chapita ${tag.tag_number}`} />
+          <figcaption><span>UNIDAD</span><strong>{tag.tag_number}</strong></figcaption>
         </figure>)}</div>
       : <div className="ch-sheet ch-sheet-cards">{cards.map((tag) => <article key={tag.id} className="ch-card">
-          <p className="ch-card-brand">BIONFC · chapita de mascota</p>
+          <div className="ch-card-head"><p className="ch-card-brand">BIONFC · chapita de mascota</p><span className="ch-unit"><small>UNIDAD</small>{tag.tag_number}</span></div>
           <h2>Activá tu chapita</h2>
           <div className="ch-card-activation">
             {/* eslint-disable-next-line @next/next/no-img-element -- QR secreto generado en el servidor */}
@@ -57,7 +57,7 @@ export default async function PrintBatch({ params, searchParams }: { params: Pro
           </div>
           <p className="ch-card-backup">Si no podés escanearlo, entrá a <strong>{host}/activar</strong> y escribí:</p>
           <p className="ch-card-code">{tag.code ? formatCode(tag.code) : "—"}</p>
-          <p className="ch-card-foot">Este QR y código son privados y se usan una sola vez. Guardá la tarjeta hasta terminar la activación. · N° {tag.tag_number}</p>
+          <p className="ch-card-foot">Este QR y código son privados y se usan una sola vez. Guardá la tarjeta hasta terminar la activación.</p>
         </article>)}</div>}
   </div>;
 }
