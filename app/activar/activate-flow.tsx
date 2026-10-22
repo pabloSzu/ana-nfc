@@ -6,7 +6,7 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import EmailCodeLogin from "../mi/email-code-login";
 import { activateTag, checkTagCode, switchAccount } from "../mi/auth-actions";
-import { formatCode } from "@/lib/pet-tags";
+import { formatCode, normalizeCode } from "@/lib/pet-tags";
 
 export default function ActivateFlow({ initialCode, signedInEmail }: { initialCode: string; signedInEmail: string }) {
   const cameFromPackagingQr = Boolean(initialCode);
@@ -64,7 +64,7 @@ export default function ActivateFlow({ initialCode, signedInEmail }: { initialCo
     <p className="mi-step">Paso 1 de 3 · {cameFromPackagingQr ? "Chapita encontrada" : "El código"}</p>
     {cameFromPackagingQr && <p className="mi-success" role="status">✓ Leímos el código del packaging. Solo falta confirmar que esta chapita es tuya.</p>}
     <label className="mi-field"><span>{cameFromPackagingQr ? "Código detectado" : "Código de la tarjetita"}</span><input className="mi-code-input" required autoCapitalize="characters" autoComplete="off" spellCheck={false} maxLength={12} value={code} placeholder="ABCD-2346" onChange={(event) => setCode(event.target.value.toUpperCase())} /></label>
-    <label className="mi-check"><input type="checkbox" checked={terms} onChange={(event) => setTerms(event.target.checked)} required /><span>Acepto los <Link href="/terminos" target="_blank">términos y condiciones</Link> y entiendo que los datos que cargue en la chapita (como el WhatsApp de la familia) se muestran a quien la escanee.</span></label>
+    <label className="mi-check"><input type="checkbox" checked={terms} onChange={(event) => setTerms(event.target.checked)} required /><span>Acepto los <Link href={`/terminos?volver=${encodeURIComponent(`/activar${normalizeCode(code) ? `?c=${normalizeCode(code)}` : ""}`)}`}>términos y condiciones</Link> y entiendo que los datos que cargue en la chapita (como el WhatsApp de la familia) se muestran a quien la escanee.</span></label>
     {error && <p className="mi-error" role="alert">{error}</p>}
     <button className="mi-button" type="submit" disabled={busy || !terms}>{busy ? "Revisando…" : "Seguir"}</button>
     {signedInEmail && <p className="mi-hint">Vas a activarla con <strong>{signedInEmail}</strong>. <button type="button" className="mi-link" onClick={() => switchAccount(code)}>No soy yo, usar otro email</button></p>}

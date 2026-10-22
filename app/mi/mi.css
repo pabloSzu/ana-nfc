@@ -69,3 +69,4 @@
 .mi-lost-button { display: flex; align-items: center; justify-content: center; min-height: 50px; border: 2px solid #d92d20; border-radius: 16px; background: #fff; color: #b42318; font-size: 15px; font-weight: 800; text-decoration: none; }
 .mi-lost-button:active { transform: scale(.98); }
 .mi-lost-button.is-on { border-color: #17803d; color: #17803d; }
+.terms-back { display: inline-flex; align-items: center; min-height: 44px; margin: 6px 0 12px; padding: 0 16px; border-radius: 12px; background: #2d1d12; color: #fff !important; font-weight: 800; text-decoration: none; }

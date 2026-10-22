@@ -11,10 +11,17 @@ export const metadata: Metadata = { title: "Términos y privacidad · BIONFC" };
 // aceptada se guarda (lib/terms.ts → client_members.terms_version). Si cambia el texto, cambiar
 // TERMS_VERSION y TERMS_UPDATED.
 // Pendiente: que los revise un abogado cuando el negocio crezca.
-export default function TermsPage() {
+// ?volver=/activar?c=… : se llega desde "Activar" en la misma pestaña, y estos botones vuelven ahí
+// con el código de la tarjetita ya cargado. Solo se aceptan rutas propias (nunca otro sitio).
+const safeBack = (value: string | undefined) => value && /^\/(activar|mi)([/?][\w\-/=?&]*)?$/.test(value) ? value : "";
+
+export default async function TermsPage({ searchParams }: { searchParams: Promise<{ volver?: string }> }) {
+  const back = safeBack((await searchParams).volver);
+  const backLink = back && <Link className="terms-back" href={back}>← Volver {back.startsWith("/activar") ? "a activar mi chapita" : ""}</Link>;
   return <div className="mi-shell">
     <header className="mi-top"><Link href="/" className="mi-brand" aria-label="BIONFC"><BioNFCLogo /></Link></header>
     <main className="mi-main terms">
+      {backLink}
       <h1>Términos y privacidad</h1>
       <p className="mi-hint">Última actualización: {TERMS_UPDATED}</p>
 
@@ -42,6 +49,7 @@ export default function TermsPage() {
 
       <h2>8. Contacto</h2>
       <p>Por consultas, denuncias o para ejercer tus derechos sobre tus datos: <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> o <a href={CONTACT_WHATSAPP} target="_blank" rel="noopener noreferrer">WhatsApp</a>.</p>
+      {backLink}
     </main>
   </div>;
 }
