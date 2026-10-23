@@ -2,6 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import { deleteReplacedPetPhoto, validPetPhotoPath } from "@/lib/pet-photo";
 import { createClient } from "@/lib/supabase/server";
 import { revalidateLandingPage } from "@/lib/landing-cache";
 import { cleanPet, parsePet, petLook, petPhoneProblem, type PetSaveResult } from "@/lib/pet";
@@ -38,20 +40,18 @@ export async function savePet(fd: FormData): Promise<PetSaveResult> {
     background_color: petLook(pet.look).background,
     button_style: { ...(landing.button_style && typeof landing.button_style === "object" ? landing.button_style : {}), pet },
   };
-  const photo = fd.get("photo");
-  if (photo instanceof File && photo.size > 0) {
-    if (photo.size > 5 * 1024 * 1024) return fail("La foto es muy pesada (más de 5 MB). Probá con otra o sacale una captura.");
-    if (!["image/jpeg", "image/png", "image/webp"].includes(photo.type)) return fail("La foto debe ser JPG, PNG o WEBP.");
-    const path = `${userId}/${landingId}/logo-${Date.now()}.${photo.type.split("/")[1].replace("jpeg", "jpg")}`;
-    const { error: uploadError } = await supabase.storage.from("landing-assets").upload(path, photo, { contentType: photo.type, upsert: false });
-    if (uploadError) return fail(uploadError.message);
-    update.logo_url = supabase.storage.from("landing-assets").getPublicUrl(path).data.publicUrl;
+  // La foto nueva ya la subió el navegador (lib/pet-photo-upload.ts): acá llega su nombre.
+  const photoPath = String(fd.get("photo_path") || "");
+  if (photoPath) {
+    if (!validPetPhotoPath(photoPath, userId, landingId)) return fail("No se pudo usar esa foto. Subila de nuevo.");
+    update.logo_url = supabase.storage.from("landing-assets").getPublicUrl(photoPath).data.publicUrl;
   } else if (fd.get("remove_photo") === "true") {
     update.logo_url = null;
   }
 
   const { error } = await supabase.from("landings").update(update).eq("id", landingId).eq("owner_id", userId);
   if (error) return fail(error.message);
+  if ("logo_url" in update) after(() => deleteReplacedPetPhoto(landing.logo_url, String(update.logo_url || ""), landingId));
   revalidatePath(back);
   revalidatePath("/admin");
   revalidatePath("/admin/paginas");

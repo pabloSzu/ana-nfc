@@ -17,6 +17,7 @@ import { readFileSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createClient } from "@supabase/supabase-js";
+import sharp from "sharp";
 import { newActivationCode, newTagSlug } from "../lib/pet-tags.ts";
 
 const BASE = process.env.E2E_BASE || "http://localhost:3000";
@@ -71,6 +72,12 @@ async function cleanupUser(userId: string) {
   if (clientIds.length) await admin.from("landings").delete().in("client_id", clientIds);
   await admin.from("client_members").delete().eq("user_id", userId);
   if (clientIds.length) await admin.from("clients").delete().in("id", clientIds);
+  // Las fotos que subió (carpeta del usuario, una subcarpeta por chapita).
+  const { data: folders } = await admin.storage.from("landing-assets").list(userId);
+  for (const folder of folders || []) {
+    const { data: files } = await admin.storage.from("landing-assets").list(`${userId}/${folder.name}`);
+    if (files?.length) await admin.storage.from("landing-assets").remove(files.map((file) => `${userId}/${folder.name}/${file.name}`));
+  }
   await admin.auth.admin.deleteUser(userId);
 }
 
@@ -161,6 +168,46 @@ async function run() {
     check("Guardar: muestra el aviso", await waitFor("document.querySelector('.toast-wrap')?.textContent.includes('Guardado')", 10));
     const { data: renamed } = await admin.from("landings").select("business_name,pet_slug").eq("id", data.tagId).single();
     check("Guardar: el nombre quedó en la base", renamed?.business_name === "Toby Editado", `link ${renamed?.pet_slug}`);
+
+    // 3b. Foto: subir, cambiar y sacar. Se sube directo del navegador y la anterior se borra.
+    const photoFiles = await Promise.all(["#2b6cb0", "#c25e22"].map(async (color, index) => {
+      const file = join(profile, `foto-${index}.jpg`);
+      await sharp({ create: { width: 900, height: 700, channels: 3, background: color } }).jpeg().toFile(file);
+      return file;
+    }));
+    const storedPhoto = async () => (await admin.from("landings").select("logo_url").eq("id", data.tagId).single()).data?.logo_url || "";
+    const photoInStorage = async (url: string) => {
+      const path = url.split("/landing-assets/")[1] || "";
+      const folder = path.split("/").slice(0, 2).join("/");
+      const { data: files } = await admin.storage.from("landing-assets").list(folder);
+      return Boolean(files?.some((file) => file.name === path.split("/")[2]));
+    };
+    const waitDb = async (test: () => Promise<boolean>, seconds = 15) => { for (let i = 0; i < seconds * 2; i++) { if (await test()) return true; await sleep(500); } return false; };
+    let previousPhoto = "";
+    for (const [index, file] of photoFiles.entries()) {
+      await click("[data-tour=row-pet]");
+      await waitFor("Boolean(document.querySelector('.pet-form-bar'))");
+      const { root } = await send("DOM.getDocument");
+      const { nodeId } = await send("DOM.querySelector", { nodeId: root.nodeId, selector: "input[type=file]" });
+      await send("DOM.setFileInputFiles", { nodeId, files: [file] });
+      await waitFor("Boolean(document.querySelector('.pet-photo-actions'))");
+      await clickText("Listo");
+      const photoStarted = Date.now();
+      await click(".pet-form-bar .is-save");
+      await waitFor("Boolean(document.querySelector('.pet-menu'))");
+      const photoSaved = await waitDb(async () => Boolean(await storedPhoto()) && (await storedPhoto()) !== previousPhoto);
+      const url = await storedPhoto();
+      check(`Foto (${index + 1}): se guarda en la carpeta de quien guarda`, photoSaved && url.includes(`/landing-assets/${data.userId}/${data.tagId}/`) && await photoInStorage(url), `${Date.now() - photoStarted} ms`);
+      if (previousPhoto) check("Foto: la anterior se borra del storage", await waitDb(async () => !(await photoInStorage(previousPhoto))));
+      previousPhoto = url;
+      await sleep(5500);
+    }
+    await click("[data-tour=row-pet]");
+    await clickText("Quitar", ".pet-form button");
+    await click(".pet-form-bar .is-save");
+    check("Foto: al sacarla, se borra del storage", await waitDb(async () => !(await storedPhoto()) && !(await photoInStorage(previousPhoto))));
+    await waitFor("Boolean(document.querySelector('.pet-menu'))");
+    await sleep(5500);
 
     // 4. Cancelar con cambios.
     await click("[data-tour=row-pet]");

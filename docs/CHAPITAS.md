@@ -95,6 +95,7 @@ al dueño cómo cargarla y al que la encontró cómo escribirnos.
 | Página pública | `components/pet-renderer.tsx` |
 | Editor (Admin y dueño) | `app/admin/landings/[id]/mascota/pet-editor.tsx` (`mode="owner"` para el dueño); sus pantallas en `pet-editor-flow.tsx` y `pet-editor-menu.tsx` |
 | Guardar | `saveMyPet` (dueño, `app/mi/chapita/[id]/actions.ts`) y `savePet` (Admin): responden qué pasó (`PetSaveResult`) y el editor elige la pantalla y el aviso |
+| Foto de la mascota | Se sube directo del navegador al storage, a la carpeta de quien guarda (`lib/pet-photo-upload.ts`); la acción recibe el nombre, lo valida y borra la foto anterior (`lib/pet-photo.ts`) |
 | Imágenes para compartir | `app/api/og/mascota/[slug]/route.tsx` (link, historia, publicación) y `components/pet-share-button.tsx` |
 | Lotes e impresión | `app/admin/chapitas/` |
 | Activar | `app/activar/` |

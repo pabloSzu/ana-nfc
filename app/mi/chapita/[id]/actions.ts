@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { sendWelcomeEmail } from "@/lib/welcome-email";
+import { deleteReplacedPetPhoto, validPetPhotoPath } from "@/lib/pet-photo";
 import { createClient } from "@/lib/supabase/server";
 import { revalidateLandingPage } from "@/lib/landing-cache";
 import { cleanPet, parsePet, petHasContact, petLook, petPhoneProblem, type PetSaveResult } from "@/lib/pet";
@@ -42,16 +43,12 @@ export async function saveMyPet(fd: FormData): Promise<PetSaveResult> {
   const badPhone = pet.family.find((member) => member.phone && petPhoneProblem(member.phone));
   if (badPhone) return fail(`Revisá el número ${badPhone.name ? `de ${badPhone.name}` : "de WhatsApp"}: ${petPhoneProblem(badPhone.phone)}`);
 
+  // La foto nueva ya la subió el celular (lib/pet-photo-upload.ts): acá llega su nombre.
   let logoUrl: string = landing.logo_url || "";
-  const photo = fd.get("photo");
-  if (photo instanceof File && photo.size > 0) {
-    if (photo.size > 5 * 1024 * 1024) return fail("La foto es muy pesada (más de 5 MB). Probá con otra o sacale una captura.");
-    if (!["image/jpeg", "image/png", "image/webp"].includes(photo.type)) return fail("La foto debe ser JPG, PNG o WEBP.");
-    // A la carpeta del dueño: es la única donde la base le deja subir.
-    const path = `${userId}/${landingId}/logo-${Date.now()}.${photo.type.split("/")[1].replace("jpeg", "jpg")}`;
-    const { error: uploadError } = await supabase.storage.from("landing-assets").upload(path, photo, { contentType: photo.type, upsert: false });
-    if (uploadError) return fail("No se pudo subir la foto. Probá con otra.");
-    logoUrl = supabase.storage.from("landing-assets").getPublicUrl(path).data.publicUrl;
+  const photoPath = String(fd.get("photo_path") || "");
+  if (photoPath) {
+    if (!validPetPhotoPath(photoPath, userId, landingId)) return fail(ERRORS.foto_invalida);
+    logoUrl = supabase.storage.from("landing-assets").getPublicUrl(photoPath).data.publicUrl;
   } else if (fd.get("remove_photo") === "true") {
     logoUrl = "";
   }
@@ -62,6 +59,8 @@ export async function saveMyPet(fd: FormData): Promise<PetSaveResult> {
     p_accent: look.accent, p_background: look.background, p_publish: petHasContact(pet),
   });
   if (error) return fail(Object.entries(ERRORS).find(([key]) => error.message.includes(key))?.[1] || "No se pudo guardar. Probá de nuevo.");
+  // La foto anterior se borra después de responder (no demora el guardado).
+  after(() => deleteReplacedPetPhoto(landing.logo_url, logoUrl, landingId));
   revalidatePath(back);
   revalidatePath("/mi");
   // La página pública se guarda en caché (app/[slug]/page.tsx): sin esto, el cartel de perdido

@@ -25,6 +25,7 @@ import { ToastBubble } from "@/components/toast";
 import PetPhotoAdjust from "./pet-photo-adjust";
 import "driver.js/dist/driver.css";
 import { compressImage } from "@/lib/compress-image";
+import { uploadPetPhoto } from "@/lib/pet-photo-upload";
 import { FontLinks } from "@/lib/fonts";
 import { PET_LOOKS, parsePet, petForEditing, petGendered, petHasContact, type PetData, type PetFamily, type PetSaveResult } from "@/lib/pet";
 import { EditorProvider, PANELS, type Editor, type EditorLanding, type Panel, type Screen } from "./pet-editor-context";
@@ -42,6 +43,7 @@ type Props = {
 };
 
 const OFFLINE = "No pudimos conectarnos. Revisá tu internet y probá de nuevo.";
+const PHOTO_FAILED = "No se pudo subir la foto. Revisá tu internet y probá de nuevo.";
 
 // Qué parte de la chapita muestra la miniatura mientras se edita cada cosa (en la compu).
 const PART_OF: Record<Panel | "menu", string> = { menu: ".pet-page", pet: ".pet-hero", family: ".pet-family", ficha: ".pet-card, .pet-family", look: ".pet-page", lost: ".pet-page" };
@@ -78,6 +80,8 @@ export default function PetEditor({ landing: initialLanding, initialPet, saveAct
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const savingNow = useRef(false);
+  // La foto ya subida al storage: si el guardado falla y se reintenta, no se sube otra vez.
+  const uploadedPhoto = useRef<{ file: File; path: string } | null>(null);
   const [notice, setNotice] = useState<{ message: string; isError: boolean; key: number } | null>(null);
   // La foto elegida vive acá y se agrega al guardar.
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -185,10 +189,19 @@ export default function PetEditor({ landing: initialLanding, initialPet, saveAct
     formData.set("remove_photo", photoRemoved ? "true" : "false");
     // El dueño ya aceptó los términos al activar; el aviso de qué se publica está en el último paso.
     if (isOwner && !landing.published) formData.set("public_visibility_ack", "yes");
-    if (photoFile) formData.set("photo", photoFile);
     let result: PetSaveResult;
     try {
-      result = await saveAction(formData);
+      // La foto nueva se sube primero, directo del celular al storage; la acción recibe su nombre.
+      if (photoFile && uploadedPhoto.current?.file !== photoFile) {
+        const path = await uploadPetPhoto(photoFile, landing.id);
+        uploadedPhoto.current = path ? { file: photoFile, path } : null;
+      }
+      if (photoFile && !uploadedPhoto.current) {
+        result = { ok: false, error: PHOTO_FAILED };
+      } else {
+        if (photoFile && uploadedPhoto.current) formData.set("photo_path", uploadedPhoto.current.path);
+        result = await saveAction(formData);
+      }
     } catch (error) {
       if (String((error as { digest?: string })?.digest).startsWith("NEXT_REDIRECT")) throw error;
       result = { ok: false, error: OFFLINE };
