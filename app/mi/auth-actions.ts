@@ -103,7 +103,8 @@ export async function activateTag(code: string, acceptedTerms: boolean): Promise
   }
   if (!data) return { ok: false, error: "Ese código no existe o ya se usó." };
   revalidatePath("/mi");
-  redirect(`/mi/chapita/${data}?saved=${encodeURIComponent("¡Chapita activada! Cargá los datos de tu mascota")}`);
+  // Sin aviso: el editor arranca en "Paso 1 de 3", que ya dice qué sigue.
+  redirect(`/mi/chapita/${data}`);
 }
 
 // "No soy yo": en /activar con la sesión de otra persona abierta (por ejemplo, la del celular de

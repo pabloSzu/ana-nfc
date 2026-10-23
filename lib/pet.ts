@@ -35,6 +35,13 @@ export function petLook(id: string | undefined): PetLook {
 }
 
 export type PetFamily = { name: string; phone: string };
+
+// Lo que responde guardar una chapita (saveMyPet del dueño, savePet del Admin). El editor decide
+// con esto qué mostrar: message es el aviso de arriba (null: ninguno, porque la pantalla que sigue
+// ya lo cuenta), lostActivated abre "Ahora, difundilo" y firstPublish, "¡Ya funciona!".
+export type PetSaveResult =
+  | { ok: true; message: string | null; lostActivated: boolean; firstPublish: boolean }
+  | { ok: false; error: string };
 export type PetPhotoPlacement = { x: number; y: number; zoom: number };
 
 // Estilo de la foto encuadrada: un <img> dentro de un marco cuadrado con overflow oculto y

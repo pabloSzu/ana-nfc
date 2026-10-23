@@ -332,3 +332,5 @@ a.pet-celebrate-more { align-items: center; text-decoration: none; }
 /* "Activar aviso" / "Desactivar aviso" en la pantalla de Modo perdido (rojo / verde). */
 .mi-shell .pet-step-next.pet-lost-confirm, .pet-step-next.pet-lost-confirm { margin-top: 4px; background: #17803d; box-shadow: none; }
 .mi-shell .pet-step-next.pet-lost-confirm.is-on, .pet-step-next.pet-lost-confirm.is-on { background: #d92d20; box-shadow: 0 8px 18px #d92d2033; }
+/* Diseño en el menú: el colorcito del elegido. */
+.pet-menu-swatch { flex: none; width: 34px; height: 24px; border-radius: 7px; box-shadow: inset 0 0 0 1px #00000018; }

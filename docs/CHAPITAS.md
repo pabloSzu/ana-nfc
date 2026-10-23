@@ -88,7 +88,9 @@ al dueño cómo cargarla y al que la encontró cómo escribirnos.
 | Códigos y slugs de lote | `lib/pet-tags.ts` |
 | Datos de la chapita y diseños | `lib/pet.ts` |
 | Página pública | `components/pet-renderer.tsx` |
-| Editor (Admin y dueño) | `app/admin/landings/[id]/mascota/pet-editor.tsx` (`mode="owner"` para el dueño) |
+| Editor (Admin y dueño) | `app/admin/landings/[id]/mascota/pet-editor.tsx` (`mode="owner"` para el dueño); sus pantallas en `pet-editor-flow.tsx` y `pet-editor-menu.tsx` |
+| Guardar | `saveMyPet` (dueño, `app/mi/chapita/[id]/actions.ts`) y `savePet` (Admin): responden qué pasó (`PetSaveResult`) y el editor elige la pantalla y el aviso |
+| Imágenes para compartir | `app/api/og/mascota/[slug]/route.tsx` (link, historia, publicación) y `components/pet-share-button.tsx` |
 | Lotes e impresión | `app/admin/chapitas/` |
 | Activar | `app/activar/` |
 | Panel del dueño y login | `app/mi/` |
@@ -112,6 +114,15 @@ al dueño cómo cargarla y al que la encontró cómo escribirnos.
 - Si despublicás desde el Admin una chapita que ya tiene dueño (por una denuncia), queda
   **pausada** (`blocked_at`): el dueño no la puede volver a publicar. Publicarla desde el Admin la
   despausa.
+
+## Probar todo antes de subir
+
+Con el servidor de DEV andando (`npm run dev`), `npm run e2e:chapitas` hace el recorrido completo
+como un dueño real, en Chrome emulando un celular: activar con el código, los 3 pasos y publicar,
+los pasos opcionales, editar y guardar, cancelar, activar y desactivar el modo perdido (dos veces),
+que la página pública muestre el cartel, que el link anterior redirija y que "Compartir" prepare
+las imágenes. Crea su propio usuario y chapita de prueba (sin mandar mails) y los borra al
+terminar. Solo corre contra DEV. Correrlo antes de cada subida a PROD.
 
 ## Configuración que no está en el código
 

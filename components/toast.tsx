@@ -6,20 +6,13 @@ import { IconCheckCircle, IconAlertCircle, IconX } from "@/components/icons";
 
 const NOTICE_KEYS = ["error", "success", "saved"];
 
-export default function Toast() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
-  const error = searchParams.get("error");
-  const success = searchParams.get("success") || searchParams.get("saved");
-  const message = error || success;
-  const isError = Boolean(error);
-
+// El aviso de arriba (verde o rojo, se va solo a los 5 segundos). Lo usan Toast, que lo saca de
+// la dirección (?saved, ?error) después de un redirect, y las pantallas que reciben la respuesta
+// de una acción directamente (por ejemplo, el editor de la chapita).
+export function ToastBubble({ message, isError = false, onDone }: { message: string; isError?: boolean; onDone: () => void }) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (!message) return;
     setVisible(true);
     const timer = setTimeout(dismiss, 5000);
     return () => clearTimeout(timer);
@@ -28,15 +21,8 @@ export default function Toast() {
 
   function dismiss() {
     setVisible(false);
-    setTimeout(() => {
-      const params = new URLSearchParams(searchParams.toString());
-      NOTICE_KEYS.forEach((key) => params.delete(key));
-      const qs = params.toString();
-      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-    }, 220);
+    setTimeout(onDone, 220);
   }
-
-  if (!message) return null;
 
   return (
     <div className={`toast-wrap ${isError ? "toast-error" : "toast-success"} ${visible ? "toast-in" : "toast-out"}`} role="status">
@@ -47,4 +33,26 @@ export default function Toast() {
       </button>
     </div>
   );
+}
+
+export default function Toast() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const error = searchParams.get("error");
+  const success = searchParams.get("success") || searchParams.get("saved");
+  const message = error || success;
+
+  if (!message) return null;
+
+  // Al cerrarse, saca el aviso de la dirección (si no, volvería a aparecer al recargar).
+  function clear() {
+    const params = new URLSearchParams(searchParams.toString());
+    NOTICE_KEYS.forEach((key) => params.delete(key));
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }
+
+  return <ToastBubble key={message} message={message} isError={Boolean(error)} onDone={clear} />;
 }
