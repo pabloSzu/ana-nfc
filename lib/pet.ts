@@ -40,7 +40,9 @@ export type PetFamily = { name: string; phone: string };
 // con esto qué mostrar: message es el aviso de arriba (null: ninguno, porque la pantalla que sigue
 // ya lo cuenta), lostActivated abre "Ahora, difundilo" y firstPublish, "¡Ya funciona!".
 export type PetSaveResult =
-  | { ok: true; message: string | null; lostActivated: boolean; firstPublish: boolean }
+  // landing: cómo quedó la página (publicada, link, foto). El editor lo usa directo, sin esperar
+  // a que la página se vuelva a pedir al servidor.
+  | { ok: true; message: string | null; lostActivated: boolean; firstPublish: boolean; landing: { published: boolean; slug: string; photoUrl: string } }
   | { ok: false; error: string };
 export type PetPhotoPlacement = { x: number; y: number; zoom: number };
 
@@ -117,6 +119,14 @@ export function petMissing(pet: PetData, hasPhoto: boolean): PetMissing[] {
 // Hembra o macho, según lo elegido en "Sexo" (botones Macho/Hembra del editor). Si no lo
 // cargaron, se usa masculino, como en la mayoría de los textos de antes.
 export const petIsFemale = (pet: Pick<PetData, "about">) => /^hembra/i.test(pet.about.sex.trim());
+// Recompensa escrita como número solo ("50000", "$ 50.000") → "$50.000". Cualquier otro texto
+// ("A convenir", "Ofrezco recompensa") queda como está.
+export function formatReward(value: string): string {
+  const text = value.trim();
+  if (!/^\$?\s*\d[\d.]*$/.test(text)) return value;
+  return "$" + Number(text.replace(/\D/g, "")).toLocaleString("es-AR");
+}
+
 export const petGendered = (pet: Pick<PetData, "about">, male: string, female: string) => petIsFemale(pet) ? female : male;
 // Los datos de salud con "Castrado" o "Castrada" según corresponda.
 export const petHealthFields = (pet: Pick<PetData, "about">) =>

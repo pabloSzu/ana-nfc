@@ -18,7 +18,7 @@ export async function savePet(fd: FormData): Promise<PetSaveResult> {
   const back = `/admin/landings/${landingId}/mascota`;
   const fail = (error: string): PetSaveResult => ({ ok: false, error });
 
-  const { data: landing, error: lookupError } = await supabase.from("landings").select("id,slug,pet_slug,business_type,button_style").eq("id", landingId).eq("owner_id", userId).maybeSingle();
+  const { data: landing, error: lookupError } = await supabase.from("landings").select("id,slug,pet_slug,business_type,button_style,logo_url").eq("id", landingId).eq("owner_id", userId).maybeSingle();
   if (lookupError) return fail(lookupError.message);
   if (!landing || landing.business_type !== "pet") return fail("Chapita inexistente o sin permisos.");
 
@@ -60,7 +60,7 @@ export async function savePet(fd: FormData): Promise<PetSaveResult> {
   // Si cambió el nombre, el link anterior pasa a ser un alias que redirige: su página guardada
   // también se descarta.
   if (landing.pet_slug) revalidateLandingPage(landing.pet_slug);
-  const { data: savedLanding } = await supabase.from("landings").select("pet_slug").eq("id", landingId).eq("owner_id", userId).maybeSingle();
+  const { data: savedLanding } = await supabase.from("landings").select("pet_slug,published,logo_url").eq("id", landingId).eq("owner_id", userId).maybeSingle();
   if (savedLanding?.pet_slug) revalidateLandingPage(savedLanding.pet_slug);
-  return { ok: true, message: "Cambios guardados", lostActivated: false, firstPublish: false };
+  return { ok: true, message: "Cambios guardados", lostActivated: false, firstPublish: false, landing: { published: Boolean(savedLanding?.published), slug: savedLanding?.pet_slug || landing.slug, photoUrl: savedLanding?.logo_url || "" } };
 }

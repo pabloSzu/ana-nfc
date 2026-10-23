@@ -62,7 +62,8 @@ export type Editor = {
   publish: () => Promise<void>;
   // La pantalla de una opción: "Guardar" guarda y vuelve al menú (o a "Ahora, difundilo" si se
   // activó el modo perdido); "Cancelar" vuelve sin guardar y, con cambios, pregunta antes.
-  savePanel: () => Promise<void>;
+  // patch: guarda con esto cambiado (lo usan "Activar aviso" y "Desactivar aviso").
+  savePanel: (patch?: Partial<PetData>) => Promise<void>;
   cancelPanel: () => void;
   openBig: () => void;
   startTour: () => void;

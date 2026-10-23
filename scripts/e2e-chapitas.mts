@@ -170,12 +170,18 @@ async function run() {
     await click(".pet-confirm-leave");
     check("Cancelar: vuelve al menú sin el cambio", await waitFor("Boolean(document.querySelector('.pet-menu')) && document.querySelector('.pet-summary strong')?.textContent === 'Toby Editado'"));
 
-    // 5. Modo perdido, dos veces.
+    // 5. Modo perdido, dos veces. Un solo botón: "Activar aviso" (sin "Guardar" arriba).
     for (const round of [1, 2]) {
       await click("[data-tour=row-lost]");
-      await click(".pet-switch");
+      await waitFor("Boolean(document.querySelector('.pet-lost-confirm'))");
+      check(`Perdido (${round}): una sola acción (sin Guardar arriba)`, !(await js("Boolean(document.querySelector('.pet-form-bar .is-save'))")) && (await js("document.querySelectorAll('.pet-form .pet-step-next').length")) === 1);
+      if (round === 1) {
+        // La recompensa escrita como número queda "$50.000".
+        await type(".pet-form input[placeholder^='Ej: $']", "50000");
+        await js("document.querySelector(\".pet-form input[placeholder^='Ej: $']\").blur()");
+      }
       const lostStarted = Date.now();
-      await click(round === 1 ? ".pet-lost-confirm" : ".pet-form-bar .is-save");
+      await click(".pet-lost-confirm");
       const spreadOk = await waitFor("Boolean(document.querySelector('.pet-spread'))", 30);
       check(`Perdido (${round}): aparece 'Ahora, difundilo'`, spreadOk, `${Date.now() - lostStarted} ms`);
       check(`Perdido (${round}): sin cartelito del modo perdido`, !(await js("Boolean(document.querySelector('.toast-wrap')?.textContent.toLowerCase().includes('perdido'))")));
@@ -183,10 +189,21 @@ async function run() {
       if (round === 1) {
         const page = await fetch(`${BASE}/mascota/${renamed?.pet_slug}`).then((response) => response.text());
         check("Perdido: la página pública muestra el cartel", page.includes("¡Estoy perdida!"));
+        const { data: lostRow } = await admin.from("landings").select("button_style").eq("id", data.tagId).single();
+        const reward = (lostRow?.button_style as { pet?: { reward?: string } })?.pet?.reward;
+        check("Perdido: la recompensa queda con $ y puntos", reward === "$50.000", String(reward));
       }
       await clickText("Listo");
       await click("[data-tour=row-lost]");
-      await click(".pet-switch");
+      check(`Perdido (${round}): muestra que el aviso está activo`, await waitFor("Boolean(document.querySelector('.pet-lost-status'))"));
+      if (round === 2) {
+        // Con el aviso activo, cambiar la zona: "Guardar cambios" guarda sin desactivar.
+        await type(".pet-form input[placeholder^='Ej: Barrio']", "Plaza Colón");
+        await clickText("Guardar cambios");
+        check("Perdido (2): guardar cambios sigue perdido", await waitFor("Boolean(document.querySelector('.pet-menu')) && Boolean(document.querySelector('.pet-lost-card.is-on')) && document.querySelector('.toast-wrap')?.textContent.includes('Guardado')", 20));
+        await click("[data-tour=row-lost]");
+        await waitFor("Boolean(document.querySelector('.pet-lost-status'))");
+      }
       await click(".pet-lost-confirm");
       check(`Perdido (${round}): desactivar vuelve al menú con el aviso`, await waitFor("Boolean(document.querySelector('.pet-menu')) && document.querySelector('.toast-wrap')?.textContent.includes('desactivado')", 20));
       await sleep(5500);

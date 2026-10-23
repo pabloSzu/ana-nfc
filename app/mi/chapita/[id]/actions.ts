@@ -89,5 +89,5 @@ export async function saveMyPet(fd: FormData): Promise<PetSaveResult> {
     : firstPublish || lostActivated ? null
     : !pet.lost && wasLost ? `✓ Modo perdido desactivado. ¡Qué bueno que ${name} volvió!`
     : `✓ Guardado. Ya se ve en la página de ${name}.`;
-  return { ok: true, message, lostActivated, firstPublish };
+  return { ok: true, message, lostActivated, firstPublish, landing: { published: Boolean(savedLanding?.published), slug: savedLanding?.pet_slug || landing.slug, photoUrl: logoUrl } };
 }

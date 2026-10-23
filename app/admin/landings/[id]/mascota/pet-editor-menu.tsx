@@ -2,11 +2,12 @@
 
 // El menú del editor de la chapita y la pantalla de cada opción.
 //  · MenuScreen: "¿Se perdió?" aparte y a la vista, y la lista de opciones. A la derecha de cada
-//    fila, solo lo que hace falta mirar: "Agregar" (violeta) si está vacío y en rojo lo que falta
+//    fila, solo lo que hace falta mirar: "Agregar" (en color) si está vacío y en rojo lo que falta
 //    para que funcione.
 //  · PanelScreen: una opción, con "Cancelar · Guardar" fijo arriba, como al editar un contacto en
-//    el celular.
-import { PET_ABOUT_FIELDS, PET_FAMILY_MAX, PET_HEALTH_FIELDS, cleanPhoneInput, petGendered, petHasContact, petLook, petPhotoStyle, petRows } from "@/lib/pet";
+//    el celular. En modo perdido, arriba solo "Cancelar": la acción es el botón grande de abajo.
+import { useState } from "react";
+import { PET_ABOUT_FIELDS, PET_FAMILY_MAX, PET_HEALTH_FIELDS, cleanPhoneInput, formatReward, petGendered, petHasContact, petLook, petPhotoStyle, petRows } from "@/lib/pet";
 import { TITLES, useEditor, type Panel } from "./pet-editor-context";
 import { Choice, Field, LookGrid, MiniPreview, PhoneStatus } from "./pet-editor-fields";
 
@@ -42,7 +43,7 @@ export function MenuScreen() {
           <span className="pet-menu-icon" aria-hidden="true">{TITLES[row.id].icon}</span>
           <span className="pet-menu-label">{TITLES[row.id].label}</span>
           {row.status && <span className={`pet-menu-status${row.tone ? ` is-${row.tone}` : ""}`}>{row.status}</span>}
-          {row.id === "look" && <span className="pet-menu-swatch" role="img" aria-label={`Diseño ${look.label}`} style={{ background: `linear-gradient(135deg, ${look.background} 0 58%, ${look.accent} 58% 100%)` }} />}
+          {row.id === "look" && <span className="pet-menu-swatch" role="img" aria-label={look.label} style={{ background: `linear-gradient(135deg, ${look.background} 0 58%, ${look.accent} 58% 100%)` }} />}
           <span className="pet-menu-go" aria-hidden="true">›</span>
         </button>
       </li>)}
@@ -57,12 +58,21 @@ export function MenuScreen() {
 }
 
 export function PanelScreen({ panel }: { panel: Panel }) {
-  const { savedPet, pet, name, setName, petName, photoUrl, photo, saving, change, about, health, setMember, savePanel, cancelPanel } = useEditor();
+  const { savedPet, pet, name, setName, petName, photoUrl, photo, dirty, saving, change, about, health, setMember, savePanel, cancelPanel } = useEditor();
+  // Qué botón del modo perdido se tocó (para poner la ruedita en ese).
+  const [lostAction, setLostAction] = useState<"save" | "on" | "off">("save");
+  const runLost = (action: "save" | "on" | "off") => { setLostAction(action); savePanel(action === "save" ? undefined : { lost: action === "on" }); };
+  const spinner = (action: "save" | "on" | "off", label: string) => saving && lostAction === action ? <><i className="spin" aria-hidden="true" />{label}</> : null;
+  const lostFields = <>
+    <Field label="Dónde se perdió (opcional)"><input value={pet.lostZone} maxLength={120} placeholder="Ej: Barrio Cofico, cerca de la plaza" onChange={(event) => change({ lostZone: event.target.value })} /></Field>
+    <Field label="Recompensa (opcional)" help="Completala solo si realmente vas a ofrecerla. Si queda vacío, no se muestra."><input value={pet.reward} maxLength={60} placeholder="Ej: $50.000" onChange={(event) => change({ reward: event.target.value })} onBlur={(event) => { const reward = formatReward(event.target.value); if (reward !== pet.reward) change({ reward }); }} /></Field>
+  </>;
   return <section className="pet-form">
     <div className="pet-form-bar">
       <button type="button" onClick={cancelPanel} disabled={saving}>Cancelar</button>
       <strong>{TITLES[panel].label}</strong>
-      <button type="button" className="is-save" onClick={savePanel} disabled={saving} aria-label={saving ? "Guardando" : undefined}>{saving ? <i className="spin" aria-hidden="true" /> : "Guardar"}</button>
+      {/* En modo perdido la acción es el botón grande de abajo (uno solo: activar o desactivar). */}
+      {panel === "lost" ? <span aria-hidden="true" /> : <button type="button" className="is-save" onClick={() => savePanel()} disabled={saving} aria-label={saving ? "Guardando" : undefined}>{saving ? <i className="spin" aria-hidden="true" /> : "Guardar"}</button>}
     </div>
 
     {panel === "look" && <>
@@ -121,18 +131,18 @@ export function PanelScreen({ panel }: { panel: Panel }) {
       <Field label="Si alguien la encuentra…"><textarea rows={3} value={pet.finder} maxLength={500} placeholder={"Ej: Soy manso pero un poco miedoso.\nAcercate despacio y llamame por mi nombre."} onChange={(event) => change({ finder: event.target.value })} /></Field>
     </>}
 
-    {panel === "lost" && <>
-      <button type="button" className={`pet-switch${pet.lost ? " is-on" : ""}`} role="switch" aria-checked={pet.lost} onClick={() => change({ lost: !pet.lost })}>
-        <span className="pet-switch-track" aria-hidden="true" />
-        <span><strong>{pet.lost ? "Modo perdido activo" : "Modo perdido inactivo"}</strong><small>Activá esta opción si se perdió: arriba de la página aparecerá un aviso rojo. Desactivala cuando vuelva. El cambio se aplica al guardar.</small></span>
-      </button>
-      <Field label="Dónde se perdió (opcional)"><input value={pet.lostZone} maxLength={120} placeholder="Ej: Barrio Cofico, cerca de la plaza" onChange={(event) => change({ lostZone: event.target.value })} /></Field>
-      <Field label="Recompensa (opcional)" help="Completala solo si realmente vas a ofrecerla. Si queda vacío, no se muestra."><input value={pet.reward} maxLength={60} placeholder="Ej: $50.000" onChange={(event) => change({ reward: event.target.value })} /></Field>
-      {/* Si cambió el interruptor, el botón dice lo que va a pasar al tocarlo: es el toque que
-          publica (o saca) el cartel rojo. Hace lo mismo que "Guardar". */}
-      {pet.lost !== savedPet.lost && <button type="button" className={`pet-step-next pet-lost-confirm${pet.lost ? " is-on" : ""}`} onClick={savePanel} disabled={saving}>
-        {saving ? <><i className="spin" aria-hidden="true" />{pet.lost ? "Activando…" : "Desactivando…"}</> : pet.lost ? "🚨 Activar aviso" : "✓ Desactivar aviso"}
-      </button>}
+    {/* Modo perdido: un solo botón que dice lo que pasa al tocarlo, según lo guardado. */}
+    {panel === "lost" && !savedPet.lost && <>
+      <p className="pet-editor-help">Si se perdió, activá el aviso: arriba de su página aparece este cartel rojo y después lo compartís por WhatsApp o en historias.</p>
+      <MiniPreview preview={{ ...pet, lost: true }} />
+      {lostFields}
+      <button type="button" className="pet-step-next pet-lost-confirm is-on" onClick={() => runLost("on")} disabled={saving}>{spinner("on", "Activando…") || "🚨 Activar aviso"}</button>
+    </>}
+    {panel === "lost" && savedPet.lost && <>
+      <div className="pet-lost-status"><span aria-hidden="true">🚨</span><span><strong>El aviso está activo</strong><small>Arriba de la página de {petName} se ve el cartel rojo. Cuando aparezca, desactivalo.</small></span></div>
+      {lostFields}
+      {dirty && <button type="button" className="pet-step-next" onClick={() => runLost("save")} disabled={saving}>{spinner("save", "Guardando…") || "Guardar cambios"}</button>}
+      <button type="button" className="pet-step-next pet-lost-confirm" onClick={() => runLost("off")} disabled={saving}>{spinner("off", "Desactivando…") || "✓ Apareció: desactivar aviso"}</button>
     </>}
   </section>;
 }

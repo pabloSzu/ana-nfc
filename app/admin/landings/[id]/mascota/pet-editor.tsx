@@ -54,7 +54,11 @@ function sectionOf(screen: Screen): PetSection {
   return screen.panel === "ficha" ? "about" : screen.panel === "look" ? "design" : screen.panel;
 }
 
-export default function PetEditor({ landing, initialPet, saveAction, publishAction, mode = "admin" }: Props) {
+export default function PetEditor({ landing: initialLanding, initialPet, saveAction, publishAction, mode = "admin" }: Props) {
+  // Lo que devuelve cada guardado (publicada, link, foto) pisa lo que vino al abrir: así no
+  // depende de que la página se vuelva a pedir al servidor a tiempo.
+  const [savedLanding, setSavedLanding] = useState<Partial<EditorLanding>>({});
+  const landing = { ...initialLanding, ...savedLanding };
   const isOwner = mode === "owner";
   const searchParams = useSearchParams();
   // Los teléfonos, como los escribe la gente ("351 555-1234"), no como se guardan.
@@ -194,6 +198,8 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
     }
     if (!result.ok) { notify(result.error, true); return result; }
     setSaved({ name, pet: petToSave });
+    setSavedLanding(result.landing);
+    setPhotoRemoved(false);
     // Los datos de alrededor que cambia el servidor (si quedó publicada, el link, la foto).
     router.refresh();
     setDirty(false);
@@ -208,9 +214,9 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
     if (result?.ok) setScreen(result.firstPublish ? { name: "after", step: "ready" } : { name: "menu" });
   }
 
-  async function savePanel() {
-    if (!dirty) { setScreen({ name: "menu" }); return; }
-    const result = await save();
+  async function savePanel(patch?: Partial<PetData>) {
+    if (!dirty && !patch) { setScreen({ name: "menu" }); return; }
+    const result = await save(patch ? { pet: { ...pet, ...patch } } : {});
     if (!result?.ok) return;
     setScreen(result.lostActivated ? { name: "spread" } : result.firstPublish ? { name: "after", step: "ready" } : { name: "menu" });
   }
@@ -257,7 +263,7 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
       { element: ".pet-menu", popover: { title: "Todo lo que podés cambiar", description: "Tocá una fila para editarla. A la derecha ves lo que falta." } },
       { element: "[data-tour='row-family']", popover: { title: "Contacto público", description: "El WhatsApp que cargues aparece en la ficha para que quien encuentre a tu mascota pueda avisarte. Tu email de acceso no se muestra." } },
       { element: "[data-tour='row-lost']", popover: { title: "Si se pierde", description: `Acá prendés el cartel rojo de “${petGendered(pet, "¡Estoy perdido!", "¡Estoy perdida!")}”. Lo apagás cuando aparece.` } },
-      { element: "[data-tour='row-ficha']", popover: { title: "Lo que falta", description: "Lo que dice “Agregar” en violeta todavía está vacío: tocalo para completarlo." } },
+      { element: "[data-tour='row-ficha']", popover: { title: "Lo que falta", description: "Lo que dice “Agregar” todavía está vacío: tocalo para completarlo." } },
       { element: "[data-tour='row-look']", popover: { title: "Guardar", description: "Cada pantalla tiene “Cancelar” y “Guardar” arriba. Los cambios se ven en su página recién al guardar." } },
       ...(isOwner ? [{ element: ".pet-editor-portal", popover: { title: "Todas tus chapitas", description: "Acá volvés a tu panel: compartir, ver o avisar si se perdió. Para entrar otro día: bionfc.com/mi con tu email." } }] : []),
     ];
