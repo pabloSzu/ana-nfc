@@ -92,7 +92,20 @@ function Address({ address, caption, size }: { address: string; caption: string;
   </div>;
 }
 
-const nameSize = (name: string, big: number) => name.length > 16 ? big * 0.62 : name.length > 10 ? big * 0.8 : big;
+// Textos largos (el nombre admite 60 letras, la zona 120, la recompensa 60): se cortan con "…" y
+// la letra se achica para que entren en `lines` renglones de `width` px. Poppins en negrita
+// ocupa unas 0,66 veces su tamaño por letra (más con mayúsculas y espaciado: `perChar`).
+const clip = (text: string, max: number) => text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
+const fitSize = (text: string, big: number, width: number, lines = 1, perChar = 0.66) =>
+  Math.round(Math.min(big, (width * lines) / (Math.max(text.length, 1) * perChar)));
+const NAME_MAX = 34;
+// El nombre: en un renglón si entra con la letra grande; si no, en dos.
+const nameFit = (name: string, big: number, width: number) => {
+  const oneLine = fitSize(name, big, width);
+  return oneLine >= big * 0.7 ? oneLine : fitSize(name, big * 0.8, width, 2);
+};
+// Saludo en mayúsculas y con espaciado: un renglón.
+const greetingFit = (text: string, big: number, width: number) => fitSize(text, big, width, 1, 0.92);
 
 export async function GET(request: Request, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -107,7 +120,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ slug
 
   const pet = parsePet(landing.button_style);
   const look = petLook(pet.look);
-  const name = (landing.business_name || "").trim() || "Mi mascota";
+  const name = clip((landing.business_name || "").trim() || "Mi mascota", NAME_MAX);
   // Su link actual (aunque se haya pedido por uno anterior), en la versión corta: /slug abre la
   // misma página que /mascota/slug.
   const landingSlug = (data as { slug?: string } | null)?.slug || slug;
@@ -120,27 +133,30 @@ export async function GET(request: Request, { params }: { params: Promise<{ slug
   const options = (width: number, height: number) => ({ width, height, fonts: font ? [{ name: "Poppins", data: font, weight: 800 as const, style: "normal" as const }] : undefined, headers: { "Cache-Control": cacheControl } });
   const background = `linear-gradient(160deg, ${look.background}, ${look.backgroundTo})`;
   const lostTitle = petGendered(pet, "¡ESTOY PERDIDO!", "¡ESTOY PERDIDA!");
-  const zone = pet.lostZone.trim() && `Me perdí en ${pet.lostZone.trim()}`;
-  const reward = pet.reward.trim() && `Recompensa: ${pet.reward.trim()}`;
+  const zone = pet.lostZone.trim() && clip(`Me perdí en ${pet.lostZone.trim()}`, 64);
+  const reward = pet.reward.trim() && clip(`Recompensa: ${pet.reward.trim()}`, 36);
+  const greeting = clip(pet.greeting.trim(), 30);
 
   // Las de compartir, en JPG: se ven igual y pesan un quinto (Instagram las recomprime igual).
   const asJpeg = async (image: ImageResponse) => new Response(new Uint8Array(await sharp(Buffer.from(await image.arrayBuffer())).jpeg({ quality: 86, mozjpeg: true }).toBuffer()), { headers: { "Content-Type": "image/jpeg", "Cache-Control": cacheControl } });
-  if (format === "historia") return asJpeg(new ImageResponse(<Story pet={pet} look={look} name={name} photo={photo} photoSize={photoSize} address={address} background={background} lostTitle={lostTitle} zone={zone} reward={reward} />, options(1080, 1920)));
-  if (format === "publicacion") return asJpeg(new ImageResponse(<Post pet={pet} look={look} name={name} photo={photo} photoSize={photoSize} address={address} background={background} lostTitle={lostTitle} zone={zone} reward={reward} />, options(1080, 1350)));
+  if (format === "historia") return asJpeg(new ImageResponse(<Story pet={pet} look={look} name={name} photo={photo} photoSize={photoSize} address={address} background={background} lostTitle={lostTitle} zone={zone} reward={reward} greeting={greeting} />, options(1080, 1920)));
+  if (format === "publicacion") return asJpeg(new ImageResponse(<Post pet={pet} look={look} name={name} photo={photo} photoSize={photoSize} address={address} background={background} lostTitle={lostTitle} zone={zone} reward={reward} greeting={greeting} />, options(1080, 1350)));
 
-  const lostDetails = [zone, reward].filter(Boolean).join("  ·  ");
+  // Zona y recompensa en un renglón si entran; si no, uno cada una.
+  const lostDetails = [zone, reward].filter(Boolean) as string[];
+  const detailsInline = lostDetails.join("  ·  ").length <= 60;
   return new ImageResponse(
     (
       <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", background, color: look.ink, fontFamily: "Poppins, sans-serif" }}>
-        {pet.lost && <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "26px 40px", background: "#d92d20", color: "#fff" }}>
+        {pet.lost && <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "22px 40px", background: "#d92d20", color: "#fff" }}>
           <div style={{ display: "flex", fontSize: 64, fontWeight: 900, letterSpacing: -1 }}>{lostTitle}</div>
-          {lostDetails && <div style={{ display: "flex", marginTop: 6, fontSize: 30, fontWeight: 700 }}>{lostDetails}</div>}
+          {(detailsInline ? [lostDetails.join("  ·  ")] : lostDetails).filter(Boolean).map((line) => <div key={line} style={{ display: "flex", marginTop: 4, fontSize: detailsInline ? 30 : 26, fontWeight: 700 }}>{line}</div>)}
         </div>}
-        <div style={{ display: "flex", flex: 1, alignItems: "center", gap: 56, padding: "0 80px" }}>
+        <div style={{ display: "flex", flex: 1, alignItems: "center", gap: 56, padding: "0 70px" }}>
           <Photo photo={photo} size={photoSize} look={look} border={12} />
           <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
-            {pet.greeting.trim() && <div style={{ display: "flex", fontSize: 30, fontWeight: 800, letterSpacing: 4, textTransform: "uppercase", color: look.accent }}>{pet.greeting.trim()}</div>}
-            <div style={{ display: "flex", fontSize: name.length > 12 ? 82 : 110, fontWeight: 900, lineHeight: 1, letterSpacing: -3 }}>{name}</div>
+            {greeting && <div style={{ display: "flex", fontSize: fitSize(greeting, 30, 600, 1, 0.9), fontWeight: 800, letterSpacing: 4, textTransform: "uppercase", color: look.accent }}>{greeting}</div>}
+            <div style={{ display: "flex", fontSize: fitSize(name, 110, 640, name.length > 12 ? 2 : 1), fontWeight: 900, lineHeight: 1, letterSpacing: -3 }}>{name}</div>
             <div style={{ display: "flex", marginTop: 22, fontSize: 32, fontWeight: 600, opacity: 0.8 }}>{pet.lost ? "Si me ves, avisale a mi familia" : "Si me encontrás, avisale a mi familia"}</div>
             <div style={{ display: "flex", marginTop: 34, fontSize: 24, fontWeight: 800, opacity: 0.55 }}>BIONFC · chapita de mascota</div>
           </div>
@@ -151,28 +167,28 @@ export async function GET(request: Request, { params }: { params: Promise<{ slug
   );
 }
 
-type ShareProps = { pet: PetData; look: PetLook; name: string; photo: string | null; photoSize: number; address: string; background: string; lostTitle: string; zone: string | false; reward: string | false };
+type ShareProps = { pet: PetData; look: PetLook; name: string; photo: string | null; photoSize: number; address: string; background: string; lostTitle: string; zone: string | false; reward: string | false; greeting: string };
 
 // Historia (1080×1920), armada dentro de la "zona segura" de Instagram: arriba (~250 px) van el
 // nombre de la cuenta y la barra de progreso, y abajo (~340 px) la caja de respuesta y, en un reel,
 // los botones. Ahí no va nada importante, así sirve igual para historias, estados y reels.
 // Perdida: el cartel rojo, la foto, el nombre y la dirección para avisar. Normal: la foto grande y
 // "Ya tengo mi chapita inteligente", para que la compartan con orgullo.
-function Story({ pet, look, name, photo, photoSize, address, background, lostTitle, zone, reward }: ShareProps) {
+function Story({ pet, look, name, photo, photoSize, address, background, lostTitle, zone, reward, greeting }: ShareProps) {
   return <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", background, color: look.ink, fontFamily: "Poppins, sans-serif", textAlign: "center" }}>
     {pet.lost
       ? <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", padding: "270px 60px 50px", background: "#d92d20", color: "#fff" }}>
           <div style={{ display: "flex", fontSize: 108, fontWeight: 900, letterSpacing: -3, lineHeight: 1 }}>{lostTitle}</div>
-          {zone && <div style={{ display: "flex", marginTop: 22, fontSize: 50, fontWeight: 800 }}>{zone}</div>}
-          {reward && <div style={{ display: "flex", marginTop: 22, padding: "10px 32px", borderRadius: 999, background: "#fff", color: "#b42318", fontSize: 42, fontWeight: 900 }}>{reward}</div>}
+          {zone && <div style={{ display: "flex", justifyContent: "center", marginTop: 22, fontSize: fitSize(zone, 50, 940, 2), fontWeight: 800, lineHeight: 1.2 }}>{zone}</div>}
+          {reward && <div style={{ display: "flex", marginTop: 22, padding: "10px 32px", borderRadius: 999, background: "#fff", color: "#b42318", fontSize: fitSize(reward, 42, 860), fontWeight: 900 }}>{reward}</div>}
         </div>
-      : <div style={{ display: "flex", marginTop: 290, fontSize: 44, fontWeight: 800, letterSpacing: 8, textTransform: "uppercase", color: look.accent }}>{pet.greeting.trim() || "¡Hola! Soy"}</div>}
+      : <div style={{ display: "flex", marginTop: 290, fontSize: greetingFit(greeting || "¡Hola! Soy", 44, 900), fontWeight: 800, letterSpacing: 6, textTransform: "uppercase", color: look.accent }}>{greeting || "¡Hola! Soy"}</div>}
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, justifyContent: "center", gap: 34, padding: "0 70px 360px" }}>
-      {!pet.lost && <div style={{ display: "flex", fontSize: nameSize(name, 160), fontWeight: 900, letterSpacing: -5, lineHeight: 1 }}>{name}</div>}
+      {!pet.lost && <div style={{ display: "flex", fontSize: nameFit(name, 160, 900), fontWeight: 900, letterSpacing: -4, lineHeight: 1.02, justifyContent: "center" }}>{name}</div>}
       <Photo photo={photo} size={photoSize} look={look} border={18} />
       {pet.lost
         ? <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 18 }}>
-            <div style={{ display: "flex", fontSize: nameSize(name, 124), fontWeight: 900, letterSpacing: -4, lineHeight: 1 }}>{name}</div>
+            <div style={{ display: "flex", fontSize: nameFit(name, 124, 900), fontWeight: 900, letterSpacing: -3, lineHeight: 1.02, justifyContent: "center" }}>{name}</div>
             <div style={{ display: "flex", fontSize: 46, fontWeight: 800, opacity: 0.85 }}>Si me ves, avisale a mi familia</div>
           </div>
         : <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
@@ -186,19 +202,20 @@ function Story({ pet, look, name, photo, photoSize, address, background, lostTit
 
 // Publicación (1080×1350, el 4:5 que Instagram no recorta en el feed). Sirve también para grupos
 // de Facebook: lo mismo que la historia, más compacto.
-function Post({ pet, look, name, photo, photoSize, address, background, lostTitle, zone, reward }: ShareProps) {
-  const details = [zone, reward].filter(Boolean).join("  ·  ");
+function Post({ pet, look, name, photo, photoSize, address, background, lostTitle, zone, reward, greeting }: ShareProps) {
+  const details = [zone, reward].filter(Boolean) as string[];
+  const inline = details.join("  ·  ").length <= 44;
   return <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", background, color: look.ink, fontFamily: "Poppins, sans-serif", textAlign: "center" }}>
     {pet.lost
       ? <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", padding: "56px 40px 48px", background: "#d92d20", color: "#fff" }}>
           <div style={{ display: "flex", fontSize: 96, fontWeight: 900, letterSpacing: -2, lineHeight: 1 }}>{lostTitle}</div>
-          {details && <div style={{ display: "flex", marginTop: 18, fontSize: 40, fontWeight: 800 }}>{details}</div>}
+          {(inline ? [details.join("  ·  ")] : details).filter(Boolean).map((line) => <div key={line} style={{ display: "flex", justifyContent: "center", marginTop: 14, fontSize: fitSize(line, 40, 1000, 2), fontWeight: 800, lineHeight: 1.2 }}>{line}</div>)}
         </div>
-      : <div style={{ display: "flex", marginTop: 80, fontSize: 38, fontWeight: 800, letterSpacing: 6, textTransform: "uppercase", color: look.accent }}>{pet.greeting.trim() || "¡Hola! Soy"}</div>}
+      : <div style={{ display: "flex", marginTop: 80, fontSize: greetingFit(greeting || "¡Hola! Soy", 38, 940), fontWeight: 800, letterSpacing: 5, textTransform: "uppercase", color: look.accent }}>{greeting || "¡Hola! Soy"}</div>}
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1, justifyContent: "center", gap: 28, padding: "0 60px 60px" }}>
-      {!pet.lost && <div style={{ display: "flex", fontSize: nameSize(name, 120), fontWeight: 900, letterSpacing: -4, lineHeight: 1 }}>{name}</div>}
+      {!pet.lost && <div style={{ display: "flex", fontSize: nameFit(name, 120, 940), fontWeight: 900, letterSpacing: -3, lineHeight: 1.02, justifyContent: "center" }}>{name}</div>}
       <Photo photo={photo} size={photoSize} look={look} border={16} />
-      {pet.lost && <div style={{ display: "flex", fontSize: nameSize(name, 110), fontWeight: 900, letterSpacing: -3, lineHeight: 1 }}>{name}</div>}
+      {pet.lost && <div style={{ display: "flex", fontSize: nameFit(name, 110, 940), fontWeight: 900, letterSpacing: -3, lineHeight: 1.02, justifyContent: "center" }}>{name}</div>}
       <div style={{ display: "flex", fontSize: 40, fontWeight: 800, opacity: 0.85 }}>{pet.lost ? "Si me ves, avisale a mi familia" : "Ya tengo mi chapita inteligente"}</div>
       <Address address={address} size={36} caption={pet.lost ? "Entrá acá para avisar a mi familia" : "Conocé mi chapita en"} />
     </div>

@@ -130,7 +130,7 @@ export function formatReward(value: string): string {
 // La versión de las imágenes para compartir (app/api/og/mascota): cambia con todo lo que se ve
 // en ellas. Con la versión en la dirección, la imagen queda guardada y solo se vuelve a armar si
 // algo cambió. PET_IMAGE_DESIGN se sube al cambiar el dibujo de las imágenes.
-const PET_IMAGE_DESIGN = 1;
+const PET_IMAGE_DESIGN = 2;
 export function petImageVersion(pet: PetData, name: string, photoUrl: string, slug: string): string {
   const text = JSON.stringify([PET_IMAGE_DESIGN, pet.lost, pet.about.sex, pet.lostZone, pet.reward, pet.greeting, pet.look, pet.photo, name, photoUrl, slug]);
   let hash = 5381;
