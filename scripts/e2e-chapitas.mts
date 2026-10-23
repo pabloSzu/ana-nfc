@@ -138,14 +138,16 @@ async function run() {
     await clickText("Hembra");
     await clickText("Siguiente");
     check("Opcionales: segundo contacto", await waitFor("document.body.innerText.includes('Alguien más')"));
+    // Un segundo número a medio escribir y "Saltear": lo descarta y guarda lo demás antes de seguir.
+    await type(".pet-wizard input[type=tel]", "351");
     await clickText("Saltear", "button");
     check("Opcionales: si se pierde", await waitFor("document.body.innerText.includes('Si algún día se pierde')"));
+    // Sin esperar: lo elegido ya tiene que estar guardado cuando aparece la pantalla siguiente.
+    const { data: afterSteps } = await admin.from("landings").select("button_style").eq("id", data.tagId).single();
+    const savedPet = (afterSteps?.button_style as { pet?: { look?: string; about?: { sex?: string }; family?: unknown[] } })?.pet;
+    check("Opcionales: se guardó lo elegido antes de seguir", savedPet?.look === "divertido" && savedPet?.about?.sex === "Hembra" && savedPet?.family?.length === 1, `${savedPet?.look} · ${savedPet?.about?.sex} · ${savedPet?.family?.length} contacto(s)`);
     await clickText("Entendido");
     check("Opcionales: final", await waitFor("document.body.innerText.includes('Lista la chapita')"));
-    await sleep(1500);
-    const { data: afterSteps } = await admin.from("landings").select("button_style").eq("id", data.tagId).single();
-    const savedPet = (afterSteps?.button_style as { pet?: { look?: string; about?: { sex?: string } } })?.pet;
-    check("Opcionales: se guardó lo elegido", savedPet?.look === "divertido" && savedPet?.about?.sex === "Hembra", `${savedPet?.look} · ${savedPet?.about?.sex}`);
     await clickText("Ver todo lo que puedo cambiar");
     check("Opcionales: llega al menú", await waitFor("Boolean(document.querySelector('.pet-menu'))"));
 

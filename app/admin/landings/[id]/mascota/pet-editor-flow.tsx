@@ -64,13 +64,21 @@ export function SetupScreen({ step }: { step: 0 | 1 | 2 }) {
 const nextAfter = (step: AfterStep): AfterStep => AFTER_STEPS[AFTER_STEPS.indexOf(step) + 1] || "done";
 
 export function AfterScreen({ step }: { step: AfterStep }) {
-  const { landing, pet, name, petName, dirty, change, about, health, go, save } = useEditor();
+  const { landing, pet, name, petName, dirty, saving, change, about, health, go, save } = useEditor();
   const second = pet.family[1] || { name: "", phone: "" };
   const setSecond = (patch: Partial<PetFamily>) => change({ family: [pet.family[0] || { name: "", phone: "" }, { ...second, ...patch }] });
   // Al pasar el último paso con datos ("¿Alguien más?") se guarda lo cargado, sin aviso: así no se
-  // pierde aunque después cierre sin terminar. Si falla, el aviso de error queda a la vista.
-  const goNext = () => {
-    if (step === "family" && dirty) save({ quiet: true });
+  // pierde aunque después cierre sin terminar. Espera a que se guarde: lo que sigue es compartir y
+  // las imágenes salen de lo guardado. Si falla, se queda acá con el aviso de error.
+  // "Saltear" en ese paso descarta el segundo contacto (aunque haya quedado a medio escribir).
+  const goNext = async (skip = false) => {
+    if (step === "family") {
+      const next = skip && pet.family.length > 1 ? { ...pet, family: pet.family.slice(0, 1) } : pet;
+      if (dirty || next !== pet) {
+        const result = await save({ quiet: true, pet: next });
+        if (!result?.ok) return;
+      }
+    }
     go({ name: "after", step: nextAfter(step) });
   };
 
@@ -142,8 +150,8 @@ export function AfterScreen({ step }: { step: AfterStep }) {
       <p className="pet-celebrate-try is-lost"><span aria-hidden="true">📣</span><span>Después lo compartís por WhatsApp o en historias con un toque. Cuando aparece, lo apagás.</span></p>
     </>}
 
-    <button type="button" className="pet-step-next" disabled={blocked} onClick={goNext}>{blocked ? "Revisá el WhatsApp" : step === "lost" ? "Entendido →" : "Siguiente →"}</button>
-    {step !== "lost" && <button type="button" className="pet-celebrate-home" onClick={goNext}>Saltear</button>}
+    <button type="button" className="pet-step-next" disabled={blocked || saving} onClick={() => goNext()}>{saving ? <><i className="spin" aria-hidden="true" />Guardando…</> : blocked ? "Revisá el WhatsApp" : step === "lost" ? "Entendido →" : "Siguiente →"}</button>
+    {step !== "lost" && <button type="button" className="pet-celebrate-home" disabled={saving} onClick={() => goNext(true)}>Saltear</button>}
   </section>;
 }
 

@@ -169,14 +169,15 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
   // Guarda todo lo cargado y devuelve la respuesta de la acción. Si se corta internet, un aviso
   // en vez de quedar "Guardando…" para siempre; si venció la sesión, la acción manda a entrar (y
   // eso no se ataja).
-  async function save({ quiet = false }: { quiet?: boolean } = {}): Promise<PetSaveResult | null> {
+  async function save({ quiet = false, pet: petToSave = pet }: { quiet?: boolean; pet?: PetData } = {}): Promise<PetSaveResult | null> {
     if (savingNow.current) return null;
+    if (petToSave !== pet) setPet(petToSave);
     savingNow.current = true;
     setSaving(true);
     const formData = new FormData();
     formData.set("landing_id", landing.id);
     formData.set("business_name", name);
-    formData.set("pet", JSON.stringify(pet));
+    formData.set("pet", JSON.stringify(petToSave));
     formData.set("remove_photo", photoRemoved ? "true" : "false");
     // El dueño ya aceptó los términos al activar; el aviso de qué se publica está en el último paso.
     if (isOwner && !landing.published) formData.set("public_visibility_ack", "yes");
@@ -192,7 +193,7 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
       setSaving(false);
     }
     if (!result.ok) { notify(result.error, true); return result; }
-    setSaved({ name, pet });
+    setSaved({ name, pet: petToSave });
     // Los datos de alrededor que cambia el servidor (si quedó publicada, el link, la foto).
     router.refresh();
     setDirty(false);

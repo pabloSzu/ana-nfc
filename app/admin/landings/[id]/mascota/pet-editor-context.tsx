@@ -54,9 +54,10 @@ export type Editor = {
   health: (patch: Partial<PetData["health"]>) => void;
   setMember: (index: number, patch: Partial<PetFamily>) => void;
   photo: { preparing: boolean; error: string; pick: () => void; adjust: () => void; remove: () => void };
-  // Guarda todo. quiet: sin el aviso de arriba (los pasos opcionales). Devuelve la respuesta, o
-  // null si ya estaba guardando.
-  save: (options?: { quiet?: boolean }) => Promise<PetSaveResult | null>;
+  // Guarda todo. quiet: sin el aviso de arriba (los pasos opcionales); pet: guarda estos datos en
+  // vez de los actuales (y quedan como actuales). Devuelve la respuesta, o null si ya estaba
+  // guardando.
+  save: (options?: { quiet?: boolean; pet?: PetData }) => Promise<PetSaveResult | null>;
   // Primera publicación (el último paso, o "Publicar mi chapita" si quedó sin publicar).
   publish: () => Promise<void>;
   // La pantalla de una opción: "Guardar" guarda y vuelve al menú (o a "Ahora, difundilo" si se
