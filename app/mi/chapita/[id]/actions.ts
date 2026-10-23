@@ -77,5 +77,8 @@ export async function saveMyPet(fd: FormData) {
     // La primera vez, el editor muestra la pantalla "¡Ya funciona!": acá alcanza con confirmar.
     : !landing!.published ? "Publicada"
     : pet.lost ? "Guardado: el cartel de perdido ya se ve en la chapita" : "Cambios guardados";
+  // Guardado automático (el diseño al tocarlo, los pasos opcionales): sin aviso en pantalla, solo
+  // ?guardado=1 para que el editor sepa que quedó guardado.
+  if (fd.get("quiet") === "1") redirect(`${back}?guardado=1`);
   redirect(`${back}?saved=${encodeURIComponent(message)}`);
 }

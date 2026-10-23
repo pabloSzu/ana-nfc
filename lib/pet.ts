@@ -37,12 +37,20 @@ export function petLook(id: string | undefined): PetLook {
 export type PetFamily = { name: string; phone: string };
 export type PetPhotoPlacement = { x: number; y: number; zoom: number };
 
-// Estilo de la foto encuadrada (para un <img> con object-fit: cover dentro de un marco con
-// overflow oculto). Lo usan la página, el editor, "Mis chapitas" y la imagen al compartir.
+// Estilo de la foto encuadrada: un <img> dentro de un marco cuadrado con overflow oculto y
+// position: relative. El zoom agranda la foto y la corre para que el punto x%, y% quede fijo (lo
+// mismo que scale() desde ese punto), pero con medidas en vez de transform: Safari en iPhone no
+// recorta bien una foto transformada dentro de un botón redondo y se veía distinto en cada lugar.
+// Lo usan la página, el editor y "Mis chapitas" (la imagen al compartir recorta con sharp).
 export const petPhotoStyle = ({ x, y, zoom }: PetPhotoPlacement) => ({
+  position: "absolute" as const,
+  left: `${-(zoom - 1) * x}%`,
+  top: `${-(zoom - 1) * y}%`,
+  width: `${zoom * 100}%`,
+  height: `${zoom * 100}%`,
+  maxWidth: "none",
+  objectFit: "cover" as const,
   objectPosition: `${x}% ${y}%`,
-  transform: `scale(${zoom})`,
-  transformOrigin: `${x}% ${y}%`,
 });
 
 export const PET_ABOUT_FIELDS = [
@@ -89,7 +97,7 @@ export const DEFAULT_PET_MESSAGE = "Si me encontrás, avisale a mi familia 🐾"
 const OLD_PET_MESSAGE = "Si me encontraste solito, avisale a mi familia, por favor 🐾";
 
 // Lo opcional que todavía le falta a una chapita publicada, en el orden en que se ofrece
-// completarlo (tarjeta "Completá la chapita" del editor y de "Mis chapitas").
+// completarlo ("Tu chapita" al lado de la miniatura del editor y el aviso de "Mis chapitas").
 export type PetMissing = "photo" | "about" | "family";
 export function petMissing(pet: PetData, hasPhoto: boolean): PetMissing[] {
   const missing: PetMissing[] = [];
@@ -98,7 +106,6 @@ export function petMissing(pet: PetData, hasPhoto: boolean): PetMissing[] {
   if (pet.family.filter((member) => member.phone.trim()).length < 2) missing.push("family");
   return missing;
 }
-export const PET_MISSING_LABELS: Record<PetMissing, string> = { photo: "Foto", about: "Datos y salud", family: "Segundo contacto" };
 
 // Hembra o macho, según lo elegido en "Sexo" (botones Macho/Hembra del editor). Si no lo
 // cargaron, se usa masculino, como en la mayoría de los textos de antes.
