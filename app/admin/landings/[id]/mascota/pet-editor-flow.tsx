@@ -7,7 +7,7 @@
 //  · SpreadScreen: "Ahora, difundilo", al activar el modo perdido.
 import Link from "next/link";
 import PetShareButton, { PetSharePanel } from "@/components/pet-share-button";
-import { cleanPhoneInput, petGendered, petHasContact, petIsFemale, petPhoneProblem, petPhotoStyle, type PetFamily } from "@/lib/pet";
+import { cleanPhoneInput, petGendered, petHasContact, petImageVersion, petIsFemale, petPhoneProblem, petPhotoStyle, type PetFamily } from "@/lib/pet";
 import { AFTER_STEPS, useEditor, type AfterStep } from "./pet-editor-context";
 import { Choice, Field, LookGrid, MiniPreview, PhoneStatus } from "./pet-editor-fields";
 
@@ -64,7 +64,7 @@ export function SetupScreen({ step }: { step: 0 | 1 | 2 }) {
 const nextAfter = (step: AfterStep): AfterStep => AFTER_STEPS[AFTER_STEPS.indexOf(step) + 1] || "done";
 
 export function AfterScreen({ step }: { step: AfterStep }) {
-  const { landing, pet, name, petName, dirty, saving, change, about, health, go, save } = useEditor();
+  const { landing, savedPet, pet, name, petName, dirty, saving, change, about, health, go, save } = useEditor();
   const second = pet.family[1] || { name: "", phone: "" };
   const setSecond = (patch: Partial<PetFamily>) => change({ family: [pet.family[0] || { name: "", phone: "" }, { ...second, ...patch }] });
   // Al pasar el último paso con datos ("¿Alguien más?") se guarda lo cargado, sin aviso: así no se
@@ -103,7 +103,7 @@ export function AfterScreen({ step }: { step: AfterStep }) {
     <MiniPreview />
     {/* El momento de más entusiasmo: la invitación a mostrarla en historias (cada una que se
         sube es publicidad gratis). */}
-    <PetShareButton path={`/mascota/${landing.slug}`} petName={name} lost={false} className="pet-step-next is-publish" label="Mostrala en tus historias" />
+    <PetShareButton path={`/mascota/${landing.slug}`} petName={name} lost={false} version={petImageVersion(savedPet, name, landing.photoUrl, landing.slug)} className="pet-step-next is-publish" label="Mostrala en tus historias" />
     <Link className="pet-celebrate-more" href="/mi">Ir a Mis chapitas</Link>
     <button type="button" className="pet-celebrate-home" onClick={() => go({ name: "menu" })}>Ver todo lo que puedo cambiar</button>
     <p className="pet-wizard-note">Para entrar otro día: <b>bionfc.com/mi</b> con tu email, o escaneá la chapita y tocá “¿Es tu mascota? Editala”.</p>
@@ -158,12 +158,12 @@ export function AfterScreen({ step }: { step: AfterStep }) {
 // Modo perdido recién activado: a difundirlo. Es cuando más importa y, si no se le muestra acá,
 // el dueño no se entera de que puede.
 export function SpreadScreen() {
-  const { landing, pet, name, go } = useEditor();
+  const { landing, savedPet, pet, name, go } = useEditor();
   return <section className="pet-wizard pet-spread">
     <div className="pet-spread-head"><span aria-hidden="true">🚨</span><div><strong>Modo perdido activado</strong><small>Su página ya muestra el cartel rojo.</small></div></div>
     <h2>Ahora, difundilo</h2>
     <p className="pet-wizard-lead">Las primeras horas son las que más importan. Compartilo en todos lados: la imagen lleva la dirección de su página para que te avisen.</p>
-    <PetSharePanel path={`/mascota/${landing.slug}`} petName={name} lost lostZone={pet.lostZone} female={petIsFemale(pet)} />
+    <PetSharePanel path={`/mascota/${landing.slug}`} petName={name} lost lostZone={pet.lostZone} female={petIsFemale(pet)} version={petImageVersion(savedPet, name, landing.photoUrl, landing.slug)} />
     <div className="pet-spread-tips">
       <strong>Además</strong>
       <ul>

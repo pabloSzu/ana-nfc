@@ -96,7 +96,11 @@ const nameSize = (name: string, big: number) => name.length > 16 ? big * 0.62 : 
 
 export async function GET(request: Request, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const format = new URL(request.url).searchParams.get("formato");
+  const searchParams = new URL(request.url).searchParams;
+  const format = searchParams.get("formato");
+  // Con ?v= (la versión: cambia con todo lo que se ve, ver petImageVersion) la imagen no cambia
+  // nunca y se guarda para siempre; sin ?v=, unos minutos.
+  const cacheControl = searchParams.has("v") ? "public, max-age=31536000, s-maxage=31536000, immutable" : "public, max-age=300, s-maxage=300";
   const { data } = await publicSupabase.rpc("public_landing", { p_slug: slug });
   const landing = data as { business_type?: string; business_name?: string; logo_url?: string; button_style?: unknown } | null;
   if (!landing || landing.business_type !== "pet") return new Response("No encontrada", { status: 404 });
@@ -113,14 +117,16 @@ export async function GET(request: Request, { params }: { params: Promise<{ slug
     landing.logo_url ? framedPhoto(landing.logo_url, photoSize * 2, pet.photo) : null,
     loadPoppins(),
   ]);
-  const options = (width: number, height: number) => ({ width, height, fonts: font ? [{ name: "Poppins", data: font, weight: 800 as const, style: "normal" as const }] : undefined, headers: { "Cache-Control": "public, max-age=300, s-maxage=300" } });
+  const options = (width: number, height: number) => ({ width, height, fonts: font ? [{ name: "Poppins", data: font, weight: 800 as const, style: "normal" as const }] : undefined, headers: { "Cache-Control": cacheControl } });
   const background = `linear-gradient(160deg, ${look.background}, ${look.backgroundTo})`;
   const lostTitle = petGendered(pet, "¡ESTOY PERDIDO!", "¡ESTOY PERDIDA!");
   const zone = pet.lostZone.trim() && `Me perdí en ${pet.lostZone.trim()}`;
   const reward = pet.reward.trim() && `Recompensa: ${pet.reward.trim()}`;
 
-  if (format === "historia") return new ImageResponse(<Story pet={pet} look={look} name={name} photo={photo} photoSize={photoSize} address={address} background={background} lostTitle={lostTitle} zone={zone} reward={reward} />, options(1080, 1920));
-  if (format === "publicacion") return new ImageResponse(<Post pet={pet} look={look} name={name} photo={photo} photoSize={photoSize} address={address} background={background} lostTitle={lostTitle} zone={zone} reward={reward} />, options(1080, 1350));
+  // Las de compartir, en JPG: se ven igual y pesan un quinto (Instagram las recomprime igual).
+  const asJpeg = async (image: ImageResponse) => new Response(new Uint8Array(await sharp(Buffer.from(await image.arrayBuffer())).jpeg({ quality: 86, mozjpeg: true }).toBuffer()), { headers: { "Content-Type": "image/jpeg", "Cache-Control": cacheControl } });
+  if (format === "historia") return asJpeg(new ImageResponse(<Story pet={pet} look={look} name={name} photo={photo} photoSize={photoSize} address={address} background={background} lostTitle={lostTitle} zone={zone} reward={reward} />, options(1080, 1920)));
+  if (format === "publicacion") return asJpeg(new ImageResponse(<Post pet={pet} look={look} name={name} photo={photo} photoSize={photoSize} address={address} background={background} lostTitle={lostTitle} zone={zone} reward={reward} />, options(1080, 1350)));
 
   const lostDetails = [zone, reward].filter(Boolean).join("  ·  ");
   return new ImageResponse(

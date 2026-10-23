@@ -127,6 +127,17 @@ export function formatReward(value: string): string {
   return "$" + Number(text.replace(/\D/g, "")).toLocaleString("es-AR");
 }
 
+// La versión de las imágenes para compartir (app/api/og/mascota): cambia con todo lo que se ve
+// en ellas. Con la versión en la dirección, la imagen queda guardada y solo se vuelve a armar si
+// algo cambió. PET_IMAGE_DESIGN se sube al cambiar el dibujo de las imágenes.
+const PET_IMAGE_DESIGN = 1;
+export function petImageVersion(pet: PetData, name: string, photoUrl: string, slug: string): string {
+  const text = JSON.stringify([PET_IMAGE_DESIGN, pet.lost, pet.about.sex, pet.lostZone, pet.reward, pet.greeting, pet.look, pet.photo, name, photoUrl, slug]);
+  let hash = 5381;
+  for (let index = 0; index < text.length; index++) hash = ((hash * 33) ^ text.charCodeAt(index)) >>> 0;
+  return hash.toString(36);
+}
+
 export const petGendered = (pet: Pick<PetData, "about">, male: string, female: string) => petIsFemale(pet) ? female : male;
 // Los datos de salud con "Castrado" o "Castrada" según corresponda.
 export const petHealthFields = (pet: Pick<PetData, "about">) =>

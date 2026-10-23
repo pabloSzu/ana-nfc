@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { landingImageUrl } from "@/lib/landing-image";
-import { parsePet, petIsFemale, petPhotoStyle } from "@/lib/pet";
+import { parsePet, petImageVersion, petIsFemale, petPhotoStyle } from "@/lib/pet";
 import { FiEdit2, FiEye } from "react-icons/fi";
 import PetShareButton from "@/components/pet-share-button";
 // Las chapitas del dueño: las de los clientes de los que es miembro (ver client_members).
@@ -32,7 +32,7 @@ export default async function OwnerHome() {
         </Link>
         <div className="mi-pet-actions">
           <Link href={`/mi/chapita/${page.id}`}><FiEdit2 aria-hidden="true" />Editar</Link>
-          {live && <PetShareButton path={publicPath} petName={page.business_name || ""} lost={pet.lost} lostZone={pet.lostZone} female={petIsFemale(pet)} className={pet.lost ? "is-urgent" : ""} />}
+          {live && <PetShareButton path={publicPath} petName={page.business_name || ""} lost={pet.lost} lostZone={pet.lostZone} female={petIsFemale(pet)} version={petImageVersion(pet, page.business_name || "", page.logo_url || "", page.pet_slug || page.slug)} className={pet.lost ? "is-urgent" : ""} />}
           {live && <a href={publicPath} target="_blank" rel="noopener noreferrer"><FiEye aria-hidden="true" />Ver</a>}
         </div>
         {/* Lo urgente, a un toque: abre el editor directo en "¿Se perdió?". */}
