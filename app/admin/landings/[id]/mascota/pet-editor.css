@@ -320,3 +320,15 @@ a.pet-celebrate-more { align-items: center; text-decoration: none; }
 }
 .mi-shell .pet-group, .mi-shell .pet-member, .mi-shell .pet-switch:not(.is-on) { border-color: #f0e2d6; background: #fff; }
 .mi-shell .pet-form > .pet-field, .mi-shell .pet-form > .pet-photo-field { padding: 12px; border: 1px solid #f0e2d6; border-radius: 14px; background: #fff; }
+
+/* "Ahora, difundilo": al activar el modo perdido. */
+.pet-spread h2 { margin-top: 0; }
+.pet-spread-head { display: flex; align-items: center; gap: 12px; margin-top: 6px; padding: 12px 14px; border-radius: 16px; background: #d92d20; color: #fff; }
+.pet-spread-head > span { font-size: 24px; }
+.pet-spread-head strong { display: block; font-size: 16px; }
+.pet-spread-head small { color: #ffe1dc; font-size: 13px; }
+.pet-spread-tips { display: grid; gap: 6px; padding: 14px; border: 1px solid #f0e2d6; border-radius: 16px; background: #fff; font-size: 13.5px; line-height: 1.45; }
+.pet-spread-tips ul { display: grid; gap: 6px; margin: 0; padding-left: 18px; color: #5b4a3d; }
+/* "Activar aviso" / "Desactivar aviso" en la pantalla de Modo perdido (rojo / verde). */
+.mi-shell .pet-step-next.pet-lost-confirm, .pet-step-next.pet-lost-confirm { margin-top: 4px; background: #17803d; box-shadow: none; }
+.mi-shell .pet-step-next.pet-lost-confirm.is-on, .pet-step-next.pet-lost-confirm.is-on { background: #d92d20; box-shadow: 0 8px 18px #d92d2033; }

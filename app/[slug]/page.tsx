@@ -126,6 +126,13 @@ export default async function Landing({ params, searchParams }: { params: Promis
   const { slug } = await params;
   const landing = await getLanding(slug);
   if (!landing) notFound();
+  // Mascota a la que se entró por otro link (el técnico o uno anterior, que queda como alias al
+  // cambiar el nombre): a su link actual, que es el que se comparte. Antes de contar la visita,
+  // así no se cuenta dos veces.
+  if (landing.business_type === "pet" && landing.slug && decodeURIComponent(slug) !== landing.slug) {
+    const source = (await searchParams).s;
+    redirect(`/mascota/${encodeURIComponent(landing.slug)}${typeof source === "string" ? `?s=${encodeURIComponent(source)}` : ""}`);
+  }
   // Se cuenta antes del redirect a propósito: una landing con redirect_url sigue siendo una
   // tarjeta que alguien apoyó, y es justo la que más necesita el dato (no se ve nada de lo
   // nuestro, así que el conteo es lo único que queda). trackLandingView difiere el insert

@@ -3262,9 +3262,11 @@ dialog.confirm-modal { width: min(400px, calc(100vw - 32px)); }
 .pet-share-option small { color: #8a6a52; font-size: 12.5px; line-height: 1.35; }
 .pet-share-thumb { display: grid; place-items: center; flex: none; width: 46px; height: 46px; overflow: hidden; border-radius: 10px; background: #f6e2d2; color: #c25e22; font-size: 20px; font-weight: 800; }
 .pet-share-thumb[data-kind="historia"] { height: 72px; }
+.pet-share-thumb[data-kind="publicacion"] { height: 56px; }
 .pet-share-thumb img { width: 100%; height: 100%; object-fit: cover; }
 .pet-share-thumb .spin { margin: 0; }
 .pet-share-go { flex: none; color: #c25e22; font-size: 20px; }
 /* El menú cerrado nunca se ve, aunque el lugar donde está le cambie el display a sus hijos. */
 .pet-share-sheet:not([open]) { display: none !important; }
-.pet-share-copied { display: flex; gap: 8px; margin: 0; padding: 10px 12px; border-radius: 12px; background: #e8f6ec; color: #145c2e; font-size: 13px; line-height: 1.45; }
+.pet-share-steps { display: grid; gap: 6px; margin: 2px 0 0; padding: 12px 12px 12px 30px; border-radius: 14px; background: #fff; color: #5b4a3d; font-size: 13px; line-height: 1.45; }
+.pet-share-steps b { color: #2d1d12; }

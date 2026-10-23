@@ -14,16 +14,16 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { FiChevronLeft, FiGrid } from "react-icons/fi";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import PetRenderer, { type PetSection } from "@/components/pet-renderer";
 import CopyButton from "@/components/copy-button";
-import PetShareButton from "@/components/pet-share-button";
+import PetShareButton, { PetSharePanel } from "@/components/pet-share-button";
 import PendingSubmitButton from "@/components/pending-submit-button";
 import PetPhotoAdjust from "./pet-photo-adjust";
 import "driver.js/dist/driver.css";
 import { compressImage } from "@/lib/compress-image";
 import { FontLinks } from "@/lib/fonts";
-import { PET_ABOUT_FIELDS, PET_FAMILY_MAX, PET_HEALTH_FIELDS, PET_LOOKS, cleanPhoneInput, formatPhone, parsePet, petForEditing, petHasContact, petGendered, petLook, petPhoneProblem, petPhotoStyle, petRows, type PetData, type PetFamily } from "@/lib/pet";
+import { PET_ABOUT_FIELDS, PET_FAMILY_MAX, PET_HEALTH_FIELDS, PET_LOOKS, cleanPhoneInput, formatPhone, parsePet, petForEditing, petHasContact, petGendered, petIsFemale, petLook, petPhoneProblem, petPhotoStyle, petRows, type PetData, type PetFamily } from "@/lib/pet";
 
 // "owner": el dueño, desde su panel (/mi). Sin QR ni publicar desde el Admin; publica con el
 // botón de arriba (saveMyPet publica cuando hay un WhatsApp).
@@ -116,6 +116,15 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
       try { localStorage.removeItem(draftKey); } catch {}
     }
   }, [landing, searchParams, draftKey]);
+  // ?guardado (guardado sin aviso) no lo saca el aviso de arriba como a ?saved: se saca acá, una
+  // vez que los efectos de este guardado ya lo leyeron.
+  const router = useRouter();
+  const pathname = usePathname();
+  useEffect(() => {
+    if (!searchParams.get("guardado")) return;
+    const timer = setTimeout(() => router.replace(pathname, { scroll: false }), 50);
+    return () => clearTimeout(timer);
+  }, [searchParams, router, pathname]);
 
   // Borrador en el celular del dueño: si se le corta la sesión, se queda sin batería o cierra sin
   // guardar, al volver se le ofrece recuperar lo que había escrito.
@@ -141,8 +150,25 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty]);
 
+  // Recién activado el modo perdido: la pantalla "Ahora, difundilo" con las opciones para
+  // compartir. Es cuando más importa difundirlo y, si no se le muestra ahí, el dueño no se entera
+  // de que puede. Al guardar se anota en el celular (sessionStorage) que se está activando: al
+  // volver del guardado el editor se arma de nuevo y no recuerda cómo estaba antes, así que no
+  // alcanza con comparar.
+  const spreadKey = `bionfc-pet-spread:${landing.id}`;
+  const [spread, setSpread] = useState(false);
+  useEffect(() => {
+    try {
+      if (!sessionStorage.getItem(spreadKey)) return;
+      if (searchParams.get("error")) { sessionStorage.removeItem(spreadKey); return; }
+      if (!searchParams.get("saved") && !searchParams.get("guardado")) return;
+      sessionStorage.removeItem(spreadKey);
+      if (initialPet.lost) { setSpread(true); setView("menu"); }
+    } catch {}
+  }, [searchParams, spreadKey, initialPet.lost]);
+
   // Cada paso y cada opción del menú es una pantalla nueva: arranca desde arriba.
-  useEffect(() => { window.scrollTo(0, 0); }, [view, setup, after]);
+  useEffect(() => { window.scrollTo(0, 0); }, [view, setup, after, spread]);
 
   // La tecla Enter del celular dice "Listo" en los campos de una línea (los de los pasos ya dicen
   // "Siguiente"). Se pone acá para no repetirlo en cada campo.
@@ -252,7 +278,12 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
   }
   // Pantalla de una opción: "Guardar" guarda y vuelve al menú (el guardado vuelve con ?saved);
   // "Cancelar" vuelve sin guardar y, si había cambios, pregunta antes de descartarlos.
-  const saveView = () => { if (dirty) save(); else setView("menu"); };
+  const saveView = () => {
+    if (!dirty) { setView("menu"); return; }
+    // Se está activando el modo perdido: al volver del guardado se muestra "Ahora, difundilo".
+    if (isOwner && landing.published && pet.lost && !initialPet.lost) { try { sessionStorage.setItem(spreadKey, "1"); } catch {} }
+    save();
+  };
   // Con cambios, "Cancelar" pregunta con un aviso propio (no la ventanita gris del navegador).
   const discardDialog = useRef<HTMLDialogElement>(null);
   const cancelView = () => { if (dirty) discardDialog.current?.showModal(); else setView("menu"); };
@@ -301,7 +332,7 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
 
   // En el celular, los pasos y las pantallas de cada opción ocupan toda la pantalla: la
   // miniatura se ve solo en el menú (en la compu queda siempre al lado).
-  const focused = setup !== null || view !== "menu" || after !== null;
+  const focused = setup !== null || view !== "menu" || after !== null || spread;
   // Pasos opcionales: al pasar del último con datos ("¿Alguien más?") se guarda lo cargado, así
   // no se pierde aunque después cierre sin terminar. Si falla, el aviso de error queda a la vista.
   const goAfter = (next: AfterStep) => {
@@ -500,7 +531,24 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
           <p className="pet-wizard-note">Para entrar otro día: <b>bionfc.com/mi</b> con tu email, o escaneá la chapita y tocá “¿Es tu mascota? Editala”.</p>
         </section>}
 
-        {setup === null && after === null && view === "menu" && <>
+        {/* Modo perdido recién activado: a difundirlo. */}
+        {spread && <section className="pet-wizard pet-spread">
+          <div className="pet-spread-head"><span aria-hidden="true">🚨</span><div><strong>Modo perdido activado</strong><small>Su página ya muestra el cartel rojo.</small></div></div>
+          <h2>Ahora, difundilo</h2>
+          <p className="pet-wizard-lead">Las primeras horas son las que más importan. Compartilo en todos lados: la imagen lleva la dirección de su página para que te avisen.</p>
+          <PetSharePanel path={`/mascota/${landing.slug}`} petName={name} lost lostZone={pet.lostZone} female={petIsFemale(pet)} />
+          <div className="pet-spread-tips">
+            <strong>Además</strong>
+            <ul>
+              <li>Publicalo en los <b>grupos de Facebook de mascotas perdidas</b> de tu zona y de la ciudad.</li>
+              <li>Avisá en <b>veterinarias, petshops y negocios</b> cercanos.</li>
+              <li>Tené el <b>teléfono a mano</b>: si alguien {petGendered(pet, "lo", "la")} encuentra, te escribe por WhatsApp desde su página.</li>
+            </ul>
+          </div>
+          <button type="button" className="pet-step-next" onClick={() => setSpread(false)}>Listo</button>
+        </section>}
+
+        {setup === null && after === null && !spread && view === "menu" && <>
           {/* Sin publicar después de los pasos (por ejemplo, si falló al publicar). */}
           {isOwner && !landing.published && <div className={`pet-ed-intro${canPublishAsOwner ? " is-ready" : ""}`}>{canPublishAsOwner
             ? <><span>Todavía no está publicada. Quien la escanee verá estos datos y tu WhatsApp.</span><button type="button" className="pet-step-next is-publish" disabled={saving} onClick={() => save()}>{saving ? <><i className="spin" aria-hidden="true" />Publicando…</> : "Publicar mi chapita"}</button></>
@@ -603,6 +651,11 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
             </button>
             {field("Dónde se perdió (opcional)", <input value={pet.lostZone} maxLength={120} placeholder="Ej: Barrio Cofico, cerca de la plaza" onChange={(event) => change({ lostZone: event.target.value })} />)}
             {field("Recompensa (opcional)", <input value={pet.reward} maxLength={60} placeholder="Ej: $50.000" onChange={(event) => change({ reward: event.target.value })} />, "Completala solo si realmente vas a ofrecerla. Si queda vacío, no se muestra.")}
+            {/* Si cambió el interruptor, el botón dice lo que va a pasar al tocarlo: es el toque
+                que publica (o saca) el cartel rojo. Hace lo mismo que "Guardar". */}
+            {pet.lost !== initialPet.lost && <button type="button" className={`pet-step-next pet-lost-confirm${pet.lost ? " is-on" : ""}`} onClick={saveView} disabled={saving}>
+              {saving ? <><i className="spin" aria-hidden="true" />{pet.lost ? "Activando…" : "Desactivando…"}</> : pet.lost ? "🚨 Activar aviso" : "✓ Desactivar aviso"}
+            </button>}
           </>}
 
           {/* Guarda y vuelve al menú (el guardado recarga esta pantalla con ?saved). */}

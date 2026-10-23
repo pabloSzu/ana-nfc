@@ -65,6 +65,9 @@ export async function saveMyPet(fd: FormData) {
   // La página pública se guarda en caché (app/[slug]/page.tsx): sin esto, el cartel de perdido
   // tardaría minutos en aparecer.
   if (landing!.slug) revalidateLandingPage(landing!.slug);
+  // Si cambió el nombre, el link anterior pasa a ser un alias que redirige: su página guardada
+  // también se descarta.
+  if (landing!.pet_slug) revalidateLandingPage(landing!.pet_slug);
   const { data: savedLanding } = await supabase.from("landings").select("pet_slug,published").eq("id", landingId).maybeSingle();
   if (savedLanding?.pet_slug) revalidateLandingPage(savedLanding.pet_slug);
   // Primera vez que queda publicada: mail de bienvenida, después de responder (no demora nada).
@@ -79,11 +82,14 @@ export async function saveMyPet(fd: FormData) {
     : !petHasContact(pet) ? "Guardado. Falta el WhatsApp para que la chapita funcione."
     // La primera vez, el editor muestra la pantalla "¡Ya funciona!": acá alcanza con confirmar.
     : !landing!.published ? "Publicada"
-    : pet.lost && !wasLost ? "🚨 Modo perdido activado. Compartilo desde Mis chapitas para que lo vean."
     : !pet.lost && wasLost ? `✓ Modo perdido desactivado. ¡Qué bueno que ${name} volvió!`
     : `✓ Guardado. Ya se ve en la página de ${name}.`;
   // Guardado de los pasos opcionales: sin aviso en pantalla, solo ?guardado=1 para que el editor
   // sepa que quedó guardado.
-  if (fd.get("quiet") === "1") redirect(`${back}?guardado=1`);
+  // Recién activado el modo perdido: tampoco hay aviso, porque el editor muestra "Ahora,
+  // difundilo" con "Modo perdido activado" arriba (el cartelito verde encima confundía).
+  // ?guardado lleva la hora: si fuera siempre igual, al guardar dos veces seguidas la dirección no
+  // cambiaría y el editor no se enteraría del segundo guardado.
+  if (fd.get("quiet") === "1" || (pet.lost && !wasLost && landing!.published && !landing!.blocked_at)) redirect(`${back}?guardado=${Date.now()}`);
   redirect(`${back}?saved=${encodeURIComponent(message)}`);
 }

@@ -56,6 +56,9 @@ export async function savePet(fd: FormData) {
   revalidatePath("/admin/paginas");
   // La página pública se guarda en caché (app/[slug]/page.tsx): sin esto el cambio tardaría en verse.
   if (landing!.slug) revalidateLandingPage(landing!.slug);
+  // Si cambió el nombre, el link anterior pasa a ser un alias que redirige: su página guardada
+  // también se descarta.
+  if (landing!.pet_slug) revalidateLandingPage(landing!.pet_slug);
   const { data: savedLanding } = await supabase.from("landings").select("pet_slug").eq("id", landingId).eq("owner_id", userId).maybeSingle();
   if (savedLanding?.pet_slug) revalidateLandingPage(savedLanding.pet_slug);
   redirect(`${back}?saved=${encodeURIComponent("Cambios guardados")}`);
