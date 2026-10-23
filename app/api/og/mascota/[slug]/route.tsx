@@ -1,6 +1,5 @@
 import { ImageResponse } from "next/og";
 import { createClient } from "@supabase/supabase-js";
-import QRCode from "qrcode";
 import sharp from "sharp";
 import { parsePet, petGendered, petLook, type PetData, type PetLook, type PetPhotoPlacement } from "@/lib/pet";
 import { getSiteOrigin } from "@/lib/site-url";
@@ -11,8 +10,9 @@ import { getSiteOrigin } from "@/lib/site-url";
 //  · ?formato=historia 1080×1920: para historias de Instagram y estados de WhatsApp.
 //  · ?formato=cuadrado 1080×1080: para grupos de Facebook y el feed.
 // Si está perdida, todas llevan "¡ESTOY PERDIDO/A!" con la zona y la recompensa. La historia y la
-// cuadrada llevan además un QR a su página: desde una página web, Instagram no deja agregar el
-// link solo, así que quien la ve escanea o entra a la dirección escrita.
+// cuadrada llevan la dirección de su página, corta y bien legible: se miran en el mismo celular
+// (un QR no se puede escanear) y, desde una página web, Instagram no deja poner el link solo; el
+// dueño lo agrega con el sticker "Enlace" (el menú de compartir se lo deja copiado).
 export const runtime = "nodejs";
 
 const publicSupabase = createClient(
@@ -82,15 +82,11 @@ function Photo({ photo, size, look, border }: { photo: string | null; size: numb
   </div>;
 }
 
-// QR a la página, en una tarjeta blanca con la dirección escrita debajo.
-function QrCard({ qr, address, size, caption }: { qr: string; address: string; size: number; caption: string }) {
-  return <div style={{ display: "flex", alignItems: "center", gap: size * 0.16, padding: size * 0.12, borderRadius: size * 0.16, background: "#fff", color: "#1d2130", boxShadow: "0 16px 40px rgba(0,0,0,.14)" }}>
-    {/* eslint-disable-next-line @next/next/no-img-element -- ImageResponse solo acepta <img> */}
-    <img src={qr} width={size} height={size} alt="" />
-    <div style={{ display: "flex", flexDirection: "column", maxWidth: size * 2.2 }}>
-      <div style={{ display: "flex", fontSize: size * 0.17, fontWeight: 800, lineHeight: 1.15 }}>{caption}</div>
-      <div style={{ display: "flex", marginTop: size * 0.06, fontSize: size * 0.11, fontWeight: 800, color: "#6b7080" }}>{address}</div>
-    </div>
+// La dirección de su página en una pastilla blanca, con lo que hay que hacer arriba.
+function Address({ address, caption, size }: { address: string; caption: string; size: number }) {
+  return <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: size * 0.3 }}>
+    <div style={{ display: "flex", fontSize: size * 0.85, fontWeight: 800, opacity: 0.8 }}>{caption}</div>
+    <div style={{ display: "flex", padding: `${size * 0.45}px ${size * 0.9}px`, borderRadius: 999, background: "#fff", color: "#1d2130", fontSize: size, fontWeight: 900, letterSpacing: -0.5, boxShadow: "0 14px 34px rgba(0,0,0,.14)" }}>{address}</div>
   </div>;
 }
 
@@ -106,13 +102,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ slug
   const pet = parsePet(landing.button_style);
   const look = petLook(pet.look);
   const name = (landing.business_name || "").trim() || "Mi mascota";
-  const pageUrl = `${getSiteOrigin()}/mascota/${encodeURIComponent(slug)}`;
-  const address = pageUrl.replace(/^https?:\/\//, "");
+  // Corta: /slug abre la misma página que /mascota/slug.
+  const address = `${new URL(getSiteOrigin()).host}/${slug}`;
   const photoSize = format === "historia" ? (pet.lost ? 520 : 620) : format === "cuadrado" ? 420 : pet.lost ? 300 : 360;
-  const [photo, font, qr] = await Promise.all([
+  const [photo, font] = await Promise.all([
     landing.logo_url ? framedPhoto(landing.logo_url, photoSize * 2, pet.photo) : null,
     loadPoppins(),
-    format ? QRCode.toDataURL(pageUrl, { width: 480, margin: 1, errorCorrectionLevel: "M" }) : null,
   ]);
   const options = (width: number, height: number) => ({ width, height, fonts: font ? [{ name: "Poppins", data: font, weight: 800 as const, style: "normal" as const }] : undefined, headers: { "Cache-Control": "public, max-age=300, s-maxage=300" } });
   const background = `linear-gradient(160deg, ${look.background}, ${look.backgroundTo})`;
@@ -120,8 +115,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ slug
   const zone = pet.lostZone.trim() && `Me perdí en ${pet.lostZone.trim()}`;
   const reward = pet.reward.trim() && `Recompensa: ${pet.reward.trim()}`;
 
-  if (format === "historia" && qr) return new ImageResponse(<Story pet={pet} look={look} name={name} photo={photo} photoSize={photoSize} qr={qr} address={address} background={background} lostTitle={lostTitle} zone={zone} reward={reward} />, options(1080, 1920));
-  if (format === "cuadrado" && qr) return new ImageResponse(<Square pet={pet} look={look} name={name} photo={photo} photoSize={photoSize} qr={qr} address={address} background={background} lostTitle={lostTitle} zone={zone} reward={reward} />, options(1080, 1080));
+  if (format === "historia") return new ImageResponse(<Story pet={pet} look={look} name={name} photo={photo} photoSize={photoSize} address={address} background={background} lostTitle={lostTitle} zone={zone} reward={reward} />, options(1080, 1920));
+  if (format === "cuadrado") return new ImageResponse(<Square pet={pet} look={look} name={name} photo={photo} photoSize={photoSize} address={address} background={background} lostTitle={lostTitle} zone={zone} reward={reward} />, options(1080, 1080));
 
   const lostDetails = [zone, reward].filter(Boolean).join("  ·  ");
   return new ImageResponse(
@@ -146,11 +141,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ slug
   );
 }
 
-type ShareProps = { pet: PetData; look: PetLook; name: string; photo: string | null; photoSize: number; qr: string; address: string; background: string; lostTitle: string; zone: string | false; reward: string | false };
+type ShareProps = { pet: PetData; look: PetLook; name: string; photo: string | null; photoSize: number; address: string; background: string; lostTitle: string; zone: string | false; reward: string | false };
 
-// Historia (1080×1920). Perdida: cartel rojo arriba, foto, nombre y el QR para avisar. Normal: la
+// Historia (1080×1920). Perdida: cartel rojo arriba, foto, nombre y la dirección para avisar. Normal: la
 // foto grande y "Ya tengo mi chapita inteligente", para que la compartan con orgullo.
-function Story({ pet, look, name, photo, photoSize, qr, address, background, lostTitle, zone, reward }: ShareProps) {
+function Story({ pet, look, name, photo, photoSize, address, background, lostTitle, zone, reward }: ShareProps) {
   return <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", background, color: look.ink, fontFamily: "Poppins, sans-serif" }}>
     {pet.lost
       ? <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", padding: "120px 60px 60px", background: "#d92d20", color: "#fff", textAlign: "center" }}>
@@ -173,14 +168,14 @@ function Story({ pet, look, name, photo, photoSize, qr, address, background, los
           </div>}
     </div>
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 34, paddingBottom: 110 }}>
-      <QrCard qr={qr} address={address} size={pet.lost ? 260 : 190} caption={pet.lost ? "Escaneá para avisar a mi familia" : "Escaneá y conocé mi chapita"} />
+      <Address address={address} size={pet.lost ? 50 : 42} caption={pet.lost ? "Entrá acá para avisar a mi familia" : "Conocé mi chapita en"} />
       <div style={{ display: "flex", fontSize: 34, fontWeight: 800, opacity: 0.55 }}>BIONFC · chapita inteligente</div>
     </div>
   </div>;
 }
 
 // Cuadrada (1080×1080), para grupos de Facebook y el feed: lo mismo, más compacto.
-function Square({ pet, look, name, photo, photoSize, qr, address, background, lostTitle, zone, reward }: ShareProps) {
+function Square({ pet, look, name, photo, photoSize, address, background, lostTitle, zone, reward }: ShareProps) {
   const details = [zone, reward].filter(Boolean).join("  ·  ");
   return <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", background, color: look.ink, fontFamily: "Poppins, sans-serif" }}>
     {pet.lost && <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "46px 40px", background: "#d92d20", color: "#fff", textAlign: "center" }}>
@@ -196,7 +191,7 @@ function Square({ pet, look, name, photo, photoSize, qr, address, background, lo
       </div>
     </div>
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 60px 56px" }}>
-      <QrCard qr={qr} address={address} size={170} caption={pet.lost ? "Escaneá para avisar" : "Escaneá y conocé mi chapita"} />
+      <Address address={address} size={32} caption={pet.lost ? "Entrá acá para avisar" : "Conocé mi chapita en"} />
       <div style={{ display: "flex", fontSize: 28, fontWeight: 800, opacity: 0.55 }}>BIONFC</div>
     </div>
   </div>;

@@ -3267,3 +3267,4 @@ dialog.confirm-modal { width: min(400px, calc(100vw - 32px)); }
 .pet-share-go { flex: none; color: #c25e22; font-size: 20px; }
 /* El menú cerrado nunca se ve, aunque el lugar donde está le cambie el display a sus hijos. */
 .pet-share-sheet:not([open]) { display: none !important; }
+.pet-share-copied { display: flex; gap: 8px; margin: 0; padding: 10px 12px; border-radius: 12px; background: #e8f6ec; color: #145c2e; font-size: 13px; line-height: 1.45; }

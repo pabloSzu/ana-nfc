@@ -2,9 +2,10 @@
 
 // "Compartir" una chapita: abre un menú con lo que se puede compartir según el momento.
 //  · Normal: la imagen para historias (para mostrarla con orgullo) y el link.
-//  · Perdida: la historia y la imagen cuadrada (grupos de Facebook) con "¡ESTOY PERDIDO/A!" y un
-//    QR, y el link con el pedido de ayuda.
-// Las imágenes salen de app/api/og/mascota y se bajan apenas se abre el menú: el celular solo
+//  · Perdida: la historia y la imagen cuadrada (grupos de Facebook) con "¡ESTOY PERDIDO/A!" y
+//    la dirección de su página, y el link con el pedido de ayuda.
+// Las imágenes (con la dirección de su página escrita; un QR no sirve en algo que se mira en el
+// mismo celular) salen de app/api/og/mascota y se bajan apenas se abre el menú: el celular solo
 // deja abrir su menú de compartir justo después de un toque, así que tienen que estar listas. Con
 // el menú del celular se elige Instagram, WhatsApp, etc.; en la compu se descargan.
 import { useRef, useState } from "react";
@@ -24,9 +25,13 @@ export default function PetShareButton({ path, petName, lost, lostZone = "", fem
   const kinds: Kind[] = lost ? ["historia", "cuadrado"] : ["historia"];
   const canShareFiles = (file: File) => typeof navigator !== "undefined" && Boolean(navigator.canShare?.({ files: [file] }));
 
+  // El link se copia apenas se abre el menú (tiene que ser en el mismo toque): en Instagram el
+  // dueño solo agrega el sticker "Enlace" y lo pega. Una página web no puede poner el link sola.
+  const [linkReady, setLinkReady] = useState(false);
   function open() {
     setFailed(false);
     sheet.current?.showModal();
+    navigator.clipboard?.writeText(new URL(path, window.location.origin).toString()).then(() => setLinkReady(true), () => setLinkReady(false));
     // Siempre recién generadas (?t=): muestran lo último guardado.
     for (const kind of kinds) {
       if (files[kind]) URL.revokeObjectURL(files[kind]!.preview);
@@ -88,7 +93,8 @@ export default function PetShareButton({ path, petName, lost, lostZone = "", fem
     </button>
     <dialog ref={sheet} className="pet-share-sheet" aria-label="Compartir" onClick={(event) => { if (event.target === sheet.current) sheet.current.close(); }}>
       <div className="pet-share-head"><strong>{lost ? `Ayudá a encontrar a ${name}` : `Compartí la chapita de ${name}`}</strong><button type="button" onClick={() => sheet.current?.close()} aria-label="Cerrar">✕</button></div>
-      <p className="pet-share-tip">{lost ? "Subila a tus historias y a los grupos de mascotas perdidas de tu zona. El QR lleva directo a su página para avisarte." : "Una imagen linda para tus historias. El QR muestra su chapita."}</p>
+      <p className="pet-share-tip">{lost ? "Subila a tus historias y a los grupos de mascotas perdidas de tu zona. La imagen tiene la dirección de su página para que te avisen." : "Una imagen linda para tus historias, con la dirección de su chapita."}</p>
+      {linkReady && <p className="pet-share-copied">✓ <span>Copiamos el link. En Instagram agregá el sticker <b>“Enlace”</b> y pegalo{lost ? "; en Facebook, pegalo en el texto de la publicación" : ""}.</span></p>}
       {kinds.map(option)}
       <button type="button" className="pet-share-option" onClick={shareLink}>
         <span className="pet-share-thumb is-icon"><FiLink aria-hidden="true" /></span>
