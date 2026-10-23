@@ -28,9 +28,13 @@ Cada chapita tiene tres identificadores con funciones distintas:
 - **Número de lote:** `Chapita 1`, `Chapita 2`, etc.; sirve para emparejar el grabado con su
   tarjetita de activación mientras está en stock.
 - **Página pública:** antes de activarse usa un slug técnico aleatorio (`m-xxxxxxx`). Cuando el
-  comprador carga el nombre, BIONFC crea una dirección amigable y única, por ejemplo
-  `/mascota/toby-a7k3f2`. El slug técnico anterior sigue siendo válido como respaldo y el QR/NFC
-  continúa apuntando a `/go/id`, por lo que el objeto físico nunca se rompe.
+  comprador carga el nombre, BIONFC crea una dirección amigable y única: nombre + 4 letras y
+  números, por ejemplo `/mascota/toby-k7m2`. No son 4 números solos: con 9.000 por nombre se
+  podían recorrer para juntar WhatsApps. Si cambia el nombre, cambia el link y el anterior
+  redirige al nuevo (`pet_slug_aliases`). Ninguna otra página puede usar un link de mascota
+  (`guard_landing_slug`; la app pregunta con `slug_in_use`). El slug técnico anterior sigue
+  siendo válido como respaldo y el QR/NFC continúa apuntando a `/go/id`, por lo que el objeto
+  físico nunca se rompe.
 
 No poner el nombre de la mascota ni el código de activación en el QR/NFC: el primero todavía no
 se conoce al fabricar y el segundo permitiría apropiarse de una chapita encontrada.
