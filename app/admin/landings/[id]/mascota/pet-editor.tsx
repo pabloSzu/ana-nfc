@@ -492,7 +492,9 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
           <div className="pet-celebrate-mark" aria-hidden="true">🐾</div>
           <h2>¡Lista la chapita de {petName}!</h2>
           {miniPreview(pet)}
-          <PetShareButton path={`/mascota/${landing.slug}`} petName={name} lost={false} className="pet-step-next is-publish" />
+          {/* El momento de más entusiasmo: la invitación a mostrarla en historias (cada una que
+              se sube es publicidad gratis). */}
+          <PetShareButton path={`/mascota/${landing.slug}`} petName={name} lost={false} className="pet-step-next is-publish" label="Mostrala en tus historias" />
           <Link className="pet-celebrate-more" href="/mi">Ir a Mis chapitas</Link>
           <button type="button" className="pet-celebrate-home" onClick={() => setAfter(null)}>Ver todo lo que puedo cambiar</button>
           <p className="pet-wizard-note">Para entrar otro día: <b>bionfc.com/mi</b> con tu email, o escaneá la chapita y tocá “¿Es tu mascota? Editala”.</p>
@@ -535,7 +537,7 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
           <div className="pet-form-bar">
             <button type="button" onClick={cancelView} disabled={saving}>Cancelar</button>
             <strong>{TITLES[view].label}</strong>
-            <button type="button" className="is-save" onClick={saveView} disabled={saving}>{saving ? <><i className="spin" aria-hidden="true" />Guardando</> : "Guardar"}</button>
+            <button type="button" className="is-save" onClick={saveView} disabled={saving} aria-label={saving ? "Guardando" : undefined}>{saving ? <i className="spin" aria-hidden="true" /> : "Guardar"}</button>
           </div>
 
           {view === "look" && <>

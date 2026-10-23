@@ -58,8 +58,8 @@
 .mi-pets .mi-pet.is-lost { box-shadow: 0 0 0 2px #d92d20, 0 6px 18px rgba(120, 70, 30, .08); }
 .mi-pets .mi-pet-card { display: flex; align-items: center; gap: 14px; padding: 2px; color: inherit; text-decoration: none; }
 .mi-pet-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.mi-pet-actions > * { flex: 1 1 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 8px; border: 0; border-radius: 13px; background: #fbefe4; color: #8a3f13; font: inherit; font-size: 14px; font-weight: 700; text-decoration: none; white-space: nowrap; cursor: pointer; }
-.mi-pet-actions > *:active { transform: scale(.97); }
+.mi-pet-actions > :is(a, button) { flex: 1 1 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 8px; border: 0; border-radius: 13px; background: #fbefe4; color: #8a3f13; font: inherit; font-size: 14px; font-weight: 700; text-decoration: none; white-space: nowrap; cursor: pointer; }
+.mi-pet-actions > :is(a, button):active { transform: scale(.97); }
 .mi-pet-actions > .is-urgent { flex-basis: 100%; order: -1; min-height: 50px; background: #d92d20; color: #fff; font-size: 15px; font-weight: 800; }
 .mi-pet-photo { position: relative; display: grid; place-items: center; flex: none; width: 64px; height: 64px; overflow: hidden; border-radius: 50%; background: #f6e2d2; font-size: 28px; }
 .mi-pet-photo img { width: 100%; height: 100%; object-fit: cover; }

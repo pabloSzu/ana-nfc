@@ -3244,3 +3244,26 @@ dialog.confirm-modal { width: min(400px, calc(100vw - 32px)); }
 /* Compartir sin portapapeles: el link a la vista para copiarlo a mano. */
 .pet-share-manual { display: grid; flex-basis: 100%; gap: 4px; font-size: 12.5px; font-weight: 700; }
 .pet-share-manual input { width: 100%; padding: 8px 10px; border: 1px solid #e4d3c5; border-radius: 10px; font: inherit; font-size: 16px; font-weight: 500; }
+/* Menú de "Compartir" una chapita (components/pet-share-button.tsx): una hoja que sube desde abajo
+   en el celular y una ventanita centrada en la compu. */
+.pet-share-sheet { width: min(100%, 440px); max-width: none; margin: auto auto 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom)); border: 0; border-radius: 22px 22px 0 0; background: #fffaf6; color: #2d1d12; font-family: inherit; box-shadow: 0 -20px 60px #0004; }
+.pet-share-sheet::backdrop { background: #111827a6; }
+.pet-share-sheet[open] { display: grid; gap: 10px; animation: pet-share-up .22s ease-out; }
+@keyframes pet-share-up { from { transform: translateY(30px); opacity: 0; } }
+@media (min-width: 640px) { .pet-share-sheet { margin: auto; border-radius: 22px; } }
+.pet-share-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.pet-share-head strong { font-size: 18px; line-height: 1.2; }
+.pet-share-head button { flex: none; width: 36px; height: 36px; border: 0; border-radius: 50%; background: #f3e6da; color: #5b4a3d; font: inherit; font-size: 15px; cursor: pointer; }
+.pet-share-tip { margin: -4px 0 2px; color: #7a5a44; font-size: 13.5px; line-height: 1.45; }
+.pet-share-option { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; border: 1px solid #f0e2d6; border-radius: 16px; background: #fff; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.pet-share-option:disabled { cursor: progress; }
+.pet-share-option > span:nth-child(2) { display: grid; flex: 1; gap: 2px; min-width: 0; }
+.pet-share-option strong { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; }
+.pet-share-option small { color: #8a6a52; font-size: 12.5px; line-height: 1.35; }
+.pet-share-thumb { display: grid; place-items: center; flex: none; width: 46px; height: 46px; overflow: hidden; border-radius: 10px; background: #f6e2d2; color: #c25e22; font-size: 20px; font-weight: 800; }
+.pet-share-thumb[data-kind="historia"] { height: 72px; }
+.pet-share-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.pet-share-thumb .spin { margin: 0; }
+.pet-share-go { flex: none; color: #c25e22; font-size: 20px; }
+/* El menú cerrado nunca se ve, aunque el lugar donde está le cambie el display a sus hijos. */
+.pet-share-sheet:not([open]) { display: none !important; }
