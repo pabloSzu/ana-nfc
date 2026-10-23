@@ -56,7 +56,7 @@ export default function ActivateFlow({ initialCode, signedInEmail }: { initialCo
     <p className="mi-success">Esta chapita quedará a nombre de <strong>{signedInEmail}</strong>.</p>
     <p className="mi-hint">Después vas a usar ese email para editar los datos de tu mascota.</p>
     {error && <p className="mi-error" role="alert">{error}</p>}
-    <button className="mi-button" type="button" disabled={busy} onClick={activate}>{busy ? "Activando…" : "Sí, activar con este email"}</button>
+    <button className="mi-button" type="button" disabled={busy} onClick={activate}>{busy ? <><i className="spin" aria-hidden="true" />Activando…</> : "Sí, activar con este email"}</button>
     <button className="mi-link" type="button" disabled={busy} onClick={() => switchAccount(code)}>No es mi email · usar otro</button>
   </div></>;
 
@@ -74,7 +74,7 @@ export default function ActivateFlow({ initialCode, signedInEmail }: { initialCo
     <label className="mi-check"><input type="checkbox" checked={terms} onChange={(event) => setTerms(event.target.checked)} required /><span>Acepto los <Link href={`/terminos?volver=${encodeURIComponent(`/activar${normalizeCode(code) ? `?c=${normalizeCode(code)}` : ""}`)}`}>términos</Link> y que la ficha será pública.</span></label>
     <details className="mi-public-details"><summary>¿Qué datos se muestran?</summary><p>Solo lo que cargues en la ficha: foto, nombre, información de la mascota y los teléfonos elegidos para que puedan avisarte. Tu email de acceso no se publica.</p></details>
     {error && <p className="mi-error" role="alert">{error}</p>}
-    <button className="mi-button" type="submit" disabled={busy || !terms}>{busy ? "Revisando…" : "Seguir"}</button>
+    <button className="mi-button" type="submit" disabled={busy || !terms}>{busy ? <><i className="spin" aria-hidden="true" />Revisando…</> : "Seguir"}</button>
     {signedInEmail && <p className="mi-hint">Vas a activarla con <strong>{signedInEmail}</strong>. <button type="button" className="mi-link" onClick={() => switchAccount(code)}>No soy yo, usar otro email</button></p>}
   </form></>;
 }

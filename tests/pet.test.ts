@@ -1,7 +1,7 @@
 // Chapita de mascota (lib/pet.ts). `npm test`.
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { cleanPet, formatPhone, newPet, normalizePhone, petPhoneProblem, parsePet, petCallHref, petGendered, petHasContact, petHealthFields, petIsFemale, petLook, petMissing, petRows, petWhatsappHref, PET_ABOUT_FIELDS, DEFAULT_PET_MESSAGE } from "../lib/pet.ts";
+import { cleanPet, cleanPhoneInput, formatPhone, newPet, petForEditing, phoneForInput, normalizePhone, petPhoneProblem, parsePet, petCallHref, petGendered, petHasContact, petHealthFields, petIsFemale, petLook, petMissing, petRows, petWhatsappHref, PET_ABOUT_FIELDS, DEFAULT_PET_MESSAGE } from "../lib/pet.ts";
 
 describe("datos de la chapita", () => {
   test("una chapita nueva arranca con el saludo, el mensaje y el WhatsApp cargado", () => {
@@ -52,6 +52,30 @@ describe("datos de la chapita", () => {
     const full = parsePet({ pet: { about: { sex: "Hembra" }, family: [{ name: "", phone: "5493511234567" }, { name: "Ana", phone: "5493517654321" }] } });
     assert.deepEqual(petMissing(full, true), []);
     assert.deepEqual(petMissing(parsePet({ pet: { health: { allergies: "Pollo" } } }), true), ["family"]);
+  });
+
+  test("el número se muestra con su característica de 2, 3 o 4 dígitos", () => {
+    assert.equal(formatPhone("11 2345 6789"), "+54 9 11 2345-6789");
+    assert.equal(formatPhone("0351 15 555-1234"), "+54 9 351 555-1234");
+    assert.equal(formatPhone("3543 12-3456"), "+54 9 3543 12-3456");
+    assert.equal(formatPhone("02266 15 41-2345"), "+54 9 2266 41-2345");
+    assert.equal(normalizePhone("02266 15 41-2345"), "5492266412345");
+    assert.equal(phoneForInput("5493515551234"), "351 555-1234");
+    assert.equal(phoneForInput("+1 305 555 0100"), "+1 305 555 0100");
+  });
+
+  test("en el teléfono solo entran números, espacios, +, guiones y paréntesis", () => {
+    assert.equal(cleanPhoneInput("351 abc 555-1234 ✨"), "351  555-1234 ");
+    assert.equal(cleanPhoneInput("1".repeat(40)).length, 20);
+  });
+
+  test("los textos se limpian: sin saltos ni invisibles en los de una línea", () => {
+    const pet = cleanPet({ ...newPet(), greeting: " ¡Hola!\n\nSoy ", lostZone: "Barrio​  Cofico\t", message: "Hola\r\n\n\n\nchau  ", family: [{ name: "Ana\n", phone: "351 555 1234" }] });
+    assert.equal(pet.greeting, "¡Hola! Soy");
+    assert.equal(pet.lostZone, "Barrio Cofico");
+    assert.equal(pet.message, "Hola\n\nchau");
+    assert.deepEqual(pet.family, [{ name: "Ana", phone: "5493515551234" }]);
+    assert.deepEqual(petForEditing(pet).family, [{ name: "Ana", phone: "351 555-1234" }]);
   });
 
   test("al guardar se recortan espacios y se van las personas vacías", () => {

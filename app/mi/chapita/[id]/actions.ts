@@ -28,7 +28,7 @@ export async function saveMyPet(fd: FormData) {
   if (!userId) redirect(`/mi/entrar?next=${encodeURIComponent(back)}`);
   const fail = (message: string): never => redirect(`${back}?error=${encodeURIComponent(message)}`);
 
-  const { data: landing } = await supabase.from("landings").select("id,slug,pet_slug,logo_url,blocked_at,published").eq("id", landingId).maybeSingle();
+  const { data: landing } = await supabase.from("landings").select("id,slug,pet_slug,logo_url,blocked_at,published,button_style").eq("id", landingId).maybeSingle();
   if (!landing) fail(ERRORS.sin_permiso);
   const name = String(fd.get("business_name") || "").trim().slice(0, 60);
   if (!name) fail(ERRORS.nombre_invalido);
@@ -72,13 +72,18 @@ export async function saveMyPet(fd: FormData) {
   if (!landing!.published && savedLanding?.published && email) {
     after(() => sendWelcomeEmail({ to: email, petName: name, petSlug: savedLanding.pet_slug || landing!.slug }));
   }
+  // El aviso dice qué pasó, en palabras del dueño (prender o apagar el modo perdido es lo que más
+  // importa confirmar).
+  const wasLost = parsePet(landing!.button_style).lost;
   const message = landing!.blocked_at ? "Cambios guardados. La chapita sigue pausada por BIONFC."
     : !petHasContact(pet) ? "Guardado. Falta el WhatsApp para que la chapita funcione."
     // La primera vez, el editor muestra la pantalla "¡Ya funciona!": acá alcanza con confirmar.
     : !landing!.published ? "Publicada"
-    : pet.lost ? "Guardado: el cartel de perdido ya se ve en la chapita" : "Cambios guardados";
-  // Guardado automático (el diseño al tocarlo, los pasos opcionales): sin aviso en pantalla, solo
-  // ?guardado=1 para que el editor sepa que quedó guardado.
+    : pet.lost && !wasLost ? "🚨 Modo perdido activado. Compartilo desde Mis chapitas para que lo vean."
+    : !pet.lost && wasLost ? `✓ Modo perdido desactivado. ¡Qué bueno que ${name} volvió!`
+    : `✓ Guardado. Ya se ve en la página de ${name}.`;
+  // Guardado de los pasos opcionales: sin aviso en pantalla, solo ?guardado=1 para que el editor
+  // sepa que quedó guardado.
   if (fd.get("quiet") === "1") redirect(`${back}?guardado=1`);
   redirect(`${back}?saved=${encodeURIComponent(message)}`);
 }

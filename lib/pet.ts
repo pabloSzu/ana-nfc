@@ -149,21 +149,32 @@ export function parsePet(buttonStyle: unknown): PetData {
   };
 }
 
+// Campos de una línea: sin saltos ni caracteres invisibles (los que llegan al copiar y pegar) y
+// con un solo espacio entre palabras. Los de varias líneas (mensaje, "si alguien lo encuentra")
+// conservan los saltos, pero como mucho una línea en blanco seguida.
+const INVISIBLE = /[\u0000-\u0008\u000b-\u001f\u007f\u200b-\u200f\u2028\u2029\u2060\ufeff]/g;
+const oneLine = (value: string) => value.replace(INVISIBLE, " ").replace(/\s+/g, " ").trim();
+const multiLine = (value: string) => value.replace(/\r\n?/g, "\n").replace(INVISIBLE, "").replace(/\t/g, " ").replace(/[ ]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+
 export function cleanPet(pet: PetData): PetData {
-  const trim = <T extends Record<string, string>>(values: T) => Object.fromEntries(Object.entries(values).map(([key, value]) => [key, value.trim()])) as T;
+  const lines = <T extends Record<string, string>>(values: T) => Object.fromEntries(Object.entries(values).map(([key, value]) => [key, oneLine(value)])) as T;
   return {
     ...pet,
-    greeting: pet.greeting.trim(),
-    message: pet.message.trim(),
-    family: pet.family.map((member) => ({ name: member.name.trim(), phone: member.phone.trim() })).filter((member) => member.name || member.phone)
+    greeting: oneLine(pet.greeting),
+    message: multiLine(pet.message),
+    family: pet.family.map((member) => ({ name: oneLine(member.name), phone: cleanPhoneInput(member.phone).trim() })).filter((member) => member.name || member.phone)
       .map((member) => ({ ...member, phone: member.phone && !petPhoneProblem(member.phone) ? normalizePhone(member.phone) : member.phone })),
-    about: trim(pet.about),
-    health: trim(pet.health),
-    finder: pet.finder.trim(),
-    lostZone: pet.lostZone.trim(),
-    reward: pet.reward.trim(),
+    about: lines(pet.about),
+    health: lines(pet.health),
+    finder: multiLine(pet.finder),
+    lostZone: oneLine(pet.lostZone),
+    reward: oneLine(pet.reward),
   };
 }
+
+// Para el editor: los teléfonos guardados ("5493515551234") como los escribe la gente
+// ("351 555-1234"). Al guardar, cleanPet los vuelve a dejar como los necesita WhatsApp.
+export const petForEditing = (pet: PetData): PetData => ({ ...pet, family: pet.family.map((member) => ({ ...member, phone: phoneForInput(member.phone) })) });
 
 export function newPet(phone = ""): PetData {
   return { ...parsePet({}), family: phone ? [{ name: "", phone }] : [] };
@@ -181,7 +192,9 @@ const digits = (phone: string) => phone.replace(/\D/g, "");
 function argentineLocal(number: string): string {
   let local = number.startsWith("0") ? number.slice(1) : number;
   if (local.length === 12) {
-    const areas = local.startsWith("11") ? [2] : [3, 4];
+    // Primero la característica que corresponde a esos números (ver AREAS_3), por si el número
+    // también tuviera un "15" en la otra posición.
+    const areas = local.startsWith("11") ? [2] : AREAS_3.has(local.slice(0, 3)) ? [3, 4] : [4, 3];
     const area = areas.find((length) => local.slice(length, length + 2) === "15");
     if (area) local = local.slice(0, area) + local.slice(area + 2);
   }
@@ -216,15 +229,31 @@ export function petPhoneProblem(phone: string): string | null {
   return /^549\d{10}$/.test(number) ? null : "Ponelo con la característica, por ejemplo 351 555 1234.";
 }
 
+// Características de 3 dígitos (las capitales y ciudades grandes); 11 es la única de 2 y el resto
+// tiene 4. Solo sirve para mostrar el número partido donde corresponde: para WhatsApp y la
+// llamada alcanza con que sean 10 dígitos en total, que es la regla en todo el país.
+const AREAS_3 = new Set(["220", "221", "223", "230", "236", "237", "249", "260", "261", "263", "264", "266", "280", "291", "294", "297", "299", "336", "341", "342", "343", "345", "348", "351", "353", "358", "362", "364", "370", "376", "379", "380", "381", "383", "385", "387", "388"]);
+const areaLength = (local: string) => local.startsWith("11") ? 2 : AREAS_3.has(local.slice(0, 3)) ? 3 : 4;
+
+// "351 555-1234": el número argentino como lo escribe la gente (para el campo del editor). Otro
+// país queda con su + y los dígitos.
+export function phoneForInput(phone: string): string {
+  const number = normalizePhone(phone);
+  const match = /^549(\d{10})$/.exec(number);
+  if (!match) return phone;
+  const local = match[1];
+  const area = areaLength(local);
+  return `${local.slice(0, area)} ${local.slice(area, -4)}-${local.slice(-4)}`;
+}
+
 // "+54 9 351 555-1234" para mostrarle al dueño cómo quedó guardado.
 export function formatPhone(phone: string): string {
   const number = normalizePhone(phone);
-  const match = /^549(\d{10})$/.exec(number);
-  if (!match) return number ? `+${number}` : "";
-  const local = match[1];
-  const area = local.startsWith("11") ? 2 : 3;
-  return `+54 9 ${local.slice(0, area)} ${local.slice(area, -4)}-${local.slice(-4)}`;
+  return /^549\d{10}$/.test(number) ? `+54 9 ${phoneForInput(number)}` : number ? `+${number}` : "";
 }
+
+// Lo que se puede escribir en un campo de teléfono: números, espacios, +, guiones y paréntesis.
+export const cleanPhoneInput = (value: string) => value.replace(/[^\d+\-\s()]/g, "").slice(0, 20);
 
 export function petWhatsappHref(phone: string, petName: string): string {
   const number = normalizePhone(phone);

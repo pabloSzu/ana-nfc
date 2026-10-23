@@ -281,3 +281,41 @@ a.pet-celebrate-more { align-items: center; text-decoration: none; }
   .pet-mini { border-width: 10px; border-radius: 44px; }
   .pet-ed-controls { overflow: visible; padding: 18px 20px 24px; border-radius: 20px; box-shadow: 0 2px 14px rgba(20, 24, 40, .08); }
 }
+
+/* "¿Salir sin guardar?": aviso propio en vez de la ventanita del navegador. */
+.pet-confirm { width: min(calc(100% - 32px), 360px); padding: 22px 20px 14px; border: 0; border-radius: 20px; background: #fff; color: #1d2130; text-align: center; box-shadow: 0 30px 80px #0005; }
+.pet-confirm::backdrop { background: #111827a6; }
+.pet-confirm strong { display: block; font-size: 18px; }
+.pet-confirm p { margin: 6px 0 16px; color: #6b7080; font-size: 14px; line-height: 1.45; }
+.pet-confirm-leave { width: 100%; min-height: 44px; margin-top: 6px; border: 0; background: none; color: #b42318; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
+.pet-wizard-photo .spin { margin: 0 0 4px; font-size: 22px; }
+.pet-editor-saving { display: inline-flex; align-items: center; }
+
+/* Celular: el celularcito es solo de muestra (es chico y los toques se equivocaban); para verlo en
+   grande está "Ver en grande". En la compu sigue tocable. */
+@media (max-width: 899px) {
+  .pet-ed-preview .pet-mini { pointer-events: none; cursor: default; }
+}
+
+/* Panel del dueño (/mi): los mismos colores que "Mis chapitas" y "Activar" (crema y naranja), así
+   no parece otra app. El rojo queda solo para el modo perdido. El Admin sigue neutro. */
+.mi-shell .pet-ed-controls { background: #fffaf6; }
+.mi-shell .pet-step-next:not(:disabled):not(.is-publish) { background: linear-gradient(135deg, #ea874d, #cf6125); box-shadow: 0 8px 18px #cf612533; }
+.mi-shell .pet-step-next.is-publish:not(:disabled) { background: #17803d; box-shadow: 0 8px 18px #17803d33; }
+.mi-shell .pet-wizard-count { color: #c25e22; }
+.mi-shell .pet-wizard-progress span { background: #e07a3f; }
+.mi-shell .pet-wizard-progress.is-done span { background: #17803d; }
+.mi-shell .pet-form-bar { background: #fff; border-bottom-color: #f0e2d6; }
+.mi-shell .pet-form-bar button.is-save { background: linear-gradient(135deg, #ea874d, #cf6125); }
+.mi-shell .pet-menu-status.is-add { color: #c25e22; }
+.mi-shell .pet-menu > li { border-bottom-color: #f2e6dc; }
+.mi-shell .pet-menu-icon { background: #fbefe4; }
+.mi-shell .pet-field input:focus, .mi-shell .pet-field textarea:focus { outline-color: #e07a3f; }
+.mi-shell .pet-choice button.active, .mi-shell .pet-look-grid button.active { border-color: #cf6125; background: #fff4ec; color: #8a3f13; box-shadow: 0 0 0 1.5px #cf6125; }
+.mi-shell .pet-choice button.active { background: #e07a3f; color: #fff; }
+/* Las pantallas de edición: fondo crema y lo que va junto en tarjetas blancas. */
+@media (max-width: 899px) {
+  .mi-shell .pet-editor.is-focused .pet-ed-controls { background: #fff6ee; }
+}
+.mi-shell .pet-group, .mi-shell .pet-member, .mi-shell .pet-switch:not(.is-on) { border-color: #f0e2d6; background: #fff; }
+.mi-shell .pet-form > .pet-field, .mi-shell .pet-form > .pet-photo-field { padding: 12px; border: 1px solid #f0e2d6; border-radius: 14px; background: #fff; }

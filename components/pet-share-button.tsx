@@ -8,6 +8,8 @@ import { FiShare2 } from "react-icons/fi";
 
 export default function PetShareButton({ path, petName, lost, lostZone = "", female = false, className = "" }: { path: string; petName: string; lost: boolean; lostZone?: string; female?: boolean; className?: string }) {
   const [copied, setCopied] = useState(false);
+  // Si el navegador no deja copiar: el link a la vista para copiarlo a mano (sin ventanitas).
+  const [manual, setManual] = useState("");
   const name = petName.trim() || "mi mascota";
 
   async function share() {
@@ -23,11 +25,14 @@ export default function PetShareButton({ path, petName, lost, lostZone = "", fem
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
     } catch {
-      window.prompt("Copiá el link:", url);
+      setManual(url);
     }
   }
 
-  return <button type="button" className={className} onClick={share}>
-    <FiShare2 aria-hidden="true" />{copied ? "¡Link copiado!" : lost ? "Compartir que se perdió" : "Compartir"}
-  </button>;
+  return <>
+    <button type="button" className={className} onClick={share}>
+      <FiShare2 aria-hidden="true" />{copied ? "¡Link copiado!" : lost ? "Compartir que se perdió" : "Compartir"}
+    </button>
+    {manual && <label className="pet-share-manual"><span>Copiá este link:</span><input readOnly value={manual} onFocus={(event) => event.currentTarget.select()} autoFocus /></label>}
+  </>;
 }

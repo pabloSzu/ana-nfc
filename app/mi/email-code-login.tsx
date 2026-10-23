@@ -47,14 +47,14 @@ export default function EmailCodeLogin({ tagCode = "", submitLabel = "Entrar", o
     ? <form className="mi-form" onSubmit={send}>
         <label className="mi-field"><span>Tu email</span><input type="email" inputMode="email" autoComplete="email" required value={email} placeholder="nombre@email.com" onChange={(event) => setEmail(event.target.value)} /></label>
         {error && <p className="mi-error" role="alert">{error}</p>}
-        <button className="mi-button" type="submit" disabled={busy}>{busy ? "Mandando…" : "Mandarme el código"}</button>
+        <button className="mi-button" type="submit" disabled={busy}>{busy ? <><i className="spin" aria-hidden="true" />Mandando…</> : "Mandarme el código"}</button>
         <p className="mi-hint">Te llega un código de 6 números. No hace falta contraseña.</p>
       </form>
     : <form className="mi-form" onSubmit={verify}>
         <p className="mi-hint">Te mandamos un código a <strong>{email}</strong>. Si no lo ves, fijate en spam o promociones.</p>
         <label className="mi-field"><span>Código</span><input className="mi-code-input" inputMode="numeric" autoComplete="one-time-code" required maxLength={8} value={code} placeholder="123456" onChange={(event) => setCode(event.target.value)} autoFocus /></label>
         {error && <p className="mi-error" role="alert">{error}</p>}
-        <button className="mi-button" type="submit" disabled={busy || code.replace(/\D/g, "").length < 6}>{busy ? "Entrando…" : submitLabel}</button>
+        <button className="mi-button" type="submit" disabled={busy || code.replace(/\D/g, "").length < 6}>{busy ? <><i className="spin" aria-hidden="true" />{submitLabel === "Entrar" ? "Entrando…" : "Activando…"}</> : submitLabel}</button>
         <p className="mi-hint">{wait > 0 ? <span>Podés pedir otro en {wait}s</span> : <button type="button" className="mi-link" onClick={() => send()} disabled={busy}>Mandar otro código</button>} · <button type="button" className="mi-link" onClick={() => { setSent(false); setCode(""); setError(""); }}>Cambiar email</button></p>
         {sends >= 2 && <p className="mi-hint">¿Sigue sin llegar? Revisá que el email esté bien escrito y la carpeta de spam. Si no, escribinos por <a className="mi-link" href={CONTACT_WHATSAPP} target="_blank" rel="noopener noreferrer">WhatsApp</a> o a {CONTACT_EMAIL} y te ayudamos.</p>}
       </form>;

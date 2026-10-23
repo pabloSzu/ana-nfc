@@ -23,7 +23,7 @@ import PetPhotoAdjust from "./pet-photo-adjust";
 import "driver.js/dist/driver.css";
 import { compressImage } from "@/lib/compress-image";
 import { FontLinks } from "@/lib/fonts";
-import { PET_ABOUT_FIELDS, PET_FAMILY_MAX, PET_HEALTH_FIELDS, PET_LOOKS, formatPhone, parsePet, petHasContact, petGendered, petLook, petPhoneProblem, petPhotoStyle, petRows, type PetData, type PetFamily } from "@/lib/pet";
+import { PET_ABOUT_FIELDS, PET_FAMILY_MAX, PET_HEALTH_FIELDS, PET_LOOKS, cleanPhoneInput, formatPhone, parsePet, petForEditing, petHasContact, petGendered, petLook, petPhoneProblem, petPhotoStyle, petRows, type PetData, type PetFamily } from "@/lib/pet";
 
 // "owner": el dueño, desde su panel (/mi). Sin QR ni publicar desde el Admin; publica con el
 // botón de arriba (saveMyPet publica cuando hay un WhatsApp).
@@ -66,7 +66,8 @@ function Choice({ label, options, value, onPick }: { label: string; options: str
 export default function PetEditor({ landing, initialPet, saveAction, publishAction, mode = "admin" }: Props) {
   const isOwner = mode === "owner";
   const searchParams = useSearchParams();
-  const [pet, setPet] = useState(initialPet);
+  // Los teléfonos, como los escribe la gente ("351 555-1234"), no como se guardan.
+  const [pet, setPet] = useState(() => petForEditing(initialPet));
   const [name, setName] = useState(landing.name);
   const firstTime = isOwner && !landing.published && !landing.blocked;
   // Pasos de la primera vez (0: foto, 1: nombre, 2: WhatsApp y publicar), o null.
@@ -123,7 +124,7 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
     try {
       const raw = JSON.parse(localStorage.getItem(draftKey) || "null") as { name?: unknown; pet?: unknown } | null;
       const saved = raw && typeof raw.name === "string" ? { name: raw.name, pet: parsePet({ pet: raw.pet }) } : null;
-      if (saved && JSON.stringify(saved) !== JSON.stringify({ name: landing.name, pet: initialPet })) setDraft(saved);
+      if (saved && JSON.stringify(saved) !== JSON.stringify({ name: landing.name, pet: petForEditing(initialPet) })) setDraft(saved);
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -166,10 +167,13 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
   const about = (patch: Partial<PetData["about"]>) => change({ about: { ...pet.about, ...patch } });
   const health = (patch: Partial<PetData["health"]>) => change({ health: { ...pet.health, ...patch } });
 
+  // Achicar la foto tarda un momento: mientras, el círculo muestra "Preparando foto…".
+  const [preparingPhoto, setPreparingPhoto] = useState(false);
   async function pickPhoto(file: File | undefined) {
     if (!file) return;
     setPhotoError("");
-    const compressed = await compressImage(file, 900, 0.85);
+    setPreparingPhoto(true);
+    const compressed = await compressImage(file, 900, 0.85).finally(() => setPreparingPhoto(false));
     if (photoInput.current) photoInput.current.value = "";
     if (!["image/jpeg", "image/png", "image/webp"].includes(compressed.type)) { setPhotoError("Ese formato de foto no sirve. Elegí una foto JPG o PNG."); return; }
     if (compressed.size > 4.5 * 1024 * 1024) { setPhotoError("La foto es muy pesada. Probá con otra o sacale una captura de pantalla."); return; }
@@ -249,18 +253,19 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
   // Pantalla de una opción: "Guardar" guarda y vuelve al menú (el guardado vuelve con ?saved);
   // "Cancelar" vuelve sin guardar y, si había cambios, pregunta antes de descartarlos.
   const saveView = () => { if (dirty) save(); else setView("menu"); };
-  const cancelView = () => {
-    if (dirty) {
-      if (!window.confirm("¿Descartar los cambios?")) return;
-      setName(landing.name);
-      setPet(initialPet);
-      if (photoPreview) URL.revokeObjectURL(photoPreview);
-      setPhotoPreview(null);
-      setPhotoFile(null);
-      setPhotoRemoved(false);
-      setDirty(false);
-      try { localStorage.removeItem(draftKey); } catch {}
-    }
+  // Con cambios, "Cancelar" pregunta con un aviso propio (no la ventanita gris del navegador).
+  const discardDialog = useRef<HTMLDialogElement>(null);
+  const cancelView = () => { if (dirty) discardDialog.current?.showModal(); else setView("menu"); };
+  const discardChanges = () => {
+    discardDialog.current?.close();
+    setName(landing.name);
+    setPet(petForEditing(initialPet));
+    if (photoPreview) URL.revokeObjectURL(photoPreview);
+    setPhotoPreview(null);
+    setPhotoFile(null);
+    setPhotoRemoved(false);
+    setDirty(false);
+    try { localStorage.removeItem(draftKey); } catch {}
     setView("menu");
   };
 
@@ -333,7 +338,7 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
             </form>}
           </div>
         </details>}
-        {saving && <span className="pet-editor-saving">Guardando…</span>}
+        {saving && <span className="pet-editor-saving"><i className="spin" aria-hidden="true" />Guardando…</span>}
       </div>
     </header>
 
@@ -391,7 +396,7 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
             <p className="pet-wizard-lead">Ayuda a que la reconozcan. Podés cambiarla cuando quieras.</p>
             <button type="button" className="pet-wizard-photo" onClick={() => photoInput.current?.click()} aria-label={photoUrl ? "Cambiar foto" : "Elegir foto"}>
               {/* eslint-disable-next-line @next/next/no-img-element -- vista previa local */}
-              {photoUrl ? <img src={photoUrl} alt="" style={photoStyle} /> : <span><b aria-hidden="true">📷</b>Tocá para elegir</span>}
+              {preparingPhoto ? <span><i className="spin" aria-hidden="true" />Preparando foto…</span> : photoUrl ? <img src={photoUrl} alt="" style={photoStyle} /> : <span><b aria-hidden="true">📷</b>Tocá para elegir</span>}
             </button>
             {photoError && <p className="pet-phone-warn">{photoError}</p>}
             {photoUrl
@@ -416,9 +421,9 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
           {setup === 2 && <>
             <h2>¿A qué WhatsApp te avisan?</h2>
             <p className="pet-wizard-lead">Si alguien encuentra a {petName}, toca un botón y te escribe a este número con el mensaje ya armado.</p>
-            <label className="pet-field pet-wizard-field"><span className="sr-only">Tu WhatsApp</span><input type="tel" inputMode="tel" autoComplete="tel" enterKeyHint="done" value={firstPhone} maxLength={30} placeholder="351 555 1234" onChange={(event) => setFirstPhone(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); if (phoneOk) event.currentTarget.form?.requestSubmit(); } }} /><small>Con la característica, como lo marcás siempre.</small>{phoneStatus(firstPhone)}</label>
+            <label className="pet-field pet-wizard-field"><span className="sr-only">Tu WhatsApp</span><input type="tel" inputMode="tel" autoComplete="tel" enterKeyHint="done" value={firstPhone} maxLength={20} placeholder="351 555 1234" onChange={(event) => setFirstPhone(cleanPhoneInput(event.target.value))} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); if (phoneOk) event.currentTarget.form?.requestSubmit(); } }} /><small>Con la característica, como lo marcás siempre.</small>{phoneStatus(firstPhone)}</label>
             {/* Publica de una: saveMyPet publica cuando hay un WhatsApp; después aparece "¡Listo!". */}
-            <button type="submit" className="pet-step-next is-publish" disabled={!phoneOk || saving}>{saving ? "Publicando…" : phoneOk ? "Publicar mi chapita" : "Falta un WhatsApp válido"}</button>
+            <button type="submit" className="pet-step-next is-publish" disabled={!phoneOk || saving}>{saving ? <><i className="spin" aria-hidden="true" />Publicando…</> : phoneOk ? "Publicar mi chapita" : "Falta un WhatsApp válido"}</button>
             <p className="pet-wizard-note">Quien la escanee va a ver su foto, su nombre y un botón para escribirte. Tu email no se muestra.</p>
           </>}
         </section>}
@@ -465,7 +470,7 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
             <h2>¿Alguien más para avisar?</h2>
             <p className="pet-wizard-lead">Por si no contestás: tu pareja, un hijo o quien viva con {petName}. Aparece como otro botón de WhatsApp.</p>
             {field("Nombre", <input value={second.name} maxLength={40} placeholder="Ej: Ana" autoCapitalize="words" onChange={(event) => setSecond({ name: event.target.value })} />, "El botón va a decir “Avisale a Ana”.")}
-            <label className="pet-field"><span>WhatsApp</span><input type="tel" inputMode="tel" autoComplete="off" value={second.phone} maxLength={30} placeholder="351 555 1234" onChange={(event) => setSecond({ phone: event.target.value })} />{phoneStatus(second.phone)}</label>
+            <label className="pet-field"><span>WhatsApp</span><input type="tel" inputMode="tel" autoComplete="off" value={second.phone} maxLength={20} placeholder="351 555 1234" onChange={(event) => setSecond({ phone: cleanPhoneInput(event.target.value) })} />{phoneStatus(second.phone)}</label>
           </>}
 
           {after === "lost" && <>
@@ -496,7 +501,7 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
         {setup === null && after === null && view === "menu" && <>
           {/* Sin publicar después de los pasos (por ejemplo, si falló al publicar). */}
           {isOwner && !landing.published && <div className={`pet-ed-intro${canPublishAsOwner ? " is-ready" : ""}`}>{canPublishAsOwner
-            ? <><span>Todavía no está publicada. Quien la escanee verá estos datos y tu WhatsApp.</span><button type="button" className="pet-step-next is-publish" disabled={saving} onClick={() => save()}>{saving ? "Publicando…" : "Publicar mi chapita"}</button></>
+            ? <><span>Todavía no está publicada. Quien la escanee verá estos datos y tu WhatsApp.</span><button type="button" className="pet-step-next is-publish" disabled={saving} onClick={() => save()}>{saving ? <><i className="spin" aria-hidden="true" />Publicando…</> : "Publicar mi chapita"}</button></>
             : <>Para publicarla falta {!name.trim() ? "el nombre" : "tu WhatsApp"}.</>}</div>}
           {/* Solo pasa con un borrador recuperado: se guarda con un toque. */}
           {dirty && !saving && <p className="pet-unsaved" role="status"><span aria-hidden="true">●</span> Tenés cambios sin guardar. <button type="button" className="pet-editor-link" onClick={() => save()}>Guardar</button></p>}
@@ -530,7 +535,7 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
           <div className="pet-form-bar">
             <button type="button" onClick={cancelView} disabled={saving}>Cancelar</button>
             <strong>{TITLES[view].label}</strong>
-            <button type="button" className="is-save" onClick={saveView} disabled={saving}>{saving ? "Guardando…" : "Guardar"}</button>
+            <button type="button" className="is-save" onClick={saveView} disabled={saving}>{saving ? <><i className="spin" aria-hidden="true" />Guardando</> : "Guardar"}</button>
           </div>
 
           {view === "look" && <>
@@ -558,7 +563,7 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
             {pet.family.map((member, index) => <div className="pet-member" key={index}>
               <div className="pet-member-head"><strong>Contacto {index + 1}</strong>{pet.family.length > 1 && <button type="button" className="pet-editor-link" onClick={() => change({ family: pet.family.filter((_, current) => current !== index) })}>Quitar</button>}</div>
               {field("Nombre (opcional)", <input value={member.name} maxLength={40} placeholder="Ej: Ana" onChange={(event) => setMember(index, { name: event.target.value })} />)}
-              <label className="pet-field"><span>WhatsApp</span><input type="tel" inputMode="tel" autoComplete="tel" value={member.phone} maxLength={30} placeholder="351 555 1234" onChange={(event) => setMember(index, { phone: event.target.value })} />{phoneStatus(member.phone)}</label>
+              <label className="pet-field"><span>WhatsApp</span><input type="tel" inputMode="tel" autoComplete="tel" value={member.phone} maxLength={20} placeholder="351 555 1234" onChange={(event) => setMember(index, { phone: cleanPhoneInput(event.target.value) })} />{phoneStatus(member.phone)}</label>
             </div>)}
             {pet.family.length < PET_FAMILY_MAX && <button type="button" className="pet-editor-ghost" onClick={() => change({ family: [...pet.family, { name: "", phone: "" }] })}>+ Agregar {pet.family.length ? "otro contacto" : "un contacto"}</button>}
           </>}
@@ -603,6 +608,13 @@ export default function PetEditor({ landing, initialPet, saveAction, publishActi
       </div>
 
       {adjustingPhoto && photoUrl && <PetPhotoAdjust src={photoUrl} initial={pet.photo} onCancel={() => setAdjustingPhoto(false)} onApply={(photo) => { change({ photo }); setAdjustingPhoto(false); }} />}
+
+      <dialog ref={discardDialog} className="pet-confirm" aria-labelledby="pet-confirm-title" onClick={(event) => { if (event.target === discardDialog.current) discardDialog.current.close(); }}>
+        <strong id="pet-confirm-title">¿Salir sin guardar?</strong>
+        <p>Los cambios que hiciste en esta pantalla se van a perder.</p>
+        <button type="button" className="pet-step-next" onClick={() => discardDialog.current?.close()}>Seguir editando</button>
+        <button type="button" className="pet-confirm-leave" onClick={discardChanges}>Salir sin guardar</button>
+      </dialog>
 
       <dialog ref={bigPreview} className="pet-big" onClose={() => setBigOpen(false)} onClick={(event) => { if (event.target === bigPreview.current) bigPreview.current.close(); }} aria-label="La chapita en grande">
         {bigOpen && <>
