@@ -5,8 +5,11 @@ import { landingImageUrl } from "@/lib/landing-image";
 import { parsePet, petImageVersion, petIsFemale, petPhotoStyle } from "@/lib/pet";
 import { FiEdit2, FiEye } from "react-icons/fi";
 import PetShareButton from "@/components/pet-share-button";
+import MiWelcome from "./mi-welcome";
 // Las chapitas del dueño: las de los clientes de los que es miembro (ver client_members).
-export default async function OwnerHome() {
+export default async function OwnerHome({ searchParams }: { searchParams: Promise<{ nueva?: string }> }) {
+  // Recién terminada (?nueva=id, desde el final del recorrido): se le muestra qué hay acá.
+  const { nueva } = await searchParams;
   const supabase = await createClient();
   const { data: claims } = await supabase.auth.getClaims();
   const userId = String(claims?.claims?.sub || "");
@@ -35,8 +38,9 @@ export default async function OwnerHome() {
           {live && <PetShareButton path={publicPath} petName={page.business_name || ""} lost={pet.lost} lostZone={pet.lostZone} female={petIsFemale(pet)} version={petImageVersion(pet, page.business_name || "", page.logo_url || "", page.pet_slug || page.slug)} className={pet.lost ? "is-urgent" : ""} />}
           {live && <a href={publicPath} target="_blank" rel="noopener noreferrer"><FiEye aria-hidden="true" />Ver</a>}
         </div>
+        {live && nueva === page.id && <MiWelcome petName={page.business_name || "tu mascota"} />}
         {/* Lo urgente, a un toque: abre el editor directo en "¿Se perdió?". */}
-        {live && <Link className={`mi-lost-button${pet.lost ? " is-on" : ""}`} href={`/mi/chapita/${page.id}?seccion=lost`}>{pet.lost ? "✓ Ya apareció: sacar el cartel" : "🚨 Avisar que se perdió"}</Link>}
+        {live && <Link className={`mi-lost-button${pet.lost ? " is-on" : ""}${live && nueva === page.id ? " is-highlight" : ""}`} href={`/mi/chapita/${page.id}?seccion=lost`}>{pet.lost ? "✓ Ya apareció: sacar el cartel" : "🚨 Avisar que se perdió"}</Link>}
       </li>;
     })}</ul>}
     {!!pages?.length && <p className="mi-hint mi-center">¿Compraste otra? <Link href="/activar">Activala acá</Link>.</p>}

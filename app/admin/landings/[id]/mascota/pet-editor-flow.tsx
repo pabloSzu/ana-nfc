@@ -104,8 +104,9 @@ export function AfterScreen({ step }: { step: AfterStep }) {
     {/* El momento de más entusiasmo: la invitación a mostrarla en historias (cada una que se
         sube es publicidad gratis). */}
     <PetShareButton path={`/mascota/${landing.slug}`} petName={name} lost={false} version={petImageVersion(savedPet, name, landing.photoUrl, landing.slug)} className="pet-step-next is-publish" label="Mostrala en tus historias" />
-    <Link className="pet-celebrate-more" href="/mi">Ir a Mis chapitas</Link>
-    <button type="button" className="pet-celebrate-home" onClick={() => go({ name: "menu" })}>Ver todo lo que puedo cambiar</button>
+    {/* Termina en Mis chapitas: es su lugar (editar, compartir y, si se pierde, avisar). La
+        primera vez se le muestra qué hay ahí (?nueva=, ver app/mi/mi-welcome.tsx). */}
+    <Link className="pet-celebrate-more" href={`/mi?nueva=${landing.id}`}>Listo<small>Ir a Mis chapitas</small></Link>
     <p className="pet-wizard-note">Para entrar otro día: <b>bionfc.com/mi</b> con tu email, o escaneá la chapita y tocá “¿Es tu mascota? Editala”.</p>
   </section>;
 

@@ -155,8 +155,13 @@ async function run() {
     check("Opcionales: se guardó lo elegido antes de seguir", savedPet?.look === "divertido" && savedPet?.about?.sex === "Hembra" && savedPet?.family?.length === 1, `${savedPet?.look} · ${savedPet?.about?.sex} · ${savedPet?.family?.length} contacto(s)`);
     await clickText("Entendido");
     check("Opcionales: final", await waitFor("document.body.innerText.includes('Lista la chapita')"));
-    await clickText("Ver todo lo que puedo cambiar");
+    // "Listo" termina en Mis chapitas, con la bienvenida apuntando al botón rojo.
+    await clickText("Listo");
+    check("Final: lleva a Mis chapitas con la bienvenida", await waitFor("location.pathname === '/mi' && Boolean(document.querySelector('.mi-welcome')) && Boolean(document.querySelector('.mi-lost-button.is-highlight'))", 30));
+    check("Final: la bienvenida no vuelve al recargar", !(await js("location.search.includes('nueva')")));
+    await go(`${BASE}/mi/chapita/${data.tagId}`);
     check("Opcionales: llega al menú", await waitFor("Boolean(document.querySelector('.pet-menu'))"));
+    check("Menú: el cartelito de Mis chapitas aparece la primera vez", await waitFor("Boolean(document.querySelector('.pet-portal-tip'))", 10));
 
     // 3. Editar y guardar.
     await click("[data-tour=row-pet]");

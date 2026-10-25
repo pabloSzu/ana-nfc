@@ -16,7 +16,7 @@
 // borrador hasta guardar.
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { FiChevronLeft, FiGrid } from "react-icons/fi";
+import { LuPawPrint } from "react-icons/lu";
 import { useRouter, useSearchParams } from "next/navigation";
 import PetRenderer, { type PetSection } from "@/components/pet-renderer";
 import CopyButton from "@/components/copy-button";
@@ -124,6 +124,22 @@ export default function PetEditor({ landing: initialLanding, initialPet, saveAct
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty]);
+
+  // La primera vez que el dueño abre el menú de una chapita publicada: un cartelito bajo
+  // "Mis chapitas" (una sola vez en este celular; se va al tocar cualquier cosa o solo).
+  const [portalTip, setPortalTip] = useState(false);
+  useEffect(() => {
+    if (!isOwner || !landing.published || screen.name !== "menu") return;
+    try {
+      if (localStorage.getItem("bionfc-portal-tip")) return;
+      localStorage.setItem("bionfc-portal-tip", "1");
+    } catch { return; }
+    setPortalTip(true);
+    const hide = () => setPortalTip(false);
+    const timer = setTimeout(hide, 7000);
+    window.addEventListener("pointerdown", hide, { once: true });
+    return () => { clearTimeout(timer); window.removeEventListener("pointerdown", hide); };
+  }, [isOwner, landing.published, screen.name]);
 
   // Cada pantalla arranca desde arriba.
   useEffect(() => { window.scrollTo(0, 0); }, [screenKey]);
@@ -300,7 +316,10 @@ export default function PetEditor({ landing: initialLanding, initialPet, saveAct
       <FontLinks ids={PET_LOOKS.map((item) => item.titleFont)} />
       <header className={`pet-editor-top${isOwner ? " is-owner" : ""}`}>
         {isOwner
-          ? <Link className="pet-editor-portal" href="/mi" aria-label="Ir a Mis chapitas"><FiChevronLeft aria-hidden="true" /><FiGrid aria-hidden="true" /><span>Mis chapitas</span></Link>
+          ? <div className="pet-editor-portal-wrap">
+              <Link className={`pet-editor-portal${portalTip ? " is-pulse" : ""}`} href="/mi" aria-label="Ir a Mis chapitas"><LuPawPrint aria-hidden="true" /><span>Mis chapitas</span></Link>
+              {portalTip && <span className="pet-portal-tip" role="status">Acá están tus chapitas. Si se pierde, avisás desde ahí.</span>}
+            </div>
           : <Link className="pet-editor-back" href="/admin/chapitas/fichas" aria-label="Volver a Fichas de mascotas">←<span className="pet-editor-back-text">Fichas de mascotas</span></Link>}
         {/* El dueño: solo "Mis chapitas" (ver y compartir la página están ahí). */}
         {!isOwner && <div className="pet-editor-title"><small>{landing.published ? "Publicada" : "Borrador"}</small><strong>{name.trim() || "Tu chapita"}</strong></div>}

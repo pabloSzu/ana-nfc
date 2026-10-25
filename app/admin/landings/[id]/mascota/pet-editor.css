@@ -341,3 +341,18 @@ a.pet-celebrate-more { align-items: center; text-decoration: none; }
 .pet-lost-status > span:last-child { display: grid; gap: 3px; }
 .pet-lost-status strong { font-size: 15px; }
 .pet-lost-status small { color: #ffe1dc; font-size: 12.5px; line-height: 1.45; }
+
+/* Dueño: "Mis chapitas" al medio de la barra, como botón. La primera vez, un pulso suave y un
+   cartelito debajo (ver portalTip en pet-editor.tsx). */
+.pet-editor-top.is-owner { justify-content: center; }
+.pet-editor-top.is-owner .pet-editor-actions { position: absolute; right: 16px; }
+.pet-editor-top.is-owner .pet-editor-actions { position: absolute; right: 16px; }
+.pet-editor-portal-wrap { position: relative; display: flex; justify-content: center; }
+.pet-editor-portal svg:first-child { margin-right: 0; color: inherit; }
+.pet-editor-portal { padding: 0 16px; }
+.pet-editor-portal.is-pulse { animation: pet-portal-pulse 1.1s ease-out 3; }
+@keyframes pet-portal-pulse { 0% { box-shadow: 0 0 0 0 #e9772f66; } 100% { box-shadow: 0 0 0 12px #e9772f00; } }
+.pet-portal-tip { position: absolute; top: calc(100% + 10px); left: 50%; z-index: 30; width: max-content; max-width: min(280px, 86vw); padding: 10px 13px; border-radius: 12px; background: #2d1d12; color: #fff; font-size: 13.5px; font-weight: 700; line-height: 1.35; text-align: center; transform: translateX(-50%); box-shadow: 0 10px 28px #0003; animation: pet-tip-in .25s ease-out; }
+.pet-portal-tip::before { content: ""; position: absolute; top: -6px; left: 50%; width: 12px; height: 12px; background: #2d1d12; transform: translateX(-50%) rotate(45deg); }
+@keyframes pet-tip-in { from { opacity: 0; transform: translate(-50%, -4px); } }
+@media (prefers-reduced-motion: reduce) { .pet-editor-portal.is-pulse, .pet-portal-tip { animation: none; } }
