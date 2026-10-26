@@ -15,6 +15,12 @@ export default function ActivateFlow({ initialCode, signedInEmail }: { initialCo
   const [code, setCode] = useState(initialCode ? formatCode(initialCode) : "");
   const [terms, setTerms] = useState(false);
   const [termsOpen, setTermsOpen] = useState(false);
+  // "Seguir" sin aceptar: se marca la casilla y se explica qué falta (el botón no se apaga).
+  const [termsMissing, setTermsMissing] = useState(false);
+  const [showPublic, setShowPublic] = useState(false);
+  // Si el código vino del QR del packaging se muestra en una línea; "Cambiar" abre el campo.
+  const [editingCode, setEditingCode] = useState(!cameFromPackagingQr);
+  const acceptTerms = (value: boolean) => { setTerms(value); if (value) setTermsMissing(false); };
   const [step, setStep] = useState<"code" | "login" | "confirm">("code");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -40,6 +46,7 @@ export default function ActivateFlow({ initialCode, signedInEmail }: { initialCo
 
   async function submitCode(event: FormEvent) {
     event.preventDefault();
+    if (!terms) { setTermsMissing(true); return; }
     setBusy(true); setError("");
     // Si se corta internet o el servidor no responde, mejor un aviso que "Revisando…" para siempre.
     const result = await checkTagCode(code).catch(() => ({ ok: false as const, error: OFFLINE }));
@@ -53,7 +60,6 @@ export default function ActivateFlow({ initialCode, signedInEmail }: { initialCo
   }
 
   if (step === "confirm") return <>{progress}<div className="mi-card">
-    <p className="mi-step">Paso 2 de 3 · Confirmá tu cuenta</p>
     <p className="mi-success">Esta chapita quedará a nombre de <strong>{signedInEmail}</strong>.</p>
     <p className="mi-hint">Después vas a usar ese email para editar los datos de tu mascota.</p>
     {error && <p className="mi-error" role="alert">{error}</p>}
@@ -62,21 +68,24 @@ export default function ActivateFlow({ initialCode, signedInEmail }: { initialCo
   </div></>;
 
   if (step === "login") return <>{progress}<div className="mi-card">
-    <p className="mi-step">Paso 2 de 3 · Tu email</p>
     <p className="mi-hint">Con este email vas a entrar después en <strong>bionfc.com/mi</strong> para editar los datos o avisar si se pierde.</p>
     <EmailCodeLogin tagCode={code} submitLabel="Activar mi chapita" onDone={async () => { setSignedIn(true); await activate(); }} />
     {error && <p className="mi-error" role="alert">{error}</p>}
   </div></>;
 
   return <>{progress}<form className="mi-card mi-form" onSubmit={submitCode}>
-    <p className="mi-step">Paso 1 de 3 · {cameFromPackagingQr ? "Chapita encontrada" : "El código"}</p>
-    {cameFromPackagingQr && <p className="mi-success" role="status">✓ Leímos el código del packaging. Solo falta confirmar que esta chapita es tuya.</p>}
-    <label className="mi-field"><span>{cameFromPackagingQr ? "Código detectado" : "Código de la tarjetita"}</span><input className="mi-code-input" required autoCapitalize="characters" autoComplete="off" spellCheck={false} maxLength={12} value={code} placeholder="ABCD-2346" onChange={(event) => setCode(event.target.value.toUpperCase())} /></label>
-    <label className="mi-check"><input type="checkbox" checked={terms} onChange={(event) => setTerms(event.target.checked)} required /><span>Acepto los <button type="button" className="mi-inline-link" onClick={(event) => { event.preventDefault(); setTermsOpen(true); }}>términos</button> y que la ficha será pública.</span></label>
-    <TermsSheet open={termsOpen} onClose={() => setTermsOpen(false)} onAccept={() => setTerms(true)} />
-    <details className="mi-public-details"><summary>¿Qué datos se muestran?</summary><p>Solo lo que cargues en la ficha: foto, nombre, información de la mascota y los teléfonos elegidos para que puedan avisarte. Tu email de acceso no se publica.</p></details>
+    {editingCode
+      ? <label className="mi-field"><span>Código de la tarjetita</span><input className="mi-code-input" required autoCapitalize="characters" autoComplete="off" spellCheck={false} maxLength={12} value={code} placeholder="ABCD-2346" onChange={(event) => setCode(event.target.value.toUpperCase())} /></label>
+      : <div className="mi-code-found" role="status"><span aria-hidden="true">✓</span><p><strong>Chapita encontrada</strong><small>Código <b>{code}</b> · <button type="button" className="mi-inline-link" onClick={() => setEditingCode(true)}>Cambiar</button></small></p></div>}
+    <div className={`mi-check${termsMissing ? " is-missing" : ""}`}>
+      <input id="activar-terminos" type="checkbox" checked={terms} onChange={(event) => acceptTerms(event.target.checked)} aria-describedby={termsMissing ? "activar-terminos-falta" : undefined} />
+      <span><label htmlFor="activar-terminos">Acepto los </label><button type="button" className="mi-inline-link" onClick={() => setTermsOpen(true)}>términos</button><label htmlFor="activar-terminos"> y que la ficha será pública</label> · <button type="button" className="mi-inline-link is-soft" aria-expanded={showPublic} onClick={() => setShowPublic(!showPublic)}>Ver qué se muestra</button></span>
+    </div>
+    {showPublic && <p className="mi-public-note">Solo lo que cargues en la ficha: foto, nombre, información de la mascota y los teléfonos elegidos para que puedan avisarte. Tu email no se publica.</p>}
+    {termsMissing && <p id="activar-terminos-falta" className="mi-check-error" role="alert">Necesitás aceptar los términos para continuar.</p>}
+    <TermsSheet open={termsOpen} onClose={() => setTermsOpen(false)} onAccept={() => acceptTerms(true)} />
     {error && <p className="mi-error" role="alert">{error}</p>}
-    <button className="mi-button" type="submit" disabled={busy || !terms}>{busy ? <><i className="spin" aria-hidden="true" />Revisando…</> : "Seguir"}</button>
+    <button className="mi-button" type="submit" disabled={busy}>{busy ? <><i className="spin" aria-hidden="true" />Revisando…</> : "Seguir"}</button>
     {signedInEmail && <p className="mi-hint">Vas a activarla con <strong>{signedInEmail}</strong>. <button type="button" className="mi-link" onClick={() => switchAccount(code)}>No soy yo, usar otro email</button></p>}
   </form></>;
 }

@@ -32,9 +32,6 @@
 .mi-check { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; line-height: 1.45; color: #6b4a33; }
 .mi-check input { flex: none; width: 20px; height: 20px; margin-top: 1px; accent-color: #e07a3f; }
 .mi-check a { color: #c25e22; font-weight: 700; }
-.mi-public-details { margin: -4px 0 2px 30px; color: #7a5a44; font-size: 12.5px; line-height: 1.5; }
-.mi-public-details summary { color: #a14e20; font-weight: 750; cursor: pointer; }
-.mi-public-details p { margin: 7px 0 0; }
 .mi-staff-warning { text-align: center; }
 .mi-staff-warning .mi-button { width: 100%; }
 .mi-staff-warning form { margin: 0; }
@@ -132,7 +129,8 @@
 .terms-summary ul { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
 .terms-summary li { display: flex; gap: 10px; padding: 11px 0; border-top: 1px solid #f1e2d6; color: #4a3424; font-size: 13.5px; line-height: 1.48; }
 .terms-summary li:first-child { border-top: 0; }
-.terms-summary li > span { flex: none; width: 23px; font-size: 17px; line-height: 1.35; text-align: center; }
+.terms-summary li > span { display: grid; flex: none; place-items: center; width: 26px; height: 26px; border-radius: 8px; background: #fff0e3; color: #c25e22; }
+.terms-summary li > span svg { width: 15px; height: 15px; }
 .terms-summary.is-compact { padding: 6px 18px; border-radius: 18px; box-shadow: none; }
 .terms-summary.is-compact li { font-size: 13.5px; }
 .terms-document { overflow: hidden; border: 1px solid #efd9c8; border-radius: 28px; background: #fff; box-shadow: 0 20px 55px #8b4d2018; }
@@ -200,3 +198,34 @@
 }
 @media (min-width: 700px) { .terms-sheet { margin: auto; border-radius: 22px; } }
 @media (prefers-reduced-motion: reduce) { .terms-sheet[open] { animation: none; } }
+
+.terms-document-actions { display: flex; flex: none; align-items: center; gap: 8px; }
+.terms-expand { min-height: 34px; padding: 0 12px; border: 1px solid #f0d2bb; border-radius: 99px; background: #fff; color: #b4541a; font: inherit; font-size: 12.5px; font-weight: 800; cursor: pointer; }
+.terms-expand:hover { border-color: #e9772f; }
+
+/* Activar: más compacto, para que el botón "Seguir" entre en la pantalla (también en celulares
+   chicos) sin achicar la casilla, el campo ni el botón. */
+.mi-activate .mi-hero-mark { width: 64px; height: 64px; border-radius: 21px; box-shadow: 0 12px 28px rgba(137, 75, 31, .14), inset 0 1px #fff; }
+.mi-activate .mi-hero-mark span { font-size: 31px; }
+/* Acá el logo es solo la marca en un costado: más discreto que las patitas. */
+.mi-shell:has(.mi-activate) .mi-brand .bx-logo-word { font-size: 20px; }
+.mi-shell:has(.mi-activate) .mi-brand .bx-logo-waves { width: 16px; height: 16px; }
+.mi-activate h1 { margin: 8px 0 6px; font-size: 30px; }
+.mi-activate .mi-lead { margin-bottom: 16px; font-size: 14.5px; }
+.mi-activate .mi-progress { margin-bottom: 14px; }
+.mi-activate .mi-card { gap: 13px; padding: 20px; }
+/* El código que vino del QR: primero lo que pasó ("Chapita encontrada"), el código más chico. */
+.mi-code-found { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; background: #e4f6e9; color: #176a38; }
+.mi-code-found > span { display: grid; flex: none; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #2f8a53; color: #fff; font-size: 15px; font-weight: 800; }
+.mi-code-found p { display: grid; gap: 1px; margin: 0; }
+.mi-code-found strong { color: #0f4f29; font-size: 15.5px; }
+.mi-code-found small { color: #3f7a55; font-size: 13px; }
+.mi-code-found b { font-family: "Courier New", monospace; font-size: 14px; letter-spacing: .06em; white-space: nowrap; }
+.mi-code-found .mi-inline-link { font-size: 13px; }
+.mi-check label { cursor: pointer; }
+.mi-inline-link.is-soft { color: #8a6a52; font-weight: 600; }
+.mi-public-note { margin: -4px 0 0 30px; color: #7a5a44; font-size: 12.5px; line-height: 1.5; }
+.mi-check.is-missing input { outline: 2px solid #d92d20; outline-offset: 2px; animation: mi-shake .35s ease; }
+.mi-check-error { margin: -6px 0 0 30px; color: #b42318; font-size: 12.5px; font-weight: 700; }
+@keyframes mi-shake { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+@media (prefers-reduced-motion: reduce) { .mi-check.is-missing input { animation: none; } }

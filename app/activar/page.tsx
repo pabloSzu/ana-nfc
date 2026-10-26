@@ -22,7 +22,7 @@ export default async function ActivatePage({ searchParams }: { searchParams: Pro
   const isStaff = email ? Boolean((await supabase.rpc("is_staff")).data) : false;
   return <div className="mi-shell">
     <header className="mi-top"><Link href="/" className="mi-brand" aria-label="BIONFC"><BioNFCLogo /></Link></header>
-    <main className="mi-main mi-narrow">
+    <main className="mi-main mi-narrow mi-activate">
       <div className="mi-hero-mark" aria-hidden="true"><span>🐾</span></div>
       <h1>Activá tu chapita</h1>
       <p className="mi-lead">En dos minutos queda lista para ayudar a tu mascota a volver a casa.</p>

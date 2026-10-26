@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import BioNFCLogo from "@/components/bionfc-logo";
 import { TermsSections, TermsSummary } from "@/components/terms-content";
+import TermsExpandAll from "@/components/terms-expand";
 import { CONTACT_EMAIL, TERMS_UPDATED } from "@/lib/terms";
 import "../globals.css";
 import "../mi/mi.css";
@@ -34,7 +35,7 @@ export default async function TermsPage({ searchParams }: { searchParams: Promis
         <article className="terms-document">
           <div className="terms-document-title">
             <div><span>Documento completo</span><h2>Todo el detalle, punto por punto</h2></div>
-            <span className="terms-read-time">Lectura: 4 min</span>
+            <div className="terms-document-actions"><span className="terms-read-time">Lectura: 4 min</span><TermsExpandAll /></div>
           </div>
           <TermsSections />
           <footer className="terms-contact">

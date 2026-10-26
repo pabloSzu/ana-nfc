@@ -4,15 +4,17 @@
 // Pendiente: que los revise un abogado cuando el negocio crezca. Cuando se venda por internet,
 // sumar compra, garantía legal (6 meses), arrepentimiento (10 días) y datos del vendedor.
 import type { ReactNode } from "react";
+import { LuGlobe, LuInfo, LuLock, LuPencil, LuTrash2 } from "react-icons/lu";
 import { CONTACT_EMAIL, CONTACT_WHATSAPP, RESPONSIBLE } from "@/lib/terms";
 
-// Lo importante en pocas líneas, arriba de todo.
-export const TERMS_SUMMARY = [
-  { icon: "🐾", text: "La página de tu chapita es pública: la ve quien la escanee o tenga el link. Cargá solo lo que quieras mostrar." },
-  { icon: "🔒", text: "Tu email no se muestra nunca. No vendemos tus datos ni los usamos para publicidad." },
-  { icon: "✏️", text: "Sos responsable de lo que cargás, y de tener permiso para poner el teléfono de otra persona." },
-  { icon: "🗑️", text: "Podés pedir que borremos tu cuenta y tus datos cuando quieras." },
-  { icon: "🐶", text: "La chapita ayuda a que tu mascota vuelva, pero no puede garantizarlo." },
+// Lo importante en pocas líneas, arriba de todo. Íconos de línea (no emojis: en algunos
+// celulares se ven chiquitos o distintos).
+export const TERMS_SUMMARY: { icon: ReactNode; text: string }[] = [
+  { icon: <LuGlobe />, text: "La página de tu chapita es pública: la ve quien la escanee o tenga el link. Cargá solo lo que quieras mostrar." },
+  { icon: <LuLock />, text: "Tu email no se muestra nunca. No vendemos tus datos ni los usamos para publicidad." },
+  { icon: <LuPencil />, text: "Sos responsable de lo que cargás, y de tener permiso para poner el teléfono de otra persona." },
+  { icon: <LuTrash2 />, text: "Podés pedir que borremos tu cuenta y tus datos cuando quieras." },
+  { icon: <LuInfo />, text: "La chapita ayuda a que tu mascota vuelva, pero no puede garantizarlo." },
 ];
 
 const mail = <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>;
