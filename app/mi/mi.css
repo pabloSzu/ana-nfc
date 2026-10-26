@@ -229,3 +229,8 @@
 .mi-check-error { margin: -6px 0 0 30px; color: #b42318; font-size: 12.5px; font-weight: 700; }
 @keyframes mi-shake { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
 @media (prefers-reduced-motion: reduce) { .mi-check.is-missing input { animation: none; } }
+
+/* Ficha incompleta (Mis chapitas): una línea discreta dentro de la tarjeta, no otro cartel. */
+.mi-pet-incomplete { display: flex; align-items: center; gap: 4px; margin-top: -2px; color: #9a6b4a; font-size: 13px; text-decoration: none; }
+.mi-pet-incomplete::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #e9772f; }
+.mi-pet-incomplete b { color: #c25e22; text-decoration: underline; text-underline-offset: 2px; }

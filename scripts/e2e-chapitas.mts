@@ -137,8 +137,9 @@ async function run() {
     const { data: published } = await admin.from("landings").select("published,pet_slug").eq("id", data.tagId).single();
     check("Publicar: quedó publicada en la base", Boolean(published?.published), published?.pet_slug || "");
 
-    // 2. Pasos opcionales.
-    await clickText("Seguir");
+    // 2. Pasos opcionales ("Completar su ficha", arriba en "¡Ya funciona!").
+    check("Ya funciona: 'Completar su ficha' se ve sin bajar", await js("(() => { const r = document.querySelector('.pet-celebrate.is-ready .pet-step-next').getBoundingClientRect(); return r.bottom <= innerHeight; })()"));
+    await clickText("Completar");
     check("Opcionales: elegir diseño", await waitFor("document.body.innerText.includes('Elegí un diseño')"));
     await js("[...document.querySelectorAll('.pet-look-grid button')][3].click()");
     await clickText("Siguiente");
@@ -148,16 +149,16 @@ async function run() {
     // Un segundo número a medio escribir y "Saltear": lo descarta y guarda lo demás antes de seguir.
     await type(".pet-wizard input[type=tel]", "351");
     await clickText("Saltear", "button");
-    check("Opcionales: si se pierde", await waitFor("document.body.innerText.includes('Si algún día se pierde')"));
+    check("Opcionales: termina en '¡Todo listo!' (sin el paso de si se pierde)", await waitFor("document.body.innerText.includes('Todo listo') && !document.body.innerText.includes('Si algún día se pierde')"));
     // Sin esperar: lo elegido ya tiene que estar guardado cuando aparece la pantalla siguiente.
     const { data: afterSteps } = await admin.from("landings").select("button_style").eq("id", data.tagId).single();
     const savedPet = (afterSteps?.button_style as { pet?: { look?: string; about?: { sex?: string }; family?: unknown[] } })?.pet;
     check("Opcionales: se guardó lo elegido antes de seguir", savedPet?.look === "divertido" && savedPet?.about?.sex === "Hembra" && savedPet?.family?.length === 1, `${savedPet?.look} · ${savedPet?.about?.sex} · ${savedPet?.family?.length} contacto(s)`);
-    await clickText("Entendido");
-    check("Opcionales: final", await waitFor("document.body.innerText.includes('Lista la chapita')"));
+    check("Opcionales: final con 'Mostrala en tus historias'", await waitFor("[...document.querySelectorAll('button')].some((b) => b.textContent.includes('Mostrala en tus historias'))"));
     // "Listo" termina en Mis chapitas, con la bienvenida apuntando al botón rojo.
     await clickText("Listo");
     check("Final: lleva a Mis chapitas con la bienvenida", await waitFor("location.pathname === '/mi' && Boolean(document.querySelector('.mi-welcome')) && Boolean(document.querySelector('.mi-lost-button.is-highlight'))", 30));
+    check("Mis chapitas: avisa que a la ficha le falta la foto", await waitFor("document.querySelector('.mi-pet-incomplete')?.getAttribute('href')?.endsWith('?seccion=pet')", 10));
     check("Final: la bienvenida no vuelve al recargar", !(await js("location.search.includes('nueva')")));
     await go(`${BASE}/mi/chapita/${data.tagId}`);
     check("Opcionales: llega al menú", await waitFor("Boolean(document.querySelector('.pet-menu'))"));
@@ -257,8 +258,12 @@ async function run() {
         await click("[data-tour=row-lost]");
         await waitFor("Boolean(document.querySelector('.pet-lost-status'))");
       }
-      await click(".pet-lost-confirm");
-      check(`Perdido (${round}): desactivar vuelve al menú con el aviso`, await waitFor("Boolean(document.querySelector('.pet-menu')) && document.querySelector('.toast-wrap')?.textContent.includes('desactivado')", 20));
+      // Sacar el aviso pide confirmación (un toque sin querer no lo saca).
+      check(`Perdido (${round}): con el aviso activo se puede compartir de nuevo`, await js("Boolean(document.querySelector('.pet-lost-share'))"));
+      await click(".pet-lost-off");
+      check(`Perdido (${round}): sacar el aviso pregunta antes`, await waitFor("Boolean(document.querySelector('.pet-lost-ask'))"));
+      await click(".pet-lost-off-yes");
+      check(`Perdido (${round}): sacarlo vuelve al menú con el aviso`, await waitFor("Boolean(document.querySelector('.pet-menu')) && document.querySelector('.toast-wrap')?.textContent.includes('Sacamos el aviso')", 20));
       await sleep(5500);
     }
 

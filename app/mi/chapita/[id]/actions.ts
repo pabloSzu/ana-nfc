@@ -86,7 +86,7 @@ export async function saveMyPet(fd: FormData): Promise<PetSaveResult> {
   const message = landing.blocked_at ? "Cambios guardados. La chapita sigue pausada por BIONFC."
     : !petHasContact(pet) ? "Guardado. Falta el WhatsApp para que la chapita funcione."
     : firstPublish || lostActivated ? null
-    : !pet.lost && wasLost ? `✓ Modo perdido desactivado. ¡Qué bueno que ${name} volvió!`
+    : !pet.lost && wasLost ? `✓ Sacamos el aviso. ¡Qué bueno que ${name} volvió!`
     : `✓ Guardado. Ya se ve en la página de ${name}.`;
   return { ok: true, message, lostActivated, firstPublish, landing: { published: Boolean(savedLanding?.published), slug: savedLanding?.pet_slug || landing.slug, photoUrl: logoUrl } };
 }

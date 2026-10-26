@@ -7,12 +7,13 @@
 //  · PanelScreen: una opción, con "Cancelar · Guardar" fijo arriba, como al editar un contacto en
 //    el celular. En modo perdido, arriba solo "Cancelar": la acción es el botón grande de abajo.
 import { useState } from "react";
-import { PET_ABOUT_FIELDS, PET_FAMILY_MAX, PET_HEALTH_FIELDS, cleanPhoneInput, formatReward, petGendered, petHasContact, petLook, petPhotoStyle, petRows } from "@/lib/pet";
+import PetShareButton from "@/components/pet-share-button";
+import { PET_ABOUT_FIELDS, PET_FAMILY_MAX, PET_HEALTH_FIELDS, cleanPhoneInput, formatReward, petGendered, petHasContact, petImageVersion, petIsFemale, petLook, petPhotoStyle, petRows } from "@/lib/pet";
 import { TITLES, useEditor, type Panel } from "./pet-editor-context";
 import { Choice, Field, LookGrid, MiniPreview, PhoneStatus } from "./pet-editor-fields";
 
 export function MenuScreen() {
-  const { landing, isOwner, pet, name, photoUrl, dirty, saving, go, save, publish, startTour } = useEditor();
+  const { landing, isOwner, pet, name, photoUrl, dirty, saving, go, save, publish } = useEditor();
   const hasContact = petHasContact(pet);
   const fichaCount = petRows(pet.about, PET_ABOUT_FIELDS).length + petRows(pet.health, PET_HEALTH_FIELDS).length + (pet.finder.trim() ? 1 : 0);
   const canPublish = isOwner && !landing.published && !landing.blocked && Boolean(name.trim()) && hasContact;
@@ -34,8 +35,8 @@ export function MenuScreen() {
     {/* Lo urgente, aparte y a la vista: el día que se pierde, se encuentra en un segundo. */}
     {landing.published && <button type="button" className={`pet-lost-card${pet.lost ? " is-on" : ""}`} data-tour="row-lost" onClick={() => go({ name: "panel", panel: "lost" })}>
       <span aria-hidden="true">🚨</span>
-      <span><strong>{pet.lost ? "Modo perdido activo" : "¿Se perdió?"}</strong><small>{pet.lost ? "Su página muestra el cartel rojo." : "Activá el aviso rojo en su página."}</small></span>
-      <b>{pet.lost ? "Desactivar" : "Avisar"}</b>
+      <span><strong>{pet.lost ? "Aviso de perdido activo" : "¿Se perdió?"}</strong><small>{pet.lost ? "Su página muestra el aviso rojo." : "Activá el aviso rojo en su página."}</small></span>
+      <b>{pet.lost ? "Ver aviso" : "Avisar"}</b>
     </button>}
     <ul className="pet-menu">
       {rows.map((row) => <li key={row.id}>
@@ -47,18 +48,13 @@ export function MenuScreen() {
           <span className="pet-menu-go" aria-hidden="true">›</span>
         </button>
       </li>)}
-      {/* La ayuda, como una opción más del menú. */}
-      <li><button type="button" className="pet-menu-row" onClick={startTour}>
-        <span className="pet-menu-icon" aria-hidden="true">💡</span>
-        <span className="pet-menu-label">¿Cómo funciona?</span>
-        <span className="pet-menu-go" aria-hidden="true">›</span>
-      </button></li>
     </ul>
   </>;
 }
 
 export function PanelScreen({ panel }: { panel: Panel }) {
-  const { savedPet, pet, name, setName, petName, photoUrl, photo, dirty, saving, change, about, health, setMember, savePanel, cancelPanel } = useEditor();
+  const { landing, savedPet, pet, name, setName, petName, photoUrl, photo, dirty, saving, change, about, health, setMember, savePanel, cancelPanel } = useEditor();
+  const [confirmOff, setConfirmOff] = useState(false);
   // Qué botón del modo perdido se tocó (para poner la ruedita en ese).
   const [lostAction, setLostAction] = useState<"save" | "on" | "off">("save");
   const runLost = (action: "save" | "on" | "off") => { setLostAction(action); savePanel(action === "save" ? undefined : { lost: action === "on" }); };
@@ -133,16 +129,23 @@ export function PanelScreen({ panel }: { panel: Panel }) {
 
     {/* Modo perdido: un solo botón que dice lo que pasa al tocarlo, según lo guardado. */}
     {panel === "lost" && !savedPet.lost && <>
-      <p className="pet-editor-help">Si se perdió, activá el aviso: arriba de su página aparece este cartel rojo y después lo compartís por WhatsApp o en historias.</p>
+      <p className="pet-editor-help">Si se perdió, activá el aviso: arriba de su página aparece este aviso rojo y después lo compartís por WhatsApp o en historias.</p>
       <MiniPreview preview={{ ...pet, lost: true }} />
       {lostFields}
-      <button type="button" className="pet-step-next pet-lost-confirm is-on" onClick={() => runLost("on")} disabled={saving}>{spinner("on", "Activando…") || "🚨 Activar aviso"}</button>
+      <button type="button" className="pet-step-next pet-lost-confirm is-on" onClick={() => runLost("on")} disabled={saving}>{spinner("on", "Activando…") || "🚨 Avisar que se perdió"}</button>
     </>}
     {panel === "lost" && savedPet.lost && <>
-      <div className="pet-lost-status"><span aria-hidden="true">🚨</span><span><strong>El aviso está activo</strong><small>Arriba de la página de {petName} se ve el cartel rojo. Cuando aparezca, desactivalo.</small></span></div>
+      <div className="pet-lost-status"><span aria-hidden="true">🚨</span><span><strong>Aviso de perdido activo</strong><small>Arriba de la página de {petName} se ve el aviso rojo. Cuando vuelva, sacalo.</small></span></div>
+      <PetShareButton path={`/mascota/${landing.slug}`} petName={name} lost lostZone={savedPet.lostZone} female={petIsFemale(savedPet)} version={petImageVersion(savedPet, name, landing.photoUrl, landing.slug)} className="pet-step-next pet-lost-share" label="Compartir de nuevo" />
       {lostFields}
       {dirty && <button type="button" className="pet-step-next" onClick={() => runLost("save")} disabled={saving}>{spinner("save", "Guardando…") || "Guardar cambios"}</button>}
-      <button type="button" className="pet-step-next pet-lost-confirm" onClick={() => runLost("off")} disabled={saving}>{spinner("off", "Desactivando…") || "✓ Apareció: desactivar aviso"}</button>
+      {confirmOff
+        ? <div className="pet-lost-ask" role="alert">
+            <p><b>¿{petName} ya volvió?</b> Su página deja de mostrar el aviso de perdido.</p>
+            <button type="button" className="pet-step-next pet-lost-off-yes" onClick={() => runLost("off")} disabled={saving}>{spinner("off", "Sacando el aviso…") || "Sí, sacar el aviso"}</button>
+            <button type="button" className="pet-celebrate-home" onClick={() => setConfirmOff(false)} disabled={saving}>No, sigue perdid{petGendered(pet, "o", "a")}</button>
+          </div>
+        : <button type="button" className="pet-step-next pet-lost-off" onClick={() => setConfirmOff(true)} disabled={saving}>Sacar el aviso · ya volvió</button>}
     </>}
   </section>;
 }

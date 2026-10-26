@@ -6,6 +6,7 @@
 //    Compartir.
 //  · SpreadScreen: "Ahora, difundilo", al activar el modo perdido.
 import Link from "next/link";
+import { LuPawPrint } from "react-icons/lu";
 import PetShareButton, { PetSharePanel } from "@/components/pet-share-button";
 import { cleanPhoneInput, petGendered, petHasContact, petImageVersion, petIsFemale, petPhoneProblem, petPhotoStyle, type PetFamily } from "@/lib/pet";
 import { AFTER_STEPS, useEditor, type AfterStep } from "./pet-editor-context";
@@ -83,31 +84,39 @@ export function AfterScreen({ step }: { step: AfterStep }) {
   };
 
   // Recién publicada: ya funciona. Lo principal es seguir completándola.
-  if (step === "ready") return <section className="pet-wizard pet-celebrate">
+  // Primero lo que sigue (una frase y el botón, arriba: se ve en cualquier celular sin bajar);
+  // la vista previa y "Probala" van abajo, como extra.
+  if (step === "ready") return <section className="pet-wizard pet-celebrate is-ready">
     <div className="pet-wizard-progress is-done" aria-hidden="true"><span style={{ width: "100%" }} /></div>
     <div className="pet-celebrate-mark" aria-hidden="true">🎉</div>
     <h2>¡La chapita de {petName} ya funciona!</h2>
-    <p className="pet-wizard-lead">Así la ve quien la escanea:</p>
-    <MiniPreview />
-    <p className="pet-celebrate-try"><span aria-hidden="true">📱</span><span><b>Probala:</b> acercá tu celular a la chapita o escaneá su QR.</span></p>
-    <p className="pet-celebrate-pitch">Ahora sumemos lo que ayuda a que vuelva más rápido.</p>
-    <button type="button" className="pet-step-next" onClick={() => go({ name: "after", step: "look" })}>Seguir · 2 minutos →</button>
-    <button type="button" className="pet-celebrate-home" onClick={() => go({ name: "after", step: "done" })}>Lo hago después</button>
+    <p className="pet-wizard-lead">Lo esencial ya está listo. Te recomendamos completar su ficha: datos para {petGendered(pet, "reconocerlo", "reconocerla")} y otro contacto por si no respondés.</p>
+    <button type="button" className="pet-step-next pet-ficha-cta" onClick={() => go({ name: "after", step: "look" })}>
+      <span className="pet-ficha-icon" aria-hidden="true"><LuPawPrint /></span>
+      <span className="pet-ficha-copy">Completar su ficha<small>Son 2 minutos · {AFTER_STEPS.length} pasos cortitos</small></span>
+      <span className="pet-ficha-arrow" aria-hidden="true">→</span>
+    </button>
+    <Link className="pet-celebrate-home" href={`/mi?nueva=${landing.id}`}>Lo hago después</Link>
+    <div className="pet-celebrate-preview">
+      <p>Así la ve quien la escanea:</p>
+      <MiniPreview />
+      <p className="pet-celebrate-try"><span aria-hidden="true">📱</span><span><b>Probala:</b> acercá tu celular a la chapita o escaneá su QR.</span></p>
+    </div>
   </section>;
 
-  // Final del recorrido: ahora sí, a compartirla.
-  if (step === "done") return <section className="pet-wizard pet-celebrate">
+  // Final del recorrido (un solo festejo corto, sin repetir la vista previa): a compartirla.
+  if (step === "done") return <section className="pet-wizard pet-celebrate is-done">
     <div className="pet-wizard-progress is-done" aria-hidden="true"><span style={{ width: "100%" }} /></div>
     <div className="pet-celebrate-mark" aria-hidden="true">🐾</div>
-    <h2>¡Lista la chapita de {petName}!</h2>
-    <MiniPreview />
+    <h2>¡Todo listo!</h2>
+    <p className="pet-wizard-lead">La chapita de {petName} quedó lista. Mostrala en tus historias: así más gente {petGendered(pet, "lo", "la")} conoce.</p>
     {/* El momento de más entusiasmo: la invitación a mostrarla en historias (cada una que se
         sube es publicidad gratis). */}
     <PetShareButton path={`/mascota/${landing.slug}`} petName={name} lost={false} version={petImageVersion(savedPet, name, landing.photoUrl, landing.slug)} className="pet-step-next is-publish" label="Mostrala en tus historias" />
     {/* Termina en Mis chapitas: es su lugar (editar, compartir y, si se pierde, avisar). La
-        primera vez se le muestra qué hay ahí (?nueva=, ver app/mi/mi-welcome.tsx). */}
+        primera vez se le muestra qué hay ahí, también el botón para cuando se pierda (?nueva=,
+        ver app/mi/mi-welcome.tsx). */}
     <Link className="pet-celebrate-more" href={`/mi?nueva=${landing.id}`}>Listo<small>Ir a Mis chapitas</small></Link>
-    <p className="pet-wizard-note">Para entrar otro día: <b>bionfc.com/mi</b> con tu email, o escaneá la chapita y tocá “¿Es tu mascota? Editala”.</p>
   </section>;
 
   // Pasos opcionales: uno por pantalla, con "Saltear".
@@ -144,15 +153,9 @@ export function AfterScreen({ step }: { step: AfterStep }) {
       <label className="pet-field"><span>WhatsApp</span><input type="tel" inputMode="tel" autoComplete="off" value={second.phone} maxLength={20} placeholder="351 555 1234" onChange={(event) => setSecond({ phone: cleanPhoneInput(event.target.value) })} /><PhoneStatus phone={second.phone} /></label>
     </>}
 
-    {step === "lost" && <>
-      <h2>Si algún día se pierde</h2>
-      <p className="pet-wizard-lead">Entrás a <b>Mis chapitas</b> y tocás <b>“Avisar que se perdió”</b>. Arriba de su página aparece este cartel rojo, con la zona y la recompensa si querés:</p>
-      <MiniPreview preview={{ ...pet, lost: true, lostZone: pet.lostZone || "tu barrio" }} />
-      <p className="pet-celebrate-try is-lost"><span aria-hidden="true">📣</span><span>Después lo compartís por WhatsApp o en historias con un toque. Cuando aparece, lo apagás.</span></p>
-    </>}
 
-    <button type="button" className="pet-step-next" disabled={blocked || saving} onClick={() => goNext()}>{saving ? <><i className="spin" aria-hidden="true" />Guardando…</> : blocked ? "Revisá el WhatsApp" : step === "lost" ? "Entendido →" : "Siguiente →"}</button>
-    {step !== "lost" && <button type="button" className="pet-celebrate-home" disabled={saving} onClick={() => goNext(true)}>Saltear</button>}
+    <button type="button" className="pet-step-next" disabled={blocked || saving} onClick={() => goNext()}>{saving ? <><i className="spin" aria-hidden="true" />Guardando…</> : blocked ? "Revisá el WhatsApp" : step === "family" ? "Terminar →" : "Siguiente →"}</button>
+    <button type="button" className="pet-celebrate-home" disabled={saving} onClick={() => goNext(true)}>Saltear</button>
   </section>;
 }
 
@@ -161,7 +164,7 @@ export function AfterScreen({ step }: { step: AfterStep }) {
 export function SpreadScreen() {
   const { landing, savedPet, pet, name, go } = useEditor();
   return <section className="pet-wizard pet-spread">
-    <div className="pet-spread-head"><span aria-hidden="true">🚨</span><div><strong>Modo perdido activado</strong><small>Su página ya muestra el cartel rojo.</small></div></div>
+    <div className="pet-spread-head"><span aria-hidden="true">🚨</span><div><strong>Aviso de perdido activado</strong><small>Su página ya muestra el aviso rojo.</small></div></div>
     <h2>Ahora, difundilo</h2>
     <p className="pet-wizard-lead">Las primeras horas son las que más importan. Compartilo en todos lados: la imagen lleva la dirección de su página para que te avisen.</p>
     <PetSharePanel path={`/mascota/${landing.slug}`} petName={name} lost lostZone={pet.lostZone} female={petIsFemale(pet)} version={petImageVersion(savedPet, name, landing.photoUrl, landing.slug)} />

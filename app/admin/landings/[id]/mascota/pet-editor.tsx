@@ -16,7 +16,7 @@
 // borrador hasta guardar.
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { LuPawPrint } from "react-icons/lu";
+import { LuLightbulb, LuPawPrint, LuZoomIn } from "react-icons/lu";
 import { useRouter, useSearchParams } from "next/navigation";
 import PetRenderer, { type PetSection } from "@/components/pet-renderer";
 import CopyButton from "@/components/copy-button";
@@ -289,19 +289,17 @@ export default function PetEditor({ landing: initialLanding, initialPet, saveAct
 
   function openBig() { setBigOpen(true); bigPreview.current?.showModal(); }
 
-  // Ayuda ("¿Cómo funciona?" en el menú): la pantalla se oscurece y un cartelito por paso.
+  // Ayuda ("Cómo funciona", al lado del celularcito): la pantalla se oscurece y un cartelito por paso.
   async function startTour() {
     const { driver } = await import("driver.js");
     const steps = [
       { element: ".pet-mini", popover: { title: "Tu chapita", description: "Así la ve quien la escanea. Podés cambiarla todas las veces que quieras: el QR y el NFC físicos siguen funcionando." } },
-      { element: ".pet-menu", popover: { title: "Todo lo que podés cambiar", description: "Tocá una fila para editarla. A la derecha ves lo que falta." } },
-      { element: "[data-tour='row-family']", popover: { title: "Contacto público", description: "El WhatsApp que cargues aparece en la ficha para que quien encuentre a tu mascota pueda avisarte. Tu email de acceso no se muestra." } },
-      { element: "[data-tour='row-lost']", popover: { title: "Si se pierde", description: `Acá prendés el cartel rojo de “${petGendered(pet, "¡Estoy perdido!", "¡Estoy perdida!")}”. Lo apagás cuando aparece.` } },
-      { element: "[data-tour='row-ficha']", popover: { title: "Lo que falta", description: "Lo que dice “Agregar” todavía está vacío: tocalo para completarlo." } },
-      { element: "[data-tour='row-look']", popover: { title: "Guardar", description: "Cada pantalla tiene “Cancelar” y “Guardar” arriba. Los cambios se ven en su página recién al guardar." } },
-      ...(isOwner ? [{ element: ".pet-editor-portal", popover: { title: "Todas tus chapitas", description: "Acá volvés a tu panel: compartir, ver o avisar si se perdió. Para entrar otro día: bionfc.com/mi con tu email." } }] : []),
+      { element: ".pet-menu", popover: { title: "Todo lo que podés cambiar", description: "Tocá una fila para editarla. Lo que dice “Agregar” todavía está vacío. Los cambios se ven en su página al tocar “Guardar”." } },
+      { element: "[data-tour='row-family']", popover: { title: "Tu WhatsApp es público", description: "Aparece en su página para que quien la encuentre te avise. Tu email no se muestra nunca." } },
+      { element: "[data-tour='row-lost']", popover: { title: "Si se pierde", description: `Tocá “Avisar”: su página muestra el aviso de perdido (“${petGendered(pet, "¡Estoy perdido!", "¡Estoy perdida!")}”) y lo compartís con un toque. Cuando vuelva, lo sacás.` } },
+      ...(isOwner ? [{ element: ".pet-editor-portal", popover: { title: "Mis chapitas", description: "Acá volvés a tu panel: compartir, ver o avisar si se perdió. Para entrar otro día: bionfc.com/mi con tu email." } }] : []),
     ];
-    driver({ showProgress: true, progressText: "{{current}} de {{total}}", nextBtnText: "Siguiente", prevBtnText: "Atrás", doneBtnText: "Entendido", overlayOpacity: 0.65, stagePadding: 6, stageRadius: 14, popoverClass: "pet-tour", steps }).drive();
+    driver({ showProgress: true, progressText: "{{current}} de {{total}}", nextBtnText: "Siguiente", prevBtnText: "Atrás", doneBtnText: "Entendido", overlayOpacity: 0.65, stagePadding: 6, stageRadius: 14, popoverClass: isOwner ? "pet-tour is-owner" : "pet-tour", steps }).drive();
   }
 
   const editor: Editor = {
@@ -344,7 +342,9 @@ export default function PetEditor({ landing: initialLanding, initialPet, saveAct
               </form>}
             </div>
           </details>}
-          {saving && <span className="pet-editor-saving"><i className="spin" aria-hidden="true" />Guardando…</span>}
+          {/* Solo en el Admin: al dueño ya le avisa el botón que tocó (y en su barra, "Mis chapitas"
+              va al medio y este texto se le encimaba). */}
+          {saving && !isOwner && <span className="pet-editor-saving"><i className="spin" aria-hidden="true" />Guardando…</span>}
         </div>
       </header>
 
@@ -368,7 +368,10 @@ export default function PetEditor({ landing: initialLanding, initialPet, saveAct
           <div className="pet-summary">
             <strong>{name.trim() || "Tu chapita"}</strong>
             <span className={`pet-summary-state${landing.blocked ? " is-off" : landing.published ? " is-on" : ""}`}>{landing.blocked ? "Pausada" : landing.published ? "Publicada" : "Sin publicar"}</span>
-            <button type="button" className="pet-summary-zoom" onClick={openBig}>Ver en grande</button>
+            <div className="pet-summary-actions">
+              <button type="button" className="pet-summary-btn" onClick={openBig}><LuZoomIn aria-hidden="true" />Ver en grande</button>
+              <button type="button" className="pet-summary-btn" onClick={startTour}><LuLightbulb aria-hidden="true" />Cómo funciona</button>
+            </div>
           </div>
         </div>
 

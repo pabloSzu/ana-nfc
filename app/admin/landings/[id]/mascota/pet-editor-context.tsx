@@ -7,8 +7,9 @@ import type { PetData, PetFamily, PetSaveResult } from "@/lib/pet";
 
 export type Panel = "pet" | "family" | "ficha" | "look" | "lost";
 // Pasos opcionales después de publicar por primera vez.
-export type AfterStep = "ready" | "look" | "about" | "family" | "lost" | "done";
-export const AFTER_STEPS: AfterStep[] = ["look", "about", "family", "lost"];
+// Solo cosas para completar: qué hacer si se pierde se muestra en Mis chapitas, junto al botón.
+export type AfterStep = "ready" | "look" | "about" | "family" | "done";
+export const AFTER_STEPS: AfterStep[] = ["look", "about", "family"];
 
 // Qué pantalla se ve. Una sola variable: no hay combinaciones posibles entre pantallas.
 //  · setup: los 3 pasos de la primera vez (foto, nombre, WhatsApp y publicar).
@@ -28,7 +29,7 @@ export const TITLES: Record<Panel, { label: string; icon: string }> = {
   family: { label: "Contactos", icon: "📞" },
   ficha: { label: "Datos importantes", icon: "📋" },
   look: { label: "Diseño", icon: "🎨" },
-  lost: { label: "Modo perdido", icon: "🚨" },
+  lost: { label: "Aviso de perdido", icon: "🚨" },
 };
 export const PANELS = Object.keys(TITLES) as Panel[];
 

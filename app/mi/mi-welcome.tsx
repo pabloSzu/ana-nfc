@@ -14,7 +14,7 @@ export default function MiWelcome({ petName }: { petName: string }) {
   }, []);
   if (!open) return null;
   return <div className="mi-welcome" role="status">
-    <p><b>Esta es tu página.</b> Acá editás a {petName} y, si algún día se pierde, avisás con este botón.</p>
+    <p><b>Esta es tu página.</b> Acá editás a {petName}. Si algún día se pierde, tocá este botón: su página muestra el aviso de perdido y lo compartís con un toque.</p>
     <button type="button" onClick={() => setOpen(false)} aria-label="Cerrar">✕</button>
   </div>;
 }

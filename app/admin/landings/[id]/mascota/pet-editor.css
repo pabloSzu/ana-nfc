@@ -360,3 +360,57 @@ a.pet-celebrate-more { align-items: center; text-decoration: none; }
 .pet-portal-tip::before { content: ""; position: absolute; top: -6px; left: 50%; width: 12px; height: 12px; background: #2d1d12; transform: translateX(-50%) rotate(45deg); }
 @keyframes pet-tip-in { from { opacity: 0; transform: translate(-50%, -4px); } }
 @media (prefers-reduced-motion: reduce) { .pet-editor-portal.is-pulse, .pet-portal-tip { animation: none; } }
+
+/* "¡Ya funciona!": la vista previa más chica y lo que sigue en una barra fija abajo. */
+.pet-celebrate.is-ready .pet-celebrate-mark { font-size: 40px; }
+.pet-celebrate.is-ready .pet-step-next { margin-top: 4px; }
+.pet-celebrate.is-ready .pet-celebrate-home { margin-top: -8px; }
+/* Abajo, como extra: la vista previa (más chica) y "Probala". */
+.pet-celebrate-preview { display: grid; justify-items: center; gap: 12px; margin-top: 6px; padding-top: 18px; border-top: 1px solid #f0dccb; }
+.pet-celebrate-preview > p:first-child { margin: 0; color: #8a6a52; font-size: 14px; }
+.pet-celebrate-preview .pet-celebrate-mini { --s: .3; }
+.pet-celebrate-preview .pet-celebrate-try { width: 100%; }
+
+/* "Completar su ficha": patita, dos líneas y una flecha que empuja; un brillo cruza cada tanto. */
+.pet-step-next.pet-ficha-cta { position: relative; justify-content: flex-start; gap: 12px; min-height: 64px; padding: 0 16px; overflow: hidden; text-align: left; }
+.pet-ficha-icon { display: grid; flex: none; place-items: center; width: 36px; height: 36px; border-radius: 12px; background: #ffffff2e; }
+/* Sin el margen que llevan los íconos de los demás botones de esta pantalla: centrado. */
+.pet-celebrate .pet-ficha-cta .pet-ficha-icon svg { display: block; width: 20px; height: 20px; margin: 0; }
+.pet-ficha-copy { display: grid; flex: 1; min-width: 0; line-height: 1.2; }
+.pet-ficha-copy small { font-size: 12.5px; font-weight: 600; opacity: .9; }
+.pet-ficha-arrow { font-size: 20px; animation: pet-ficha-nudge 1.6s ease-in-out infinite; }
+/* Que se note que es un botón: un borde fino con una luz cálida (crema y dorado) que lo recorre
+   girando. El fondo naranja va en el relleno y el borde de colores debajo, en el borde. */
+@property --pet-ficha-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+.mi-shell .pet-step-next.pet-ficha-cta:not(:disabled), .pet-step-next.pet-ficha-cta {
+  border: 2px solid transparent;
+  background:
+    linear-gradient(135deg, #ea874d, #cf6125) padding-box,
+    conic-gradient(from var(--pet-ficha-angle), #f6b07a 0deg, #fff6e6 50deg, #ffd27a 90deg, #f6b07a 150deg, #e98a4e 260deg, #f6b07a 360deg) border-box;
+  box-shadow: 0 10px 24px #cf612538;
+  animation: pet-ficha-border 3.5s linear infinite;
+  transition: transform .1s ease;
+}
+.mi-shell .pet-step-next.pet-ficha-cta:not(:disabled):active, .pet-step-next.pet-ficha-cta:active { transform: scale(.98); }
+@keyframes pet-ficha-border { to { --pet-ficha-angle: 360deg; } }
+@media (prefers-reduced-motion: reduce) { .mi-shell .pet-step-next.pet-ficha-cta:not(:disabled), .pet-step-next.pet-ficha-cta { animation: none; } }
+.pet-step-next.pet-ficha-cta:focus-visible { outline: 3px solid #e9772f; outline-offset: 4px; }
+.pet-ficha-cta::after { content: ""; position: absolute; top: 0; left: -60%; width: 40%; height: 100%; background: linear-gradient(100deg, transparent, #ffffff66, transparent); transform: skewX(-20deg); animation: pet-ficha-shine 3.2s ease-in-out infinite; pointer-events: none; }
+@keyframes pet-ficha-nudge { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(5px); } }
+@keyframes pet-ficha-shine { 0%, 55% { left: -60%; } 85%, 100% { left: 130%; } }
+@media (prefers-reduced-motion: reduce) { .pet-ficha-arrow, .pet-ficha-cta::after { animation: none; } }
+
+/* Al lado del celularcito: "Ver en grande" y "Cómo funciona", botoncitos con ícono. */
+.pet-summary-actions { display: grid; justify-items: start; gap: 6px; margin-top: 2px; }
+.pet-summary-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px; border: 1px solid #f2c29d; border-radius: 99px; background: #fff3e8; color: #a8481a; font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
+.pet-summary-btn svg { flex: none; width: 15px; height: 15px; color: #e9772f; }
+.pet-summary-btn:hover { border-color: #e9772f; background: #ffe9d6; }
+/* La ayuda del dueño, con el naranja del portal (la del Admin queda oscura). */
+.driver-popover.pet-tour.is-owner .driver-popover-next-btn { border-color: #e9772f; background: #e9772f; color: #fff; }
+.driver-popover.pet-tour.is-owner .driver-popover-prev-btn { border-color: #f2c29d; color: #a8481a; background: #fff; }
+/* Aviso activo: compartir de nuevo (rojo) y sacarlo (verde de contorno, con confirmación). */
+.mi-shell .pet-step-next.pet-lost-share:not(:disabled), .pet-step-next.pet-lost-share { gap: 8px; background: #d92d20; box-shadow: 0 8px 18px #d92d2033; }
+.mi-shell .pet-step-next.pet-lost-off:not(:disabled), .pet-step-next.pet-lost-off { border: 2px solid #17803d; background: #fff; color: #17803d; box-shadow: none; }
+.pet-lost-ask { display: grid; gap: 10px; padding: 14px; border: 1px solid #b7e1c4; border-radius: 16px; background: #eefaf2; text-align: center; }
+.pet-lost-ask p { margin: 0; color: #145c30; font-size: 14px; line-height: 1.45; }
+.mi-shell .pet-step-next.pet-lost-off-yes:not(:disabled), .pet-step-next.pet-lost-off-yes { background: #17803d; box-shadow: 0 8px 18px #17803d33; }
