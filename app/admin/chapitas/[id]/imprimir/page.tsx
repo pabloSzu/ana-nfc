@@ -1,15 +1,17 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
-import { getSiteOrigin } from "@/lib/site-url";
+import { getSiteOrigin, isLocalSite } from "@/lib/site-url";
 import { activationPath, formatCode } from "@/lib/pet-tags";
 import QRCode from "qrcode";
-import PrintButton from "./print-button";
-import "../../chapitas.css";
+import PrintStudio, { type PrintItem } from "./print-studio";
+import "./print-studio.css";
 
-// Hojas para imprimir de un lote:
-//  · tarjetas: la tarjetita que va adentro del paquete, con el código de activación. El código
-//    nunca va en la chapita: si alguien encuentra al perro, no tiene que poder quedársela.
-//  · qr: los QR de cada chapita, numerados, para grabar o imprimir en sticker.
+// Imprimir el material de un lote (solo las chapitas sin activar):
+//  · tarjetas: la tarjetita del paquete, frente y dorso, con el QR secreto y el código de
+//    activación. El código nunca va en la chapita: si alguien encuentra al perro, no tiene que
+//    poder quedársela.
+//  · qr: el QR de cada chapita, numerado, para grabar o imprimir en sticker.
+// El diseño, los tamaños y las líneas de corte se eligen en la pantalla (print-studio.tsx).
 export default async function PrintBatch({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ que?: string }> }) {
   const { id } = await params;
   const { que } = await searchParams;
@@ -24,40 +26,21 @@ export default async function PrintBatch({ params, searchParams }: { params: Pro
   const { data: codes } = ids.length ? await supabase.from("tag_activations").select("landing_id,code").in("landing_id", ids) : { data: [] };
   const codeOf = new Map((codes || []).map((row) => [row.landing_id, row.code]));
   const origin = getSiteOrigin();
-  const host = new URL(origin).host;
-  const isQr = que === "qr";
-  // Los dos QR se generan dentro del servidor: la impresión no depende de un tercero ni envía
-  // enlaces (el de activación contiene además un secreto de un solo uso) fuera de BIONFC.
-  const exteriorQrs = isQr ? new Map(await Promise.all((tags || []).map(async (tag) => [tag.id, await QRCode.toDataURL(`${origin}/go/${tag.id}?s=qr`, { width: 400, margin: 0, errorCorrectionLevel: "M" })] as const))) : new Map<string, string>();
-  const cards = isQr ? [] : await Promise.all((tags || []).map(async (tag) => {
-    const code = codeOf.get(tag.id);
-    const activationUrl = code ? `${origin}${activationPath(code)}` : "";
-    const activationQr = activationUrl ? await QRCode.toDataURL(activationUrl, { width: 400, margin: 0, errorCorrectionLevel: "M" }) : "";
-    return { ...tag, code, activationQr };
+  // Los QR se generan en el servidor: la impresión no depende de un tercero ni manda los enlaces
+  // (el de activación tiene un secreto de un solo uso) fuera de BIONFC.
+  const qr = (text: string) => QRCode.toDataURL(text, { width: 480, margin: 0, errorCorrectionLevel: "M", color: { dark: "#1d1410", light: "#00000000" } });
+  const items: PrintItem[] = await Promise.all((tags || []).map(async (tag) => {
+    const code = codeOf.get(tag.id) || "";
+    return {
+      id: tag.id,
+      number: tag.tag_number,
+      code: code ? formatCode(code) : "",
+      activationQr: code ? await qr(`${origin}${activationPath(code)}`) : "",
+      // El de la chapita, con el margen blanco que necesitan los celulares para leerlo (en la
+      // tarjeta ese margen ya lo da el recuadro blanco del diseño).
+      tagQr: await QRCode.toDataURL(`${origin}/go/${tag.id}?s=qr`, { width: 480, margin: 2, errorCorrectionLevel: "M", color: { dark: "#1d1410", light: "#ffffff" } }),
+    };
   }));
 
-  return <div className="ch-print">
-    <header className="ch-print-bar">
-      <div><strong>{batch.name}</strong><span>{isQr ? "QR de cada chapita" : "Tarjetitas con el código de activación"} · {tags?.length || 0} sin activar</span></div>
-      <PrintButton />
-    </header>
-    {isQr
-      ? <div className="ch-sheet ch-sheet-qr">{(tags || []).map((tag) => <figure key={tag.id}>
-          {/* eslint-disable-next-line @next/next/no-img-element -- QR generado en el servidor */}
-          <img src={exteriorQrs.get(tag.id)} alt={`QR chapita ${tag.tag_number}`} />
-          <figcaption><span>UNIDAD</span><strong>{tag.tag_number}</strong></figcaption>
-        </figure>)}</div>
-      : <div className="ch-sheet ch-sheet-cards">{cards.map((tag) => <article key={tag.id} className="ch-card">
-          <div className="ch-card-head"><p className="ch-card-brand">BIONFC · chapita de mascota</p><span className="ch-unit"><small>UNIDAD</small>{tag.tag_number}</span></div>
-          <h2>Activá tu chapita</h2>
-          <div className="ch-card-activation">
-            {/* eslint-disable-next-line @next/next/no-img-element -- QR secreto generado en el servidor */}
-            {tag.activationQr && <img src={tag.activationQr} alt={`QR secreto para activar la chapita ${tag.tag_number}`} />}
-            <div><strong>1. Escaneá este QR</strong><span>2. Confirmá tu email</span><span>3. Cargá los datos de tu mascota</span></div>
-          </div>
-          <p className="ch-card-backup">Si no podés escanearlo, entrá a <strong>{host}/activar</strong> y escribí:</p>
-          <p className="ch-card-code">{tag.code ? formatCode(tag.code) : "—"}</p>
-          <p className="ch-card-foot">Este QR y código son privados y se usan una sola vez. Guardá la tarjeta hasta terminar la activación.</p>
-        </article>)}</div>}
-  </div>;
+  return <PrintStudio batchId={batch.id} batchName={batch.name} items={items} host={new URL(origin).host} isLocal={isLocalSite(origin)} initialMode={que === "qr" ? "qr" : "cards"} />;
 }

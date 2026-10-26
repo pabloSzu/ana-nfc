@@ -1,0 +1,153 @@
+/* Estudio de impresión (print-studio.tsx) y diseños de la tarjetita (card-designs.tsx). */
+/* Pantalla completa: sin la barra del Admin. */
+.admin-shell-frame:has(.ps) > .global-nav { display: none; }
+.ps { display: grid; grid-template-columns: 300px minmax(0, 1fr); min-height: 100vh; background: #e4e6ec; color: #1d2130; }
+.ps-panel { position: sticky; top: 0; display: grid; align-content: start; gap: 14px; height: 100vh; overflow-y: auto; padding: 20px 18px; border-right: 1px solid #d5d8e0; background: #fff; }
+.ps-panel h1 { margin: 0; font-size: 20px; }
+.ps-back { color: #6b7080; font-size: 13px; font-weight: 700; text-decoration: none; }
+.ps-muted { margin: 0; color: #6b7080; font-size: 12.5px; line-height: 1.4; }
+.ps-local { margin: 0; padding: 10px 12px; border-radius: 10px; background: #fff4e5; color: #9a3412; font-size: 12.5px; font-weight: 600; line-height: 1.4; }
+.ps-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 12px; background: #f1f2f5; }
+.ps-tabs button { min-height: 38px; border: 0; border-radius: 9px; background: none; color: #4b5060; font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
+.ps-tabs button.is-on { background: #fff; color: #1d2130; box-shadow: 0 1px 4px #0002; }
+.ps-group { display: grid; gap: 8px; margin: 0; padding: 0; border: 0; }
+.ps-group legend { margin-bottom: 6px; color: #8a8f9c; font-size: 11.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.ps-group select, .ps-group input[type=number] { width: 100%; min-height: 40px; padding: 0 10px; border: 1px solid #dfe2e8; border-radius: 10px; background: #fff; font: inherit; font-size: 14px; }
+.ps-group label { display: grid; gap: 4px; font-size: 13px; font-weight: 700; }
+.ps-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ps-group .ps-check { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.ps-group .ps-check input { flex: none; width: 16px; height: 16px; min-height: 0; margin: 0; padding: 0; accent-color: #1d2130; }
+.ps-group input[type=range] { width: 100%; accent-color: #1d2130; }
+.ps-designs { display: grid; gap: 6px; }
+.ps-designs button { display: grid; grid-template-columns: 34px 1fr; grid-template-rows: auto auto; column-gap: 10px; align-items: center; padding: 9px 10px; border: 1.5px solid #e4e6ec; border-radius: 12px; background: #fff; font: inherit; text-align: left; cursor: pointer; }
+.ps-designs button.is-on { border-color: #1d2130; box-shadow: 0 0 0 2px #1d213014; }
+.ps-designs strong { font-size: 14px; }
+.ps-designs small { grid-column: 2; color: #6b7080; font-size: 11.5px; }
+.ps-swatch { grid-row: span 2; width: 34px; height: 24px; border-radius: 6px; box-shadow: inset 0 0 0 1px #0002; }
+.ps-print { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.ps-help { display: grid; gap: 6px; padding: 12px; border-radius: 12px; background: #f6f7f9; font-size: 12.5px; line-height: 1.45; }
+.ps-help .is-warn { color: #9a3412; }
+.ps-sheets { display: grid; justify-content: center; align-content: start; gap: 28px; padding: 28px; overflow-x: auto; }
+.ps-sheets.is-single { display: flex; flex-wrap: wrap; align-content: flex-start; justify-content: center; gap: 16px; }
+.ps-pair { display: grid; gap: 28px; }
+.ps-empty { padding: 40px; color: #6b7080; }
+.ps-page { position: relative; box-sizing: border-box; width: 210mm; height: 297mm; padding: 7mm; overflow: hidden; background: #fff; box-shadow: 0 6px 24px #0002; }
+.ps-page-label { position: absolute; top: 2mm; left: 7mm; color: #a0a4b0; font: 700 2.6mm Arial, sans-serif; }
+.ps-grid { display: grid; justify-content: center; align-content: start; }
+.ps-cell { position: relative; }
+/* En la hoja, esquinas rectas: la guillotina corta derecho (redondearlas es una terminación de la
+   imprenta). */
+.ps-cell .pc, .ps-single .pc { border-radius: 0; }
+/* Línea de corte: punteada, apenas por fuera de la tarjeta. */
+.ps-cell.has-cut::after, .ps-qr.has-cut::after { content: ""; position: absolute; inset: -1mm; border: .2mm dashed #b9bdc8; border-radius: 1mm; pointer-events: none; }
+.ps-qr { position: relative; display: grid; justify-items: center; gap: 1.5mm; margin: 0; }
+.ps-qr figcaption { padding: .6mm 2.4mm; border: .35mm solid #1d2130; border-radius: 1.5mm; font: 800 3.2mm Arial, sans-serif; }
+/* Una tarjeta por página (imprenta / Canva): la tarjeta con su sangrado, centrada, y las marcas de
+   corte en el margen. */
+.ps-single { position: relative; box-sizing: border-box; display: grid; place-items: center; flex: none; background: #fff; box-shadow: 0 4px 16px #0002; }
+.ps-mark { position: absolute; background: #000; }
+
+@media print {
+  .global-nav, .ps-panel, .ps-page-label { display: none !important; }
+  .ps { display: block; background: #fff; }
+  .ps-sheets, .ps-sheets.is-single { display: block; padding: 0; overflow: visible; }
+  .ps-pair { display: block; }
+  .ps-page, .ps-single { box-shadow: none; break-after: page; }
+  .ps-sheets > :last-child, .ps-pair:last-child .ps-page:last-child { break-after: auto; }
+}
+
+/* --- Tarjetas (1em = 1 mm en 85 mm de ancho) --------------------------------------------- */
+.pc { position: relative; box-sizing: border-box; overflow: hidden; border-radius: 3em; font-family: Poppins, Arial, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+/* Con sangrado: el fondo sigue por debajo del borde transparente (el sangrado) y el contenido
+   queda dentro de la medida final. */
+.pc.pc.is-bleed { border-style: solid; border-color: transparent; background-origin: border-box; }
+.pc * { box-sizing: border-box; margin: 0; }
+.pc h2 { font-family: inherit; }
+.pc img { display: block; }
+.pc-logo { display: inline-flex; align-items: center; color: #1d1410; font-size: 3.4em; font-weight: 800; line-height: 1; letter-spacing: -.04em; }
+.pc-logo b { font-weight: 800; }
+.pc-logo i { font-style: normal; background: linear-gradient(100deg, #22c7e0, #4b6bff 60%, #8a5cf7); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.pc-logo svg { width: .9em; height: .9em; margin-left: .1em; fill: none; stroke: #3aa0ff; stroke-width: 2.4; stroke-linecap: round; }
+.pc-logo.is-light { color: #fff; }
+.pc-logo.is-light i { background: none; color: #fff; }
+.pc-logo.is-light svg { stroke: #fff; }
+.pc-deco { position: absolute; inset: 0; pointer-events: none; }
+.pc-deco span { position: absolute; display: block; line-height: 0; }
+.pc-deco svg { width: 1em; height: 1em; }
+
+/* Frente: textos a la izquierda, el QR a la derecha. */
+.pc-front { display: grid; grid-template-columns: 1fr 26em; gap: 3.5em; padding: 4.5em; }
+.pc-copy { position: relative; z-index: 1; display: grid; align-content: space-between; min-width: 0; }
+.pc-unit { font-size: 2.2em; font-weight: 800; letter-spacing: .1em; }
+.pc-front h2 { font-size: 5em; font-weight: 800; line-height: 1.02; letter-spacing: -.03em; }
+.pc-front p { font-size: 2.4em; font-weight: 600; line-height: 1.32; }
+.pc-qr { position: relative; z-index: 1; display: grid; align-content: center; justify-items: center; gap: 1.3em; }
+.pc-qrbox { position: relative; width: 26em; height: 26em; padding: 2em; border-radius: 4em; background: #fff; transform: rotate(2deg); }
+.pc-qrbox img { width: 100%; height: 100%; }
+.pc-code { padding: .25em .6em; border-radius: 99em; background: #fff; color: #1d1410; font-family: "Courier New", monospace; font-size: 3.3em; font-weight: 700; letter-spacing: .1em; white-space: nowrap; }
+.pc-qr small { font-size: 2.2em; font-weight: 700; }
+
+/* Dorso: título y logo a la izquierda, los pasos a la derecha. */
+.pc-back { display: grid; grid-template-columns: 1fr 1.05fr; gap: 4em; padding: 5em; color: #fff; }
+.pc-left { position: relative; z-index: 1; display: grid; align-content: space-between; }
+.pc-back h2 { font-size: 4.8em; font-weight: 800; line-height: 1.05; letter-spacing: -.02em; }
+.pc-back .pc-logo { font-size: 3.2em; }
+.pc-back ul { position: relative; z-index: 1; display: grid; align-content: center; gap: 1.8em; padding: 0; list-style: none; }
+.pc-back li { display: flex; align-items: center; gap: .7em; font-size: 2.4em; font-weight: 600; line-height: 1.3; }
+.pc-back li b { display: grid; flex: none; place-items: center; width: 1.8em; height: 1.8em; border-radius: 50%; font-size: .95em; }
+
+/* Juguetón */
+.pc-playful.pc-front { background: linear-gradient(150deg, #ffe0c2, #ffc6d9); color: #3a1730; }
+.pc-playful .pc-unit { color: #c2185b; }
+.pc-playful .pc-deco { color: #ffffffb3; }
+.pc-playful .pc-qrbox { box-shadow: 0 1em 3em #c2185b33; }
+.pc-playful .pc-qr small { color: #8e2a5e; }
+.pc-playful.pc-back { background: #3a1730; }
+.pc-playful.pc-back .pc-deco { color: #ffffff1a; }
+.pc-playful li b { background: #ffc6d9; color: #3a1730; }
+
+/* Patitas */
+.pc-paws.pc-front { background: radial-gradient(circle at 92% 8%, #ffd9b8 0 18%, transparent 19%), #fff1e2; color: #3b2314; }
+.pc-paws .pc-unit { color: #d4621c; }
+.pc-paws .pc-deco { color: #e9772f40; }
+.pc-paws .pc-qrbox { transform: rotate(-2deg); box-shadow: 0 0 0 .8em #ffd9b8, 0 1em 3em #e9772f33; }
+.pc-paws .pc-code { background: #3b2314; color: #fff; }
+.pc-paws .pc-qr small { color: #b4541a; }
+.pc-paws.pc-back { background: #e9772f; }
+.pc-paws.pc-back .pc-deco { color: #ffffff38; }
+.pc-paws li b { background: #fff; color: #e9772f; }
+
+/* Huesitos */
+.pc-bones.pc-front { background: linear-gradient(160deg, #e6f4ff, #bfe0ff); color: #12345f; }
+.pc-bones .pc-unit { color: #1f6fd1; }
+.pc-bones .pc-deco { color: #1f6fd12e; }
+.pc-bones .pc-qrbox { border: .5em dashed #8cc3f5; box-shadow: 0 1em 3em #1f6fd126; }
+.pc-bones .pc-qr small { color: #1f5aa8; }
+.pc-bones.pc-back { background: #1f4e8c; }
+.pc-bones.pc-back .pc-deco { color: #ffffff1f; }
+.pc-bones li b { background: #bfe0ff; color: #12345f; }
+
+/* Michi: el QR con orejitas de gato. */
+.pc-kitty.pc-front { background: linear-gradient(150deg, #f4eeff, #dccbff); color: #2e1a57; }
+.pc-kitty .pc-unit { color: #7b4ddb; }
+.pc-kitty .pc-deco { color: #7b4ddb2e; }
+.pc-kitty .pc-qrbox { transform: rotate(-1.5deg); box-shadow: 0 1em 3em #7b4ddb2e; }
+.pc-kitty .pc-qrbox::before, .pc-kitty .pc-qrbox::after { content: ""; position: absolute; top: -3.4em; width: 0; height: 0; border-right: 3.2em solid transparent; border-bottom: 4.2em solid #fff; border-left: 3.2em solid transparent; }
+.pc-kitty .pc-qrbox::before { left: 1.6em; transform: rotate(-8deg); }
+.pc-kitty .pc-qrbox::after { right: 1.6em; transform: rotate(8deg); }
+.pc-kitty .pc-qr small { color: #6a3fc4; }
+.pc-kitty.pc-back { background: #4b2a85; }
+.pc-kitty.pc-back .pc-deco { color: #ffffff1f; }
+.pc-kitty li b { background: #dccbff; color: #2e1a57; }
+
+/* Parque */
+.pc-park.pc-front { background: linear-gradient(160deg, #f6fcdf, #d4efa4); color: #20441f; }
+.pc-park .pc-unit { color: #3f8a2a; }
+.pc-park .pc-deco { color: #3f8a2a33; }
+.pc-park .pc-deco span:first-child { color: #f2b70599; }
+.pc-park .pc-qrbox { transform: rotate(1.5deg); box-shadow: 0 1em 3em #3f8a2a2e; }
+.pc-park .pc-qr small { color: #2f6b2f; }
+.pc-park.pc-back { background: #2f6b2f; }
+.pc-park.pc-back .pc-deco { color: #ffffff1f; }
+.pc-park.pc-back .pc-deco span:nth-child(2) { color: #f2d64b55; }
+.pc-park li b { background: #f2d64b; color: #20441f; }
