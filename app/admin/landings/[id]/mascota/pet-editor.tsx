@@ -135,11 +135,16 @@ export default function PetEditor({ landing: initialLanding, initialPet, saveAct
       localStorage.setItem("bionfc-portal-tip", "1");
     } catch { return; }
     setPortalTip(true);
+  }, [isOwner, landing.published, screen.name]);
+  // Aparte de lo de arriba: si la pantalla se vuelve a dibujar mientras se ve, el cartelito igual
+  // se va a los 7 segundos.
+  useEffect(() => {
+    if (!portalTip) return;
     const hide = () => setPortalTip(false);
     const timer = setTimeout(hide, 7000);
     window.addEventListener("pointerdown", hide, { once: true });
     return () => { clearTimeout(timer); window.removeEventListener("pointerdown", hide); };
-  }, [isOwner, landing.published, screen.name]);
+  }, [portalTip]);
 
   // Cada pantalla arranca desde arriba.
   useEffect(() => { window.scrollTo(0, 0); }, [screenKey]);

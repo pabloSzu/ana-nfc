@@ -3,8 +3,8 @@
 // Activar en tres pasos: el código de la tarjetita (y aceptar los términos), el email con su
 // código de 6 números (si no entró antes) y listo: activateTag lleva al editor de la chapita.
 import { useState, type FormEvent } from "react";
-import Link from "next/link";
 import EmailCodeLogin from "../mi/email-code-login";
+import TermsSheet from "./terms-sheet";
 import { activateTag, checkTagCode, switchAccount } from "../mi/auth-actions";
 import { formatCode, normalizeCode } from "@/lib/pet-tags";
 
@@ -14,6 +14,7 @@ export default function ActivateFlow({ initialCode, signedInEmail }: { initialCo
   const cameFromPackagingQr = Boolean(initialCode);
   const [code, setCode] = useState(initialCode ? formatCode(initialCode) : "");
   const [terms, setTerms] = useState(false);
+  const [termsOpen, setTermsOpen] = useState(false);
   const [step, setStep] = useState<"code" | "login" | "confirm">("code");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -71,7 +72,8 @@ export default function ActivateFlow({ initialCode, signedInEmail }: { initialCo
     <p className="mi-step">Paso 1 de 3 · {cameFromPackagingQr ? "Chapita encontrada" : "El código"}</p>
     {cameFromPackagingQr && <p className="mi-success" role="status">✓ Leímos el código del packaging. Solo falta confirmar que esta chapita es tuya.</p>}
     <label className="mi-field"><span>{cameFromPackagingQr ? "Código detectado" : "Código de la tarjetita"}</span><input className="mi-code-input" required autoCapitalize="characters" autoComplete="off" spellCheck={false} maxLength={12} value={code} placeholder="ABCD-2346" onChange={(event) => setCode(event.target.value.toUpperCase())} /></label>
-    <label className="mi-check"><input type="checkbox" checked={terms} onChange={(event) => setTerms(event.target.checked)} required /><span>Acepto los <Link href={`/terminos?volver=${encodeURIComponent(`/activar${normalizeCode(code) ? `?c=${normalizeCode(code)}` : ""}`)}`}>términos</Link> y que la ficha será pública.</span></label>
+    <label className="mi-check"><input type="checkbox" checked={terms} onChange={(event) => setTerms(event.target.checked)} required /><span>Acepto los <button type="button" className="mi-inline-link" onClick={(event) => { event.preventDefault(); setTermsOpen(true); }}>términos</button> y que la ficha será pública.</span></label>
+    <TermsSheet open={termsOpen} onClose={() => setTermsOpen(false)} onAccept={() => setTerms(true)} />
     <details className="mi-public-details"><summary>¿Qué datos se muestran?</summary><p>Solo lo que cargues en la ficha: foto, nombre, información de la mascota y los teléfonos elegidos para que puedan avisarte. Tu email de acceso no se publica.</p></details>
     {error && <p className="mi-error" role="alert">{error}</p>}
     <button className="mi-button" type="submit" disabled={busy || !terms}>{busy ? <><i className="spin" aria-hidden="true" />Revisando…</> : "Seguir"}</button>

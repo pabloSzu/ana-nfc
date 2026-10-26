@@ -162,6 +162,7 @@ async function run() {
     await go(`${BASE}/mi/chapita/${data.tagId}`);
     check("Opcionales: llega al menú", await waitFor("Boolean(document.querySelector('.pet-menu'))"));
     check("Menú: el cartelito de Mis chapitas aparece la primera vez", await waitFor("Boolean(document.querySelector('.pet-portal-tip'))", 10));
+    check("Menú: el cartelito se va solo", await waitFor("!document.querySelector('.pet-portal-tip')", 10));
 
     // 3. Editar y guardar.
     await click("[data-tour=row-pet]");

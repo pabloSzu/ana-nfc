@@ -6,6 +6,7 @@
 // por debajo de 2,2em (~6 puntos impreso). Estilos en print-studio.css (.pc-*).
 import type { CSSProperties, ReactNode } from "react";
 import { LuBone, LuCat, LuDog, LuFish, LuHeart, LuLeaf, LuPawPrint, LuSparkles, LuStar, LuSun } from "react-icons/lu";
+import { LOGO_FONT_FAMILY } from "@/components/bionfc-logo";
 import type { PrintItem } from "./print-studio";
 
 export type DesignId = "playful" | "paws" | "bones" | "kitty" | "park";
@@ -61,7 +62,8 @@ export const DESIGNS: Design[] = [
 const designOf = (id: DesignId) => DESIGNS.find((design) => design.id === id) || DESIGNS[0];
 
 function Logo({ light = false }: { light?: boolean }) {
-  return <span className={`pc-logo${light ? " is-light" : ""}`}><b>BIO</b><i>NFC</i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 9.2a4.6 4.6 0 0 1 0 5.6" /><path d="M8.6 6.4a8.6 8.6 0 0 1 0 11.2" /><path d="M13.9 3.6a12.6 12.6 0 0 1 0 16.8" /></svg></span>;
+  // Con la letra del logo de la marca (la misma que en la página).
+  return <span className={`pc-logo${light ? " is-light" : ""}`} style={{ fontFamily: LOGO_FONT_FAMILY }}><b>BIO</b><i>NFC</i><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 9.2a4.6 4.6 0 0 1 0 5.6" /><path d="M8.6 6.4a8.6 8.6 0 0 1 0 11.2" /><path d="M13.9 3.6a12.6 12.6 0 0 1 0 16.8" /></svg></span>;
 }
 
 function Deco({ items }: { items: Design["deco"] }) {

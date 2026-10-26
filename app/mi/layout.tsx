@@ -2,9 +2,10 @@ import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import BioNFCLogo from "@/components/bionfc-logo";
-import BioNFCSignature from "@/components/bionfc-signature";
 import { createClient } from "@/lib/supabase/server";
-import { logoutOwner } from "./auth-actions";
+import { CONTACT_EMAIL, CONTACT_WHATSAPP } from "@/lib/terms";
+import { FiMessageCircle } from "react-icons/fi";
+import AccountMenu from "./account-menu";
 import "../globals.css";
 import "./mi.css";
 
@@ -21,9 +22,17 @@ export default async function OwnerLayout({ children }: { children: ReactNode })
   return <div className="mi-shell">
     <header className="mi-top">
       <Link href="/mi" className="mi-brand" aria-label="Mis chapitas"><BioNFCLogo /></Link>
-      {email && <form action={logoutOwner} className="mi-top-user"><span>{email}</span><button type="submit" className="mi-link">Salir</button></form>}
+      {email && <AccountMenu email={email} />}
     </header>
     <div className="mi-content">{children}</div>
-    <BioNFCSignature className="mi-signature" />
+    {/* Abajo, lo que el dueño puede necesitar: dónde pedir ayuda. */}
+    <footer className="mi-footer">
+      <a className="mi-help" href={`${CONTACT_WHATSAPP}?text=${encodeURIComponent("Hola, necesito ayuda con mi chapita BIONFC")}`} target="_blank" rel="noopener noreferrer">
+        <span className="mi-help-icon" aria-hidden="true"><FiMessageCircle /></span>
+        <span className="mi-help-copy"><strong>¿Necesitás ayuda?</strong><small>Te respondemos por WhatsApp</small></span>
+        <b>Escribinos</b>
+      </a>
+      <p><Link href="/terminos">Términos y condiciones</Link><span aria-hidden="true">·</span><a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a></p>
+    </footer>
   </div>;
 }
