@@ -99,8 +99,8 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
 
   const width = clamp(settings.width, 40, 190);
   const height = clamp(settings.height, 30, 270);
-  // La chapita entera (el círculo), en mm.
-  const qrSize = clamp(settings.qrSize, 22, 45);
+  // La chapita entera (el círculo), en mm. Desde 28 mm: más chica, el QR no se lee bien impreso.
+  const qrSize = clamp(settings.qrSize, 28, 45);
   const single = mode === "cards" && settings.output === "single";
 
   // Cuántas entran por hoja.
@@ -226,7 +226,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
         </fieldset>
       </> : <>
       <fieldset className="ps-group"><legend>Impresión de chapitas</legend>
-        <label>Tamaño (diámetro): <b>{qrSize} mm</b><input type="range" min={22} max={45} value={qrSize} onChange={(event) => update({ qrSize: Number(event.target.value) })} /></label>
+        <label>Tamaño (diámetro): <b>{qrSize} mm</b><input type="range" min={28} max={45} value={qrSize} onChange={(event) => update({ qrSize: Number(event.target.value) })} /></label>
         <span className="ps-colors-label">Formato de hoja</span>
         <div className="ps-output-options">
           <button type="button" className={settings.tagOutput === "pairs" ? "is-on" : ""} onClick={() => update({ tagOutput: "pairs", tagSides: "both", tagLayoutVersion: 2 })}><strong>Pares para armado</strong><small>Frente y dorso juntos, en orden normal · recomendado</small></button>

@@ -1,15 +1,17 @@
 // Las dos caras de la chapita física. El frente es visual y puede llevar un nombre; el dorso
 // conserva el diseño original con el enlace público permanente, NFC e instrucciones. El código privado de activación nunca
 // aparece acá: va únicamente en la tarjeta del paquete.
+// Los colores lisos son lo bastante oscuros para que el texto blanco chico se lea impreso
+// (contraste de 4,5:1 o más). En los arcoíris, el texto del dorso va sobre una franja oscura.
 export const TAG_COLORS = [
-  { id: "mix", label: "Mezcla de colores", value: "conic-gradient(#36aef0, #7652f0, #ef6681, #ef8a3d, #65cf58, #36aef0)" },
+  { id: "mix", label: "Mezcla de colores", value: "conic-gradient(#1673b8, #6a45e0, #c93a62, #c4501a, #2a7f36, #1673b8)" },
   { id: "rainbow", label: "Arcoíris", value: "linear-gradient(135deg, #ff4f6d, #ff9a3c, #ffd23f, #3ecf8e, #3aa0ff, #8a5cf7)" },
   { id: "rainbow-v", label: "Arcoíris vertical", value: "linear-gradient(180deg, #ff1f3d, #ff7a00, #ffd000, #19c35a, #1f8bff, #6a3cff, #9b2cff)" },
-  { id: "blue", label: "Azul BIONFC", value: "#36aef0" },
-  { id: "violet", label: "Violeta", value: "#7652f0" },
-  { id: "pink", label: "Rosa", value: "#ef6681" },
-  { id: "orange", label: "Naranja", value: "#ef8a3d" },
-  { id: "green", label: "Verde", value: "#65cf58" },
+  { id: "blue", label: "Azul BIONFC", value: "#1673b8" },
+  { id: "violet", label: "Violeta", value: "#6a45e0" },
+  { id: "pink", label: "Rosa", value: "#c93a62" },
+  { id: "orange", label: "Naranja", value: "#c4501a" },
+  { id: "green", label: "Verde", value: "#2a7f36" },
   { id: "black", label: "Negro", value: "#1d2130" },
 ];
 
@@ -106,13 +108,15 @@ export function TagBack({ id, qr, diameter, color, design }: { id: string; qr: s
       <path d="M 15,31 C 7,29 3,38 5,48 C 6,53 10,54 13,50 Z" fill="#fff" />
       <path d="M 45,31 C 51,30 54,37 53,46 C 52.5,50 49.5,51 47.5,48 Z" fill="#fff" />
     </>}
-    <rect x="12" y="30" width="36" height="36" rx="5.5" fill="#fff" />
-    <image href={qr} x="14" y="32" width="32" height="32" />
-    {design !== "dog" && <polygon points="55.5,44 50.5,47.5 55.5,51" fill="#fff" />}
-    <text x="57" y="39.5" fontSize="6.4" letterSpacing=".2" {...ink}>ESCANEÁ</text>
-    <text x="57" y="47.3" fontSize="6.4" letterSpacing=".2" {...ink}>O ACERCÁ</text>
-    <text x="57" y="55.1" fontSize="6.4" letterSpacing=".2" {...ink}>TU CELU</text>
-    <g transform="translate(57.5 58.5)" fill="none" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+    {/* El QR lo más grande posible sin salir del margen de seguridad (2 mm del borde a 30 mm). */}
+    <rect x="10" y="27" width="40" height="40" rx="5.5" fill="#fff" />
+    <image href={qr} x="11.5" y="28.5" width="37" height="37" />
+    {RAINBOWS[color] && <rect x="53" y="32" width="41" height="36" rx="6" fill="#1d2130" fillOpacity=".38" />}
+    {design !== "dog" && <polygon points="56,44 51.5,47.5 56,51" fill="#fff" />}
+    <text x="58" y="39.5" fontSize="6.4" letterSpacing=".2" {...ink}>ESCANEÁ</text>
+    <text x="58" y="47.3" fontSize="6.4" letterSpacing=".2" {...ink}>O ACERCÁ</text>
+    <text x="58" y="55.1" fontSize="6.4" letterSpacing=".2" {...ink}>TU CELU</text>
+    <g transform="translate(58.5 58.5)" fill="none" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
       <rect x="0" y="0" width="4.6" height="7.6" rx="1.1" />
       <path d="M 6.7,2.3 A 2.1,2.1 0 0 1 6.7,5.3" /><path d="M 8.6,1.1 A 3.7,3.7 0 0 1 8.6,6.5" /><path d="M 10.5,0 A 5.3,5.3 0 0 1 10.5,7.6" />
     </g>

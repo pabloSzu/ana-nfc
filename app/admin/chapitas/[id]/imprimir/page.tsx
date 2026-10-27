@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
 import { getSiteOrigin, isLocalSite } from "@/lib/site-url";
-import { activationPath, formatCode } from "@/lib/pet-tags";
+import { activationPath, formatCode, shortTagCode, shortTagRange } from "@/lib/pet-tags";
+import { createAdminClient } from "@/lib/supabase/admin";
 import QRCode from "qrcode";
 import PrintStudio, { type PrintItem } from "./print-studio";
 import "./print-studio.css";
@@ -26,6 +27,14 @@ export default async function PrintBatch({ params, searchParams }: { params: Pro
   const { data: codes } = ids.length ? await supabase.from("tag_activations").select("landing_id,code").in("landing_id", ids) : { data: [] };
   const codeOf = new Map((codes || []).map((row) => [row.landing_id, row.code]));
   const origin = getSiteOrigin();
+  // El QR del dorso usa el link corto (/q/…). Si otra chapita empezara con el mismo código
+  // (casi imposible), esa sale con el link largo de siempre.
+  const admin = createAdminClient();
+  const isUnique = async (id: string) => {
+    const [from, to] = shortTagRange(shortTagCode(id))!;
+    const { count, error } = await admin.from("landings").select("id", { count: "exact", head: true }).not("batch_id", "is", null).gte("id", from).lte("id", to);
+    return !error && count === 1;
+  };
   // Los QR se generan en el servidor: la impresión no depende de un tercero ni manda los enlaces
   // (el de activación tiene un secreto de un solo uso) fuera de BIONFC.
   const qr = (text: string) => QRCode.toDataURL(text, { width: 480, margin: 0, errorCorrectionLevel: "M", color: { dark: "#1d1410", light: "#00000000" } });
@@ -38,7 +47,7 @@ export default async function PrintBatch({ params, searchParams }: { params: Pro
       activationQr: code ? await qr(`${origin}${activationPath(code)}`) : "",
       // El de la chapita: va dentro de un cuadrado blanco (tag-face.tsx), que ya le da el margen
       // que necesitan los celulares para leerlo.
-      tagQr: await QRCode.toDataURL(`${origin}/go/${tag.id}?s=qr`, { width: 480, margin: 1, errorCorrectionLevel: "M", color: { dark: "#1d1410", light: "#ffffff" } }),
+      tagQr: await QRCode.toDataURL(await isUnique(tag.id) ? `${origin}/q/${shortTagCode(tag.id)}` : `${origin}/go/${tag.id}?s=qr`, { width: 480, margin: 1, errorCorrectionLevel: "M", color: { dark: "#1d1410", light: "#ffffff" } }),
     };
   }));
 

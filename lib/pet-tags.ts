@@ -35,6 +35,22 @@ export function newTagSlug(random: (max: number) => number = secureRandom): stri
   return "m-" + Array.from({ length: 7 }, () => chars[random(chars.length)]).join("");
 }
 
+// El QR impreso en el dorso usa un link corto: /q/ y los primeros 12 caracteres del id. Con el
+// /go/<id>?s=qr completo el QR tiene 37×37 cuadraditos; así, 29×29, y cada uno sale más grande
+// impreso (en una chapita de 30 mm, ~0,36 mm: se lee bien). El chip NFC sigue con /go/<id>.
+export const SHORT_TAG_LENGTH = 12;
+
+export function shortTagCode(id: string): string {
+  return id.replace(/-/g, "").slice(0, SHORT_TAG_LENGTH).toLowerCase();
+}
+
+// Los ids que empiezan con ese código corto, como rango de uuid (para buscarlos en la base).
+export function shortTagRange(code: string): [string, string] | null {
+  if (!new RegExp(`^[0-9a-f]{${SHORT_TAG_LENGTH}}$`).test(code)) return null;
+  const head = `${code.slice(0, 8)}-${code.slice(8, 12)}`;
+  return [`${head}-0000-0000-000000000000`, `${head}-ffff-ffff-ffffffffffff`];
+}
+
 function secureRandom(max: number): number {
   const value = new Uint32Array(1);
   crypto.getRandomValues(value);
