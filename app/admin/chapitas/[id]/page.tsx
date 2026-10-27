@@ -45,7 +45,7 @@ export default async function BatchPage({ params }: { params: Promise<{ id: stri
       <div><p className="eyebrow">{batch.reseller || "Venta directa"}</p><h1>{batch.name}</h1><p className="muted">{active} de {tags?.length || 0} activadas. Grabá en cada chapita su link NFC y su QR, y poné en el paquete la tarjetita con su código.</p></div>
       <div className="library-page-actions">
         <Link className="btn" href={`/admin/chapitas/${id}/imprimir?que=tarjetas`} target="_blank">1. Imprimir tarjetas del paquete</Link>
-        <Link className="btn secondary" href={`/admin/chapitas/${id}/imprimir?que=qr`} target="_blank">2. Imprimir QR de las chapitas</Link>
+        <Link className="btn secondary" href={`/admin/chapitas/${id}/imprimir?que=qr`} target="_blank">2. Imprimir chapitas · frente y dorso</Link>
       </div>
     </header>
     <MascotasNav active="stock" />

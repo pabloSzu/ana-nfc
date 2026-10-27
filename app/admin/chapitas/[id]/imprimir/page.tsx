@@ -10,7 +10,7 @@ import "./print-studio.css";
 //  · tarjetas: la tarjetita del paquete, frente y dorso, con el QR secreto y el código de
 //    activación. El código nunca va en la chapita: si alguien encuentra al perro, no tiene que
 //    poder quedársela.
-//  · qr: el QR de cada chapita, numerado, para grabar o imprimir en sticker.
+//  · chapitas: frente ilustrado, con nombre opcional, y dorso con el QR público permanente.
 // El diseño, los tamaños y las líneas de corte se eligen en la pantalla (print-studio.tsx).
 export default async function PrintBatch({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ que?: string }> }) {
   const { id } = await params;
