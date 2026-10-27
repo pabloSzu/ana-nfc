@@ -57,6 +57,13 @@ function secureRandom(max: number): number {
   return value[0] % max;
 }
 
+// Modo "Verificar armado" (app/admin/chapitas/verificar): mientras está la cookie, en el celu de
+// quien arma las chapitas /go lleva a la pantalla que dice qué unidad es. La segunda cookie guarda
+// el escaneo anterior ("<id>.<qr|nfc|link>") para avisar si el QR y el NFC no son de la misma.
+export const VERIFY_COOKIE = "bionfc-verificar";
+export const VERIFY_LAST_COOKIE = "bionfc-verificar-ultimo";
+export const VERIFY_HOURS = 4;
+
 export type TagState = "stock" | "active" | "lost";
 
 // En qué está una chapita del lote, para la lista del Admin.

@@ -70,7 +70,10 @@ function Deco({ items }: { items: Design["deco"] }) {
   return <div className="pc-deco" aria-hidden="true">{items.map((item, index) => <span key={index} style={{ left: `${item.x}%`, top: `${item.y}%`, fontSize: `${item.size}em`, transform: `rotate(${item.rotate}deg)` }}>{item.icon}</span>)}</div>;
 }
 
-const unit = (number: number) => `UNIDAD ${String(number).padStart(2, "0")}`;
+// El N° de unidad: va en la tarjeta y al lado de cada chapita impresa, para emparejarlas sin
+// imprimir el código privado en la hoja de chapitas.
+export const unitNumber = (number: number) => String(number).padStart(2, "0");
+export const unit = (number: number) => `UNIDAD ${unitNumber(number)}`;
 
 // bleed: la tarjeta con sangrado (el fondo sigue 2 mm más por fuera, ver .pc.is-bleed).
 export function CardFront({ design: id, item, host, style, bleed = false }: { design: DesignId; item: PrintItem; host: string; style: CSSProperties; bleed?: boolean }) {

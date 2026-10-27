@@ -227,7 +227,7 @@
 .ps-pair-grid { padding-top: 1mm; }
 .ps-print-pair { display: grid; justify-items: center; align-content: start; }
 .ps-print-pair-faces { position: relative; display: grid; grid-template-columns: repeat(2, max-content); gap: 3mm; }
-.ps-pair-code { position: absolute; top: 50%; left: 50%; z-index: 2; padding: .15mm .45mm; border-radius: 1mm; background: #fff; color: #7b8190; font: 800 1.65mm/1 Arial, sans-serif; letter-spacing: .08mm; white-space: nowrap; transform: translate(-50%, -50%) rotate(-90deg); }
+.ps-pair-code { position: absolute; top: 50%; left: 50%; z-index: 2; padding: .15mm .45mm; border-radius: 1mm; background: #fff; color: #3d4250; font: 800 1.65mm/1 Arial, sans-serif; letter-spacing: .08mm; white-space: nowrap; transform: translate(-50%, -50%) rotate(-90deg); }
 
 /* La vista grande no se imprime: sirve para comparar ambas caras mientras se personaliza. */
 .ps-tag-overview { box-sizing: border-box; width: min(100%, 760px); padding: 22px 26px 26px; border: 1px solid #d5d8e0; border-radius: 22px; background: #fff; box-shadow: 0 8px 28px #0000001a; }
@@ -273,3 +273,8 @@
 .ps-color-custom input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 .ps-colors { flex-wrap: wrap; }
 @media print { .ps-tag-hole { display: none; } }
+
+/* Pie de la hoja (SheetFoot): en el margen de abajo, se imprime. La línea mide 50 mm exactos. */
+.ps-sheet-foot { position: absolute; right: 7mm; bottom: 2mm; left: 7mm; display: flex; align-items: flex-end; justify-content: space-between; gap: 4mm; color: #5b6170; font: 700 2.3mm/1 Arial, sans-serif; white-space: nowrap; }
+.ps-ruler { display: inline-flex; align-items: flex-end; gap: 2mm; }
+.ps-ruler i { box-sizing: border-box; display: block; width: 50mm; height: 1.8mm; border: .3mm solid #1d2130; border-top: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }

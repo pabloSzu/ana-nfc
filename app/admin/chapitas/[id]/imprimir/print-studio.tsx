@@ -12,7 +12,7 @@
 import { useEffect, useState, type CSSProperties, type KeyboardEvent } from "react";
 import Link from "next/link";
 import { LuPrinter } from "react-icons/lu";
-import { CardBack, CardFront, DESIGNS, type DesignId } from "./card-designs";
+import { CardBack, CardFront, DESIGNS, unit, unitNumber, type DesignId } from "./card-designs";
 import { TagBack, TagFront, TAG_CHARACTERS, TAG_COLORS, tagCharacterFor, type TagCharacterChoice, type TagCharacterId } from "./tag-face";
 
 export type PrintItem = { id: string; number: number; code: string; activationQr: string; tagQr: string };
@@ -66,6 +66,17 @@ function CropMarks({ width, height }: { width: number; height: number }) {
     line({ top: 0, left: `${x}mm`, width: ".2mm", height: `${length}mm` }, `t${x}`),
     line({ bottom: 0, left: `${x}mm`, width: ".2mm", height: `${length}mm` }, `b${x}`),
   ]))}</>;
+}
+
+// Pie de cada hoja, en el margen (fuera del corte): de qué lote es, qué unidades lleva y una línea
+// de 50 mm para comprobar que se imprimió al 100% (con "Ajustar a la página" todo sale más chico y
+// la chapita ya no entra en su base).
+function SheetFoot({ batchName, page, pages, items, detail }: { batchName: string; page: number; pages: number; items: PrintItem[]; detail: string }) {
+  const range = items.length ? `Unidades ${unitNumber(items[0].number)}–${unitNumber(items[items.length - 1].number)}` : "";
+  return <footer className="ps-sheet-foot">
+    <span>{[batchName, `Hoja ${page}/${pages}`, range, detail].filter(Boolean).join(" · ")}</span>
+    <span className="ps-ruler"><i />Esta línea mide 50 mm</span>
+  </footer>;
 }
 
 export default function PrintStudio({ batchId, batchName, items, host, isLocal = false, initialMode }: { batchId: string; batchName: string; items: PrintItem[]; host: string; isLocal?: boolean; initialMode: Mode }) {
@@ -181,7 +192,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
   </div>;
   const tagCell = (item: PrintItem, side: "front" | "back") => <button type="button" className={`ps-tag-cell ps-selectable${previewItem?.id === item.id ? " is-selected" : ""}`} onClick={() => selectItem(item.id)} aria-label={`Seleccionar chapita con código ${item.code}`}>
     {tagArtwork(item, side, "sheet")}
-    {settings.qrNumber && <span className="ps-tag-number">Código {item.code}</span>}
+    {settings.qrNumber && <span className="ps-tag-number">{unit(item.number)}</span>}
   </button>;
 
   return <div className="ps">
@@ -241,7 +252,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
             <button type="button" className={settings.tagSides === "back" ? "is-on" : ""} onClick={() => update({ tagSides: "back" })}>Sólo dorso</button>
           </div>}
         </details>
-        <label className="ps-check"><input type="checkbox" checked={settings.qrNumber} onChange={(event) => update({ qrNumber: event.target.checked })} />Mostrar código para emparejar con la tarjeta</label>
+        {settings.tagOutput === "duplex" && <label className="ps-check"><input type="checkbox" checked={settings.qrNumber} onChange={(event) => update({ qrNumber: event.target.checked })} />Mostrar el N° de unidad debajo de cada chapita</label>}
       </fieldset>
 
       <details className="ps-defaults">
@@ -266,7 +277,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
         <div className="ps-personalize-head"><strong>Elegí una unidad</strong><small>Después personalizá sólo esa.</small></div>
         <div className="ps-unit-picker">{items.map((item) => <button type="button" key={item.id} className={previewItem?.id === item.id ? "is-on" : ""} onClick={() => setPreviewId(item.id)}>
           <span style={{ background: TAG_COLORS.find((color) => color.id === colorOf(item))?.value || colorOf(item) }} />
-          <b>{item.code}</b><small>{settings.tagNames[item.id]?.trim() || "Stock"}</small>
+          <b>{unitNumber(item.number)} · {item.code}</b><small>{settings.tagNames[item.id]?.trim() || "Stock"}</small>
         </button>)}</div>
         {previewItem && <div className="ps-unit-editor">
           <label>Nombre <small>Opcional · vacío para stock</small><input value={settings.tagNames[previewItem.id] || ""} maxLength={14} placeholder="Ej: Luna" onChange={(event) => setTagName(previewItem.id, event.target.value)} /></label>
@@ -302,7 +313,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
           : settings.sides === "both" && mode === "cards" && <span>Doble faz, <b>girando por el lado largo</b>: los dorsos ya están ubicados para caer detrás de cada frente.</span>}
         {mode === "qr" && settings.tagOutput === "pairs" && <span>Cada unidad sale como un par: <b>frente y dorso juntos</b> en la misma hoja, listos para cortar y emparejar.</span>}
         {mode === "qr" && settings.tagOutput === "duplex" && settings.tagSides === "both" && <span>Primero sale la hoja de frentes y después la de dorsos, ya <b>espejada por fila</b>. Imprimí doble faz girando por el lado largo.</span>}
-        {mode === "qr" && settings.qrNumber && <span className="is-warn">La guía incluye los códigos privados de activación. Usá el PDF sólo para producir y emparejar; el código desaparece al recortar.</span>}
+        {mode === "qr" && <span>La hoja de chapitas no lleva códigos privados: cada par se empareja con su tarjeta por el <b>N° de unidad</b>. Al terminar de armar, controlá cada una con <b>Verificar armado</b>.</span>}
         {mode === "cards" && <span className="is-warn">Las tarjetas tienen los códigos para activar: no compartas el PDF por cualquier lado.</span>}
       </div>
     </aside>
@@ -310,7 +321,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
     <main className={`ps-sheets${single ? " is-single" : ""}`}>
       {!items.length && <p className="ps-empty">Todas las chapitas de este lote ya están activadas: no hay nada para imprimir.</p>}
       {mode === "qr" && previewItem && <section className="ps-tag-overview" aria-label={`Vista del código ${previewItem.code}`}>
-        <div className="ps-tag-overview-head"><div><small>VISTA PREVIA</small><h2>Código {previewItem.code}</h2></div><span>{settings.tagNames[previewItem.id]?.trim() || "Sin nombre · stock"}</span></div>
+        <div className="ps-tag-overview-head"><div><small>VISTA PREVIA</small><h2>{unit(previewItem.number)} · {previewItem.code}</h2></div><span>{settings.tagNames[previewItem.id]?.trim() || "Sin nombre · stock"}</span></div>
         <div className="ps-tag-overview-pair">
           <figure><TagFront id={`preview-${previewItem.id}-front`} diameter={60} color={colorOf(previewItem)} character={characterOf(previewItem)} name={settings.tagNames[previewItem.id] || ""} /><figcaption>Frente</figcaption></figure>
           <figure><TagBack id={`preview-${previewItem.id}-back`} qr={previewItem.tagQr} diameter={60} color={colorOf(previewItem)} design="classic" /><figcaption>Dorso original</figcaption></figure>
@@ -331,6 +342,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
           <div className="ps-grid" style={gridStyle(cardCols, width, cardGap)}>
             {page.map((item) => <button type="button" key={item.id} className={`ps-cell ps-selectable${settings.cutLines ? " has-cut" : ""}${previewItem?.id === item.id ? " is-selected" : ""}`} onClick={() => selectItem(item.id)} aria-label={`Seleccionar tarjeta con código ${item.code}`}><CardFront design={settings.design} item={item} host={host} style={cardStyle} /></button>)}
           </div>
+          <SheetFoot batchName={batchName} page={pageIndex + 1} pages={cardPages.length} items={page} detail="Tarjetas · frentes" />
         </section>
         {settings.sides === "both" && <section className="ps-page" aria-label={`Hoja ${pageIndex + 1}: dorsos`}>
           <span className="ps-page-label">Hoja {pageIndex + 1} · dorsos (atrás de la anterior)</span>
@@ -344,6 +356,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
                 : <div key={cell} className="ps-cell"><div style={cardStyle} /></div>;
             })}
           </div>
+          <SheetFoot batchName={batchName} page={pageIndex + 1} pages={cardPages.length} items={page} detail="Tarjetas · dorsos" />
         </section>}
       </div>) : settings.tagOutput === "pairs" ? pairPages.map((page, pageIndex) => <section key={pageIndex} className="ps-page ps-pair-page" aria-label={`Hoja ${pageIndex + 1}: frentes y dorsos de chapitas`}>
         <span className="ps-page-label">Hoja {pageIndex + 1} · pares para armado</span>
@@ -352,16 +365,18 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
             <div className="ps-print-pair-faces">
               {tagArtwork(item, "front", `pair-${pageIndex}`)}
               {tagArtwork(item, "back", `pair-${pageIndex}`)}
-              {settings.qrNumber && <span className="ps-pair-code">{item.code}</span>}
+              <span className="ps-pair-code">{unit(item.number)}</span>
             </div>
           </button>)}
         </div>
+        <SheetFoot batchName={batchName} page={pageIndex + 1} pages={pairPages.length} items={page} detail={`Chapitas Ø ${qrSize} mm`} />
       </section>) : qrPages.map((page, pageIndex) => <div key={pageIndex} className="ps-pair ps-tag-pages">
         {settings.tagSides !== "back" && <section className="ps-page" aria-label={`Hoja ${pageIndex + 1}: frentes de chapitas`}>
           <span className="ps-page-label">Hoja {pageIndex + 1} · frentes</span>
           <div className="ps-grid" style={gridStyle(qrCols, qrSize, qrGap)}>
             {page.map((item) => <div key={item.id}>{tagCell(item, "front")}</div>)}
           </div>
+          <SheetFoot batchName={batchName} page={pageIndex + 1} pages={qrPages.length} items={page} detail={`Chapitas Ø ${qrSize} mm · frentes`} />
         </section>}
         {settings.tagSides !== "front" && <section className="ps-page" aria-label={`Hoja ${pageIndex + 1}: dorsos de chapitas`}>
           <span className="ps-page-label">Hoja {pageIndex + 1} · dorsos (atrás de la anterior)</span>
@@ -372,6 +387,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
               return <div key={cell}>{item ? tagCell(item, "back") : <div style={{ width: `${qrSize}mm`, height: `${qrCell}mm` }} />}</div>;
             })}
           </div>
+          <SheetFoot batchName={batchName} page={pageIndex + 1} pages={qrPages.length} items={page} detail={`Chapitas Ø ${qrSize} mm · dorsos`} />
         </section>}
       </div>)}
     </main>

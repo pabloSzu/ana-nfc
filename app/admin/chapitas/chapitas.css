@@ -150,3 +150,23 @@
 }
 
 /* Hojas para imprimir (A4). La barra de arriba no se imprime. */
+
+/* Verificar armado (app/admin/chapitas/verificar): pensado para el celu, con el número bien grande. */
+.ch-verify { max-width: 560px; }
+.ch-verify h1 { margin: 6px 0 8px; }
+.ch-verify-state { display: grid; gap: 4px; margin: 16px 0; padding: 16px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); }
+.ch-verify-state.is-on { border-color: color-mix(in srgb, var(--success) 40%, var(--border)); background: var(--success-subtle); }
+.ch-verify-state small { color: var(--text-muted); }
+.ch-verify-state form { margin-top: 8px; }
+.ch-verify-steps { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.ch-verify-steps li { display: flex; align-items: flex-start; gap: 11px; font-size: 14px; line-height: 1.45; }
+.ch-verify-steps b { display: grid; place-items: center; flex: none; width: 26px; height: 26px; border-radius: 8px; background: var(--accent-subtle); color: var(--accent); }
+.ch-verify-note { margin-top: 16px; font-size: 12.5px; }
+.ch-verify .ch-verify-unit { margin: 4px 0 12px; font-size: clamp(44px, 14vw, 72px); line-height: 1; letter-spacing: -.02em; }
+.ch-verify-check { margin: 0 0 14px; padding: 12px 14px; border-radius: 14px; font-weight: 700; line-height: 1.4; }
+.ch-verify-check.is-ok { background: var(--success-subtle); color: var(--success); }
+.ch-verify-check.is-bad { background: #fde8e8; color: #b42318; }
+.ch-verify-code { display: grid; gap: 4px; margin: 0 0 12px; }
+.ch-verify-code small { color: var(--text-muted); font-size: 12px; }
+.ch-verify-code code { font: 800 24px/1 "Courier New", monospace; letter-spacing: .08em; }
+.ch-verify-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 18px; }

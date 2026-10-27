@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { readWithLegacyFallback } from "@/lib/public-read-compat";
+import { VERIFY_COOKIE, VERIFY_HOURS, VERIFY_LAST_COOKIE } from "@/lib/pet-tags";
+import { cookies } from "next/headers";
 
 // Link permanente que se graba en el chip NFC y en el QR. Lleva a la página publicada; si no hay
 // ninguna, nunca a un error técnico:
@@ -8,6 +10,19 @@ import { readWithLegacyFallback } from "@/lib/public-read-compat";
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const valid = /^[0-9a-f-]{36}$/i.test(id);
+  const url = new URL(request.url);
+  const source = url.searchParams.get("s");
+  // Verificar armado: la pantalla de verificación controla que la chapita sea de quien escanea; si
+  // no, vuelve acá con publico=1 y sigue como cualquier escaneo.
+  const cookieStore = await cookies();
+  if (valid && cookieStore.has(VERIFY_COOKIE) && !url.searchParams.has("publico")) {
+    const via = source === "nfc" || source === "qr" ? source : "link";
+    const previous = cookieStore.get(VERIFY_LAST_COOKIE)?.value;
+    const query = new URLSearchParams({ via, ...(previous ? { antes: previous } : {}) });
+    const response = redirectTo(`/admin/chapitas/verificar/${id}?${query}`);
+    response.headers.append("Set-Cookie", `${VERIFY_LAST_COOKIE}=${id}.${via}; Path=/; Max-Age=${VERIFY_HOURS * 3600}; HttpOnly; SameSite=Lax${url.protocol === "https:" ? "; Secure" : ""}`);
+    return response;
+  }
   const supabase = await createClient();
   // Puente de despliegue: el RPC existe después de las migraciones. Antes de aplicarlas,
   // conservamos la consulta que usa hoy producción. Tras el lockdown el RPC será el camino
@@ -34,7 +49,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     return redirectTo(pending ? "/activar" : "/sin-datos");
   }
 
-  const source = new URL(request.url).searchParams.get("s");
   // Solo las chapitas van a /mascota/…; landings y tarjetas siguen en su dirección de siempre.
   // Si la consulta falla, se va a la dirección directa, que abre cualquier página.
   const { data: info } = await supabase.rpc("public_landing", { p_slug: slug });

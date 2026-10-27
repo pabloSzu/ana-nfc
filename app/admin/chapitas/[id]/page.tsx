@@ -46,6 +46,7 @@ export default async function BatchPage({ params }: { params: Promise<{ id: stri
       <div className="library-page-actions">
         <Link className="btn" href={`/admin/chapitas/${id}/imprimir?que=tarjetas`} target="_blank">1. Imprimir tarjetas del paquete</Link>
         <Link className="btn secondary" href={`/admin/chapitas/${id}/imprimir?que=qr`} target="_blank">2. Imprimir chapitas · frente y dorso</Link>
+        <Link className="btn secondary" href="/admin/chapitas/verificar">3. Verificar armado</Link>
       </div>
     </header>
     <MascotasNav active="stock" />
