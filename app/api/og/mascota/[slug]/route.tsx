@@ -1,15 +1,15 @@
 import { ImageResponse } from "next/og";
 import { createClient } from "@supabase/supabase-js";
 import sharp from "sharp";
-import { parsePet, petGendered, petLook, type PetData, type PetLook, type PetPhotoPlacement } from "@/lib/pet";
+import { parsePet, petAge, petGendered, petLook, type PetData, type PetLook, type PetPhotoPlacement } from "@/lib/pet";
 import { getSiteOrigin } from "@/lib/site-url";
 
 // Imágenes de una chapita para compartir, con los colores del diseño elegido:
 //  · (sin ?formato) 1200×630: la que se ve al mandar el link por WhatsApp. La usa la metadata de
 //    app/[slug]/page.tsx.
-//  · ?formato=historia 1080×1920: para historias, estados de WhatsApp y reels. Si no está perdida,
-//    una polaroid (StoryPolaroid).
+//  · ?formato=historia 1080×1920: para historias, estados de WhatsApp y reels.
 //  · ?formato=publicacion 1080×1350: para el feed de Instagram y grupos de Facebook.
+// Si no está perdida, la historia y la publicación son una polaroid (Polaroid).
 // Si está perdida, todas llevan "¡ESTOY PERDIDO/A!" con la zona y la recompensa. La historia y la
 // publicación llevan la dirección de su página, corta y bien legible: se miran en el mismo celular
 // (un QR no se puede escanear) y, desde una página web, Instagram no deja poner el link solo; el
@@ -118,6 +118,7 @@ const greetingFit = (text: string, big: number, width: number) => fitSize(text, 
 // El tamaño de la foto según lo que se arma (en píxeles de la imagen final).
 function photoSizeFor(format: string | null, lost: boolean) {
   if (format === "historia" && !lost) return 490;
+  if (format === "publicacion" && !lost) return 540;
   return format === "historia" ? 440 : format === "publicacion" ? (lost ? 400 : 460) : lost ? 300 : 360;
 }
 
@@ -153,7 +154,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ slug
 
   // Las de compartir, en JPG: se ven igual y pesan un quinto (Instagram las recomprime igual).
   const asJpeg = async (image: ImageResponse) => new Response(new Uint8Array(await sharp(Buffer.from(await image.arrayBuffer())).jpeg({ quality: 86, mozjpeg: true }).toBuffer()), { headers: { "Content-Type": "image/jpeg", "Cache-Control": cacheControl } });
-  if (format === "historia" && !pet.lost) return asJpeg(new ImageResponse(<StoryPolaroid name={name} photo={photo} address={address} />, options(1080, 1920)));
+  if (!pet.lost && (format === "historia" || format === "publicacion")) {
+    const post = format === "publicacion";
+    return asJpeg(new ImageResponse(<Polaroid pet={pet} name={name} photo={photo} address={address} post={post} />, options(1080, post ? 1350 : 1920)));
+  }
   if (format === "historia") return asJpeg(new ImageResponse(<Story pet={pet} look={look} name={name} photo={photo} photoSize={photoSize} address={address} background={background} lostTitle={lostTitle} zone={zone} reward={reward} greeting={greeting} />, options(1080, 1920)));
   if (format === "publicacion") return asJpeg(new ImageResponse(<Post pet={pet} look={look} name={name} photo={photo} photoSize={photoSize} address={address} background={background} lostTitle={lostTitle} zone={zone} reward={reward} greeting={greeting} />, options(1080, 1350)));
 
@@ -211,7 +215,6 @@ function Story({ pet, look, name, photo, photoSize, address, background, lostTit
 // chapita es de BIONFC" arriba de la dirección: la dirección la tapa el sticker "Enlace" de
 // Instagram, la marca no. Todo entre los 280 px de arriba y los 360 de abajo, que Instagram tapa
 // (ver Story). Siempre la misma: que en Instagram se reconozca de una ("otra chapita BIONFC").
-type StoryProps = { name: string; photo: string | null; address: string };
 const INK = "#2d1d12";
 
 // El logo, como en components/bionfc-logo.tsx: "BIO", "NFC" en azul y las tres ondas.
@@ -269,28 +272,57 @@ function NewSeal({ size }: { size: number }) {
 function Pill({ address }: { address: string }) {
   return <div style={{ display: "flex", padding: "24px 54px", borderRadius: 999, background: "#fff", color: INK, fontSize: Math.min(47, Math.floor(1500 / address.length)), fontWeight: 800, whiteSpace: "nowrap", boxShadow: "0 18px 40px rgba(0,0,0,.14)" }}>{address}</div>;
 }
-// La polaroid: la foto con su cinta, letra a mano y patitas de fondo. Queda linda con cualquier foto.
-function StoryPolaroid({ name, photo, address }: StoryProps) {
-  const paws = [[60, 120, -20, 150], [820, 210, 25, 130], [90, 1180, 15, 120], [860, 1060, -15, 150], [480, 1700, 10, 140], [60, 1640, -25, 110], [880, 1520, 20, 120], [500, 60, -10, 110]];
-  return <div style={{ position: "relative", width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", padding: "280px 80px 0", background: "#fff4e6", color: INK, fontFamily: "Poppins", textAlign: "center" }}>
-    {paws.map(([left, top, rotate, size], index) => <div key={index} style={{ position: "absolute", left, top, display: "flex", transform: `rotate(${rotate}deg)`, opacity: 0.13 }}><Paw color="#e9772f" size={size} /></div>)}
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", fontFamily: "Caveat", fontSize: 104, lineHeight: 0.95, color: "#e9772f", transform: "rotate(-3deg)" }}>
-      <div style={{ display: "flex" }}>¡Ya tengo mi chapita</div><div style={{ display: "flex" }}>inteligente!</div>
+// La polaroid: la foto con su cinta, letra a mano y patitas de fondo. Queda linda con cualquier
+// foto. Como una de verdad: la fecha escrita en el borde, el nombre (y su edad, si se sabe) y una
+// flechita con "¡este soy yo!". En dos tamaños: historia (1080×1920, dentro de la zona que no tapa
+// Instagram) y publicación (1080×1350, para el feed).
+const MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+
+// Flechita dibujada a mano, curva, de abajo a la izquierda hacia arriba a la derecha.
+function Arrow({ size, color }: { size: number; color: string }) {
+  return <svg width={size} height={size} viewBox="0 0 100 100" fill="none" stroke={color} strokeWidth="5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 88 C 14 58, 38 30, 84 22" /><path d="M66 10 L 86 21 L 70 38" />
+  </svg>;
+}
+
+function Polaroid({ pet, name, photo, address, post }: { pet: PetData; name: string; photo: string | null; address: string; post: boolean }) {
+  // Medidas de cada tamaño (la historia deja libres los 280 px de arriba y los 360 de abajo).
+  const m = post
+    ? { top: 104, hand: 84, gap: 54, card: 630, photo: 540, foot: 124, seal: 200, tape: [200, 58], brandGap: 44, paws: [[50, 60, -20, 120], [900, 120, 25, 110], [60, 760, 15, 110], [910, 700, -15, 120], [470, 1220, 10, 110], [880, 1180, 20, 100]] }
+    : { top: 280, hand: 104, gap: 66, card: 570, photo: 490, foot: 130, seal: 220, tape: [210, 62], brandGap: 50, paws: [[60, 120, -20, 150], [820, 210, 25, 130], [90, 1460, 15, 120], [860, 1060, -15, 150], [480, 1700, 10, 140], [60, 1640, -25, 110], [880, 1520, 20, 120], [500, 60, -10, 110]] };
+  const pad = (m.card - m.photo) / 2;
+  const age = pet.birth ? petAge(pet.birth, pet.birthApprox) : pet.about.age.trim();
+  const caption = age && name.length + age.length <= 22 ? `${name} · ${age.replace(/^Aprox\. /, "≈ ")}` : name;
+  const now = new Date();
+  const date = `${MONTHS[now.getMonth()]} ${now.getFullYear()}`;
+  const me = petGendered(pet, "¡este soy yo!", "¡esta soy yo!");
+  return <div style={{ position: "relative", width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", padding: `${m.top}px 70px 0`, background: "#fff4e6", color: INK, fontFamily: "Poppins", textAlign: "center" }}>
+    {m.paws.map(([left, top, rotate, size], index) => <div key={index} style={{ position: "absolute", left, top, display: "flex", transform: `rotate(${rotate}deg)`, opacity: 0.13 }}><Paw color="#e9772f" size={size} /></div>)}
+    <div style={{ display: "flex", flexDirection: post ? "row" : "column", alignItems: "center", fontFamily: "Caveat", fontSize: m.hand, lineHeight: 0.95, color: "#e9772f", transform: "rotate(-3deg)" }}>
+      {(post ? ["¡Ya tengo mi chapita inteligente!"] : ["¡Ya tengo mi chapita", "inteligente!"]).map((line) => <div key={line} style={{ display: "flex" }}>{line}</div>)}
     </div>
-    <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", marginTop: 66, padding: "40px 40px 0", width: 570, height: 660, background: "#fff", boxShadow: "0 30px 70px rgba(45,29,18,.18)", transform: "rotate(3deg)" }}>
+    <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", marginTop: m.gap, padding: `${pad}px ${pad}px 0`, width: m.card, height: pad + m.photo + m.foot, background: "#fff", boxShadow: "0 30px 70px rgba(45,29,18,.18)", transform: "rotate(3deg)" }}>
       {/* eslint-disable-next-line @next/next/no-img-element -- ImageResponse solo acepta <img> */}
-      {photo ? <img src={photo} width={490} height={490} alt="" /> : <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 490, height: 490, background: "#f6e2d2" }}><Paw color="#e9772f" size={240} /></div>}
-      <div style={{ display: "flex", marginTop: 14, fontFamily: "Caveat", fontSize: fitSize(name, 108, 480, 1, 0.45), lineHeight: 1 }}>{name}</div>
-      <div style={{ position: "absolute", top: -34, left: 180, display: "flex", transform: "rotate(-5deg)" }}><Tape width={210} height={62} /></div>
-      <div style={{ position: "absolute", top: -70, right: -86, display: "flex", transform: "rotate(14deg)" }}><NewSeal size={220} /></div>
+      {photo ? <img src={photo} width={m.photo} height={m.photo} alt="" /> : <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: m.photo, height: m.photo, background: "#f6e2d2" }}><Paw color="#e9772f" size={m.photo / 2} /></div>}
+      <div style={{ display: "flex", marginTop: m.foot * 0.12, fontFamily: "Caveat", fontSize: fitSize(caption, m.foot * 0.8, m.photo - 60, 1, 0.42), lineHeight: 1 }}>{caption}</div>
+      <div style={{ position: "absolute", right: pad + 4, bottom: 8, display: "flex", fontFamily: "Caveat", fontSize: m.foot * 0.26, color: "#a08a76", transform: "rotate(-4deg)" }}>{date}</div>
+      <div style={{ position: "absolute", top: -m.tape[1] * 0.55, left: (m.card - m.tape[0]) / 2 - 10, display: "flex", transform: "rotate(-5deg)" }}><Tape width={m.tape[0]} height={m.tape[1]} /></div>
+      <div style={{ position: "absolute", top: -m.seal * 0.32, right: -m.seal * 0.39, display: "flex", transform: "rotate(14deg)" }}><NewSeal size={m.seal} /></div>
     </div>
-    <div style={{ display: "flex", marginTop: 50 }}><Brand /></div>
+    {/* "¡este soy yo!" con su flechita, a la izquierda de la polaroid, a la altura de la foto. */}
+    <div style={{ position: "absolute", left: post ? 14 : 26, top: m.top + m.hand * (post ? 1 : 2) + m.gap + m.photo * 0.62, display: "flex", flexDirection: "column", alignItems: "flex-start", transform: "rotate(-8deg)" }}>
+      <Arrow size={post ? 130 : 170} color="#e9772f" />
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: -6, fontFamily: "Caveat", fontSize: post ? 62 : 76, lineHeight: 0.9, color: "#e9772f" }}>
+        <div style={{ display: "flex" }}>{me.split(" ")[0]}</div><div style={{ display: "flex" }}>{me.split(" ").slice(1).join(" ")}</div>
+      </div>
+    </div>
+    <div style={{ display: "flex", marginTop: m.brandGap }}><Brand /></div>
     <div style={{ display: "flex", marginTop: 22 }}><Pill address={address} /></div>
   </div>;
 }
 
-// Publicación (1080×1350, el 4:5 que Instagram no recorta en el feed). Sirve también para grupos
-// de Facebook: lo mismo que la historia, más compacto.
+// Publicación de perdido (1080×1350, el 4:5 que Instagram no recorta en el feed). Sirve también
+// para grupos de Facebook: lo mismo que la historia, más compacto.
 function Post({ pet, look, name, photo, photoSize, address, background, lostTitle, zone, reward, greeting }: ShareProps) {
   const details = [zone, reward].filter(Boolean) as string[];
   const inline = details.join("  ·  ").length <= 44;
