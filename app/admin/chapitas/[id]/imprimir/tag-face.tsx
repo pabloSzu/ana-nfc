@@ -2,7 +2,7 @@
 // conserva el diseño original con el enlace público permanente, NFC e instrucciones. El código privado de activación nunca
 // aparece acá: va únicamente en la tarjeta del paquete.
 // Los colores lisos son lo bastante oscuros para que el texto blanco chico se lea impreso
-// (contraste de 4,5:1 o más). En los arcoíris, el texto del dorso va sobre una franja oscura.
+// (contraste de 4,5:1 o más). En los arcoíris, las letras se leen por su borde oscuro (EDGE).
 export const TAG_COLORS = [
   { id: "mix", label: "Mezcla de colores", value: "conic-gradient(#1673b8, #6a45e0, #c93a62, #c4501a, #2a7f36, #1673b8)" },
   { id: "rainbow", label: "Arcoíris", value: "linear-gradient(135deg, #ff4f6d, #ff9a3c, #ffd23f, #3ecf8e, #3aa0ff, #8a5cf7)" },
@@ -55,9 +55,21 @@ export const TAG_CHARACTERS = [
 ] as const;
 
 export type TagCharacterId = (typeof TAG_CHARACTERS)[number]["id"];
-export type TagCharacterChoice = TagCharacterId | "mix";
+export type TagCharacterChoice = TagCharacterId | "mix" | "mix-dogs" | "mix-cats";
+export type TagCharacter = (typeof TAG_CHARACTERS)[number];
+export const isCat = (id: string) => id.endsWith("cat");
+export const TAG_DOGS: TagCharacter[] = TAG_CHARACTERS.filter((character) => !isCat(character.id));
+export const TAG_CATS: TagCharacter[] = TAG_CHARACTERS.filter((character) => isCat(character.id));
+// Para la mezcla automática: perro, gato, perro, gato… (en orden de la lista, una raza distinta cada vez).
+const MIXED = Array.from({ length: Math.max(TAG_DOGS.length, TAG_CATS.length) * 2 }, (_, index) => {
+  const list = index % 2 ? TAG_CATS : TAG_DOGS;
+  return list[Math.floor(index / 2) % list.length].id;
+});
 export const tagCharacterFor = (choice: TagCharacterChoice, index: number): TagCharacterId =>
-  choice === "mix" ? TAG_CHARACTERS[index % TAG_CHARACTERS.length].id : choice;
+  choice === "mix" ? MIXED[index % MIXED.length]
+    : choice === "mix-dogs" ? TAG_DOGS[index % TAG_DOGS.length].id
+    : choice === "mix-cats" ? TAG_CATS[index % TAG_CATS.length].id
+    : choice;
 // Lo que se eligió para imprimir cada unidad (nombre, animal y color). Se guarda en la chapita
 // (button_style.print, ver actions.ts) para no depender del navegador. Vacío = automático.
 export type TagPrint = { name?: string; character?: TagCharacterId; color?: string };
@@ -75,7 +87,7 @@ export function cleanTagPrint(value: unknown): TagPrint {
 const HOLE = { cx: 50, cy: 10 };
 const HoleMark = () => <circle cx={HOLE.cx} cy={HOLE.cy} r=".9" fill="#fff" stroke="#00000059" strokeWidth=".3" />;
 
-export type TagBackStyle = "classic" | "cat" | "dog" | "paws";
+export type TagBackStyle = "classic" | "v2" | "cat" | "dog" | "paws";
 export type TagBackChoice = TagBackStyle | "mix";
 export const TAG_BACK_STYLES: { id: TagBackChoice; label: string }[] = [
   { id: "mix", label: "Mezcla" },
@@ -122,6 +134,12 @@ function Paw({ x, y, size, rotate }: { x: number; y: number; size: number; rotat
   </g>;
 }
 
+// Letras blancas con un borde oscuro marcado (mismo tamaño y grosor). Probado simulando una
+// impresora común (tinta que se corre, 150 ppp): sobre colores claros y arcoíris, sin borde no se
+// leen; con borde, sí. Sobre colores oscuros no cambia nada.
+const EDGE = { stroke: "#151826", strokeOpacity: .72, strokeLinejoin: "round" as const };
+const WAVES = <><path d="M 0,2.3 A 2.2,2.2 0 0 1 0,5.7" /><path d="M 2.2,1.1 A 4,4 0 0 1 2.2,6.9" /><path d="M 4.4,0 A 5.8,5.8 0 0 1 4.4,8" /></>;
+
 export function TagFront({ id, diameter, color, character, name = "", hole = false }: { id: string; diameter: number; color: string; character: TagCharacterId; name?: string; hole?: boolean }) {
   const animal = TAG_CHARACTERS.find((item) => item.id === character) || TAG_CHARACTERS[0];
   const cleanName = tagNameText(name);
@@ -131,7 +149,7 @@ export function TagFront({ id, diameter, color, character, name = "", hole = fal
   return <svg className="ps-tag" viewBox="0 0 100 100" width={`${diameter}mm`} height={`${diameter}mm`} role="img" aria-label={cleanName ? `Frente de la chapita de ${cleanName}` : `Frente de chapita con ${animal.label}`}>
     <Background id={`tag-front-${id}`} color={color} />
     {hole && <HoleMark />}
-    <text x="50" y="21.5" textAnchor="middle" fill="#fff" stroke="#00000030" strokeWidth=".45" paintOrder="stroke" fontFamily="Poppins, Arial, sans-serif" fontSize="4.3" fontWeight="800" letterSpacing=".22">CHAPITA INTELIGENTE</text>
+    <text x="50" y="21.5" textAnchor="middle" fill="#fff" {...EDGE} strokeWidth="1" paintOrder="stroke" fontFamily="Poppins, Arial, sans-serif" fontSize="4.3" fontWeight="800" letterSpacing=".35">CHAPITA INTELIGENTE</text>
     {cleanName ? <>
       {/* Personaje y nombre forman un solo bloque compacto, con espacio real para explicar el NFC. */}
       {/* Las patitas apoyan sólo en el borde de arriba de la placa: el nombre queda libre debajo. */}
@@ -142,26 +160,42 @@ export function TagFront({ id, diameter, color, character, name = "", hole = fal
       {/* Las de stock usan una ilustración creada como cabeza aislada: no es un recorte del personaje con patas. */}
       <image href={animal.faceSrc} x="18" y="22" width="64" height="54" preserveAspectRatio="xMidYMid meet" />
     </>}
-    <g aria-label="BioNFC · Acercá tu celu" fill="#fff" stroke="#00000035" strokeWidth=".45" paintOrder="stroke">
-      <text x="47" y="83.5" textAnchor="middle" fontFamily="Plus Jakarta Sans, Poppins, Arial, sans-serif" fontSize="7.2" fontWeight="800" letterSpacing="-.25">BIONFC</text>
-      <g transform="translate(68.5 76.7)" fill="none" stroke="#fff" strokeWidth="1.2" strokeLinecap="round">
-        <path d="M 0,2.3 A 2.2,2.2 0 0 1 0,5.7" /><path d="M 2.2,1.1 A 4,4 0 0 1 2.2,6.9" /><path d="M 4.4,0 A 5.8,5.8 0 0 1 4.4,8" />
+    {/* Un poco más arriba que antes: "ACERCÁ TU CELU" quedaba fuera del margen de seguridad. */}
+    <g aria-label="BioNFC · Acercá tu celu" fill="#fff" {...EDGE} paintOrder="stroke">
+      <text x="47" y="82" textAnchor="middle" strokeWidth="1.4" fontFamily="Plus Jakarta Sans, Poppins, Arial, sans-serif" fontSize="7.2" fontWeight="800" letterSpacing="-.25">BIONFC</text>
+      <g transform="translate(68.5 75.2)" fill="none" strokeLinecap="round">
+        <g strokeWidth="2.4">{WAVES}</g>
+        <g stroke="#fff" strokeOpacity="1" strokeWidth="1.2">{WAVES}</g>
       </g>
-      <text x="50" y="91.3" textAnchor="middle" fontFamily="Poppins, Arial, sans-serif" fontSize="4.2" fontWeight="800" letterSpacing=".2">ACERCÁ TU CELU</text>
+      <text x="50" y="88.6" textAnchor="middle" strokeWidth="1" fontFamily="Poppins, Arial, sans-serif" fontSize="4.2" fontWeight="800" letterSpacing=".3">ACERCÁ TU CELU</text>
     </g>
   </svg>;
 }
 
 export function TagBack({ id, qr, diameter, color, design, hole = false }: { id: string; qr: string; diameter: number; color: string; design: TagBackStyle; hole?: boolean }) {
   const bottom = `tag-back-bottom-${id}`;
-  // Letras blancas con un borde oscuro marcado (mismo tamaño y grosor): resaltan sobre cualquier
-  // color, también los claros y los arcoíris. El ícono y la flechita llevan el mismo borde.
-  const edge = { stroke: "#151826", strokeOpacity: .72, strokeLinejoin: "round" as const };
+  // El mismo borde que el frente (EDGE): también en el ícono y la flechita.
+  const edge = EDGE;
   const ink = { fill: "#fff", ...edge, strokeWidth: 1.5, paintOrder: "stroke" as const, fontWeight: 800, fontFamily: "Poppins, Arial, sans-serif" };
   const phone = <>
     <rect x="0" y="0" width="4.6" height="7.6" rx="1.1" />
     <path d="M 6.7,2.3 A 2.1,2.1 0 0 1 6.7,5.3" /><path d="M 8.6,1.1 A 3.7,3.7 0 0 1 8.6,6.5" /><path d="M 10.5,0 A 5.3,5.3 0 0 1 10.5,7.6" />
   </>;
+  // Dorso nuevo: arriba "ESCANEÁ O ACERCÁ / TU CELU" (sin fondo, con el borde oscuro); en el medio
+  // el QR en su tarjeta blanca y, a su derecha y apenas más chico, el dibujo de la chapita con el
+  // celu acercándose (lo que el NFC no muestra) en su círculo blanco, así se ve en cualquier color;
+  // abajo, derecho, "Y AVISALE A MI FAMILIA".
+  if (design === "v2") return <svg className="ps-tag" viewBox="0 0 100 100" width={`${diameter}mm`} height={`${diameter}mm`} role="img" aria-label="Dorso de la chapita con QR">
+    <Background id={`tag-back-${id}`} color={color} />
+    {hole && <HoleMark />}
+    <text x="50" y="22" textAnchor="middle" fontSize="5.6" letterSpacing=".15" {...ink}>ESCANEÁ O ACERCÁ</text>
+    <text x="50" y="28.6" textAnchor="middle" fontSize="5.6" letterSpacing=".15" {...ink}>TU CELU</text>
+    <rect x="11" y="31.2" width="38" height="38" rx="5.5" fill="#fff" />
+    <image href={qr} x="12.5" y="32.7" width="35" height="35" />
+    <circle cx="69.5" cy="50.2" r="16" fill="#fff" />
+    <image href="/pet-tags/tap-phone-bold.png" x="57.3" y="39.4" width="24.4" height="21.5" />
+    <text x="50" y="77.4" textAnchor="middle" fontSize="5.2" letterSpacing=".1" {...ink}>Y AVISALE A MI FAMILIA</text>
+  </svg>;
   return <svg className="ps-tag" viewBox="0 0 100 100" width={`${diameter}mm`} height={`${diameter}mm`} role="img" aria-label="Dorso de la chapita con QR">
     <defs><path id={bottom} d="M 11.5,50 A 38.5,38.5 0 0 0 88.5,50" /></defs>
     <Background id={`tag-back-${id}`} color={color} />
@@ -179,7 +213,6 @@ export function TagBack({ id, qr, diameter, color, design, hole = false }: { id:
     {/* El QR lo más grande posible sin salir del margen de seguridad (2 mm del borde a 30 mm). */}
     <rect x="10" y="27" width="40" height="40" rx="5.5" fill="#fff" />
     <image href={qr} x="11.5" y="28.5" width="37" height="37" />
-    {RAINBOWS[color] && <rect x="53" y="32" width="41" height="36" rx="6" fill="#1d2130" fillOpacity=".38" />}
     {design !== "dog" && <polygon points="56,44 51.5,47.5 56,51" fill="#fff" {...edge} strokeWidth="1.2" paintOrder="stroke" />}
     <text x="58" y="39.5" fontSize="6.4" letterSpacing=".2" {...ink}>ESCANEÁ</text>
     <text x="58" y="47.3" fontSize="6.4" letterSpacing=".2" {...ink}>O ACERCÁ</text>

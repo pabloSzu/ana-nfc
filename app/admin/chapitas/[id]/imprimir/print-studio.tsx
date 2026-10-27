@@ -3,7 +3,7 @@
 // El estudio de impresión de un lote: a la izquierda las opciones, a la derecha las páginas tal
 // como salen. Se imprime con el navegador ("Guardar como PDF" para llevar a la imprenta).
 //  · Tarjetas: 5 diseños (card-designs.tsx), varios tamaños, frente y dorso, en dos formatos:
-//     - Hoja A4: varias por hoja, para imprimir en casa. Los dorsos van espejados en su hoja: al
+//     - Hoja A4 (o A3): varias por hoja, para imprimir en casa. Los dorsos van espejados en su hoja: al
 //       imprimir doble faz (girando por el lado largo) cada dorso cae detrás de su frente.
 //     - Una por página: cada cara en su página, con 2 mm de sangrado y marcas de corte. Es como
 //       la piden las imprentas (ellas arman las planchas) y como se importa en Canva.
@@ -14,8 +14,9 @@ import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } f
 import Link from "next/link";
 import { LuPrinter } from "react-icons/lu";
 import { CardBack, CardFront, DESIGNS, unit, unitNumber, type DesignId } from "./card-designs";
-import { cleanTagPrint, TagBack, TagFront, TAG_CHARACTERS, TAG_COLORS, tagCharacterFor, type TagCharacterChoice, type TagCharacterId, type TagPrint } from "./tag-face";
+import { cleanTagPrint, TagBack, TagFront, TAG_CATS, TAG_COLORS, TAG_DOGS, tagCharacterFor, type TagCharacterChoice, type TagCharacterId, type TagPrint } from "./tag-face";
 import { saveTagPrint } from "./actions";
+import CharacterPicker from "./character-picker";
 
 export type PrintItem = { id: string; number: number; code: string; activationQr: string; tagQr: string; print: TagPrint };
 type Mode = "cards" | "qr";
@@ -38,6 +39,8 @@ type Settings = {
   tagCharacters: Record<string, TagCharacterId>;
   tagColors: Record<string, string>;
   tagHole: boolean;
+  tagLayout: "v1" | "v2";
+  paper: Paper;
 };
 
 const SIZES = [
@@ -46,7 +49,7 @@ const SIZES = [
   { id: "100x70", label: "Grande · 100×70 mm", width: 100, height: 70 },
   { id: "custom", label: "Otra medida", width: 85, height: 55 },
 ];
-const DEFAULTS: Settings = { design: "playful", size: "85x55", width: 85, height: 55, sides: "both", output: "single", cutLines: true, qrSize: 30, qrNumber: true, qrColor: "mix", tagSides: "both", tagOutput: "pairs", tagLayoutVersion: 2, tagCharacter: "mix", tagNames: {}, tagCharacters: {}, tagColors: {}, tagHole: false };
+const DEFAULTS: Settings = { design: "playful", size: "85x55", width: 85, height: 55, sides: "both", output: "single", cutLines: true, qrSize: 30, qrNumber: true, qrColor: "mix", tagSides: "both", tagOutput: "pairs", tagLayoutVersion: 2, tagCharacter: "mix", tagNames: {}, tagCharacters: {}, tagColors: {}, tagHole: false, paper: "A4", tagLayout: "v1" };
 const STORAGE_KEY = "bionfc-print-settings";
 // Lo de cada unidad no va al navegador: viene de la base (PrintItem.print).
 const UNIT_KEYS = ["tagNames", "tagCharacters", "tagColors"];
@@ -57,9 +60,12 @@ const unitsOf = (entries: { id: string; print: TagPrint }[]) => ({
   tagCharacters: Object.fromEntries(entries.filter((entry) => entry.print.character).map((entry) => [entry.id, entry.print.character!])) as Record<string, TagCharacterId>,
   tagColors: Object.fromEntries(entries.filter((entry) => entry.print.color).map((entry) => [entry.id, entry.print.color!])),
 });
-// Hoja A4 con 7 mm de margen (casi todas las impresoras dejan ~5 mm sin imprimir): así entran
+// Hoja A4 (o A3, para imprenta o impresora grande) con 7 mm de margen (casi todas las impresoras
+// dejan ~5 mm sin imprimir): así en A4 entran
 // 10 tarjetas personales por hoja, como en las planchas de imprenta.
-const PAGE = { width: 210, height: 297, margin: 7 };
+const PAPERS = { A4: { width: 210, height: 297 }, A3: { width: 297, height: 420 } } as const;
+type Paper = keyof typeof PAPERS;
+const PAGE_MARGIN = 7;
 // Una por página: 2 mm de sangrado y 6 mm alrededor para las marcas de corte.
 const BLEED = 2;
 const MARKS = 6;
@@ -149,6 +155,8 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
   // La chapita entera (el círculo), en mm. Desde 28 mm: más chica, el QR no se lee bien impreso.
   const qrSize = clamp(settings.qrSize, 28, 45);
   const single = mode === "cards" && settings.output === "single";
+  const paper: Paper = settings.paper in PAPERS ? settings.paper : "A4";
+  const PAGE = { ...PAPERS[paper], margin: PAGE_MARGIN };
 
   // Cuántas entran por hoja.
   const cardGap = 2;
@@ -232,18 +240,18 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
   const tagArtwork = (item: PrintItem, side: "front" | "back", suffix: string) => <div className={`ps-tag-ring${settings.cutLines ? " has-cut" : ""}`}>
     {side === "front"
       ? <TagFront id={`${item.id}-${suffix}-front`} diameter={qrSize} color={colorOf(item)} character={characterOf(item)} name={settings.tagNames[item.id] || ""} hole={settings.tagHole} />
-      : <TagBack id={`${item.id}-${suffix}-back`} qr={item.tagQr} diameter={qrSize} color={colorOf(item)} design="classic" hole={settings.tagHole} />}
+      : <TagBack id={`${item.id}-${suffix}-back`} qr={item.tagQr} diameter={qrSize} color={colorOf(item)} design={settings.tagLayout === "v2" ? "v2" : "classic"} hole={settings.tagHole} />}
   </div>;
   const tagCell = (item: PrintItem, side: "front" | "back") => <button type="button" className={`ps-tag-cell ps-selectable${previewItem?.id === item.id ? " is-selected" : ""}`} onClick={() => selectItem(item.id)} aria-label={`Seleccionar chapita con código ${item.code}`}>
     {tagArtwork(item, side, "sheet")}
     {settings.qrNumber && <span className="ps-tag-number">{unit(item.number)}</span>}
   </button>;
 
-  return <div className="ps">
+  return <div className={`ps is-${paper.toLowerCase()}`} style={{ "--page-w": `${PAGE.width}mm`, "--page-h": `${PAGE.height}mm` } as CSSProperties}>
     {/* eslint-disable-next-line @next/next/no-page-custom-font -- solo para esta hoja de impresión */}
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@800&family=Poppins:wght@600;700;800&display=swap" />
     {/* El tamaño de página depende del formato elegido. */}
-    <style>{`@media print { @page { size: ${single ? `${singlePage.width}mm ${singlePage.height}mm` : "A4"}; margin: 0; } }`}</style>
+    <style>{`@media print { @page { size: ${single ? `${singlePage.width}mm ${singlePage.height}mm` : paper}; margin: 0; } }`}</style>
     <aside className="ps-panel">
       <Link className="ps-back" href={`/admin/chapitas/${batchId}`}>← Volver al lote</Link>
       <h1>{batchName}</h1>
@@ -277,7 +285,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
         </fieldset>
         <fieldset className="ps-group"><legend>Formato</legend>
           <label className="ps-check"><input type="radio" checked={settings.output === "single"} onChange={() => update({ output: "single" })} />Una por página, con sangrado (imprenta o Canva)</label>
-          <label className="ps-check"><input type="radio" checked={settings.output === "sheet"} onChange={() => update({ output: "sheet" })} />Hoja A4, {perCardPage} por hoja (imprimir en casa)</label>
+          <label className="ps-check"><input type="radio" checked={settings.output === "sheet"} onChange={() => update({ output: "sheet" })} />Hoja {paper}, {perCardPage} por hoja (imprimir en casa)</label>
         </fieldset>
       </> : <>
       <fieldset className="ps-group"><legend>Impresión de chapitas</legend>
@@ -296,6 +304,10 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
             <button type="button" className={settings.tagSides === "back" ? "is-on" : ""} onClick={() => update({ tagSides: "back" })}>Sólo dorso</button>
           </div>}
         </details>
+        <span className="ps-colors-label">Diseño</span>
+        <div className="ps-tag-styles">
+          {([["v1", "Actual"], ["v2", "Nuevo"]] as const).map(([value, label]) => <button key={value} type="button" className={(settings.tagLayout || "v1") === value ? "is-on" : ""} onClick={() => update({ tagLayout: value })}>{label}</button>)}
+        </div>
         <label className="ps-check"><input type="checkbox" checked={settings.tagHole} onChange={(event) => update({ tagHole: event.target.checked })} />Con agujero (marca un puntito para perforar)</label>
         {settings.tagOutput === "duplex" && <label className="ps-check"><input type="checkbox" checked={settings.qrNumber} onChange={(event) => update({ qrNumber: event.target.checked })} />Mostrar el N° de unidad debajo de cada chapita</label>}
       </fieldset>
@@ -304,8 +316,13 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
         <summary>Diseño automático del lote</summary>
         <label>Animal
           <select value={settings.tagCharacter} onChange={(event) => update({ tagCharacter: event.target.value as TagCharacterChoice })}>
-            <option value="mix">Mezcla de perros y gatos</option>
-            {TAG_CHARACTERS.map((character) => <option key={character.id} value={character.id}>{character.label}</option>)}
+            <optgroup label="Mezcla">
+              <option value="mix">Perros y gatos</option>
+              <option value="mix-dogs">Sólo perros</option>
+              <option value="mix-cats">Sólo gatos</option>
+            </optgroup>
+            <optgroup label="Todas iguales · perro">{TAG_DOGS.map((character) => <option key={character.id} value={character.id}>{character.label}</option>)}</optgroup>
+            <optgroup label="Todas iguales · gato">{TAG_CATS.map((character) => <option key={character.id} value={character.id}>{character.label}</option>)}</optgroup>
           </select>
         </label>
         <span className="ps-colors-label">Colores</span>
@@ -327,13 +344,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
         {previewItem && <div className="ps-unit-editor">
           <label>Nombre <small>Opcional · vacío para stock</small><input value={settings.tagNames[previewItem.id] || ""} maxLength={14} placeholder="Ej: Luna" onChange={(event) => setTagName(previewItem.id, event.target.value)} /></label>
           <span className="ps-editor-label">Animal</span>
-          <div className="ps-character-grid">
-            <button type="button" className={!settings.tagCharacters[previewItem.id] ? "is-on" : ""} onClick={() => setTagCharacter(previewItem.id, "")}><span>Auto</span></button>
-            {TAG_CHARACTERS.map((character) => <button type="button" key={character.id} title={character.label} aria-label={character.label} className={settings.tagCharacters[previewItem.id] === character.id ? "is-on" : ""} onClick={() => setTagCharacter(previewItem.id, character.id)}>
-              {/* eslint-disable-next-line @next/next/no-img-element -- miniaturas locales para impresión */}
-              <img src={character.src} alt="" />
-            </button>)}
-          </div>
+          <CharacterPicker value={settings.tagCharacters[previewItem.id] || ""} auto={tagCharacterFor(settings.tagCharacter, previewItem.number - 1)} color={colorOf(previewItem)} onChange={(id) => setTagCharacter(previewItem.id, id)} />
           <span className="ps-editor-label">Color</span>
           <div className="ps-colors ps-unit-colors">
             <button type="button" className={!settings.tagColors[previewItem.id] ? "is-on" : ""} onClick={() => setTagColor(previewItem.id, "")} title="Automático"><span className="is-auto">A</span></button>
@@ -344,6 +355,13 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
       </section>
       <small className="ps-muted">El dorso conserva siempre el diseño original y el QR público. El código privado va sólo en la tarjeta de activación.</small>
       </>}
+
+      {!single && <fieldset className="ps-group"><legend>Hoja</legend>
+        <div className="ps-tag-styles">
+          {(Object.keys(PAPERS) as Paper[]).map((size) => <button key={size} type="button" className={paper === size ? "is-on" : ""} onClick={() => update({ paper: size })}>{size} · {PAPERS[size].width}×{PAPERS[size].height} mm</button>)}
+        </div>
+        <small className="ps-muted">{paper === "A3" ? "A3 entra el doble por hoja: para imprenta o impresora grande." : "A4 es la de cualquier impresora."} Al imprimir, elegí el mismo tamaño de papel.</small>
+      </fieldset>}
 
       {!single && <fieldset className="ps-group"><legend>Corte</legend>
         <label className="ps-check"><input type="checkbox" checked={settings.cutLines} onChange={(event) => update({ cutLines: event.target.checked })} />Líneas de corte punteadas</label>
@@ -369,7 +387,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
         <div className="ps-tag-overview-head"><div><small>VISTA PREVIA</small><h2>{unit(previewItem.number)} · {previewItem.code}</h2></div><span>{settings.tagNames[previewItem.id]?.trim() || "Sin nombre · stock"}</span></div>
         <div className="ps-tag-overview-pair">
           <figure><TagFront id={`preview-${previewItem.id}-front`} diameter={60} color={colorOf(previewItem)} character={characterOf(previewItem)} name={settings.tagNames[previewItem.id] || ""} hole={settings.tagHole} /><figcaption>Frente</figcaption></figure>
-          <figure><TagBack id={`preview-${previewItem.id}-back`} qr={previewItem.tagQr} diameter={60} color={colorOf(previewItem)} design="classic" hole={settings.tagHole} /><figcaption>Dorso original</figcaption></figure>
+          <figure><TagBack id={`preview-${previewItem.id}-back`} qr={previewItem.tagQr} diameter={60} color={colorOf(previewItem)} design={settings.tagLayout === "v2" ? "v2" : "classic"} hole={settings.tagHole} /><figcaption>Dorso original</figcaption></figure>
         </div>
       </section>}
       {single ? items.flatMap((item) => [

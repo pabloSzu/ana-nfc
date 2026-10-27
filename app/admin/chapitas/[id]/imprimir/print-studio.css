@@ -32,10 +32,12 @@
 .ps-pair { display: grid; gap: 28px; }
 @media screen and (min-width: 1200px) {
   /* En pantalla se ven las dos hojas juntas; al imprimir vuelven a A4 real, una por página. */
-  .ps-pair.ps-tag-pages { grid-template-columns: repeat(2, 210mm); gap: 22px; zoom: .72; }
+  .ps-pair.ps-tag-pages { grid-template-columns: repeat(2, var(--page-w, 210mm)); gap: 22px; zoom: .72; }
 }
 .ps-empty { padding: 40px; color: #6b7080; }
-.ps-page { position: relative; box-sizing: border-box; width: 210mm; height: 297mm; padding: 7mm; overflow: hidden; background: #fff; box-shadow: 0 6px 24px #0002; }
+.ps-page { position: relative; box-sizing: border-box; width: var(--page-w, 210mm); height: var(--page-h, 297mm); padding: 7mm; overflow: hidden; background: #fff; box-shadow: 0 6px 24px #0002; }
+/* La A3 en pantalla se ve achicada para que entre; al imprimir sale a tamaño real. */
+@media screen { .ps.is-a3 .ps-page { zoom: .72; } }
 .ps-page-label { position: absolute; top: 2mm; left: 7mm; color: #a0a4b0; font: 700 2.6mm Arial, sans-serif; }
 .ps-grid { display: grid; justify-content: center; align-content: start; }
 .ps-cell { position: relative; }
@@ -213,12 +215,8 @@
 .ps-unit-editor { display: grid; gap: 9px; padding: 11px 12px 12px; border-top: 1px solid #e7e9ef; background: #f7f8fb; }
 .ps-unit-editor > label { display: grid; gap: 5px; color: #343947; font-size: 12px; font-weight: 800; }
 .ps-unit-editor > label small { color: #858b98; font-size: 10px; font-weight: 600; }
-.ps-unit-editor input { text-transform: uppercase; width: 100%; min-height: 38px; padding: 0 10px; border: 1px solid #d8dce5; border-radius: 9px; background: #fff; font: inherit; font-size: 13px; }
+.ps-unit-editor > label input { text-transform: uppercase; width: 100%; min-height: 38px; padding: 0 10px; border: 1px solid #d8dce5; border-radius: 9px; background: #fff; font: inherit; font-size: 13px; }
 .ps-editor-label { color: #555b69; font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
-.ps-character-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
-.ps-character-grid button { display: grid; place-items: center; aspect-ratio: 1; min-width: 0; overflow: hidden; padding: 3px; border: 1.5px solid #dfe2e8; border-radius: 9px; background: #fff; color: #656b79; font: inherit; font-size: 9px; font-weight: 800; cursor: pointer; }
-.ps-character-grid button.is-on { border-color: #4b6bff; background: #eef2ff; box-shadow: 0 0 0 1px #4b6bff18; }
-.ps-character-grid img { width: 100%; height: 100%; object-fit: contain; }
 .ps-unit-colors { gap: 4px; }
 .ps-unit-colors button { width: 31px; height: 31px; }
 .ps-unit-colors button > span { width: 22px; height: 22px; }
@@ -259,8 +257,6 @@
   .ps-unit-picker { display: flex; max-height: none; overflow-x: auto; overflow-y: hidden; padding-bottom: 8px; scrollbar-width: thin; }
   .ps-unit-picker button { flex: 0 0 132px; }
   .ps-unit-editor { gap: 7px; padding: 9px 11px 10px; }
-  .ps-character-grid { grid-template-columns: repeat(9, 1fr); }
-  .ps-character-grid button { max-height: 42px; }
   .ps-help { padding: 10px; }
 }
 
@@ -279,3 +275,36 @@
 .ps-sheet-foot { position: absolute; right: 7mm; bottom: 2mm; left: 7mm; display: flex; align-items: flex-end; justify-content: space-between; gap: 4mm; color: #5b6170; font: 700 2.3mm/1 Arial, sans-serif; white-space: nowrap; }
 .ps-ruler { display: inline-flex; align-items: flex-end; gap: 2mm; }
 .ps-ruler i { box-sizing: border-box; display: block; width: 50mm; height: 1.8mm; border: .3mm solid #1d2130; border-top: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+
+/* Elegir el animal (character-picker.tsx): el elegido en el panel y el modal con perros y gatos. */
+.ps-animal-face { display: grid; place-items: end center; flex: none; overflow: hidden; border-radius: 50%; box-shadow: inset 0 0 0 1px #0000001a; }
+.ps-animal-face img { width: 88%; height: 88%; object-fit: contain; }
+.ps-animal-trigger { display: flex; align-items: center; gap: 11px; width: 100%; padding: 7px 12px 7px 7px; border: 1.5px solid #dfe2e8; border-radius: 14px; background: #fff; color: #1d2130; font: inherit; text-align: left; cursor: pointer; transition: border-color .15s ease; }
+.ps-animal-trigger:hover { border-color: #4b6bff; }
+.ps-animal-trigger > span:nth-child(2) { display: grid; flex: 1; min-width: 0; }
+.ps-animal-trigger b { overflow: hidden; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
+.ps-animal-trigger small { color: #7a8090; font-size: 11px; font-weight: 600; }
+.ps-animal-trigger em { padding: 6px 11px; border-radius: 99px; background: #eef2ff; color: #3446c9; font-size: 12px; font-style: normal; font-weight: 800; }
+.ps-animal-dialog { width: min(760px, calc(100vw - 32px)); max-height: min(720px, calc(100vh - 40px)); padding: 0; border: 0; border-radius: 24px; background: #fff; color: #1d2130; box-shadow: 0 30px 80px #10132a40; }
+.ps-animal-dialog::backdrop { background: #10132a73; backdrop-filter: blur(3px); }
+.ps-animal-box { display: grid; grid-template-rows: auto auto minmax(0, 1fr); max-height: inherit; }
+.ps-animal-box header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 20px 22px 12px; }
+.ps-animal-box header div { display: grid; gap: 3px; }
+.ps-animal-box header strong { font-size: 20px; }
+.ps-animal-box header small { color: #6b7080; font-size: 13px; }
+.ps-animal-close { display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 50%; background: #f1f2f5; color: #4b5060; font-size: 15px; cursor: pointer; }
+.ps-animal-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 0 22px 14px; border-bottom: 1px solid #eceef2; }
+.ps-animal-tabs { display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: #f1f2f5; }
+.ps-animal-tabs button { display: flex; align-items: center; gap: 7px; min-height: 36px; padding: 0 14px; border: 0; border-radius: 9px; background: none; color: #4b5060; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
+.ps-animal-tabs button span { padding: 1px 7px; border-radius: 99px; background: #0000000f; font-size: 11.5px; }
+.ps-animal-tabs button.is-on { background: #fff; color: #1d2130; box-shadow: 0 1px 4px #0002; }
+.ps-animal-tools input { flex: 1; min-width: 180px; max-width: 280px; min-height: 40px; padding: 0 12px; border: 1px solid #dfe2e8; border-radius: 11px; font: inherit; font-size: 14px; }
+.ps-animal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; overflow-y: auto; padding: 16px 22px 22px; }
+.ps-animal-option { display: grid; justify-items: center; align-content: start; gap: 6px; padding: 12px 8px 10px; border: 1.5px solid #e4e6ec; border-radius: 16px; background: #fff; color: #1d2130; font: inherit; cursor: pointer; transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease; }
+.ps-animal-option:hover { border-color: #4b6bff; transform: translateY(-2px); box-shadow: 0 8px 18px #1d21301a; }
+.ps-animal-option.is-on { border-color: #4b6bff; background: #f2f5ff; box-shadow: 0 0 0 3px #4b6bff26; }
+.ps-animal-option b { font-size: 13px; line-height: 1.2; text-align: center; }
+.ps-animal-option small { margin-top: -4px; color: #7a8090; font-size: 11px; }
+.ps-animal-option.is-auto { border-style: dashed; }
+.ps-animal-empty { grid-column: 1 / -1; margin: 20px 0; color: #6b7080; text-align: center; }
