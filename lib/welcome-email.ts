@@ -1,5 +1,6 @@
 import "server-only";
 import { getSiteOrigin } from "@/lib/site-url";
+import { CONTACT_EMAIL } from "@/lib/terms";
 
 // Mail de bienvenida: se manda una sola vez, cuando el dueño publica su chapita por primera vez
 // (app/mi/chapita/[id]/actions.ts). Queda en su casilla para el día que la mascota se pierda: ahí
@@ -39,7 +40,7 @@ export async function sendWelcomeEmail({ to, petName, petSlug }: { to: string; p
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: FROM, to, reply_to: "contacto.bionfc@gmail.com", subject: `La chapita de ${petName.trim() || "tu mascota"} ya funciona 🐾`, html, text }),
+      body: JSON.stringify({ from: FROM, to, reply_to: CONTACT_EMAIL, subject: `La chapita de ${petName.trim() || "tu mascota"} ya funciona 🐾`, html, text }),
     });
     if (!response.ok) console.error("Mail de bienvenida: Resend respondió", response.status, await response.text());
   } catch (error) {

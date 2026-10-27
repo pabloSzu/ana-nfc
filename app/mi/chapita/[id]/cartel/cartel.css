@@ -1,0 +1,37 @@
+/* El cartel de mascota perdida (page.tsx). En pantalla, la hoja se ve al ancho disponible; al
+   imprimir, mide exactamente un A4. Todo está en unidades del ancho de la hoja (cqw), así se ve
+   igual en el celular y en el papel. */
+.poster-page { display: grid; justify-items: center; gap: 18px; width: min(100%, 640px); margin: 0 auto; padding: 8px 16px 32px; }
+.poster-toolbar { display: grid; gap: 10px; width: 100%; }
+.poster-toolbar > a { justify-self: start; color: #7a5a44; font-size: 14px; font-weight: 700; text-decoration: none; }
+.poster-toolbar > div { display: grid; gap: 2px; }
+.poster-toolbar strong { font-size: 22px; }
+.poster-toolbar small { color: #7a5a44; font-size: 13.5px; line-height: 1.45; }
+.poster-print { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; border: 0; border-radius: 16px; background: linear-gradient(135deg, #ea874d, #cf6125); color: #fff; font: inherit; font-size: 16px; font-weight: 800; cursor: pointer; box-shadow: 0 10px 22px #cf612540; }
+.poster-print svg { width: 19px; height: 19px; }
+.poster-hint { margin: 0; color: #8a6a52; font-size: 12.5px; line-height: 1.5; }
+
+.poster { container-type: inline-size; display: grid; grid-template-rows: 44% auto auto 1fr; grid-template-columns: minmax(0, 1fr); width: 100%; aspect-ratio: 210 / 297; overflow: hidden; background: #fff; color: #1d1410; font-family: "Poppins", system-ui, sans-serif; box-shadow: 0 10px 30px #2d1d1226; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.poster-photo { position: relative; overflow: hidden; display: grid; place-items: center; background: #f1e4d8; }
+.poster-photo > span { font-size: 22cqw; opacity: .5; }
+.poster-red { padding: 2.2cqw 4cqw; background: #d92d20; color: #fff; text-align: center; font-size: 14cqw; font-weight: 900; line-height: 1; letter-spacing: -.04em; }
+.poster-name { display: flex; align-items: baseline; justify-content: center; gap: 2.4cqw; padding: 2.4cqw 5cqw 0; }
+.poster-name small { font-size: 3.6cqw; font-weight: 700; color: #7d6656; }
+.poster-name b { overflow: hidden; font-size: 10cqw; font-weight: 900; line-height: 1.05; letter-spacing: -.04em; text-overflow: ellipsis; white-space: nowrap; }
+.poster-info { display: grid; grid-template-columns: minmax(0, 1fr) 25cqw; gap: 4cqw; align-items: center; padding: 2.4cqw 5cqw 4cqw; }
+.poster-info p { margin: 0 0 1cqw; font-size: 3cqw; font-weight: 600; line-height: 1.4; }
+.poster-info .poster-lead { font-size: 3.8cqw; font-weight: 800; line-height: 1.25; }
+.poster-reward { color: #b42318; font-size: 3.6cqw !important; font-weight: 900 !important; }
+.poster-wa { display: flex; align-items: center; gap: 1.6cqw; margin-top: 1.4cqw !important; color: #14843f; font-size: 5.4cqw !important; font-weight: 900 !important; letter-spacing: -.02em; white-space: nowrap; }
+.poster-wa svg { flex: none; width: 1em; height: 1em; fill: currentColor; }
+.poster-qr { display: grid; justify-items: center; gap: 1.2cqw; text-align: center; }
+.poster-qr img { width: 25cqw; height: 25cqw; }
+.poster-qr small { font-size: 2.3cqw; font-weight: 700; line-height: 1.25; }
+
+@media print {
+  @page { size: A4; margin: 0; }
+  .mi-top, .mi-footer, .poster-toolbar { display: none !important; }
+  .mi-shell { background: #fff !important; min-height: 0; }
+  .mi-content, .poster-page { width: auto; margin: 0; padding: 0; }
+  .poster { width: 210mm; height: 297mm; aspect-ratio: auto; box-shadow: none; }
+}

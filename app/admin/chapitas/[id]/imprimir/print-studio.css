@@ -151,3 +151,27 @@
 .pc-park.pc-back .pc-deco { color: #ffffff1f; }
 .pc-park.pc-back .pc-deco span:nth-child(2) { color: #f2d64b55; }
 .pc-park li b { background: #f2d64b; color: #20441f; }
+
+/* La cara de la chapita (tag-face.tsx): círculos juntos; la línea de corte, un círculo punteado. */
+.ps-tag-cell { display: grid; justify-items: center; align-content: start; }
+.ps-tag-ring { position: relative; display: grid; place-items: center; }
+.ps-tag { display: block; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.ps-tag-ring.has-cut::after { content: ""; position: absolute; inset: -.6mm; border: .2mm dashed #b9bdc8; border-radius: 50%; pointer-events: none; }
+.ps-colors-label { font-size: 13px; font-weight: 700; }
+.ps-colors { display: flex; gap: 8px; }
+.ps-colors button { display: grid; place-items: center; width: 38px; height: 38px; padding: 0; border: 2px solid transparent; border-radius: 50%; background: none; cursor: pointer; }
+.ps-colors button.is-on { border-color: #1d2130; }
+.ps-colors span { width: 28px; height: 28px; border-radius: 50%; box-shadow: inset 0 0 0 1px #0002; }
+
+.ps-tag-number { margin-top: .4mm; color: #9aa0ad; font: 700 2.4mm/1 Arial, sans-serif; }
+.ps-tag-styles { display: flex; flex-wrap: wrap; gap: 6px; }
+.ps-tag-styles button { min-height: 34px; padding: 0 12px; border: 1.5px solid #e4e6ec; border-radius: 99px; background: #fff; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.ps-tag-styles button.is-on { border-color: #1d2130; background: #1d2130; color: #fff; }
+
+/* Color propio: un círculo con "+" que abre el selector de colores. */
+.ps-color-custom { position: relative; display: grid; place-items: center; width: 38px; height: 38px; border: 2px solid transparent; border-radius: 50%; cursor: pointer; }
+.ps-color-custom.is-on { border-color: #1d2130; }
+.ps-color-custom span { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: conic-gradient(#ff4f6d, #ffd23f, #3ecf8e, #3aa0ff, #8a5cf7, #ff4f6d); color: #fff; font-size: 18px; font-weight: 800; box-shadow: inset 0 0 0 1px #0002; text-shadow: 0 1px 2px #0006; }
+.ps-color-custom input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.ps-colors { flex-wrap: wrap; }
+@media print { .ps-tag-hole { display: none; } }

@@ -36,9 +36,9 @@ export default async function PrintBatch({ params, searchParams }: { params: Pro
       number: tag.tag_number,
       code: code ? formatCode(code) : "",
       activationQr: code ? await qr(`${origin}${activationPath(code)}`) : "",
-      // El de la chapita, con el margen blanco que necesitan los celulares para leerlo (en la
-      // tarjeta ese margen ya lo da el recuadro blanco del diseño).
-      tagQr: await QRCode.toDataURL(`${origin}/go/${tag.id}?s=qr`, { width: 480, margin: 2, errorCorrectionLevel: "M", color: { dark: "#1d1410", light: "#ffffff" } }),
+      // El de la chapita: va dentro de un cuadrado blanco (tag-face.tsx), que ya le da el margen
+      // que necesitan los celulares para leerlo.
+      tagQr: await QRCode.toDataURL(`${origin}/go/${tag.id}?s=qr`, { width: 480, margin: 1, errorCorrectionLevel: "M", color: { dark: "#1d1410", light: "#ffffff" } }),
     };
   }));
 

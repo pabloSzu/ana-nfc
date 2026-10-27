@@ -6,7 +6,7 @@
 //    Compartir.
 //  · SpreadScreen: "Ahora, difundilo", al activar el modo perdido.
 import Link from "next/link";
-import { LuPawPrint } from "react-icons/lu";
+import { LuPawPrint, LuPrinter } from "react-icons/lu";
 import PetShareButton, { PetSharePanel } from "@/components/pet-share-button";
 import { cleanPhoneInput, petGendered, petHasContact, petImageVersion, petIsFemale, petPhoneProblem, petPhotoStyle, type PetFamily } from "@/lib/pet";
 import { AFTER_STEPS, useEditor, type AfterStep } from "./pet-editor-context";
@@ -162,12 +162,17 @@ export function AfterScreen({ step }: { step: AfterStep }) {
 // Modo perdido recién activado: a difundirlo. Es cuando más importa y, si no se le muestra acá,
 // el dueño no se entera de que puede.
 export function SpreadScreen() {
-  const { landing, savedPet, pet, name, go } = useEditor();
+  const { landing, isOwner, savedPet, pet, name, go } = useEditor();
   return <section className="pet-wizard pet-spread">
     <div className="pet-spread-head"><span aria-hidden="true">🚨</span><div><strong>Aviso de perdido activado</strong><small>Su página ya muestra el aviso rojo.</small></div></div>
     <h2>Ahora, difundilo</h2>
     <p className="pet-wizard-lead">Las primeras horas son las que más importan. Compartilo en todos lados: la imagen lleva la dirección de su página para que te avisen.</p>
     <PetSharePanel path={`/mascota/${landing.slug}`} petName={name} lost lostZone={pet.lostZone} female={petIsFemale(pet)} version={petImageVersion(savedPet, name, landing.photoUrl, landing.slug)} />
+    {/* El cartel A4 para pegar en la calle (solo el dueño: la página es de su panel). */}
+    {isOwner && <Link className="pet-share-option" href={`/mi/chapita/${landing.id}/cartel`}>
+      <span className="pet-share-thumb is-icon"><LuPrinter aria-hidden="true" /></span>
+      <span><strong>Cartel para imprimir</strong><small>Hoja A4 con su foto, tu WhatsApp y el QR. Para veterinarias, kioscos y postes.</small></span>
+    </Link>}
     <div className="pet-spread-tips">
       <strong>Además</strong>
       <ul>

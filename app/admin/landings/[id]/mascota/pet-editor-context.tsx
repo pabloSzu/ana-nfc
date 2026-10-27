@@ -5,6 +5,9 @@
 import { createContext, useContext } from "react";
 import type { PetData, PetFamily, PetSaveResult } from "@/lib/pet";
 
+// Solo el dueño (en la compu): su email (el menú de la cuenta) y el dominio para mostrar su link.
+export type EditorOwner = { email: string; host: string };
+
 export type Panel = "pet" | "family" | "ficha" | "look" | "lost";
 // Pasos opcionales después de publicar por primera vez.
 // Solo cosas para completar: qué hacer si se pierde se muestra en Mis chapitas, junto al botón.
@@ -38,6 +41,7 @@ export type EditorLanding = { id: string; slug: string; name: string; photoUrl: 
 export type Editor = {
   landing: EditorLanding;
   isOwner: boolean;
+  owner: EditorOwner | null;
   // Lo último guardado (con eso se compara, y "Cancelar" vuelve a eso).
   savedPet: PetData;
   pet: PetData;

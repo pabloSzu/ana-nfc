@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { parsePet } from "@/lib/pet";
+import { getSiteOrigin } from "@/lib/site-url";
 import Toast from "@/components/toast";
 import PetEditor from "@/app/admin/landings/[id]/mascota/pet-editor";
 import { saveMyPet } from "./actions";
@@ -19,6 +20,8 @@ export default async function OwnerPetPage({ params }: { params: Promise<{ id: s
   if (!landing || landing.business_type !== "pet") notFound();
   const { data: member } = await supabase.from("client_members").select("client_id").eq("client_id", landing.client_id).eq("user_id", userId).maybeSingle();
   if (!member) notFound();
+  // Para la compu: su cuenta arriba y el link de su página.
+  const email = (claims?.claims as { email?: string } | undefined)?.email || "";
   return <>
     <Suspense fallback={null}><Toast /></Suspense>
     <PetEditor
@@ -26,6 +29,7 @@ export default async function OwnerPetPage({ params }: { params: Promise<{ id: s
       landing={{ id: landing.id, slug: landing.pet_slug || landing.slug, name: landing.business_name || "", photoUrl: landing.logo_url || "", published: Boolean(landing.published), blocked: Boolean(landing.blocked_at) }}
       initialPet={parsePet(landing.button_style)}
       saveAction={saveMyPet}
+      owner={{ email, host: new URL(getSiteOrigin()).host }}
     />
   </>;
 }

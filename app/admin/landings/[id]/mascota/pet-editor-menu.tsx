@@ -7,13 +7,16 @@
 //  · PanelScreen: una opción, con "Cancelar · Guardar" fijo arriba, como al editar un contacto en
 //    el celular. En modo perdido, arriba solo "Cancelar": la acción es el botón grande de abajo.
 import { useState } from "react";
+import CopyButton from "@/components/copy-button";
+import Link from "next/link";
+import { LuPrinter } from "react-icons/lu";
 import PetShareButton from "@/components/pet-share-button";
-import { PET_ABOUT_FIELDS, PET_FAMILY_MAX, PET_HEALTH_FIELDS, cleanPhoneInput, formatReward, petGendered, petHasContact, petImageVersion, petIsFemale, petLook, petPhotoStyle, petRows } from "@/lib/pet";
+import { PET_ABOUT_FIELDS, PET_FAMILY_MAX, PET_HEALTH_FIELDS, cleanPhoneInput, formatReward, petGendered, petHasContact, petImageVersion, petIsFemale, petLook, petPhotoStyle, petRows, phoneForInput } from "@/lib/pet";
 import { TITLES, useEditor, type Panel } from "./pet-editor-context";
 import { Choice, Field, LookGrid, MiniPreview, PhoneStatus } from "./pet-editor-fields";
 
 export function MenuScreen() {
-  const { landing, isOwner, pet, name, photoUrl, dirty, saving, go, save, publish } = useEditor();
+  const { landing, isOwner, owner, pet, name, photoUrl, dirty, saving, go, save, publish, startTour } = useEditor();
   const hasContact = petHasContact(pet);
   const fichaCount = petRows(pet.about, PET_ABOUT_FIELDS).length + petRows(pet.health, PET_HEALTH_FIELDS).length + (pet.finder.trim() ? 1 : 0);
   const canPublish = isOwner && !landing.published && !landing.blocked && Boolean(name.trim()) && hasContact;
@@ -25,7 +28,22 @@ export function MenuScreen() {
   ];
   // Diseño: el colorcito del elegido (dice más que el nombre).
   const look = petLook(pet.look);
+  // En la compu, cada opción muestra un adelanto de lo que tiene (en el celular no entra).
+  const contacts = pet.family.filter((member) => member.phone.trim()).map((member) => `${member.name.trim() ? `${member.name.trim()} ` : ""}${phoneForInput(member.phone)}`).join(" · ");
+  const fichaPreview = [pet.about.sex, pet.about.size, pet.about.breed, pet.health.neutered === "Sí" ? petGendered(pet, "Castrado", "Castrada") : ""].filter(Boolean).join(" · ");
+  const preview: Record<Exclude<Panel, "lost">, string> = {
+    pet: `${name.trim() || "Sin nombre"} · ${photoUrl ? "con foto" : "sin foto"}`,
+    family: contacts || "Falta el WhatsApp",
+    ficha: fichaPreview || "Raza, salud y cómo acercarse",
+    look: look.label,
+  };
   return <>
+    {/* En la compu, arriba del panel: de quién es, si está publicada y su link para copiar. */}
+    {isOwner && <div className="pet-desk-head">
+      <span className="pet-desk-avatar">{/* eslint-disable-next-line @next/next/no-img-element -- la foto con su encuadre */}{photoUrl ? <img src={photoUrl} alt="" style={petPhotoStyle(pet.photo)} /> : <span aria-hidden="true">🐾</span>}</span>
+      <div className="pet-desk-title"><h2>{name.trim() || "Tu chapita"}</h2><span className={`pet-summary-state${landing.blocked ? " is-off" : landing.published ? " is-on" : ""}`}>{landing.blocked ? "Pausada" : landing.published ? "Publicada" : "Sin publicar"}</span></div>
+      {landing.published && owner && <div className="pet-desk-link"><span>{owner.host}/{landing.slug}</span><CopyButton text={`/${landing.slug}`} label="Copiar" /></div>}
+    </div>}
     {/* Sin publicar después de los pasos (por ejemplo, si falló al publicar). */}
     {isOwner && !landing.published && <div className={`pet-ed-intro${canPublish ? " is-ready" : ""}`}>{canPublish
       ? <><span>Todavía no está publicada. Quien la escanee verá estos datos y tu WhatsApp.</span><button type="button" className="pet-step-next is-publish" disabled={saving} onClick={publish}>{saving ? <><i className="spin" aria-hidden="true" />Publicando…</> : "Publicar mi chapita"}</button></>
@@ -42,18 +60,30 @@ export function MenuScreen() {
       {rows.map((row) => <li key={row.id}>
         <button type="button" className="pet-menu-row" data-tour={`row-${row.id}`} onClick={() => go({ name: "panel", panel: row.id })}>
           <span className="pet-menu-icon" aria-hidden="true">{TITLES[row.id].icon}</span>
-          <span className="pet-menu-label">{TITLES[row.id].label}</span>
+          <span className="pet-menu-label">{TITLES[row.id].label}<small className="pet-menu-preview">{preview[row.id]}</small></span>
           {row.status && <span className={`pet-menu-status${row.tone ? ` is-${row.tone}` : ""}`}>{row.status}</span>}
           {row.id === "look" && <span className="pet-menu-swatch" role="img" aria-label={look.label} style={{ background: `linear-gradient(135deg, ${look.background} 0 58%, ${look.accent} 58% 100%)` }} />}
           <span className="pet-menu-go" aria-hidden="true">›</span>
         </button>
       </li>)}
     </ul>
+    {/* En la compu: la guía, a la vista. (Las visitas se guardan, pero solo para BIONFC: no se
+        muestran. La ayuda por WhatsApp está en el pie de la página.) */}
+    {isOwner && landing.published && <div className="pet-desk-cards">
+      <div className="pet-desk-card pet-desk-help">
+        <span className="pet-desk-help-icon" aria-hidden="true">💡</span>
+        <div>
+          <h3>¿Cómo funciona?</h3>
+          <p>En un minuto te mostramos cómo se edita, qué ve quien la encuentra y qué hacer si se pierde.</p>
+        </div>
+        <button type="button" onClick={startTour}>Ver la guía</button>
+      </div>
+    </div>}
   </>;
 }
 
 export function PanelScreen({ panel }: { panel: Panel }) {
-  const { landing, savedPet, pet, name, setName, petName, photoUrl, photo, dirty, saving, change, about, health, setMember, savePanel, cancelPanel } = useEditor();
+  const { landing, isOwner, savedPet, pet, name, setName, petName, photoUrl, photo, dirty, saving, change, about, health, setMember, savePanel, cancelPanel } = useEditor();
   const [confirmOff, setConfirmOff] = useState(false);
   // Qué botón del modo perdido se tocó (para poner la ruedita en ese).
   const [lostAction, setLostAction] = useState<"save" | "on" | "off">("save");
@@ -137,6 +167,7 @@ export function PanelScreen({ panel }: { panel: Panel }) {
     {panel === "lost" && savedPet.lost && <>
       <div className="pet-lost-status"><span aria-hidden="true">🚨</span><span><strong>Aviso de perdido activo</strong><small>Arriba de la página de {petName} se ve el aviso rojo. Cuando vuelva, sacalo.</small></span></div>
       <PetShareButton path={`/mascota/${landing.slug}`} petName={name} lost lostZone={savedPet.lostZone} female={petIsFemale(savedPet)} version={petImageVersion(savedPet, name, landing.photoUrl, landing.slug)} className="pet-step-next pet-lost-share" label="Compartir de nuevo" />
+      {isOwner && <Link className="pet-lost-print" href={`/mi/chapita/${landing.id}/cartel`}><LuPrinter aria-hidden="true" />Imprimir cartel para pegar</Link>}
       {lostFields}
       {dirty && <button type="button" className="pet-step-next" onClick={() => runLost("save")} disabled={saving}>{spinner("save", "Guardando…") || "Guardar cambios"}</button>}
       {confirmOff

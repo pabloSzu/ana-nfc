@@ -13,6 +13,7 @@ import { useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { LuPrinter } from "react-icons/lu";
 import { CardBack, CardFront, DESIGNS, type DesignId } from "./card-designs";
+import TagFace, { TAG_COLORS, TAG_STYLES, tagStyleFor, type TagStyle } from "./tag-face";
 
 export type PrintItem = { id: string; number: number; code: string; activationQr: string; tagQr: string };
 type Mode = "cards" | "qr";
@@ -26,6 +27,8 @@ type Settings = {
   cutLines: boolean;
   qrSize: number;
   qrNumber: boolean;
+  qrColor: string;
+  qrDesign: TagStyle | "mix";
 };
 
 const SIZES = [
@@ -34,7 +37,7 @@ const SIZES = [
   { id: "100x70", label: "Grande · 100×70 mm", width: 100, height: 70 },
   { id: "custom", label: "Otra medida", width: 85, height: 55 },
 ];
-const DEFAULTS: Settings = { design: "playful", size: "85x55", width: 85, height: 55, sides: "both", output: "single", cutLines: true, qrSize: 25, qrNumber: true };
+const DEFAULTS: Settings = { design: "playful", size: "85x55", width: 85, height: 55, sides: "both", output: "single", cutLines: true, qrSize: 30, qrNumber: true, qrColor: "rainbow", qrDesign: "mix" };
 const STORAGE_KEY = "bionfc-print-settings";
 // Hoja A4 con 7 mm de margen (casi todas las impresoras dejan ~5 mm sin imprimir): así entran
 // 10 tarjetas personales por hoja, como en las planchas de imprenta.
@@ -81,7 +84,8 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
 
   const width = clamp(settings.width, 40, 190);
   const height = clamp(settings.height, 30, 270);
-  const qrSize = clamp(settings.qrSize, 12, 60);
+  // La chapita entera (el círculo), en mm.
+  const qrSize = clamp(settings.qrSize, 22, 45);
   const single = mode === "cards" && settings.output === "single";
 
   // Cuántas entran por hoja.
@@ -89,8 +93,10 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
   const cardCols = Math.max(1, Math.floor((PAGE.width - PAGE.margin * 2 + cardGap) / (width + cardGap)));
   const cardRows = Math.max(1, Math.floor((PAGE.height - PAGE.margin * 2 + cardGap) / (height + cardGap)));
   const perCardPage = cardCols * cardRows;
-  const qrGap = 6;
-  const qrCell = qrSize + (settings.qrNumber ? 9 : 0);
+  // Bien juntas para no gastar hojas (2 mm entre una y otra para cortar).
+  const qrGap = 2;
+  // Abajo de cada círculo, el número de unidad (afuera: se recorta; es una guía para armar).
+  const qrCell = qrSize + (settings.qrNumber ? 4 : 0);
   const qrCols = Math.max(1, Math.floor((PAGE.width - PAGE.margin * 2 + qrGap) / (qrSize + qrGap)));
   const qrRows = Math.max(1, Math.floor((PAGE.height - PAGE.margin * 2 + qrGap) / (qrCell + qrGap)));
   const perQrPage = qrCols * qrRows;
@@ -110,7 +116,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
 
   return <div className="ps">
     {/* eslint-disable-next-line @next/next/no-page-custom-font -- solo para esta hoja de impresión */}
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@800&family=Poppins:wght@600;700;800&display=swap" />
     {/* El tamaño de página depende del formato elegido. */}
     <style>{`@media print { @page { size: ${single ? `${singlePage.width}mm ${singlePage.height}mm` : "A4"}; margin: 0; } }`}</style>
     <aside className="ps-panel">
@@ -148,11 +154,22 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
           <label className="ps-check"><input type="radio" checked={settings.output === "single"} onChange={() => update({ output: "single" })} />Una por página, con sangrado (imprenta o Canva)</label>
           <label className="ps-check"><input type="radio" checked={settings.output === "sheet"} onChange={() => update({ output: "sheet" })} />Hoja A4, {perCardPage} por hoja (imprimir en casa)</label>
         </fieldset>
-      </> : <fieldset className="ps-group"><legend>QR de cada chapita</legend>
-        <label>Tamaño del QR: <b>{qrSize} mm</b><input type="range" min={12} max={45} value={qrSize} onChange={(event) => update({ qrSize: Number(event.target.value) })} /></label>
-        <small className="ps-muted">Para chapitas de 3 a 4 cm conviene entre 22 y 28 mm. Más chico que 15 mm cuesta escanearlo.</small>
-        <label className="ps-check"><input type="checkbox" checked={settings.qrNumber} onChange={(event) => update({ qrNumber: event.target.checked })} />Número de unidad abajo</label>
-        <small className="ps-muted">Entran {perQrPage} por hoja.</small>
+      </> : <fieldset className="ps-group"><legend>La chapita</legend>
+        <label>Tamaño (diámetro): <b>{qrSize} mm</b><input type="range" min={22} max={45} value={qrSize} onChange={(event) => update({ qrSize: Number(event.target.value) })} /></label>
+        <small className="ps-muted">El círculo entero, del tamaño de tu chapita. Entran {perQrPage} por hoja.</small>
+        <span className="ps-colors-label">Diseño</span>
+        <div className="ps-tag-styles">{TAG_STYLES.map((style) => <button key={style.id} type="button" className={settings.qrDesign === style.id ? "is-on" : ""} onClick={() => update({ qrDesign: style.id })}>{style.label}</button>)}</div>
+        <span className="ps-colors-label">Color</span>
+        <div className="ps-colors">
+          {TAG_COLORS.map((color) => <button key={color.id} type="button" className={settings.qrColor === color.id ? "is-on" : ""} onClick={() => update({ qrColor: color.id })} aria-label={color.label} title={color.label}><span style={{ background: color.value }} /></button>)}
+          {/* Un color propio: el selector de colores del navegador. */}
+          <label className={`ps-color-custom${settings.qrColor.startsWith("#") ? " is-on" : ""}`} title="Otro color">
+            <span style={settings.qrColor.startsWith("#") ? { background: settings.qrColor } : undefined}>{settings.qrColor.startsWith("#") ? "" : "+"}</span>
+            <input type="color" value={settings.qrColor.startsWith("#") ? settings.qrColor : "#3a7bd5"} onChange={(event) => update({ qrColor: event.target.value })} aria-label="Elegir otro color" />
+          </label>
+        </div>
+        <label className="ps-check"><input type="checkbox" checked={settings.qrNumber} onChange={(event) => update({ qrNumber: event.target.checked })} />Número de unidad abajo, afuera del círculo (guía para armar cada paquete con su tarjeta)</label>
+        <small className="ps-muted">El código para activar nunca va en la chapita: con él, quien encuentra a la mascota podría quedarse con ella. Va solo en la tarjeta del paquete.</small>
       </fieldset>}
 
       {!single && <fieldset className="ps-group"><legend>Corte</legend>
@@ -202,11 +219,10 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
       </div>) : qrPages.map((page, pageIndex) => <section key={pageIndex} className="ps-page" aria-label={`Hoja ${pageIndex + 1}`}>
         <span className="ps-page-label">Hoja {pageIndex + 1}</span>
         <div className="ps-grid" style={gridStyle(qrCols, qrSize, qrGap)}>
-          {page.map((item) => <figure key={item.id} className={`ps-qr${settings.cutLines ? " has-cut" : ""}`}>
-            {/* eslint-disable-next-line @next/next/no-img-element -- QR generado en el servidor */}
-            <img src={item.tagQr} alt={`QR de la chapita ${item.number}`} style={{ width: `${qrSize}mm`, height: `${qrSize}mm` }} />
-            {settings.qrNumber && <figcaption>N° {item.number}</figcaption>}
-          </figure>)}
+          {page.map((item, index) => <div key={item.id} className="ps-tag-cell">
+            <div className={`ps-tag-ring${settings.cutLines ? " has-cut" : ""}`}><TagFace id={item.id} qr={item.tagQr} diameter={qrSize} color={settings.qrColor} design={tagStyleFor(settings.qrDesign, index)} /></div>
+            {settings.qrNumber && <span className="ps-tag-number">{item.number}</span>}
+          </div>)}
         </div>
       </section>)}
     </main>

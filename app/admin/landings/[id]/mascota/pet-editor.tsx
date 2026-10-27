@@ -28,7 +28,13 @@ import { compressImage } from "@/lib/compress-image";
 import { uploadPetPhoto } from "@/lib/pet-photo-upload";
 import { FontLinks } from "@/lib/fonts";
 import { PET_LOOKS, parsePet, petForEditing, petGendered, petHasContact, type PetData, type PetFamily, type PetSaveResult } from "@/lib/pet";
-import { EditorProvider, PANELS, type Editor, type EditorLanding, type Panel, type Screen } from "./pet-editor-context";
+import { EditorProvider, PANELS, type Editor, type EditorLanding, type EditorOwner, type Panel, type Screen } from "./pet-editor-context";
+import BioNFCLogo from "@/components/bionfc-logo";
+import PetShareButton from "@/components/pet-share-button";
+import AccountMenu from "@/app/mi/account-menu";
+import { petImageVersion, petIsFemale } from "@/lib/pet";
+import { LuEye } from "react-icons/lu";
+import { CONTACT_EMAIL } from "@/lib/terms";
 import { AfterScreen, SetupScreen, SpreadScreen } from "./pet-editor-flow";
 import { MenuScreen, PanelScreen } from "./pet-editor-menu";
 
@@ -40,6 +46,7 @@ type Props = {
   saveAction: (formData: FormData) => Promise<PetSaveResult>;
   publishAction?: (formData: FormData) => void | Promise<void>;
   mode?: "admin" | "owner";
+  owner?: EditorOwner;
 };
 
 const OFFLINE = "No pudimos conectarnos. Revisá tu internet y probá de nuevo.";
@@ -56,7 +63,7 @@ function sectionOf(screen: Screen): PetSection {
   return screen.panel === "ficha" ? "about" : screen.panel === "look" ? "design" : screen.panel;
 }
 
-export default function PetEditor({ landing: initialLanding, initialPet, saveAction, publishAction, mode = "admin" }: Props) {
+export default function PetEditor({ landing: initialLanding, initialPet, saveAction, publishAction, mode = "admin", owner }: Props) {
   // Lo que devuelve cada guardado (publicada, link, foto) pisa lo que vino al abrir: así no
   // depende de que la página se vuelva a pedir al servidor a tiempo.
   const [savedLanding, setSavedLanding] = useState<Partial<EditorLanding>>({});
@@ -92,6 +99,10 @@ export default function PetEditor({ landing: initialLanding, initialPet, saveAct
   const [adjustingPhoto, setAdjustingPhoto] = useState(false);
   const [draft, setDraft] = useState<{ name: string; pet: PetData } | null>(null);
   const [bigOpen, setBigOpen] = useState(false);
+  // En la compu el celular del dueño se scrollea con el mouse. Para que se note: un degradado abajo
+  // (se va al llegar al final) y, la primera vez, "Deslizá para ver más" hasta que scrollea.
+  const [miniAtEnd, setMiniAtEnd] = useState(false);
+  const [scrollHint, setScrollHint] = useState(false);
   const photoInput = useRef<HTMLInputElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
   const screenRef = useRef<HTMLDivElement>(null);
@@ -165,6 +176,20 @@ export default function PetEditor({ landing: initialLanding, initialPet, saveAct
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screenKey]);
+
+  useEffect(() => {
+    if (!isOwner) return;
+    try { if (!localStorage.getItem("bionfc-scroll-hint")) setScrollHint(true); } catch {}
+  }, [isOwner]);
+  const onMiniScroll = (event: React.UIEvent<HTMLDivElement>) => {
+    const box = event.currentTarget;
+    setMiniAtEnd(box.scrollTop + box.clientHeight >= box.scrollHeight - 4);
+  };
+  const onMiniWheel = () => {
+    if (!scrollHint) return;
+    setScrollHint(false);
+    try { localStorage.setItem("bionfc-scroll-hint", "1"); } catch {}
+  };
 
   const notify = (message: string, isError = false) => setNotice({ message, isError, key: Date.now() });
   const change = (patch: Partial<PetData>) => { setPet((current) => ({ ...current, ...patch })); setDirty(true); };
@@ -303,7 +328,7 @@ export default function PetEditor({ landing: initialLanding, initialPet, saveAct
   }
 
   const editor: Editor = {
-    landing, isOwner, savedPet: saved.pet, pet, name, petName: name.trim() || "tu mascota", photoUrl, dirty, saving, screen,
+    landing, isOwner, owner: owner || null, savedPet: saved.pet, pet, name, petName: name.trim() || "tu mascota", photoUrl, dirty, saving, screen,
     go: setScreen,
     change,
     setName: (value) => { setNameValue(value); setDirty(true); },
@@ -319,10 +344,16 @@ export default function PetEditor({ landing: initialLanding, initialPet, saveAct
       <FontLinks ids={PET_LOOKS.map((item) => item.titleFont)} />
       <header className={`pet-editor-top${isOwner ? " is-owner" : ""}`}>
         {isOwner
-          ? <div className="pet-editor-portal-wrap">
+          ? <>
+            <Link href="/mi" className="pet-top-logo" aria-label="BIONFC · Mis chapitas"><BioNFCLogo /></Link>
+            <div className="pet-editor-portal-wrap">
               <Link className={`pet-editor-portal${portalTip ? " is-pulse" : ""}`} href="/mi" aria-label="Ir a Mis chapitas"><LuPawPrint aria-hidden="true" /><span>Mis chapitas</span></Link>
               {portalTip && <span className="pet-portal-tip" role="status">Acá están tus chapitas. Si se pierde, avisás desde ahí.</span>}
             </div>
+            <span className="pet-top-crumb" aria-hidden="true">›</span>
+            <strong className="pet-top-name">{name.trim() || "Tu chapita"}</strong>
+            {owner?.email && <div className="pet-top-account"><AccountMenu email={owner.email} /></div>}
+          </>
           : <Link className="pet-editor-back" href="/admin/chapitas/fichas" aria-label="Volver a Fichas de mascotas">←<span className="pet-editor-back-text">Fichas de mascotas</span></Link>}
         {/* El dueño: solo "Mis chapitas" (ver y compartir la página están ahí). */}
         {!isOwner && <div className="pet-editor-title"><small>{landing.published ? "Publicada" : "Borrador"}</small><strong>{name.trim() || "Tu chapita"}</strong></div>}
@@ -349,7 +380,7 @@ export default function PetEditor({ landing: initialLanding, initialPet, saveAct
       </header>
 
       {/* Un solo aviso a la vez, el más importante. */}
-      {landing.blocked ? <p className="pet-editor-note is-danger">BIONFC pausó esta chapita y por ahora no se muestra. Si creés que es un error, escribinos a contacto.bionfc@gmail.com.</p>
+      {landing.blocked ? <p className="pet-editor-note is-danger">BIONFC pausó esta chapita y por ahora no se muestra. Si creés que es un error, escribinos a {CONTACT_EMAIL}.</p>
         : draft ? <p className="pet-editor-note">Quedaron cambios sin guardar de la otra vez. <button type="button" className="pet-editor-link" onClick={restoreDraft}>Recuperarlos</button> · <button type="button" className="pet-editor-link" onClick={discardDraft}>Descartar</button></p>
         : null}
 
@@ -358,11 +389,16 @@ export default function PetEditor({ landing: initialLanding, initialPet, saveAct
 
         {/* Arriba (en la compu, a la izquierda): la chapita en un celular en miniatura. */}
         <div className="pet-ed-preview">
-          <div className="pet-mini" role="button" tabIndex={0} aria-label="Ver la chapita en grande" onClick={(event) => { if (!(event.target as HTMLElement).closest(".pet-editable")) openBig(); }} onKeyDown={(event) => { if (event.key === "Enter") openBig(); }}>
-            <div className="pet-mini-screen" ref={screenRef}>
-              <PetRenderer landing={{ business_name: name }} pet={pet} photoUrl={photoUrl} edit={{ selected: sectionOf(screen), onSelect: (section) => { if (screen.name === "menu" || screen.name === "panel") setScreen({ name: "panel", panel: panelOf(section) }); } }} />
-            </div>
-          </div>
+          {isOwner
+            ? <div className={`pet-mini is-static${miniAtEnd ? " is-end" : ""}`} aria-label="Así se ve su página">
+                <div className="pet-mini-screen" ref={screenRef} onScroll={onMiniScroll} onWheel={onMiniWheel}><PetRenderer landing={{ business_name: name }} pet={pet} photoUrl={photoUrl} /></div>
+                {scrollHint && <span className="pet-mini-hint" aria-hidden="true">Deslizá para ver más</span>}
+              </div>
+            : <div className="pet-mini" role="button" tabIndex={0} aria-label="Ver la chapita en grande" onClick={(event) => { if (!(event.target as HTMLElement).closest(".pet-editable")) openBig(); }} onKeyDown={(event) => { if (event.key === "Enter") openBig(); }}>
+                <div className="pet-mini-screen" ref={screenRef}>
+                  <PetRenderer landing={{ business_name: name }} pet={pet} photoUrl={photoUrl} edit={{ selected: sectionOf(screen), onSelect: (section) => { if (screen.name === "menu" || screen.name === "panel") setScreen({ name: "panel", panel: panelOf(section) }); } }} />
+                </div>
+              </div>}
           {/* Al lado de la miniatura (en el celular): de quién es, si está publicada y verla en
               grande. Nada más. */}
           <div className="pet-summary">
@@ -373,6 +409,12 @@ export default function PetEditor({ landing: initialLanding, initialPet, saveAct
               <button type="button" className="pet-summary-btn" onClick={startTour}><LuLightbulb aria-hidden="true" />Cómo funciona</button>
             </div>
           </div>
+          {isOwner && <div className="pet-stage-actions">
+            <button type="button" className="pet-summary-btn" onClick={openBig}><LuZoomIn aria-hidden="true" />Ver en grande</button>
+            {landing.published && <PetShareButton path={`/mascota/${landing.slug}`} petName={name} lost={saved.pet.lost} lostZone={saved.pet.lostZone} female={petIsFemale(saved.pet)} version={petImageVersion(saved.pet, name, landing.photoUrl, landing.slug)} className="pet-summary-btn" label="Compartir" />}
+            {landing.published && <a className="pet-summary-btn" href={`/mascota/${landing.slug}`} target="_blank" rel="noopener noreferrer"><LuEye aria-hidden="true" />Ver su página</a>}
+            {!landing.published && <button type="button" className="pet-summary-btn" onClick={startTour}><LuLightbulb aria-hidden="true" />Cómo funciona</button>}
+          </div>}
         </div>
 
         {/* Abajo: la pantalla que corresponda. Enter en un campo cierra el teclado; los campos

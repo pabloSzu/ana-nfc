@@ -267,6 +267,10 @@ async function run() {
       await sleep(5500);
     }
 
+    // 5b. El cartel para imprimir: con sus datos, su WhatsApp y el QR.
+    await go(`${BASE}/mi/chapita/${data.tagId}/cartel`);
+    check("Cartel: se arma con sus datos", await waitFor("document.querySelector('.poster-red')?.textContent.includes('PERDIDA') && document.querySelector('.poster-wa')?.textContent.includes('351 555-1234') && Boolean(document.querySelector('.poster-qr img'))", 20));
+
     // 6. El link anterior redirige al actual.
     const old = await fetch(`${BASE}/mascota/${published?.pet_slug}`, { redirect: "manual" });
     check("Link: el anterior redirige al actual", old.status === 307 && (old.headers.get("location") || "").includes(renamed?.pet_slug || "?"), `${old.status} → ${old.headers.get("location")}`);

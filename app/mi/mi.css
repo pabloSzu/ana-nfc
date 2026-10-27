@@ -53,7 +53,8 @@
 .mi-pets .mi-pet.is-lost { box-shadow: 0 0 0 2px #d92d20, 0 6px 18px rgba(120, 70, 30, .08); }
 .mi-pets .mi-pet-card { display: flex; align-items: center; gap: 14px; padding: 2px; color: inherit; text-decoration: none; }
 .mi-pet-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.mi-pet-actions > :is(a, button) { flex: 1 1 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 8px; border: 0; border-radius: 13px; background: #fbefe4; color: #8a3f13; font: inherit; font-size: 14px; font-weight: 700; text-decoration: none; white-space: nowrap; cursor: pointer; }
+.mi-pet-actions > :is(a, button) { flex: 1 1 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 0; min-height: 44px; padding: 0 8px; border: 0; border-radius: 13px; background: #fbefe4; color: #8a3f13; font: inherit; font-size: 14px; font-weight: 700; text-decoration: none; white-space: nowrap; cursor: pointer; }
+.mi-pet-actions > :is(a, button) svg { flex: none; }
 .mi-pet-actions > :is(a, button):active { transform: scale(.97); }
 .mi-pet-actions > .is-urgent { flex-basis: 100%; order: -1; min-height: 50px; background: #d92d20; color: #fff; font-size: 15px; font-weight: 800; }
 .mi-pet-photo { position: relative; display: grid; place-items: center; flex: none; width: 64px; height: 64px; overflow: hidden; border-radius: 50%; background: #f6e2d2; font-size: 28px; }
@@ -234,3 +235,42 @@
 .mi-pet-incomplete { display: flex; align-items: center; gap: 4px; margin-top: -2px; color: #9a6b4a; font-size: 13px; text-decoration: none; }
 .mi-pet-incomplete::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #e9772f; }
 .mi-pet-incomplete b { color: #c25e22; text-decoration: underline; text-underline-offset: 2px; }
+
+/* Mis chapitas: en el celular, una debajo de otra (como siempre); en la compu, una ficha amplia
+   por mascota, con la foto y las acciones respirando sin dejar huecos dentro de la tarjeta. */
+.mi-home-head small, .mi-home-head p, .mi-home-new, .mi-pet-badge { display: none; }
+@media (min-width: 900px) {
+  .mi-shell:has(.mi-home) { position: relative; isolation: isolate; background: radial-gradient(circle at 7% 2%, #fff 0 10%, transparent 32%), radial-gradient(circle at 92% 12%, #f6cfb2 0, transparent 26%), linear-gradient(150deg, #fff9f2 0%, #fdebdc 52%, #f7d9c1 100%); }
+  .mi-shell:has(.mi-home)::before, .mi-shell:has(.mi-home)::after { position: absolute; z-index: -1; color: #b9673820; font-size: 72px; line-height: 1; pointer-events: none; user-select: none; }
+  .mi-shell:has(.mi-home)::before { content: "🐾"; top: 24%; left: max(26px, calc(50% - 620px)); transform: rotate(-24deg); text-shadow: 68px 124px #b9673818, 4px 268px #b9673812; }
+  .mi-shell:has(.mi-home)::after { content: "🐾"; top: 14%; right: max(26px, calc(50% - 620px)); transform: rotate(22deg); text-shadow: -66px 142px #b9673816, 0 304px #b9673810; }
+  .mi-main.mi-home { width: min(100%, 920px); padding: 30px 40px 48px; }
+  .mi-home-head { display: flex; align-items: center; justify-content: space-between; gap: 28px; }
+  .mi-home-head small { display: block; color: #9a7a62; font-size: 14px; font-weight: 700; }
+  .mi-home-head h1 { margin: 2px 0 0; font-size: 42px; }
+  .mi-home-head p { display: block; max-width: 520px; margin: 7px 0 0; color: #795b46; font-size: 14px; line-height: 1.5; }
+  .mi-home-new { display: inline-flex; align-items: center; min-height: 46px; padding: 0 18px; border-radius: 14px; background: linear-gradient(135deg, #ea874d, #cf6125); color: #fff; font-size: 14.5px; font-weight: 800; text-decoration: none; box-shadow: 0 10px 22px #cf612540; transition: transform .16s ease, box-shadow .16s ease; }
+  .mi-home-new:hover { transform: translateY(-2px); box-shadow: 0 14px 28px #cf61254a; }
+  .mi-home .mi-pets { grid-template-columns: 1fr; gap: 18px; margin-top: 26px; }
+  .mi-home .mi-pets .mi-pet { grid-template-columns: 190px minmax(0, 1fr); align-content: start; align-items: start; gap: 12px 20px; min-width: 0; padding: 18px; border: 1px solid #f4dfcf; border-radius: 26px; box-shadow: 0 14px 34px #c25e2217; transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+  .mi-home .mi-pets .mi-pet:hover { transform: translateY(-3px); border-color: #ebc8ad; box-shadow: 0 18px 38px #9b4c1d20; }
+  .mi-home .mi-pets .mi-pet-card { display: contents; }
+  .mi-home .mi-pet-photo { grid-column: 1; grid-row: 1 / span 8; width: 190px; height: 190px; border-radius: 20px; font-size: 54px; }
+  .mi-home .mi-pet-copy { grid-column: 2; padding: 5px 2px 0; }
+  .mi-home .mi-pet-copy strong { font-size: 24px; line-height: 1.15; }
+  .mi-home .mi-pet-copy small { margin-top: 5px; line-height: 1.5; overflow-wrap: anywhere; }
+  .mi-home .mi-pet-badge { position: absolute; top: 10px; left: 10px; display: inline-block; padding: 4px 10px; border-radius: 99px; background: #d92d20; color: #fff; font-size: 12px; font-style: normal; font-weight: 800; }
+  .mi-home .mi-pet-incomplete, .mi-home .mi-pet-actions, .mi-home .mi-welcome, .mi-home .mi-lost-button { grid-column: 2; }
+  .mi-home .mi-pet-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .mi-home .mi-pet-actions > :is(a, button) { width: 100%; padding-inline: 10px; font-size: 14px; }
+  .mi-home .mi-pet-actions > .is-urgent { grid-column: 1 / -1; min-height: 48px; }
+  .mi-home .mi-lost-button { margin-top: auto; }
+  .mi-home .mi-hint { display: none; }
+  .mi-home .mi-empty { max-width: 660px; margin: 28px auto 0; padding: 40px 28px 48px; border: 1px solid #f4dfcf; box-shadow: 0 14px 34px #c25e2217; }
+  .mi-home .mi-empty::before { content: "🐾"; display: grid; place-items: center; width: 62px; height: 62px; margin-bottom: 2px; border: 1px solid #f3d7c2; border-radius: 21px; background: linear-gradient(145deg, #fff9f4, #f9dfcb); box-shadow: 0 10px 24px #b9602520; font-size: 30px; transform: rotate(-5deg); }
+  .mi-shell:has(.mi-home) .mi-footer { width: min(100%, 920px); padding-inline: 40px; }
+  .mi-shell:has(.mi-home) .mi-top { width: min(100%, 920px); padding-inline: 40px; }
+}
+@media (hover: none) {
+  .mi-home-new:hover, .mi-home .mi-pets .mi-pet:hover { transform: none; }
+}
