@@ -28,7 +28,7 @@ export default async function Admin() {
   // Las plantillas son landings propias pero no páginas de clientes: no cuentan acá.
   const landings = (allLandings || []).filter((landing) => !landing.template_name);
   const pageLandings = landings.filter((landing) => landing.business_type !== "pet");
-  const petProfiles = landings.filter((landing) => landing.business_type === "pet");
+  const petProfiles = landings.filter((landing) => landing.business_type === "pet" && !landing.pet_archived_at);
   const templates = templateChoices(allLandings || []);
   const totalClients = clients?.length || 0;
   const totalPages = pageLandings.length;
@@ -37,12 +37,12 @@ export default async function Admin() {
   const published = pageLandings.filter((landing) => landing.published).length;
   const drafts = totalPages - published;
   const landingCountByClient = new Map<string, number>();
-  landings?.forEach((landing) => { if (landing.client_id) landingCountByClient.set(landing.client_id, (landingCountByClient.get(landing.client_id) || 0) + 1); });
+  landings?.forEach((landing) => { if (landing.client_id && !(landing.business_type === "pet" && landing.pet_archived_at)) landingCountByClient.set(landing.client_id, (landingCountByClient.get(landing.client_id) || 0) + 1); });
   const activeClients = Array.from(landingCountByClient.values()).filter((count) => count > 0).length;
   const publishRate = totalPages ? Math.round((published / totalPages) * 100) : 0;
   // Lo que pide acción: páginas que vencen en los próximos 30 días o ya vencieron, ordenadas por
   // la que vence primero.
-  const renewals = (landings || [])
+  const renewals = (landings || []).filter((landing) => !(landing.business_type === "pet" && landing.pet_archived_at))
     .map((landing) => ({ landing, status: planStatus(withAutoFallback(landing)) }))
     .filter(({ status }) => status.key === "expiring" || status.key === "expired")
     .sort((a, b) => (a.status.days ?? 0) - (b.status.days ?? 0));

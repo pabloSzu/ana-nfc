@@ -99,6 +99,7 @@
 .ch-steps { display: grid; gap: 10px; margin: 0; padding-left: 20px; color: var(--text-muted); line-height: 1.5; }
 .ch-steps strong { color: var(--text); }
 .ch-batches { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.ch-batch-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; }
 .ch-batches a { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 16px; padding: 14px 18px 14px 14px; border: 1px solid var(--border); border-radius: 18px; background: var(--surface, #fff); color: inherit; text-decoration: none; box-shadow: var(--shadow-sm); transition: border-color .15s ease, transform .15s ease; }
 .ch-batches a:hover { border-color: #e9772f; transform: translateY(-1px); }
 .ch-batches a.is-empty { opacity: .72; }
@@ -115,6 +116,12 @@
 .ch-batch-go { color: var(--text-muted); font-size: 20px; font-weight: 700; }
 .ch-batches strong { display: block; font-size: 16px; }
 .ch-batches small { color: var(--text-muted); }
+.ch-batches.is-archived a { opacity: .76; box-shadow: none; }
+.ch-batch-restore button { padding: 8px 11px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
+.ch-archived { position: relative; z-index: 1; margin-top: 20px; padding: 14px; border: 1px solid var(--border); border-radius: 16px; background: color-mix(in srgb, var(--surface) 88%, var(--surface-2)); }
+.ch-archived summary { width: fit-content; cursor: pointer; color: var(--text-muted); font-size: 13px; font-weight: 800; }
+.ch-archived summary span { margin-left: 5px; padding: 2px 7px; border-radius: 99px; background: var(--surface-2); }
+.ch-archived > p { margin: 10px 0 12px; color: var(--text-muted); font-size: 12.5px; }
 .ch-progress { height: 8px; overflow: hidden; border-radius: 999px; background: color-mix(in srgb, var(--text) 10%, transparent); }
 .ch-progress span { display: block; height: 100%; border-radius: inherit; background: #22a861; }
 .ch-table { width: 100%; border-collapse: collapse; font-size: 14px; }
@@ -149,6 +156,12 @@
 .ch-lot-progress { display: grid; gap: 6px; flex: none; width: 220px; }
 .ch-lot-progress strong { font-size: 14px; }
 .ch-lot-progress small { color: var(--text-muted); font-size: 12px; }
+.ch-archive-bar { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 18px; margin: -6px 0 18px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+.ch-archive-bar p { display: grid; gap: 2px; margin: 0; }
+.ch-archive-bar p strong { font-size: 13px; }
+.ch-archive-bar p span { color: var(--text-muted); font-size: 12px; }
+.ch-archive-bar button { flex: none; padding: 8px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); color: var(--text); font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
+.ch-archive-bar.is-archived { border-color: #e5c875; background: #fff8df; color: #5f4a0d; }
 /* Las acciones del lote, cada una con su color: imprimir (tinta) y la ayuda por si algo se
    mezcló (ámbar). La tarjeta entera es el link. */
 .ch-lot-actions { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
@@ -211,6 +224,8 @@
   .ch-profiles-head form, .ch-profiles-head input { width: 100%; }
   .ch-profile-actions { width: 100%; justify-content: space-between; }
   .ch-worlds { grid-template-columns: 1fr; }
+  .ch-batch-row { grid-template-columns: 1fr; }
+  .ch-batch-restore { justify-self: end; }
   .ch-batches a { grid-template-columns: auto minmax(0, 1fr) auto; }
   .ch-batch-counts { grid-column: 1 / -1; min-width: 0; }
   .ch-batch-go { grid-row: 1; grid-column: 3; }
@@ -219,6 +234,7 @@
   .ch-table td { padding: 0; border: 0; }
   .ch-table td.ch-number { grid-row: span 4; }
   .ch-actions { justify-content: flex-start; }
+  .ch-archive-bar { align-items: flex-start; flex-direction: column; }
 }
 
 /* Hojas para imprimir (A4). La barra de arriba no se imprime. */

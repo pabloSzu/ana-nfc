@@ -9,7 +9,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ cod
   const range = shortTagRange(code.toLowerCase());
   if (!range) return redirectTo("/sin-datos");
   // Con la clave secreta: una chapita sin activar no se puede leer en público.
-  const { data, error } = await createAdminClient().from("landings").select("id").not("batch_id", "is", null).gte("id", range[0]).lte("id", range[1]).limit(2);
+  const { data, error } = await createAdminClient().from("landings").select("id").not("batch_id", "is", null).is("pet_archived_at", null).gte("id", range[0]).lte("id", range[1]).limit(2);
   if (error) console.error("No se pudo resolver /q", { code, message: error.message });
   if (data?.length !== 1) return redirectTo("/sin-datos");
   return redirectTo(`/go/${data[0].id}?s=qr`);

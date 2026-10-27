@@ -32,7 +32,7 @@ export async function saveMyPet(fd: FormData): Promise<PetSaveResult> {
   if (!userId) redirect(`/mi/entrar?next=${encodeURIComponent(back)}`);
   const fail = (error: string): PetSaveResult => ({ ok: false, error });
 
-  const { data: landing } = await supabase.from("landings").select("id,slug,pet_slug,logo_url,blocked_at,published,button_style").eq("id", landingId).maybeSingle();
+  const { data: landing } = await supabase.from("landings").select("id,slug,pet_slug,logo_url,blocked_at,published,button_style").eq("id", landingId).is("pet_archived_at", null).maybeSingle();
   if (!landing) return fail(ERRORS.sin_permiso);
   const name = String(fd.get("business_name") || "").trim().slice(0, 60);
   if (!name) return fail(ERRORS.nombre_invalido);
@@ -70,7 +70,7 @@ export async function saveMyPet(fd: FormData): Promise<PetSaveResult> {
   // Si cambió el nombre, el link anterior pasa a ser un alias que redirige: su página guardada
   // también se descarta.
   if (landing.pet_slug) revalidateLandingPage(landing.pet_slug);
-  const { data: savedLanding } = await supabase.from("landings").select("pet_slug,published").eq("id", landingId).maybeSingle();
+  const { data: savedLanding } = await supabase.from("landings").select("pet_slug,published").eq("id", landingId).is("pet_archived_at", null).maybeSingle();
   if (savedLanding?.pet_slug) revalidateLandingPage(savedLanding.pet_slug);
   const firstPublish = !landing.published && Boolean(savedLanding?.published);
   // Las imágenes para compartir, listas antes de que las pidan (ver lib/pet-images.ts).

@@ -23,11 +23,12 @@ export default async function ClientsPage({ searchParams }: { searchParams: Sear
 
   const [{ data: clients }, { data: pages }] = await Promise.all([
     supabase.from("clients").select("*").eq("owner_id", userId).order("created_at", { ascending: false }),
-    supabase.from("landings").select("client_id,business_type,plan").eq("owner_id", userId),
+    supabase.from("landings").select("client_id,business_type,plan,pet_archived_at").eq("owner_id", userId),
   ]);
   const pageCount = new Map<string, { landings: number; cards: number; direct: number }>();
   for (const page of pages || []) {
     if (!page.client_id) continue;
+    if (page.business_type === "pet" && page.pet_archived_at) continue;
     const count = pageCount.get(page.client_id) || { landings: 0, cards: 0, direct: 0 };
     if (planOf(page) === "direct") count.direct += 1;
     else if (page.business_type === "contact") count.cards += 1;

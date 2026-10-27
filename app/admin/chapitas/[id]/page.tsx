@@ -6,11 +6,12 @@ import Toast from "@/components/toast";
 import CopyButton from "@/components/copy-button";
 import { AdminThemeBackdrop } from "@/components/admin-theme";
 import { IconEdit, IconExternalLink, IconPaw, IconShieldCheck } from "@/components/icons";
+import PendingSubmitButton from "@/components/pending-submit-button";
 import { LuPrinter as IconPrinter } from "react-icons/lu";
 import { getSiteOrigin, isLocalSite } from "@/lib/site-url";
 import { parsePet } from "@/lib/pet";
 import { formatCode, tagState, unitNumber, type TagState } from "@/lib/pet-tags";
-import { regenerateTagCode } from "../actions";
+import { regenerateTagCode, setBatchArchived } from "../actions";
 import RegenerateCodeButton from "../regenerate-code-button";
 import "../chapitas.css";
 
@@ -32,7 +33,7 @@ export default async function BatchPage({ params, searchParams }: { params: Prom
   const { data: authData } = await supabase.auth.getClaims();
   const userId = String(authData?.claims?.sub || "");
   if (!userId) redirect("/admin/login");
-  const { data: batch } = await supabase.from("tag_batches").select("id,name,reseller,created_at").eq("id", id).eq("owner_id", userId).maybeSingle();
+  const { data: batch } = await supabase.from("tag_batches").select("id,name,reseller,created_at,archived_at").eq("id", id).eq("owner_id", userId).maybeSingle();
   if (!batch) notFound();
   const { data: tags } = await supabase.from("landings").select("id,slug,pet_slug,business_name,tag_number,activated_at,published,client_id,button_style").eq("batch_id", id).eq("owner_id", userId).order("tag_number");
   const ids = (tags || []).map((tag) => tag.id);
@@ -74,6 +75,13 @@ export default async function BatchPage({ params, searchParams }: { params: Prom
         <small>{counts.stock} sin activar{counts.lost ? ` · ${counts.lost} ${counts.lost === 1 ? "perdida" : "perdidas"}` : ""}</small>
       </div>
     </header>
+
+    <form action={setBatchArchived} className={`ch-archive-bar${batch.archived_at ? " is-archived" : ""}`}>
+      <input type="hidden" name="batchId" value={batch.id} />
+      <input type="hidden" name="archive" value={batch.archived_at ? "false" : "true"} />
+      <p><strong>{batch.archived_at ? "Este lote está archivado" : "¿Ya no querés verlo en el stock?"}</strong><span>{batch.archived_at ? "No cuenta en los totales, pero conserva todas sus chapitas y códigos." : "Archivar lo oculta y lo saca de los totales. No elimina nada."}</span></p>
+      <PendingSubmitButton pendingText={batch.archived_at ? "Restaurando…" : "Archivando…"}>{batch.archived_at ? "Restaurar lote" : "Archivar lote"}</PendingSubmitButton>
+    </form>
 
     {isLocalSite(origin) && <aside className="admin-assignment-warning"><IconExternalLink /><p><strong>Estás en desarrollo ({new URL(origin).host}).</strong><span>Los links y QR de esta pantalla apuntan a tu computadora: no los grabes en chapitas reales. Grabalas desde el Admin de bionfc.com.</span></p></aside>}
 

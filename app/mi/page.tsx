@@ -17,7 +17,7 @@ export default async function OwnerHome({ searchParams }: { searchParams: Promis
   const { data: memberships } = await supabase.from("client_members").select("client_id").eq("user_id", userId);
   const clientIds = (memberships || []).map((row) => row.client_id);
   const { data: pages } = clientIds.length
-    ? await supabase.from("landings").select("id,slug,pet_slug,business_name,business_type,logo_url,published,button_style,blocked_at").in("client_id", clientIds).eq("business_type", "pet").order("activated_at")
+    ? await supabase.from("landings").select("id,slug,pet_slug,business_name,business_type,logo_url,published,button_style,blocked_at").in("client_id", clientIds).eq("business_type", "pet").is("pet_archived_at", null).order("activated_at")
     : { data: [] };
 
   return <main className="mi-main mi-home">

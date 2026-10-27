@@ -21,6 +21,7 @@ export default async function PetProfilesPage({ searchParams }: { searchParams: 
     .select("id,business_name,slug,pet_slug,batch_id,tag_number,activated_at,published,blocked_at,client_id,button_style,created_at", { count: "exact" })
     .eq("owner_id", userId)
     .eq("business_type", "pet")
+    .is("pet_archived_at", null)
     .or("batch_id.is.null,activated_at.not.is.null")
     .order("created_at", { ascending: false })
     .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);

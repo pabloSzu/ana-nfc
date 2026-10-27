@@ -19,7 +19,7 @@ export default async function LostPoster({ params }: { params: Promise<{ id: str
   const { data: claims } = await supabase.auth.getClaims();
   const userId = String(claims?.claims?.sub || "");
   if (!userId) redirect(`/mi/entrar?next=${encodeURIComponent(`/mi/chapita/${id}/cartel`)}`);
-  const { data: landing } = await supabase.from("landings").select("id,slug,pet_slug,business_name,business_type,logo_url,button_style,client_id").eq("id", id).maybeSingle();
+  const { data: landing } = await supabase.from("landings").select("id,slug,pet_slug,business_name,business_type,logo_url,button_style,client_id").eq("id", id).is("pet_archived_at", null).maybeSingle();
   if (!landing || landing.business_type !== "pet") notFound();
   const { data: member } = await supabase.from("client_members").select("client_id").eq("client_id", landing.client_id).eq("user_id", userId).maybeSingle();
   if (!member) notFound();

@@ -8,7 +8,7 @@ import { IconHeart, IconPlus, IconPaw, IconQrCode } from "@/components/icons";
 import PendingSubmitButton from "@/components/pending-submit-button";
 import { BATCH_MAX } from "@/lib/pet-tags";
 import ModalTrigger from "../modal-trigger";
-import { createBatch } from "./actions";
+import { createBatch, setBatchArchived } from "./actions";
 import MascotasNav from "./mascotas-nav";
 import "./chapitas.css";
 
@@ -21,7 +21,7 @@ export default async function BatchesPage() {
   const userId = String(authData?.claims?.sub || "");
   if (!userId) redirect("/admin/login");
   const [{ data: batches }, { data: batchCounts }] = await Promise.all([
-    supabase.from("tag_batches").select("id,name,reseller,created_at").eq("owner_id", userId).order("created_at", { ascending: false }),
+    supabase.from("tag_batches").select("id,name,reseller,created_at,archived_at").eq("owner_id", userId).order("created_at", { ascending: false }),
     // Contado en la base: traer todas las chapitas para contarlas se cortaría a las 1.000.
     supabase.rpc("tag_batch_counts"),
   ]);
@@ -29,8 +29,26 @@ export default async function BatchesPage() {
   for (const row of (batchCounts || []) as { batch_id: string; total: number; active: number }[]) {
     counts.set(row.batch_id, { total: Number(row.total), active: Number(row.active) });
   }
-  const totals = Array.from(counts.values()).reduce((sum, count) => ({ total: sum.total + count.total, active: sum.active + count.active }), { total: 0, active: 0 });
+  const visibleBatches = (batches || []).filter((batch) => !batch.archived_at);
+  const archivedBatches = (batches || []).filter((batch) => !!batch.archived_at);
+  const visibleIds = new Set(visibleBatches.map((batch) => batch.id));
+  const totals = Array.from(counts.entries()).filter(([id]) => visibleIds.has(id)).reduce((sum, [, count]) => ({ total: sum.total + count.total, active: sum.active + count.active }), { total: 0, active: 0 });
   const stock = totals.total - totals.active;
+
+  const batchList = (list: typeof visibleBatches, archived = false) => <ul className={`ch-batches${archived ? " is-archived" : ""}`}>{list.map((batch) => {
+    const count = counts.get(batch.id) || { total: 0, active: 0 };
+    const forSale = count.total - count.active;
+    return <li key={batch.id} className="ch-batch-row"><Link href={`/admin/chapitas/${batch.id}`} className={count.total ? "" : "is-empty"}>
+      <span className="ch-batch-icon" aria-hidden="true"><IconPaw /></span>
+      <div className="ch-batch-name"><strong>{batch.name}</strong><small><span>{batch.reseller || "Venta directa"}</span>{new Date(batch.created_at).toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" })}</small></div>
+      {count.total ? <div className="ch-batch-counts">
+        <span className="is-sale">{forSale} para vender</span>
+        <span className="is-active">{count.active} {count.active === 1 ? "activada" : "activadas"}</span>
+        <div className="ch-progress" aria-label={`${count.active} de ${count.total} activadas`}><span style={{ width: `${(count.active / count.total) * 100}%` }} /></div>
+      </div> : <div className="ch-batch-counts"><span>Sin chapitas</span></div>}
+      <span className="ch-batch-go" aria-hidden="true">→</span>
+    </Link>{archived && <form action={setBatchArchived} className="ch-batch-restore"><input type="hidden" name="batchId" value={batch.id} /><input type="hidden" name="archive" value="false" /><PendingSubmitButton pendingText="Restaurando…">Restaurar</PendingSubmitButton></form>}</li>;
+  })}</ul>;
 
   return <main className="shell admin-shell admin-library-page">
     <AdminThemeBackdrop />
@@ -63,23 +81,16 @@ export default async function BatchesPage() {
       </Link>
     </section>
 
-    <div className="ch-lots-head"><h2>Tus lotes</h2>{!!batches?.length && <span>{batches.length}</span>}</div>
-    {!batches?.length ? <section className="ch-lots-empty">
-      <strong>Todavía no hay lotes</strong>
-      <p>Empezá con un lote chico de prueba: podés crear una sola chapita para recorrer todo el proceso antes de fabricar más.</p>
-    </section> : <ul className="ch-batches">{batches.map((batch) => {
-      const count = counts.get(batch.id) || { total: 0, active: 0 };
-      const forSale = count.total - count.active;
-      return <li key={batch.id}><Link href={`/admin/chapitas/${batch.id}`} className={count.total ? "" : "is-empty"}>
-        <span className="ch-batch-icon" aria-hidden="true"><IconPaw /></span>
-        <div className="ch-batch-name"><strong>{batch.name}</strong><small><span>{batch.reseller || "Venta directa"}</span>{new Date(batch.created_at).toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" })}</small></div>
-        {count.total ? <div className="ch-batch-counts">
-          <span className="is-sale">{forSale} para vender</span>
-          <span className="is-active">{count.active} {count.active === 1 ? "activada" : "activadas"}</span>
-          <div className="ch-progress" aria-label={`${count.active} de ${count.total} activadas`}><span style={{ width: `${(count.active / count.total) * 100}%` }} /></div>
-        </div> : <div className="ch-batch-counts"><span>Sin chapitas</span></div>}
-        <span className="ch-batch-go" aria-hidden="true">→</span>
-      </Link></li>;
-    })}</ul>}
+    <div className="ch-lots-head"><h2>Tus lotes</h2>{!!visibleBatches.length && <span>{visibleBatches.length}</span>}</div>
+    {!visibleBatches.length ? <section className="ch-lots-empty">
+      <strong>No hay lotes visibles</strong>
+      <p>Creá un lote cuando vayas a fabricar chapitas. Las pruebas anteriores están archivadas y no cuentan como stock.</p>
+    </section> : batchList(visibleBatches)}
+
+    {!!archivedBatches.length && <details className="ch-archived">
+      <summary>Lotes archivados <span>{archivedBatches.length}</span></summary>
+      <p>No se borró nada. Podés abrir un lote para revisarlo o restaurarlo al stock.</p>
+      {batchList(archivedBatches, true)}
+    </details>}
   </main>;
 }

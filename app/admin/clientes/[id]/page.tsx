@@ -26,6 +26,7 @@ type Landing = {
   expires_at: string | null;
   fallback_url: string | null;
   redirect_url: string | null;
+  pet_archived_at: string | null;
   actions?: { type: string | null; url: string | null; enabled: boolean | null; position: number | null }[] | null;
 };
 
@@ -54,15 +55,15 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   if (!userId) redirect("/admin/login");
   const [{ data: client }, { data }, { data: ownTemplates }] = await Promise.all([
     supabase.from("clients").select("*").eq("id", id).eq("owner_id", userId).maybeSingle(),
-    supabase.from("landings").select("id,business_name,business_type,slug,published,logo_url,logo_style,primary_color,plan,expires_at,fallback_url,redirect_url,actions(type,url,enabled,position)").eq("client_id", id).eq("owner_id", userId).order("created_at", { ascending: false }),
+    supabase.from("landings").select("id,business_name,business_type,slug,published,logo_url,logo_style,primary_color,plan,expires_at,fallback_url,redirect_url,pet_archived_at,actions(type,url,enabled,position)").eq("client_id", id).eq("owner_id", userId).order("created_at", { ascending: false }),
     supabase.from("landings").select("id,template_name,template_hidden,template_order").eq("owner_id", userId).not("template_name", "is", null),
   ]);
   if (!client) notFound();
-  const landings = (data || []) as Landing[];
+  const landings = ((data || []) as Landing[]).filter((landing) => !(landing.business_type === "pet" && landing.pet_archived_at));
   const templates = templateChoices(ownTemplates || []);
   const directLinks = landings.filter((landing) => planOf(landing) === "direct");
   const contactCards = landings.filter((landing) => planOf(landing) !== "direct" && landing.business_type === "contact");
-  const petTags = landings.filter((landing) => planOf(landing) !== "direct" && landing.business_type === "pet");
+  const petTags = landings.filter((landing) => planOf(landing) !== "direct" && landing.business_type === "pet" && !landing.pet_archived_at);
   const landingPages = landings.filter((landing) => planOf(landing) !== "direct" && landing.business_type !== "contact" && landing.business_type !== "pet");
   const returnTo = `/admin/clientes/${id}`;
 

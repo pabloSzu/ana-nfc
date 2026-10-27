@@ -70,3 +70,25 @@ export async function regenerateTagCode(fd: FormData) {
   revalidatePath(`/admin/chapitas/${batchId}`);
   redirect(`/admin/chapitas/${batchId}?saved=${encodeURIComponent("Código anterior anulado. Imprimí o copiá el nuevo código.")}`);
 }
+
+// Oculta un lote del stock y de los totales sin borrar sus chapitas ni sus códigos. Se puede
+// restaurar desde "Lotes archivados". La igualdad por owner_id mantiene la operación dentro de
+// la cuenta aunque alguien manipule el formulario.
+export async function setBatchArchived(fd: FormData) {
+  const supabase = await createClient();
+  const { data: claims } = await supabase.auth.getClaims();
+  const userId = String(claims?.claims?.sub || "");
+  if (!userId) redirect("/admin/login");
+
+  const batchId = String(fd.get("batchId") || "");
+  const archive = String(fd.get("archive") || "") === "true";
+  const validId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (!validId.test(batchId)) redirect("/admin/chapitas?error=" + encodeURIComponent("Lote inválido."));
+
+  const { data, error } = await supabase.rpc("set_tag_batch_archived", { p_batch: batchId, p_archived: archive });
+  if (error || !data) redirect("/admin/chapitas?error=" + encodeURIComponent(error?.message || "No se pudo actualizar el lote."));
+
+  revalidatePath("/admin/chapitas");
+  revalidatePath(`/admin/chapitas/${batchId}`);
+  redirect(`/admin/chapitas?saved=${encodeURIComponent(archive ? "Lote archivado. No se borró nada." : "Lote restaurado.")}`);
+}
