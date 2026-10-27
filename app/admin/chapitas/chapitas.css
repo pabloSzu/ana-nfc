@@ -137,14 +137,14 @@
 .ch-link code { overflow: hidden; color: var(--text-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; max-width: 260px; }
 .ch-actions { display: flex; justify-content: flex-end; gap: 6px; white-space: nowrap; }
 .ch-actions form { margin: 0; }
-/* Adentro de un lote ([id]/page.tsx): ruta, encabezado con la franja naranja de Mascotas, los 4
-   pasos para producirlo y las unidades con filtros. */
+/* Adentro de un lote ([id]/page.tsx): regreso bien visible, encabezado con la franja naranja de
+   Mascotas, acciones para producirlo y las unidades con filtros. */
 /* Con fondo propio: se lee también sobre los temas oscuros del Admin. */
-.ch-crumbs { position: relative; z-index: 1; display: flex; align-items: center; gap: 8px; width: fit-content; max-width: 100%; margin-bottom: 12px; padding: 6px 13px; border: 1px solid var(--border); border-radius: 99px; background: var(--surface); color: var(--text-muted); font-size: 13px; font-weight: 700; box-shadow: var(--shadow-sm); }
-.ch-crumbs a { color: var(--text-muted); text-decoration: none; }
-.ch-crumbs a:hover { color: var(--text); }
-.ch-crumbs strong { overflow: hidden; color: var(--text); text-overflow: ellipsis; white-space: nowrap; }
-.ch-lot-head { position: relative; z-index: 1; display: flex; align-items: center; gap: 18px; margin-bottom: 18px; padding: 22px 24px 22px 28px; overflow: hidden; border: 1px solid color-mix(in srgb, #e9772f 30%, var(--border)); border-radius: 22px; background: linear-gradient(110deg, color-mix(in srgb, #e9772f 13%, var(--surface)), var(--surface) 70%); box-shadow: var(--shadow-md); }
+.ch-back-lots { position: relative; z-index: 2; display: inline-flex; align-items: center; gap: 10px; margin-bottom: 14px; padding: 11px 18px 11px 11px; border: 2px solid #c65318; border-radius: 14px; background: #e9772f; color: #fff; font-size: 13px; font-weight: 900; letter-spacing: .055em; text-decoration: none; text-transform: uppercase; box-shadow: 0 8px 20px #b94f1d35; transition: transform .15s ease, box-shadow .15s ease, background .15s ease; }
+.ch-back-lots span { display: grid; place-items: center; width: 29px; height: 29px; border-radius: 9px; background: #ffffff24; font-size: 20px; line-height: 1; }
+.ch-back-lots:hover { transform: translateY(-1px); background: #d96624; box-shadow: 0 11px 24px #b94f1d45; }
+.ch-back-lots:focus-visible { outline: 3px solid #1d2130; outline-offset: 3px; }
+.ch-lot-head { position: relative; z-index: 3; display: flex; align-items: center; gap: 18px; margin-bottom: 18px; padding: 22px 24px 22px 28px; border: 1px solid color-mix(in srgb, #e9772f 30%, var(--border)); border-radius: 22px; background: linear-gradient(110deg, color-mix(in srgb, #e9772f 13%, var(--surface)), var(--surface) 70%); box-shadow: var(--shadow-md); }
 .ch-lot-head::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 6px; background: #e9772f; }
 .ch-lot-icon { display: grid; place-items: center; flex: none; width: 52px; height: 52px; border-radius: 16px; background: #e9772f; color: #fff; }
 .ch-lot-icon svg { width: 26px; height: 26px; }
@@ -153,9 +153,21 @@
 .ch-lot-eyebrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; color: #c2551a; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .ch-lot-eyebrow span { padding: 3px 9px; border-radius: 99px; background: color-mix(in srgb, #e9772f 16%, var(--surface)); color: var(--text); letter-spacing: 0; text-transform: none; font-size: 12px; }
 .ch-lot-eyebrow small { color: var(--text-muted); font-size: 12px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+.ch-lot-side { display: grid; justify-items: end; gap: 12px; flex: none; width: 240px; }
 .ch-lot-progress { display: grid; gap: 6px; flex: none; width: 220px; }
 .ch-lot-progress strong { font-size: 14px; }
 .ch-lot-progress small { color: var(--text-muted); font-size: 12px; }
+.ch-lot-manage { display: flex; align-items: center; gap: 7px; }
+.ch-lot-manage > .btn { min-height: 38px; padding: 8px 12px; font-size: 12px; }
+.ch-lot-manage > .btn svg { width: 15px; height: 15px; }
+.ch-lot-more { position: relative; }
+.ch-lot-more summary { display: grid; place-items: center; width: 39px; height: 39px; border: 1px solid var(--border); border-radius: 11px; background: var(--surface); color: var(--text); font-size: 16px; font-weight: 900; cursor: pointer; list-style: none; }
+.ch-lot-more summary::-webkit-details-marker { display: none; }
+.ch-lot-more[open] summary { border-color: #e9772f; }
+.ch-lot-more > div { position: absolute; z-index: 10; top: calc(100% + 7px); right: 0; width: min(280px, calc(100vw - 40px)); padding: 14px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-lg); }
+.ch-lot-more > div > strong { font-size: 13px; }
+.ch-lot-more p { margin: 4px 0 12px; color: var(--text-muted); font-size: 12px; line-height: 1.4; }
+.ch-lot-more button { width: 100%; padding: 9px 11px; border: 1px solid #e7b2a6; border-radius: 10px; background: #fff3f0; color: #a83722; font: inherit; font-size: 12px; font-weight: 850; cursor: pointer; }
 .ch-archive-bar { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 18px; margin: -6px 0 18px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
 .ch-archive-bar p { display: grid; gap: 2px; margin: 0; }
 .ch-archive-bar p strong { font-size: 13px; }
@@ -219,7 +231,9 @@
   .ch-section-heading > span { text-align: left; }
   .ch-flow, .ch-user-journey, .ch-code-explainer, .ch-lot-actions { grid-template-columns: 1fr; }
   .ch-lot-head { align-items: flex-start; flex-wrap: wrap; padding: 18px 18px 18px 22px; }
-  .ch-lot-progress { width: 100%; }
+  .ch-back-lots { display: flex; justify-content: center; width: 100%; }
+  .ch-lot-side, .ch-lot-progress { justify-items: stretch; width: 100%; }
+  .ch-lot-manage { justify-content: space-between; }
   .ch-profiles-head, .ch-profile-list li { align-items: flex-start; flex-direction: column; }
   .ch-profiles-head form, .ch-profiles-head input { width: 100%; }
   .ch-profile-actions { width: 100%; justify-content: space-between; }

@@ -11,7 +11,8 @@ import { LuPrinter as IconPrinter } from "react-icons/lu";
 import { getSiteOrigin, isLocalSite } from "@/lib/site-url";
 import { parsePet } from "@/lib/pet";
 import { formatCode, tagState, unitNumber, type TagState } from "@/lib/pet-tags";
-import { regenerateTagCode, setBatchArchived } from "../actions";
+import ModalTrigger from "../../modal-trigger";
+import { regenerateTagCode, setBatchArchived, updateBatch } from "../actions";
 import RegenerateCodeButton from "../regenerate-code-button";
 import "../chapitas.css";
 
@@ -60,7 +61,7 @@ export default async function BatchPage({ params, searchParams }: { params: Prom
   return <main className="shell admin-shell admin-library-page">
     <AdminThemeBackdrop />
     <Suspense fallback={null}><Toast /></Suspense>
-    <nav className="ch-crumbs" aria-label="Ruta"><Link href="/admin/chapitas">Chapitas</Link><span aria-hidden="true">›</span><strong>{batch.name}</strong></nav>
+    <Link className="ch-back-lots" href="/admin/chapitas"><span aria-hidden="true">←</span><strong>Volver a lotes</strong></Link>
 
     {/* Encabezado propio del lote (franja naranja de Mascotas): que se note que estás adentro de uno. */}
     <header className="ch-lot-head">
@@ -69,19 +70,35 @@ export default async function BatchPage({ params, searchParams }: { params: Prom
         <p className="ch-lot-eyebrow">Lote<span>{batch.reseller || "Venta directa"}</span><small>Creado el {created}</small></p>
         <h1>{batch.name}</h1>
       </div>
-      <div className="ch-lot-progress">
-        <strong>{activated} de {rows.length} activadas</strong>
-        <div className="ch-progress"><span style={{ width: `${rows.length ? (activated / rows.length) * 100 : 0}%` }} /></div>
-        <small>{counts.stock} sin activar{counts.lost ? ` · ${counts.lost} ${counts.lost === 1 ? "perdida" : "perdidas"}` : ""}</small>
+      <div className="ch-lot-side">
+        <div className="ch-lot-progress">
+          <strong>{activated} de {rows.length} activadas</strong>
+          <div className="ch-progress"><span style={{ width: `${rows.length ? (activated / rows.length) * 100 : 0}%` }} /></div>
+          <small>{counts.stock} sin activar{counts.lost ? ` · ${counts.lost} ${counts.lost === 1 ? "perdida" : "perdidas"}` : ""}</small>
+        </div>
+        <div className="ch-lot-manage">
+          <ModalTrigger label="Editar lote" icon={<IconEdit />} title="Editar datos del lote" description="Podés corregir el nombre y el canal de venta. Las unidades y sus códigos no cambian." variant="secondary">
+            <form action={updateBatch} className="stack">
+              <input type="hidden" name="batchId" value={batch.id} />
+              <label className="label">Nombre del lote<input name="name" maxLength={60} required defaultValue={batch.name} /></label>
+              <label className="label">Veterinaria o revendedor (opcional)<input name="reseller" maxLength={60} defaultValue={batch.reseller || ""} /></label>
+              <PendingSubmitButton className="btn full" pendingText="Guardando…">Guardar cambios</PendingSubmitButton>
+            </form>
+          </ModalTrigger>
+          {!batch.archived_at && <details className="ch-lot-more">
+            <summary aria-label="Más acciones del lote">•••</summary>
+            <div><strong>Más acciones</strong><p>Podés ocultarlo del stock sin borrar sus unidades.</p><form action={setBatchArchived}><input type="hidden" name="batchId" value={batch.id} /><input type="hidden" name="archive" value="true" /><PendingSubmitButton pendingText="Archivando…">Archivar lote</PendingSubmitButton></form></div>
+          </details>}
+        </div>
       </div>
     </header>
 
-    <form action={setBatchArchived} className={`ch-archive-bar${batch.archived_at ? " is-archived" : ""}`}>
+    {batch.archived_at && <form action={setBatchArchived} className="ch-archive-bar is-archived">
       <input type="hidden" name="batchId" value={batch.id} />
-      <input type="hidden" name="archive" value={batch.archived_at ? "false" : "true"} />
-      <p><strong>{batch.archived_at ? "Este lote está archivado" : "¿Ya no querés verlo en el stock?"}</strong><span>{batch.archived_at ? "No cuenta en los totales, pero conserva todas sus chapitas y códigos." : "Archivar lo oculta y lo saca de los totales. No elimina nada."}</span></p>
-      <PendingSubmitButton pendingText={batch.archived_at ? "Restaurando…" : "Archivando…"}>{batch.archived_at ? "Restaurar lote" : "Archivar lote"}</PendingSubmitButton>
-    </form>
+      <input type="hidden" name="archive" value="false" />
+      <p><strong>Este lote está archivado</strong><span>No cuenta en los totales, pero conserva todas sus chapitas y códigos.</span></p>
+      <PendingSubmitButton pendingText="Restaurando…">Restaurar lote</PendingSubmitButton>
+    </form>}
 
     {isLocalSite(origin) && <aside className="admin-assignment-warning"><IconExternalLink /><p><strong>Estás en desarrollo ({new URL(origin).host}).</strong><span>Los links y QR de esta pantalla apuntan a tu computadora: no los grabes en chapitas reales. Grabalas desde el Admin de bionfc.com.</span></p></aside>}
 

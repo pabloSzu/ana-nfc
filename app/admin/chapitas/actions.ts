@@ -71,6 +71,34 @@ export async function regenerateTagCode(fd: FormData) {
   redirect(`/admin/chapitas/${batchId}?saved=${encodeURIComponent("Código anterior anulado. Imprimí o copiá el nuevo código.")}`);
 }
 
+// Los datos administrativos del lote sí se pueden corregir. La cantidad, las unidades y sus
+// códigos no forman parte de esta edición porque ya representan piezas físicas identificables.
+export async function updateBatch(fd: FormData) {
+  const supabase = await createClient();
+  const { data: claims } = await supabase.auth.getClaims();
+  const userId = String(claims?.claims?.sub || "");
+  if (!userId) redirect("/admin/login");
+
+  const batchId = String(fd.get("batchId") || "");
+  const name = String(fd.get("name") || "").trim().slice(0, 60);
+  const reseller = String(fd.get("reseller") || "").trim().slice(0, 60);
+  const validId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if (!validId.test(batchId)) redirect("/admin/chapitas?error=" + encodeURIComponent("Lote inválido."));
+  if (!name) redirect(`/admin/chapitas/${batchId}?error=${encodeURIComponent("Poné un nombre para el lote.")}`);
+
+  const { data, error } = await supabase.from("tag_batches")
+    .update({ name, reseller })
+    .eq("id", batchId)
+    .eq("owner_id", userId)
+    .select("id")
+    .maybeSingle();
+  if (error || !data) redirect(`/admin/chapitas/${batchId}?error=${encodeURIComponent(error?.message || "No se pudo editar el lote.")}`);
+
+  revalidatePath("/admin/chapitas");
+  revalidatePath(`/admin/chapitas/${batchId}`);
+  redirect(`/admin/chapitas/${batchId}?saved=${encodeURIComponent("Datos del lote actualizados.")}`);
+}
+
 // Oculta un lote del stock y de los totales sin borrar sus chapitas ni sus códigos. Se puede
 // restaurar desde "Lotes archivados". La igualdad por owner_id mantiene la operación dentro de
 // la cuenta aunque alguien manipule el formulario.
