@@ -39,24 +39,24 @@ export default async function PetProfilesPage({ searchParams }: { searchParams: 
 
   return <main className="shell admin-shell admin-library-page">
     <AdminThemeBackdrop />
-    <header className="library-page-header">
-      <div><p className="eyebrow">BIONFC Mascotas</p><h1>Fichas de mascotas</h1><p className="muted">Acá ves las fichas que activaron los compradores. Las chapitas todavía sin vender siguen en «Chapitas y stock».</p></div>
-      <div className="library-page-actions"><Link className="btn secondary" href="/admin/chapitas">Ver stock</Link></div>
+    <header className="library-page-header ch-pets-head">
+      <div><p className="eyebrow">BIONFC Mascotas</p><h1>Mascotas activadas</h1><p className="muted">Las mascotas de quienes ya activaron su chapita: podés ver y editar cada una. Las chapitas sin vender están en «Lotes».</p></div>
+      <div className="library-page-actions"><Link className="btn secondary" href="/admin/chapitas">Ver lotes</Link></div>
     </header>
     <MascotasNav active="fichas" />
     <section className="elevated-section ch-profiles">
-      <div className="ch-profiles-head"><div><h2>{count || 0} {(count || 0) === 1 ? "ficha" : "fichas"}</h2><p>También conservamos acá las fichas manuales que ya se habían creado; no necesitás crear una para cada venta.</p></div><form method="get" role="search"><label className="sr-only" htmlFor="pet-search">Buscar mascota</label><input id="pet-search" type="search" name="q" defaultValue={query} placeholder="Buscar por nombre…" /><button className="btn secondary" type="submit">Buscar</button></form></div>
-      {error ? <p className="ch-profiles-empty" role="alert">No se pudieron cargar las fichas. Probá de nuevo.</p>
-        : !pets?.length ? <p className="ch-profiles-empty">{query ? "No hay mascotas con ese nombre." : "Todavía no hay fichas activadas. Prepará una tanda de prueba y activá una chapita para ver el recorrido."}</p>
+      <div className="ch-profiles-head"><div><h2>{count || 0} {(count || 0) === 1 ? "mascota" : "mascotas"}</h2><p>También aparecen las que se crearon a mano antes de los lotes; no hace falta crear una para cada venta.</p></div><form method="get" role="search"><label className="sr-only" htmlFor="pet-search">Buscar mascota</label><input id="pet-search" type="search" name="q" defaultValue={query} placeholder="Buscar por nombre…" /><button className="btn secondary" type="submit">Buscar</button></form></div>
+      {error ? <p className="ch-profiles-empty" role="alert">No se pudieron cargar las mascotas. Probá de nuevo.</p>
+        : !pets?.length ? <p className="ch-profiles-empty">{query ? "No hay mascotas con ese nombre." : "Todavía no hay mascotas activadas. Creá un lote de prueba y activá una chapita para ver el recorrido."}</p>
         : <ul className="ch-profile-list">{pets.map((pet) => {
           const lost = parsePet(pet.button_style).lost;
           const label = pet.blocked_at ? "Pausada" : !pet.published ? "Sin publicar" : lost ? "Perdida" : "Publicada";
           const publicSlug = pet.pet_slug || pet.slug;
           return <li key={pet.id}>
             <div className="ch-profile-mark" aria-hidden="true">🐾</div>
-            <div className="ch-profile-details"><strong>{pet.business_name || "Sin nombre todavía"}</strong><small>{pet.client_id ? clientNames.get(pet.client_id) || "Familia sin nombre" : "Sin familia asignada"}</small><small>{pet.batch_id ? `${batchNames.get(pet.batch_id) || "Tanda"} · unidad ${pet.tag_number || "—"}` : "Ficha creada manualmente"}</small></div>
+            <div className="ch-profile-details"><strong>{pet.business_name || "Sin nombre todavía"}</strong><small>{pet.client_id ? clientNames.get(pet.client_id) || "Familia sin nombre" : "Sin familia asignada"}</small><small>{pet.batch_id ? `${batchNames.get(pet.batch_id) || "Tanda"} · unidad ${pet.tag_number || "—"}` : "Creada a mano"}</small></div>
             <span className={`ch-profile-status${pet.published && !pet.blocked_at ? " is-live" : ""}`}>{label}</span>
-            <div className="ch-profile-actions"><Link className="btn secondary" href={`/admin/landings/${pet.id}/mascota`}>Abrir ficha</Link>{pet.published && !pet.blocked_at && <a href={`/mascota/${publicSlug}`} target="_blank" rel="noopener noreferrer">Ver pública ↗</a>}</div>
+            <div className="ch-profile-actions"><Link className="btn secondary" href={`/admin/landings/${pet.id}/mascota`}>Editar</Link>{pet.published && !pet.blocked_at && <a href={`/mascota/${publicSlug}`} target="_blank" rel="noopener noreferrer">Ver pública ↗</a>}</div>
           </li>;
         })}</ul>}
       {!error && totalPages > 1 && <nav className="ch-profile-pages" aria-label="Páginas de fichas">{page > 1 ? <Link href={pageHref(page - 1)}>← Anterior</Link> : <span />}{page} de {totalPages}{page < totalPages ? <Link href={pageHref(page + 1)}>Siguiente →</Link> : <span />}</nav>}

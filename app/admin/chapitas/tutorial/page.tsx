@@ -35,7 +35,7 @@ export default function TagTutorialPage() {
       <header><div><p className="eyebrow">Tres enlaces, tres trabajos</p><h2>Qué va en cada lugar</h2></div><IconWifi /></header>
       <div className="ch-link-map-grid">
         <article><span>En la chapita</span><code>bionfc.com/go/ID</code><p>Es permanente. Va grabado en el NFC y codificado en el QR exterior. Nunca lleva el nombre ni el código secreto.</p></article>
-        <article><span>Ficha para compartir</span><code>bionfc.com/mascota/toby-a7k3f2</code><p>Es amigable y única. Dos mascotas con el mismo nombre reciben terminaciones diferentes. Se ve en «Fichas de mascotas» después de activar.</p></article>
+        <article><span>Ficha para compartir</span><code>bionfc.com/mascota/toby-a7k3f2</code><p>Es amigable y única. Dos mascotas con el mismo nombre reciben terminaciones diferentes. Se ve en «Mascotas activadas» después de activar.</p></article>
         <article><span>Dentro del paquete</span><code>bionfc.com/activar?c=…</code><p>El QR privado lleva a la activación. Su código de 8 caracteres se usa una sola vez para asignar la chapita al comprador.</p></article>
       </div>
       <aside><strong>Regla importante:</strong> si la familia cambia el nombre, la foto o el teléfono, no se reimprime el QR exterior ni se vuelve a grabar el NFC. El enlace permanente sigue llevando a su ficha.</aside>
@@ -51,7 +51,7 @@ export default function TagTutorialPage() {
       <aside className="ch-code-explainer"><div><span className="ch-code-sample">ABCD-2346</span><p><strong>Código de activación</strong><br />8 caracteres · viene en el paquete · un solo uso.</p></div><div><span className="ch-code-sample is-otp">906438</span><p><strong>Código de acceso</strong><br />6 números · llega por email · vence y se renueva.</p></div></aside>
       <div className="ch-faq">
         <h3>Dudas comunes</h3>
-        <details><summary>¿Dónde veo el stock y dónde veo las fichas?</summary><p>En <b>Chapitas y stock</b> preparás tandas y ves las unidades sin activar o ya activadas. En <b>Fichas de mascotas</b> abrís las páginas que hicieron los compradores. Todo está dentro del mismo Admin.</p></details>
+        <details><summary>¿Dónde veo los lotes y dónde las mascotas?</summary><p>En <b>Lotes</b> fabricás las chapitas y ves las unidades sin activar o ya activadas. En <b>Mascotas activadas</b> abrís las páginas que hicieron los compradores. Todo está dentro del mismo Admin.</p></details>
         <details><summary>¿Qué pasa si hay dos mascotas llamadas Toby?</summary><p>No se mezclan. Cada chapita tiene un ID interno único y cada ficha recibe una terminación diferente, por ejemplo <b>toby-a7k3f2</b> y <b>toby-k9m2p4</b>.</p></details>
         <details><summary>¿Qué pasa si después le cambian el nombre?</summary><p>La ficha muestra el nombre nuevo, pero conserva su dirección y el enlace físico. Los QR y NFC ya entregados siguen funcionando.</p></details>
         <details><summary>¿Qué pasa si el dueño pierde su contraseña?</summary><p>No hay contraseña. Entra desde <b>bionfc.com/mi/entrar</b> y recibe un código nuevo de 6 números en su email.</p></details>
@@ -62,6 +62,6 @@ export default function TagTutorialPage() {
       </div>
     </section>
 
-    <div className="ch-tutorial-finish"><Link className="btn" href="/admin/chapitas">Preparar una tanda</Link><Link className="btn secondary" href="/admin/chapitas/fichas">Ver fichas</Link></div>
+    <div className="ch-tutorial-finish"><Link className="btn" href="/admin/chapitas">Ir a los lotes</Link><Link className="btn secondary" href="/admin/chapitas/fichas">Ver mascotas activadas</Link></div>
   </main>;
 }

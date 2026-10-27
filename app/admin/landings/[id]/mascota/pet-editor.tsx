@@ -361,7 +361,7 @@ export default function PetEditor({ landing: initialLanding, initialPet, saveAct
             <strong className="pet-top-name">{name.trim() || "Tu chapita"}</strong>
             {owner?.email && <div className="pet-top-account"><AccountMenu email={owner.email} /></div>}
           </>
-          : <Link className="pet-editor-back" href="/admin/chapitas/fichas" aria-label="Volver a Fichas de mascotas">←<span className="pet-editor-back-text">Fichas de mascotas</span></Link>}
+          : <Link className="pet-editor-back" href="/admin/chapitas/fichas" aria-label="Volver a Mascotas activadas">←<span className="pet-editor-back-text">Mascotas activadas</span></Link>}
         {/* El dueño: solo "Mis chapitas" (ver y compartir la página están ahí). */}
         {!isOwner && <div className="pet-editor-title"><small>{landing.published ? "Publicada" : "Borrador"}</small><strong>{name.trim() || "Tu chapita"}</strong></div>}
         <div className="pet-editor-actions">

@@ -81,7 +81,7 @@ export default async function PagesPage({ searchParams }: { searchParams: Search
     <AdminThemeBackdrop />
     <Suspense fallback={null}><Toast /></Suspense>
     <header className="library-page-header">
-      <div><p className="eyebrow">Experiencias digitales</p><h1>Páginas</h1><p className="muted">Landings, tarjetas personales y links directos. Las chapitas y las fichas de mascotas están en «Mascotas».</p></div>
+      <div><p className="eyebrow">Experiencias digitales</p><h1>Páginas</h1><p className="muted">Landings, tarjetas personales y links directos. Los lotes de chapitas y las mascotas activadas están en «Mascotas».</p></div>
       <div className="library-page-actions">{clients?.length ? <><ModalTrigger label="Nueva landing" icon={<IconPlus />} title="Nueva landing" description="Elegí el cliente al que pertenece."><LandingCreationForm clients={clients} action={newLanding} kind="custom" returnTo={returnTo} templates={templateChoices(allPages || [])} /></ModalTrigger><ModalTrigger label="Nueva tarjeta" icon={<IconPlus />} title="Nueva tarjeta personal" description="Elegí el cliente al que pertenece." variant="secondary"><LandingCreationForm clients={clients} action={newLanding} kind="contact" returnTo={returnTo} /></ModalTrigger><ModalTrigger label="Nuevo link directo" icon={<IconPlus />} title="Nuevo link directo" description="El producto abre un solo link. Queda publicado y vas directo a grabar el NFC." variant="secondary"><LandingCreationForm clients={clients} action={newLanding} kind="direct" returnTo={returnTo} /></ModalTrigger></> : <Link className="btn" href="/admin/clientes"><IconUsers /> Primero creá un cliente</Link>}</div>
     </header>
 

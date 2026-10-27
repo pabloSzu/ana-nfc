@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import Toast from "@/components/toast";
 import { AdminThemeBackdrop } from "@/components/admin-theme";
-import { IconCheckCircle, IconFileText, IconPlus, IconPaw, IconQrCode } from "@/components/icons";
+import { IconHeart, IconPlus, IconPaw, IconQrCode } from "@/components/icons";
 import PendingSubmitButton from "@/components/pending-submit-button";
 import { BATCH_MAX } from "@/lib/pet-tags";
 import ModalTrigger from "../modal-trigger";
@@ -12,8 +12,9 @@ import { createBatch } from "./actions";
 import MascotasNav from "./mascotas-nav";
 import "./chapitas.css";
 
-// Admin → Chapitas: lotes de chapitas para vender en la calle o dejar en veterinarias. Cada
-// chapita la activa el comprador con el código de su tarjetita (ver /activar).
+// Admin → Mascotas: dos mundos, cada uno con su color. Los lotes (naranja) son las chapitas físicas
+// que se fabrican y venden; las mascotas activadas (verde) son las páginas que armaron los
+// compradores al activar la suya con el código de la tarjeta (ver /activar).
 export default async function BatchesPage() {
   const supabase = await createClient();
   const { data: authData } = await supabase.auth.getClaims();
@@ -35,41 +36,49 @@ export default async function BatchesPage() {
     <AdminThemeBackdrop />
     <Suspense fallback={null}><Toast /></Suspense>
     <header className="library-page-header">
-      <div><p className="eyebrow ch-eyebrow"><IconPaw /> BIONFC Mascotas</p><h1>Chapitas y stock</h1><p className="muted">Prepará tandas para vender, imprimí el material y controlá cuáles chapitas se activaron.</p></div>
-      <div className="library-page-actions">
-        <Link className="btn secondary" href="/admin/chapitas/tutorial">Leer guía completa</Link>
-        <ModalTrigger label="Generar lote" icon={<IconPlus />} title="Generar lote de chapitas" description="Se crean vacías y sin publicar, cada una con su código de activación.">
+      <div><p className="eyebrow ch-eyebrow"><IconPaw /> BIONFC Mascotas</p><h1>Mascotas</h1><p className="muted">Fabricá chapitas en lotes para vender y seguí las mascotas que ya las activaron.</p></div>
+    </header>
+    <MascotasNav active="stock" />
+
+    {/* Los dos mundos, lado a lado: lo que fabricás (lotes) y lo que ya está en uso (mascotas). */}
+    <section className="ch-worlds" aria-label="Lotes y mascotas">
+      <article className="ch-world is-lots">
+        <span className="ch-world-icon"><IconQrCode /></span>
+        <div className="ch-world-copy"><strong>Lotes de chapitas</strong><small>Las chapitas físicas que fabricás para vender. Cada lote tiene sus tarjetas, sus chapitas y sus códigos.</small></div>
+        <dl className="ch-world-stats"><div><dt>Para vender</dt><dd>{stock}</dd></div><div><dt>Fabricadas</dt><dd>{totals.total}</dd></div></dl>
+        <ModalTrigger label="Nuevo lote" icon={<IconPlus />} title="Nuevo lote de chapitas" description="Se crean vacías y sin publicar, cada una con su código de activación.">
           <form action={createBatch} className="stack">
             <label className="label">Nombre del lote<input name="name" maxLength={60} required placeholder="Ej. Calle · octubre" /></label>
             <label className="label">Veterinaria o revendedor (opcional)<input name="reseller" maxLength={60} placeholder="Ej. Veterinaria Patitas" /><small className="field-help">Para saber cuántas vendió cada uno.</small></label>
             <label className="label">Cantidad<input name="count" type="number" min={1} max={BATCH_MAX} defaultValue={10} required /></label>
-            <PendingSubmitButton className="btn full" pendingText="Generando…">Generar</PendingSubmitButton>
+            <PendingSubmitButton className="btn full" pendingText="Generando…">Crear lote</PendingSubmitButton>
           </form>
         </ModalTrigger>
-      </div>
-    </header>
-    <MascotasNav active="stock" />
-
-    <section className="ch-overview" aria-label="Resumen de chapitas">
-      <article><span className="ch-overview-icon"><IconQrCode /></span><small>Total preparadas</small><strong>{totals.total}</strong></article>
-      <article><span className="ch-overview-icon is-stock"><IconFileText /></span><small>Disponibles para vender</small><strong>{stock}</strong></article>
-      <article><span className="ch-overview-icon is-active"><IconCheckCircle /></span><small>Activadas por clientes</small><strong>{totals.active}</strong></article>
+      </article>
+      <Link className="ch-world is-pets" href="/admin/chapitas/fichas">
+        <span className="ch-world-icon"><IconHeart /></span>
+        <div className="ch-world-copy"><strong>Mascotas activadas</strong><small>Cuando alguien activa su chapita, carga los datos de su mascota y aparece acá. Podés ver y editar cada una.</small></div>
+        <dl className="ch-world-stats"><div><dt>Activadas</dt><dd>{totals.active}</dd></div></dl>
+        <span className="ch-world-go">Ver mascotas →</span>
+      </Link>
     </section>
 
-    <section className="elevated-section ch-tutorial-card" aria-labelledby="tutorial-title">
-      <div><p className="eyebrow">Después de la venta</p><h2 id="tutorial-title">Las fichas no son el stock</h2><p>Acá ves cada unidad física y su código privado. Cuando un comprador la activa, su ficha aparece en «Fichas de mascotas»; puede cambiar los datos sin regrabar el NFC.</p></div>
-      <Link className="btn secondary" href="/admin/chapitas/fichas">Ver fichas</Link>
-    </section>
-
-    {!batches?.length ? <section className="elevated-section ch-empty">
-      <h2>Todavía no hay lotes</h2>
-      <p className="muted">Empezá con un lote chico de prueba. Podés generar una sola chapita para recorrer todo el proceso antes de fabricar más.</p>
+    <div className="ch-lots-head"><h2>Tus lotes</h2>{!!batches?.length && <span>{batches.length}</span>}</div>
+    {!batches?.length ? <section className="ch-lots-empty">
+      <strong>Todavía no hay lotes</strong>
+      <p>Empezá con un lote chico de prueba: podés crear una sola chapita para recorrer todo el proceso antes de fabricar más.</p>
     </section> : <ul className="ch-batches">{batches.map((batch) => {
       const count = counts.get(batch.id) || { total: 0, active: 0 };
-      return <li key={batch.id}><Link href={`/admin/chapitas/${batch.id}`}>
-        <div><strong>{batch.name}</strong><small>{batch.reseller || "Venta directa"} · {new Date(batch.created_at).toLocaleDateString("es-AR")}</small></div>
-        <div className="ch-progress" aria-label={`${count.active} de ${count.total} activadas`}><span style={{ width: `${count.total ? (count.active / count.total) * 100 : 0}%` }} /></div>
-        <em>{count.active} de {count.total} activadas</em>
+      const forSale = count.total - count.active;
+      return <li key={batch.id}><Link href={`/admin/chapitas/${batch.id}`} className={count.total ? "" : "is-empty"}>
+        <span className="ch-batch-icon" aria-hidden="true"><IconPaw /></span>
+        <div className="ch-batch-name"><strong>{batch.name}</strong><small><span>{batch.reseller || "Venta directa"}</span>{new Date(batch.created_at).toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" })}</small></div>
+        {count.total ? <div className="ch-batch-counts">
+          <span className="is-sale">{forSale} para vender</span>
+          <span className="is-active">{count.active} {count.active === 1 ? "activada" : "activadas"}</span>
+          <div className="ch-progress" aria-label={`${count.active} de ${count.total} activadas`}><span style={{ width: `${(count.active / count.total) * 100}%` }} /></div>
+        </div> : <div className="ch-batch-counts"><span>Sin chapitas</span></div>}
+        <span className="ch-batch-go" aria-hidden="true">→</span>
       </Link></li>;
     })}</ul>}
   </main>;

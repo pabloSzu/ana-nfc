@@ -67,7 +67,7 @@ export default async function Admin() {
       <div className="stat-card"><span className="stat-icon"><IconUsers /></span><small>Clientes</small><strong>{totalClients}</strong><span>{activeClients} con página</span></div>
       <div className="stat-card"><span className="stat-icon"><IconFileText /></span><small>Páginas</small><strong>{totalPages}</strong><span>{totalLandings} landings · {totalCards} tarjetas</span></div>
       <div className="stat-card"><span className="stat-icon"><IconCheckCircle /></span><small>Publicadas</small><strong>{published}</strong><span>{drafts} en borrador · {publishRate}% del total</span></div>
-      <div className="stat-card"><span className="stat-icon"><IconPaw /></span><small>Fichas de mascotas</small><strong>{petProfiles.length}</strong><span>{petProfiles.filter((pet) => pet.published).length} públicas · {petProfiles.filter((pet) => !pet.published).length} sin publicar</span></div>
+      <div className="stat-card"><span className="stat-icon"><IconPaw /></span><small>Mascotas activadas</small><strong>{petProfiles.length}</strong><span>{petProfiles.filter((pet) => pet.published).length} públicas · {petProfiles.filter((pet) => !pet.published).length} sin publicar</span></div>
     </section>
 
     {!!reports?.length && <section className="elevated-section renewals-card">
@@ -101,7 +101,7 @@ export default async function Admin() {
     <div className="dashboard-overview-grid">
       <section className="elevated-section dashboard-overview-card">
         <div className="section-heading rich-heading"><span className="step"><IconFileText /></span><div><p className="eyebrow">Actividad reciente</p><h2>Últimas páginas</h2></div><Link className="text-button" href="/admin/paginas">Ver todas →</Link></div>
-        {!pageLandings.length ? <div className="empty-state compact"><IconFileText /><strong>Todavía no hay páginas</strong><p className="muted">Las fichas de mascotas se ven en «Mascotas».</p></div> : <div className="dashboard-recent-list">{pageLandings.slice(0, 5).map((landing) => <Link key={landing.id} href={editHref(landing)}><AdminPageAvatar page={landing} /><span><strong>{landing.business_name}</strong><small>{pageKindLabel(landing)}</small></span><em className={landing.published ? "is-live" : ""}>{landing.published ? "Publicada" : "Borrador"}</em></Link>)}</div>}
+        {!pageLandings.length ? <div className="empty-state compact"><IconFileText /><strong>Todavía no hay páginas</strong><p className="muted">Las mascotas se ven en «Mascotas».</p></div> : <div className="dashboard-recent-list">{pageLandings.slice(0, 5).map((landing) => <Link key={landing.id} href={editHref(landing)}><AdminPageAvatar page={landing} /><span><strong>{landing.business_name}</strong><small>{pageKindLabel(landing)}</small></span><em className={landing.published ? "is-live" : ""}>{landing.published ? "Publicada" : "Borrador"}</em></Link>)}</div>}
       </section>
       <section className="elevated-section dashboard-overview-card">
         <div className="section-heading rich-heading"><span className="step warm"><IconUsers /></span><div><p className="eyebrow warm-text">Organización</p><h2>Clientes recientes</h2></div><Link className="text-button" href="/admin/clientes">Ver todos →</Link></div>

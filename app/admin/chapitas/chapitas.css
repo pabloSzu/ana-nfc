@@ -1,21 +1,39 @@
 /* Admin → Chapitas (lotes para vender) y sus hojas para imprimir. */
 .ch-eyebrow { display: flex; align-items: center; gap: 7px; }
 .ch-eyebrow svg { width: 15px; height: 15px; }
-.ch-overview { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: -20px 0 24px; }
-.ch-overview article { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 2px 12px; padding: 16px 18px; border: 1px solid var(--border); border-radius: 18px; background: color-mix(in srgb, var(--surface) 92%, transparent); box-shadow: var(--shadow-sm); }
-.ch-overview-icon { display: grid; grid-row: span 2; place-items: center; width: 42px; height: 42px; border-radius: 13px; background: var(--accent-subtle); color: var(--accent); }
-.ch-overview-icon.is-stock { background: var(--accent-4-subtle); color: #8a6412; }
-.ch-overview-icon.is-active { background: var(--success-subtle); color: var(--success); }
-.ch-overview-icon svg { width: 20px; height: 20px; }
-.ch-overview small { color: var(--text-muted); font-size: 12px; font-weight: 700; }
-.ch-overview strong { font-size: 24px; line-height: 1; }
-.ch-tutorial-card { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 24px; }
-.ch-tutorial-card h2 { margin: 5px 0 9px; font-size: clamp(21px, 3vw, 29px); }
-.ch-tutorial-card p:not(.eyebrow) { margin: 0; color: var(--text-muted); font-size: 13.5px; line-height: 1.55; }
-.ch-tutorial-card .btn { flex: none; }
+/* Página de Mascotas (page.tsx): dos mundos con su color. Lotes = naranja (lo que fabricás);
+   mascotas activadas = verde (lo que ya está en uso). */
+.ch-worlds { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: -12px 0 28px; }
+.ch-world { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto 1fr auto; gap: 14px 16px; padding: 22px; border: 1px solid transparent; border-radius: 22px; color: #1d2130; text-decoration: none; box-shadow: 0 10px 28px #1d21300f; }
+.ch-world-icon { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 15px; color: #fff; }
+.ch-world-icon svg { width: 24px; height: 24px; }
+.ch-world-copy { display: grid; gap: 4px; align-content: start; }
+.ch-world-copy strong { font-size: 19px; line-height: 1.2; }
+.ch-world-copy small { color: #4d5362; font-size: 13.5px; line-height: 1.5; }
+.ch-world-stats { display: flex; grid-column: 1 / -1; gap: 10px; margin: 0; }
+.ch-world-stats div { display: grid; gap: 2px; min-width: 104px; padding: 10px 14px; border-radius: 14px; background: #ffffffb3; }
+.ch-world-stats dt { color: #5b6170; font-size: 12px; font-weight: 700; }
+.ch-world-stats dd { margin: 0; font-size: 26px; font-weight: 800; line-height: 1; }
+.ch-world > .btn, .ch-world > .ch-world-go { grid-column: 1 / -1; justify-self: start; }
+.ch-world-go { padding: 10px 16px; border-radius: 99px; font-size: 14px; font-weight: 800; }
+.ch-world.is-lots { border-color: #f6cfae; background: linear-gradient(145deg, #fff0e3, #fffaf5 70%); }
+.ch-world.is-lots .ch-world-icon { background: #e9772f; }
+.ch-world.is-lots .btn { border-color: #e9772f; background: #e9772f; color: #fff; }
+.ch-world.is-pets { border-color: #bfe8cf; background: linear-gradient(145deg, #e7f8ee, #f8fdfa 70%); transition: transform .18s ease, box-shadow .18s ease; }
+.ch-world.is-pets:hover { transform: translateY(-2px); box-shadow: 0 16px 32px #1d21301a; }
+.ch-world.is-pets .ch-world-icon { background: #22a861; }
+.ch-world.is-pets .ch-world-go { background: #17803d; color: #fff; }
+.ch-lots-head { position: relative; z-index: 1; display: flex; align-items: center; gap: 10px; margin: 0 0 12px; }
+.ch-lots-head h2 { margin: 0; font-size: 20px; }
+.ch-lots-head span { padding: 2px 10px; border-radius: 99px; background: #e9772f; color: #fff; font-size: 13px; font-weight: 800; }
+.ch-lots-empty { position: relative; z-index: 1; display: grid; gap: 6px; padding: 24px; border: 1.5px dashed #f0b98e; border-radius: 18px; background: var(--surface); }
+.ch-lots-empty p { margin: 0; color: var(--text-muted); }
 .ch-section-nav { display: flex; flex-wrap: wrap; gap: 8px; margin: -15px 0 28px; }
 .ch-section-nav a { padding: 10px 15px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text-muted); font-size: 13px; font-weight: 750; text-decoration: none; }
-.ch-section-nav a:hover, .ch-section-nav a.is-active { border-color: var(--accent); background: var(--accent-subtle); color: var(--accent); }
+.ch-section-nav a:hover { border-color: var(--text-muted); color: var(--text); }
+.ch-section-nav a.is-active { border-color: #1d2130; background: #1d2130; color: #fff; }
+.ch-section-nav a.is-stock.is-active { border-color: #e9772f; background: #e9772f; }
+.ch-section-nav a.is-fichas.is-active { border-color: #22a861; background: #22a861; }
 .ch-tutorial-page { padding-top: 30px; }
 .ch-tutorial-heading { max-width: 850px; margin-bottom: 38px; }
 .ch-tutorial-heading h1 { margin: 7px 0 10px; font-size: clamp(30px, 5vw, 48px); }
@@ -81,11 +99,22 @@
 .ch-steps { display: grid; gap: 10px; margin: 0; padding-left: 20px; color: var(--text-muted); line-height: 1.5; }
 .ch-steps strong { color: var(--text); }
 .ch-batches { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
-.ch-batches a { display: grid; grid-template-columns: minmax(0, 1fr) 160px auto; align-items: center; gap: 18px; padding: 16px 18px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface, #fff); color: inherit; text-decoration: none; }
-.ch-batches a:hover { border-color: var(--primary, #6d5dfc); }
+.ch-batches a { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 16px; padding: 14px 18px 14px 14px; border: 1px solid var(--border); border-radius: 18px; background: var(--surface, #fff); color: inherit; text-decoration: none; box-shadow: var(--shadow-sm); transition: border-color .15s ease, transform .15s ease; }
+.ch-batches a:hover { border-color: #e9772f; transform: translateY(-1px); }
+.ch-batches a.is-empty { opacity: .72; }
+.ch-batch-icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 13px; background: #fff0e3; color: #e9772f; }
+.ch-batch-icon svg { width: 20px; height: 20px; }
+.ch-batch-name { display: grid; gap: 4px; min-width: 0; }
+.ch-batch-name small { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--text-muted); font-size: 12.5px; }
+.ch-batch-name small span { padding: 2px 8px; border-radius: 99px; background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text); font-weight: 700; }
+.ch-batch-counts { display: grid; grid-template-columns: auto auto; gap: 6px 8px; justify-items: start; min-width: 230px; }
+.ch-batch-counts > span { padding: 4px 10px; border-radius: 99px; background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text-muted); font-size: 12px; font-weight: 800; white-space: nowrap; }
+.ch-batch-counts > span.is-sale { background: #fff0e3; color: #b8481a; }
+.ch-batch-counts > span.is-active { background: #e3f6ea; color: #17803d; }
+.ch-batch-counts .ch-progress { grid-column: 1 / -1; width: 100%; height: 6px; }
+.ch-batch-go { color: var(--text-muted); font-size: 20px; font-weight: 700; }
 .ch-batches strong { display: block; font-size: 16px; }
 .ch-batches small { color: var(--text-muted); }
-.ch-batches em { color: var(--text-muted); font-style: normal; font-size: 13px; white-space: nowrap; }
 .ch-progress { height: 8px; overflow: hidden; border-radius: 999px; background: color-mix(in srgb, var(--text) 10%, transparent); }
 .ch-progress span { display: block; height: 100%; border-radius: inherit; background: #22a861; }
 .ch-table { width: 100%; border-collapse: collapse; font-size: 14px; }
@@ -101,12 +130,52 @@
 .ch-link code { overflow: hidden; color: var(--text-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; max-width: 260px; }
 .ch-actions { display: flex; justify-content: flex-end; gap: 6px; white-space: nowrap; }
 .ch-actions form { margin: 0; }
-.ch-batch-next { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
-.ch-batch-next > div { display: flex; align-items: center; gap: 11px; padding: 13px 15px; border: 1px solid var(--border); border-radius: 15px; background: var(--surface); }
-.ch-batch-next span { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 9px; background: var(--accent-subtle); color: var(--accent); font-weight: 800; }
-.ch-batch-next p { display: grid; margin: 0; }
-.ch-batch-next strong { font-size: 13px; }
-.ch-batch-next small { color: var(--text-muted); font-size: 11.5px; }
+/* Adentro de un lote ([id]/page.tsx): ruta, encabezado con la franja naranja de Mascotas, los 4
+   pasos para producirlo y las unidades con filtros. */
+/* Con fondo propio: se lee también sobre los temas oscuros del Admin. */
+.ch-crumbs { position: relative; z-index: 1; display: flex; align-items: center; gap: 8px; width: fit-content; max-width: 100%; margin-bottom: 12px; padding: 6px 13px; border: 1px solid var(--border); border-radius: 99px; background: var(--surface); color: var(--text-muted); font-size: 13px; font-weight: 700; box-shadow: var(--shadow-sm); }
+.ch-crumbs a { color: var(--text-muted); text-decoration: none; }
+.ch-crumbs a:hover { color: var(--text); }
+.ch-crumbs strong { overflow: hidden; color: var(--text); text-overflow: ellipsis; white-space: nowrap; }
+.ch-lot-head { position: relative; z-index: 1; display: flex; align-items: center; gap: 18px; margin-bottom: 18px; padding: 22px 24px 22px 28px; overflow: hidden; border: 1px solid color-mix(in srgb, #e9772f 30%, var(--border)); border-radius: 22px; background: linear-gradient(110deg, color-mix(in srgb, #e9772f 13%, var(--surface)), var(--surface) 70%); box-shadow: var(--shadow-md); }
+.ch-lot-head::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 6px; background: #e9772f; }
+.ch-lot-icon { display: grid; place-items: center; flex: none; width: 52px; height: 52px; border-radius: 16px; background: #e9772f; color: #fff; }
+.ch-lot-icon svg { width: 26px; height: 26px; }
+.ch-lot-title { flex: 1; min-width: 0; }
+.ch-lot-title h1 { margin: 2px 0 0; font-size: clamp(1.6rem, 1.3rem + 1.3vw, 2.3rem); line-height: 1.1; overflow-wrap: anywhere; }
+.ch-lot-eyebrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; color: #c2551a; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.ch-lot-eyebrow span { padding: 3px 9px; border-radius: 99px; background: color-mix(in srgb, #e9772f 16%, var(--surface)); color: var(--text); letter-spacing: 0; text-transform: none; font-size: 12px; }
+.ch-lot-eyebrow small { color: var(--text-muted); font-size: 12px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+.ch-lot-progress { display: grid; gap: 6px; flex: none; width: 220px; }
+.ch-lot-progress strong { font-size: 14px; }
+.ch-lot-progress small { color: var(--text-muted); font-size: 12px; }
+/* Las acciones del lote, cada una con su color: imprimir (tinta) y la ayuda por si algo se
+   mezcló (ámbar). La tarjeta entera es el link. */
+.ch-lot-actions { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
+.ch-action { display: grid; grid-template-rows: auto auto 1fr auto; gap: 5px; min-height: 160px; padding: 18px; border: 1px solid transparent; border-radius: 20px; color: #1d2130; text-decoration: none; box-shadow: 0 8px 24px #1d21300f; transition: transform .18s ease, box-shadow .18s ease; }
+.ch-action:hover { transform: translateY(-2px); box-shadow: 0 14px 30px #1d21301f; }
+.ch-action:focus-visible { outline: 3px solid #4b6bff; outline-offset: 3px; }
+.ch-action strong { margin-top: 8px; font-size: 17px; line-height: 1.2; }
+.ch-action small { font-size: 13px; line-height: 1.45; opacity: .78; }
+.ch-action-icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 13px; }
+.ch-action-icon svg { width: 21px; height: 21px; }
+.ch-action-go { justify-self: start; margin-top: 10px; padding: 8px 13px; border-radius: 99px; font-size: 13px; font-weight: 800; }
+.ch-action.is-print { background: linear-gradient(140deg, #23263a, #3b3366); color: #fff; }
+.ch-action.is-print .ch-action-icon { background: #ffffff1f; color: #fff; }
+.ch-action.is-print .ch-action-go { background: #fff; color: #23263a; }
+.ch-action.is-verify { border-color: #fde3a7; background: linear-gradient(140deg, #fff7e3, #ffffff); }
+.ch-action.is-verify .ch-action-icon { background: #f2a516; color: #fff; }
+.ch-action.is-verify .ch-action-go { background: #1d2130; color: #fff; }
+.ch-units { position: relative; z-index: 1; overflow-x: auto; padding: 20px 22px 12px; border: 1px solid var(--border); border-radius: 22px; background: var(--surface); box-shadow: var(--shadow-md); }
+.ch-units-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.ch-units-head h2 { margin: 0; font-size: 18px; }
+.ch-filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.ch-filters a { display: inline-flex; align-items: center; gap: 7px; padding: 7px 12px; border: 1px solid var(--border); border-radius: 99px; background: var(--surface); color: var(--text-muted); font-size: 13px; font-weight: 750; text-decoration: none; }
+.ch-filters a span { min-width: 20px; padding: 1px 6px; border-radius: 99px; background: color-mix(in srgb, var(--text) 8%, transparent); font-size: 11.5px; text-align: center; }
+.ch-filters a.is-active { border-color: var(--text); background: var(--text); color: var(--surface); }
+.ch-filters a.is-active span { background: color-mix(in srgb, var(--surface) 22%, transparent); }
+.ch-units-empty { margin: 0; padding: 22px 4px; }
+#unidades { scroll-margin-top: 80px; }
 .ch-profiles h2 { margin: 0; }
 .ch-profiles-head { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin-bottom: 20px; }
 .ch-profiles-head p { margin: 5px 0 0; color: var(--text-muted); font-size: 13px; }
@@ -115,7 +184,7 @@
 .ch-profiles-empty { margin: 0; padding: 25px; border-radius: 12px; background: var(--surface-2); color: var(--text-muted); }
 .ch-profile-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .ch-profile-list li { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
-.ch-profile-mark { display: grid; place-items: center; flex: none; width: 42px; height: 42px; border-radius: 13px; background: var(--accent-subtle); }
+.ch-profile-mark { display: grid; place-items: center; flex: none; width: 42px; height: 42px; border-radius: 13px; background: #e7f8ee; }
 .ch-profile-details { display: grid; gap: 3px; min-width: 0; flex: 1; }
 .ch-profile-details strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ch-profile-details small { color: var(--text-muted); }
@@ -126,8 +195,6 @@
 .ch-profile-pages { display: flex; justify-content: space-between; gap: 20px; padding-top: 20px; color: var(--text-muted); font-size: 13px; }
 .ch-profile-pages a { color: var(--accent); font-weight: 750; }
 @media (max-width: 760px) {
-  .ch-overview { grid-template-columns: 1fr; margin-top: -10px; }
-  .ch-tutorial-card { align-items: flex-start; flex-direction: column; }
   .ch-section-nav { margin-top: -8px; }
   .ch-section-nav a { padding: 9px 11px; font-size: 11px; }
   .ch-tutorial-steps, .ch-link-map-grid { grid-template-columns: 1fr; }
@@ -137,11 +204,16 @@
   .ch-piece-link { transform: rotate(90deg); line-height: .7; }
   .ch-section-heading { align-items: flex-start; flex-direction: column; }
   .ch-section-heading > span { text-align: left; }
-  .ch-flow, .ch-user-journey, .ch-code-explainer, .ch-batch-next { grid-template-columns: 1fr; }
+  .ch-flow, .ch-user-journey, .ch-code-explainer, .ch-lot-actions { grid-template-columns: 1fr; }
+  .ch-lot-head { align-items: flex-start; flex-wrap: wrap; padding: 18px 18px 18px 22px; }
+  .ch-lot-progress { width: 100%; }
   .ch-profiles-head, .ch-profile-list li { align-items: flex-start; flex-direction: column; }
   .ch-profiles-head form, .ch-profiles-head input { width: 100%; }
   .ch-profile-actions { width: 100%; justify-content: space-between; }
-  .ch-batches a { grid-template-columns: 1fr; gap: 8px; }
+  .ch-worlds { grid-template-columns: 1fr; }
+  .ch-batches a { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .ch-batch-counts { grid-column: 1 / -1; min-width: 0; }
+  .ch-batch-go { grid-row: 1; grid-column: 3; }
   .ch-table thead { display: none; }
   .ch-table tr { display: grid; grid-template-columns: 40px 1fr; gap: 4px 10px; padding: 12px 0; border-top: 1px solid var(--border); }
   .ch-table td { padding: 0; border: 0; }
@@ -170,3 +242,8 @@
 .ch-verify-code small { color: var(--text-muted); font-size: 12px; }
 .ch-verify-code code { font: 800 24px/1 "Courier New", monospace; letter-spacing: .08em; }
 .ch-verify-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 18px; }
+
+/* Mascotas activadas (fichas/page.tsx): la franja verde del mundo "mascotas". */
+.ch-pets-head { overflow: hidden; border-color: #bfe8cf; background: linear-gradient(110deg, #e7f8ee, var(--surface) 65%); }
+.ch-pets-head::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 6px; background: #22a861; }
+.ch-pets-head .eyebrow { color: #17803d; }

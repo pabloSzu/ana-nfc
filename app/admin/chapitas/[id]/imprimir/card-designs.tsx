@@ -7,6 +7,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { LuBone, LuCat, LuDog, LuFish, LuHeart, LuLeaf, LuPawPrint, LuSparkles, LuStar, LuSun } from "react-icons/lu";
 import { LOGO_FONT_FAMILY } from "@/components/bionfc-logo";
+import { unitNumber } from "@/lib/pet-tags";
 import type { PrintItem } from "./print-studio";
 
 export type DesignId = "playful" | "paws" | "bones" | "kitty" | "park";
@@ -70,9 +71,7 @@ function Deco({ items }: { items: Design["deco"] }) {
   return <div className="pc-deco" aria-hidden="true">{items.map((item, index) => <span key={index} style={{ left: `${item.x}%`, top: `${item.y}%`, fontSize: `${item.size}em`, transform: `rotate(${item.rotate}deg)` }}>{item.icon}</span>)}</div>;
 }
 
-// El N° de unidad: va en la tarjeta y al lado de cada chapita impresa, para emparejarlas sin
-// imprimir el código privado en la hoja de chapitas.
-export const unitNumber = (number: number) => String(number).padStart(2, "0");
+export { unitNumber };
 export const unit = (number: number) => `UNIDAD ${unitNumber(number)}`;
 
 // bleed: la tarjeta con sangrado (el fondo sigue 2 mm más por fuera, ver .pc.is-bleed).

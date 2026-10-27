@@ -100,7 +100,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           <PageList items={contactCards} kind="contact" />
         </section>
         {petTags.length > 0 && <section className="card client-page-group">
-          <div className="client-page-group-heading"><div><p className="eyebrow">Para mascotas</p><h2>Chapitas <span>{petTags.length}</span></h2><p className="muted">Estas fichas ya pertenecen a este cliente. Para preparar chapitas nuevas, usá «Mascotas → Chapitas y stock».</p></div><Link className="btn secondary" href="/admin/chapitas">Ver stock</Link></div>
+          <div className="client-page-group-heading"><div><p className="eyebrow">Para mascotas</p><h2>Chapitas <span>{petTags.length}</span></h2><p className="muted">Estas mascotas ya pertenecen a este cliente. Para fabricar chapitas nuevas, usá «Mascotas → Lotes».</p></div><Link className="btn secondary" href="/admin/chapitas">Ver lotes</Link></div>
           <PageList items={petTags} kind="pet" />
         </section>}
         {directLinks.length > 0 && <section className="card client-page-group">

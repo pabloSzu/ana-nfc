@@ -57,6 +57,10 @@ function secureRandom(max: number): number {
   return value[0] % max;
 }
 
+// El N° de unidad ("07"): va en la tarjeta, al lado de cada chapita impresa y en el lote, para
+// emparejarlas sin imprimir el código privado en la hoja de chapitas.
+export const unitNumber = (number: number) => String(number).padStart(2, "0");
+
 // Modo "Verificar armado" (app/admin/chapitas/verificar): mientras está la cookie, en el celu de
 // quien arma las chapitas /go lleva a la pantalla que dice qué unidad es. La segunda cookie guarda
 // el escaneo anterior ("<id>.<qr|nfc|link>") para avisar si el QR y el NFC no son de la misma.
