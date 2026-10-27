@@ -56,7 +56,19 @@ function Background({ id, color }: { id: string; color: string }) {
   </>;
 }
 
-const nameSize = (name: string) => Math.max(6.5, Math.min(10, 52 / Math.max(5, name.length * .56)));
+// El nombre va en mayúsculas, en Poppins 800. Ancho de cada letra medido en esa letra (en "em");
+// así el tamaño se calcula de verdad y el nombre nunca se sale de la placa.
+const LETTER_WIDTHS: Record<string, number> = {
+  A: .76, B: .67, C: .76, D: .74, E: .55, F: .56, G: .76, H: .74, I: .31, J: .58, K: .73, L: .49, M: .94, N: .77, Ñ: .77, O: .79, P: .64, Q: .79,
+  R: .66, S: .62, T: .6, U: .71, V: .75, W: 1.08, X: .74, Y: .7, Z: .61, Á: .76, É: .55, Í: .31, Ó: .79, Ú: .71, Ü: .71,
+  0: .66, 1: .39, 2: .57, 3: .61, 4: .69, 5: .66, 6: .64, 7: .52, 8: .65, 9: .61, " ": .26, ".": .3, "-": .58, "'": .24, "&": .81,
+};
+const NAME_MAX_WIDTH = 50;
+const NAME_MAX_SIZE = 9.5;
+const NAME_MIN_SIZE = 5.8;
+export const tagNameText = (name: string) => name.trim().slice(0, 14).toLocaleUpperCase("es-AR");
+const nameWidth = (name: string) => [...name].reduce((sum, letter) => sum + (LETTER_WIDTHS[letter] ?? .8), 0);
+const nameSize = (name: string) => Math.max(NAME_MIN_SIZE, Math.min(NAME_MAX_SIZE, NAME_MAX_WIDTH / nameWidth(name)));
 const PAW = "M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.045Q6.52 17.48 4.46 16.84A3.5 3.5 0 0 1 5.5 10Z";
 
 function Paw({ x, y, size, rotate }: { x: number; y: number; size: number; rotate: number }) {
@@ -67,16 +79,20 @@ function Paw({ x, y, size, rotate }: { x: number; y: number; size: number; rotat
 
 export function TagFront({ id, diameter, color, character, name = "" }: { id: string; diameter: number; color: string; character: TagCharacterId; name?: string }) {
   const animal = TAG_CHARACTERS.find((item) => item.id === character) || TAG_CHARACTERS[0];
-  const cleanName = name.trim().slice(0, 18);
+  const cleanName = tagNameText(name);
+  const size = nameSize(cleanName);
+  // Si aun en el tamaño mínimo no entra (nombres muy anchos), se angosta para que quepa justo.
+  const squeeze = nameWidth(cleanName) * size > NAME_MAX_WIDTH;
   return <svg className="ps-tag" viewBox="0 0 100 100" width={`${diameter}mm`} height={`${diameter}mm`} role="img" aria-label={cleanName ? `Frente de la chapita de ${cleanName}` : `Frente de chapita con ${animal.label}`}>
     <Background id={`tag-front-${id}`} color={color} />
     <circle className="ps-tag-hole" cx="50" cy="9.5" r="5.7" fill="none" stroke="#fff" strokeWidth=".9" strokeDasharray="2 1.6" />
     <text x="50" y="21.5" textAnchor="middle" fill="#fff" stroke="#00000030" strokeWidth=".45" paintOrder="stroke" fontFamily="Poppins, Arial, sans-serif" fontSize="4.3" fontWeight="800" letterSpacing=".22">CHAPITA INTELIGENTE</text>
     {cleanName ? <>
       {/* Personaje y nombre forman un solo bloque compacto, con espacio real para explicar el NFC. */}
-      <rect x="23" y="55" width="54" height="15" rx="6.5" fill="#fff" stroke="#171717" strokeWidth="1.1" />
-      <image href={animal.src} x="32" y="28" width="36" height="31" preserveAspectRatio="xMidYMax meet" />
-      <text x="50" y="65.6" textAnchor="middle" fill="#1d1a18" fontFamily="Poppins, Arial, sans-serif" fontSize={nameSize(cleanName)} fontWeight="800" textLength={cleanName.length > 8 ? 48 : undefined} lengthAdjust="spacingAndGlyphs">{cleanName}</text>
+      {/* Las patitas apoyan sólo en el borde de arriba de la placa: el nombre queda libre debajo. */}
+      <rect x="19" y="55" width="62" height="17" rx="7.5" fill="#fff" stroke="#171717" strokeWidth="1.1" />
+      <image href={animal.src} x="31" y="26" width="38" height="32" preserveAspectRatio="xMidYMax meet" />
+      <text x="50" y={65.4 + size * .35} textAnchor="middle" fill="#1d1a18" fontFamily="Poppins, Arial, sans-serif" fontSize={size} fontWeight="800" {...(squeeze ? { textLength: NAME_MAX_WIDTH, lengthAdjust: "spacingAndGlyphs" } : {})}>{cleanName}</text>
     </> : <>
       {/* Las de stock usan una ilustración creada como cabeza aislada: no es un recorte del personaje con patas. */}
       <image href={animal.faceSrc} x="18" y="22" width="64" height="54" preserveAspectRatio="xMidYMid meet" />
