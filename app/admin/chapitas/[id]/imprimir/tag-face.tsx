@@ -22,8 +22,36 @@ export const TAG_CHARACTERS = [
   { id: "poodle", label: "Caniche", src: "/pet-tags/characters/poodle.png", faceSrc: "/pet-tags/faces/poodle.png" },
   { id: "husky", label: "Husky", src: "/pet-tags/characters/husky.png", faceSrc: "/pet-tags/faces/husky.png" },
   { id: "corgi", label: "Corgi", src: "/pet-tags/characters/corgi.png", faceSrc: "/pet-tags/faces/corgi.png" },
+  { id: "dalmatian", label: "Dálmata", src: "/pet-tags/characters/dalmatian.png", faceSrc: "/pet-tags/faces/dalmatian.png" },
+  { id: "rottweiler", label: "Rottweiler", src: "/pet-tags/characters/rottweiler.png", faceSrc: "/pet-tags/faces/rottweiler.png" },
+  { id: "beagle", label: "Beagle", src: "/pet-tags/characters/beagle.png", faceSrc: "/pet-tags/faces/beagle.png" },
+  { id: "schnauzer", label: "Schnauzer", src: "/pet-tags/characters/schnauzer.png", faceSrc: "/pet-tags/faces/schnauzer.png" },
+  { id: "maltese", label: "Maltés", src: "/pet-tags/characters/maltese.png", faceSrc: "/pet-tags/faces/maltese.png" },
+  { id: "miniature-pinscher", label: "Pinscher", src: "/pet-tags/characters/miniature-pinscher.png", faceSrc: "/pet-tags/faces/miniature-pinscher.png" },
+  { id: "yorkshire-terrier", label: "Yorkshire", src: "/pet-tags/characters/yorkshire-terrier.png", faceSrc: "/pet-tags/faces/yorkshire-terrier.png" },
+  { id: "boston-terrier", label: "Boston terrier", src: "/pet-tags/characters/boston-terrier.png", faceSrc: "/pet-tags/faces/boston-terrier.png" },
+  { id: "pomeranian", label: "Pomerania", src: "/pet-tags/characters/pomeranian.png", faceSrc: "/pet-tags/faces/pomeranian.png" },
+  { id: "australian-shepherd", label: "Pastor australiano", src: "/pet-tags/characters/australian-shepherd.png", faceSrc: "/pet-tags/faces/australian-shepherd.png" },
   { id: "tabby-cat", label: "Gato atigrado", src: "/pet-tags/characters/tabby-cat.png", faceSrc: "/pet-tags/faces/tabby-cat.png" },
   { id: "black-cat", label: "Gato negro", src: "/pet-tags/characters/black-cat.png", faceSrc: "/pet-tags/faces/black-cat.png" },
+  { id: "white-persian-cat", label: "Persa blanco", src: "/pet-tags/characters/white-persian-cat.png", faceSrc: "/pet-tags/faces/white-persian-cat.png" },
+  { id: "siamese-cat", label: "Siamés", src: "/pet-tags/characters/siamese-cat.png", faceSrc: "/pet-tags/faces/siamese-cat.png" },
+  { id: "orange-tabby-cat", label: "Atigrado naranja", src: "/pet-tags/characters/orange-tabby-cat.png", faceSrc: "/pet-tags/faces/orange-tabby-cat.png" },
+  { id: "british-shorthair-cat", label: "British gris", src: "/pet-tags/characters/british-shorthair-cat.png", faceSrc: "/pet-tags/faces/british-shorthair-cat.png" },
+  { id: "maine-coon-cat", label: "Maine Coon", src: "/pet-tags/characters/maine-coon-cat.png", faceSrc: "/pet-tags/faces/maine-coon-cat.png" },
+  { id: "calico-cat", label: "Calicó", src: "/pet-tags/characters/calico-cat.png", faceSrc: "/pet-tags/faces/calico-cat.png" },
+  { id: "sphynx-cat", label: "Sphynx", src: "/pet-tags/characters/sphynx-cat.png", faceSrc: "/pet-tags/faces/sphynx-cat.png" },
+  { id: "white-longhair-cat", label: "Blanco de pelo largo", src: "/pet-tags/characters/white-longhair-cat.png", faceSrc: "/pet-tags/faces/white-longhair-cat.png" },
+  { id: "tuxedo-cat", label: "Tuxedo", src: "/pet-tags/characters/tuxedo-cat.png", faceSrc: "/pet-tags/faces/tuxedo-cat.png" },
+  { id: "cream-fold-cat", label: "Fold crema", src: "/pet-tags/characters/cream-fold-cat.png", faceSrc: "/pet-tags/faces/cream-fold-cat.png" },
+  { id: "longhair-tabby-cat", label: "Atigrado de pelo largo", src: "/pet-tags/characters/longhair-tabby-cat.png", faceSrc: "/pet-tags/faces/longhair-tabby-cat.png" },
+  { id: "himalayan-cat", label: "Himalayo", src: "/pet-tags/characters/himalayan-cat.png", faceSrc: "/pet-tags/faces/himalayan-cat.png" },
+  { id: "silver-tabby-cat", label: "Atigrado plateado", src: "/pet-tags/characters/silver-tabby-cat.png", faceSrc: "/pet-tags/faces/silver-tabby-cat.png" },
+  { id: "white-odd-eyed-cat", label: "Blanco ojos distintos", src: "/pet-tags/characters/white-odd-eyed-cat.png", faceSrc: "/pet-tags/faces/white-odd-eyed-cat.png" },
+  { id: "black-persian-cat", label: "Persa negro", src: "/pet-tags/characters/black-persian-cat.png", faceSrc: "/pet-tags/faces/black-persian-cat.png" },
+  { id: "bengal-cat", label: "Bengal", src: "/pet-tags/characters/bengal-cat.png", faceSrc: "/pet-tags/faces/bengal-cat.png" },
+  { id: "ragdoll-cat", label: "Ragdoll", src: "/pet-tags/characters/ragdoll-cat.png", faceSrc: "/pet-tags/faces/ragdoll-cat.png" },
+  { id: "russian-blue-cat", label: "Azul ruso", src: "/pet-tags/characters/russian-blue-cat.png", faceSrc: "/pet-tags/faces/russian-blue-cat.png" },
 ] as const;
 
 export type TagCharacterId = (typeof TAG_CHARACTERS)[number]["id"];
@@ -126,7 +154,14 @@ export function TagFront({ id, diameter, color, character, name = "", hole = fal
 
 export function TagBack({ id, qr, diameter, color, design, hole = false }: { id: string; qr: string; diameter: number; color: string; design: TagBackStyle; hole?: boolean }) {
   const bottom = `tag-back-bottom-${id}`;
-  const ink = { fill: "#fff", stroke: "#00000038", strokeWidth: 1.1, paintOrder: "stroke" as const, fontWeight: 800, fontFamily: "Poppins, Arial, sans-serif" };
+  // Letras blancas con un borde oscuro marcado (mismo tamaño y grosor): resaltan sobre cualquier
+  // color, también los claros y los arcoíris. El ícono y la flechita llevan el mismo borde.
+  const edge = { stroke: "#151826", strokeOpacity: .72, strokeLinejoin: "round" as const };
+  const ink = { fill: "#fff", ...edge, strokeWidth: 1.5, paintOrder: "stroke" as const, fontWeight: 800, fontFamily: "Poppins, Arial, sans-serif" };
+  const phone = <>
+    <rect x="0" y="0" width="4.6" height="7.6" rx="1.1" />
+    <path d="M 6.7,2.3 A 2.1,2.1 0 0 1 6.7,5.3" /><path d="M 8.6,1.1 A 3.7,3.7 0 0 1 8.6,6.5" /><path d="M 10.5,0 A 5.3,5.3 0 0 1 10.5,7.6" />
+  </>;
   return <svg className="ps-tag" viewBox="0 0 100 100" width={`${diameter}mm`} height={`${diameter}mm`} role="img" aria-label="Dorso de la chapita con QR">
     <defs><path id={bottom} d="M 11.5,50 A 38.5,38.5 0 0 0 88.5,50" /></defs>
     <Background id={`tag-back-${id}`} color={color} />
@@ -145,13 +180,13 @@ export function TagBack({ id, qr, diameter, color, design, hole = false }: { id:
     <rect x="10" y="27" width="40" height="40" rx="5.5" fill="#fff" />
     <image href={qr} x="11.5" y="28.5" width="37" height="37" />
     {RAINBOWS[color] && <rect x="53" y="32" width="41" height="36" rx="6" fill="#1d2130" fillOpacity=".38" />}
-    {design !== "dog" && <polygon points="56,44 51.5,47.5 56,51" fill="#fff" />}
+    {design !== "dog" && <polygon points="56,44 51.5,47.5 56,51" fill="#fff" {...edge} strokeWidth="1.2" paintOrder="stroke" />}
     <text x="58" y="39.5" fontSize="6.4" letterSpacing=".2" {...ink}>ESCANEÁ</text>
     <text x="58" y="47.3" fontSize="6.4" letterSpacing=".2" {...ink}>O ACERCÁ</text>
     <text x="58" y="55.1" fontSize="6.4" letterSpacing=".2" {...ink}>TU CELU</text>
-    <g transform="translate(58.5 58.5)" fill="none" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="0" y="0" width="4.6" height="7.6" rx="1.1" />
-      <path d="M 6.7,2.3 A 2.1,2.1 0 0 1 6.7,5.3" /><path d="M 8.6,1.1 A 3.7,3.7 0 0 1 8.6,6.5" /><path d="M 10.5,0 A 5.3,5.3 0 0 1 10.5,7.6" />
+    <g transform="translate(58.5 58.5)" fill="none" strokeLinecap="round" strokeLinejoin="round">
+      <g {...edge} strokeWidth="2.6">{phone}</g>
+      <g stroke="#fff" strokeWidth="1.2">{phone}</g>
     </g>
     <text fontSize="5.2" letterSpacing=".3" {...ink}><textPath href={`#${bottom}`} startOffset="50%" textAnchor="middle">Y AVISALE A MI FAMILIA</textPath></text>
   </svg>;
