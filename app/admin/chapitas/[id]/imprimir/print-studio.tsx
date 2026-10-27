@@ -8,14 +8,16 @@
 //     - Una por página: cada cara en su página, con 2 mm de sangrado y marcas de corte. Es como
 //       la piden las imprentas (ellas arman las planchas) y como se importa en Canva.
 //  · QR de las chapitas: el tamaño en mm se elige según la chapita.
-// Las opciones quedan guardadas en esta compu.
-import { useEffect, useState, type CSSProperties, type KeyboardEvent } from "react";
+// Las opciones generales quedan guardadas en esta compu; lo de cada unidad (nombre, animal, color)
+// se guarda en la chapita misma (actions.ts), así no se pierde ni lo pisa otra pestaña.
+import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 import Link from "next/link";
 import { LuPrinter } from "react-icons/lu";
 import { CardBack, CardFront, DESIGNS, unit, unitNumber, type DesignId } from "./card-designs";
-import { TagBack, TagFront, TAG_CHARACTERS, TAG_COLORS, tagCharacterFor, type TagCharacterChoice, type TagCharacterId } from "./tag-face";
+import { cleanTagPrint, TagBack, TagFront, TAG_CHARACTERS, TAG_COLORS, tagCharacterFor, type TagCharacterChoice, type TagCharacterId, type TagPrint } from "./tag-face";
+import { saveTagPrint } from "./actions";
 
-export type PrintItem = { id: string; number: number; code: string; activationQr: string; tagQr: string };
+export type PrintItem = { id: string; number: number; code: string; activationQr: string; tagQr: string; print: TagPrint };
 type Mode = "cards" | "qr";
 type Settings = {
   design: DesignId;
@@ -35,6 +37,7 @@ type Settings = {
   tagNames: Record<string, string>;
   tagCharacters: Record<string, TagCharacterId>;
   tagColors: Record<string, string>;
+  tagHole: boolean;
 };
 
 const SIZES = [
@@ -43,8 +46,17 @@ const SIZES = [
   { id: "100x70", label: "Grande · 100×70 mm", width: 100, height: 70 },
   { id: "custom", label: "Otra medida", width: 85, height: 55 },
 ];
-const DEFAULTS: Settings = { design: "playful", size: "85x55", width: 85, height: 55, sides: "both", output: "single", cutLines: true, qrSize: 30, qrNumber: true, qrColor: "mix", tagSides: "both", tagOutput: "pairs", tagLayoutVersion: 2, tagCharacter: "mix", tagNames: {}, tagCharacters: {}, tagColors: {} };
+const DEFAULTS: Settings = { design: "playful", size: "85x55", width: 85, height: 55, sides: "both", output: "single", cutLines: true, qrSize: 30, qrNumber: true, qrColor: "mix", tagSides: "both", tagOutput: "pairs", tagLayoutVersion: 2, tagCharacter: "mix", tagNames: {}, tagCharacters: {}, tagColors: {}, tagHole: false };
 const STORAGE_KEY = "bionfc-print-settings";
+// Lo de cada unidad no va al navegador: viene de la base (PrintItem.print).
+const UNIT_KEYS = ["tagNames", "tagCharacters", "tagColors"];
+const prefsOf = (value: Settings) => Object.fromEntries(Object.entries(value).filter(([key]) => !UNIT_KEYS.includes(key)));
+const savePrefs = (value: Settings) => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(prefsOf(value))); } catch {} };
+const unitsOf = (entries: { id: string; print: TagPrint }[]) => ({
+  tagNames: Object.fromEntries(entries.filter((entry) => entry.print.name).map((entry) => [entry.id, entry.print.name!])),
+  tagCharacters: Object.fromEntries(entries.filter((entry) => entry.print.character).map((entry) => [entry.id, entry.print.character!])) as Record<string, TagCharacterId>,
+  tagColors: Object.fromEntries(entries.filter((entry) => entry.print.color).map((entry) => [entry.id, entry.print.color!])),
+});
 // Hoja A4 con 7 mm de margen (casi todas las impresoras dejan ~5 mm sin imprimir): así entran
 // 10 tarjetas personales por hoja, como en las planchas de imprenta.
 const PAGE = { width: 210, height: 297, margin: 7 };
@@ -81,13 +93,36 @@ function SheetFoot({ batchName, page, pages, items, detail }: { batchName: strin
 
 export default function PrintStudio({ batchId, batchName, items, host, isLocal = false, initialMode }: { batchId: string; batchName: string; items: PrintItem[]; host: string; isLocal?: boolean; initialMode: Mode }) {
   const [mode, setMode] = useState<Mode>(initialMode);
-  const [settings, setSettings] = useState<Settings>(DEFAULTS);
+  const [settings, setSettings] = useState<Settings>(() => ({ ...DEFAULTS, ...unitsOf(items) }));
   const [previewId, setPreviewId] = useState(items[0]?.id || "");
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  // Guarda una unidad en la chapita. Mientras se escribe el nombre, espera a que se deje de tipear.
+  const saveUnit = (id: string, print: TagPrint, delay = 0) => {
+    clearTimeout(saveTimers.current[id]);
+    setSaveState("saving");
+    saveTimers.current[id] = setTimeout(() => {
+      saveTagPrint(batchId, id, cleanTagPrint(print)).then((ok) => setSaveState(ok ? "saved" : "error"), () => setSaveState("error"));
+    }, delay);
+  };
+  // Si se cierra con algo sin guardar, el navegador pregunta antes.
+  useEffect(() => {
+    if (saveState !== "saving") return;
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [saveState]);
   useEffect(() => {
     try {
       const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
       if (stored && typeof stored === "object") {
-        const next = { ...DEFAULTS, ...stored };
+        // Lo que versiones anteriores guardaban en el navegador por unidad pasa una sola vez a la
+        // chapita (sólo si la chapita todavía no tiene nada elegido).
+        const legacy = items.filter((item) => !Object.keys(item.print).length)
+          .map((item) => ({ id: item.id, print: cleanTagPrint({ name: stored.tagNames?.[item.id], character: stored.tagCharacters?.[item.id], color: stored.tagColors?.[item.id] }) }))
+          .filter((entry) => Object.keys(entry.print).length);
+        for (const entry of legacy) saveUnit(entry.id, entry.print);
+        const next = { ...DEFAULTS, ...stored, ...unitsOf([...items.filter((item) => Object.keys(item.print).length), ...legacy]) };
         // Un diseño guardado que ya no existe vuelve al primero.
         if (!DESIGNS.some((design) => design.id === next.design)) next.design = DEFAULTS.design;
         // La versión anterior dejaba el modo espejado demasiado visible. Una sola vez migramos a
@@ -96,15 +131,16 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
           next.tagOutput = "pairs";
           next.tagSides = "both";
           next.tagLayoutVersion = DEFAULTS.tagLayoutVersion;
-          try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
         }
+        savePrefs(next);
         setSettings(next);
       }
     } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- sólo al abrir el estudio
   }, []);
   const update = (patch: Partial<Settings>) => setSettings((current) => {
     const next = { ...current, ...patch };
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
+    savePrefs(next);
     return next;
   });
 
@@ -151,25 +187,32 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
   const bleedStyle = { width: `${width + BLEED * 2}mm`, height: `${height + BLEED * 2}mm`, borderWidth: `${BLEED}mm`, fontSize: `${width / 85}mm` };
   const singlePage = { width: width + (BLEED + MARKS) * 2, height: height + (BLEED + MARKS) * 2 };
   const gridStyle = (cols: number, cellWidth: number, gap: number) => ({ gridTemplateColumns: `repeat(${cols}, ${cellWidth}mm)`, gap: `${gap}mm` });
-  const setTagName = (id: string, name: string) => update({ tagNames: { ...settings.tagNames, [id]: name.slice(0, 14) } });
+  const printOf = (id: string, patch: TagPrint): TagPrint => ({ name: settings.tagNames[id], character: settings.tagCharacters[id], color: settings.tagColors[id], ...patch });
+  const setTagName = (id: string, name: string) => {
+    update({ tagNames: { ...settings.tagNames, [id]: name.slice(0, 14) } });
+    saveUnit(id, printOf(id, { name: name.slice(0, 14) }), 700);
+  };
   const setTagCharacter = (id: string, character: string) => {
     const next = { ...settings.tagCharacters };
     if (!character) delete next[id];
     else next[id] = character as TagCharacterId;
     update({ tagCharacters: next });
+    saveUnit(id, printOf(id, { character: next[id] }));
   };
   const setTagColor = (id: string, color: string) => {
     const next = { ...settings.tagColors };
     if (!color) delete next[id];
     else next[id] = color;
     update({ tagColors: next });
+    saveUnit(id, printOf(id, { color: next[id] }));
   };
-  const itemOrder = new Map(items.map((item, index) => [item.id, index]));
-  const characterOf = (item: PrintItem) => settings.tagCharacters[item.id] || tagCharacterFor(settings.tagCharacter, itemOrder.get(item.id) || 0);
+  // Lo automático sale del N° de unidad (no del orden en la lista): así no cambia cuando se
+  // activa otra chapita del lote y se reimprime.
+  const characterOf = (item: PrintItem) => settings.tagCharacters[item.id] || tagCharacterFor(settings.tagCharacter, item.number - 1);
   const colorOf = (item: PrintItem) => {
     const choice = settings.tagColors[item.id] || settings.qrColor;
     const mix = ["blue", "violet", "pink", "orange", "green"];
-    return choice === "mix" ? mix[(itemOrder.get(item.id) || 0) % mix.length] : choice;
+    return choice === "mix" ? mix[(item.number - 1) % mix.length] : choice;
   };
   const previewItem = items.find((item) => item.id === previewId) || items[0];
   const selectItem = (id: string) => setPreviewId(id);
@@ -184,11 +227,12 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
     const tagCharacters = { ...settings.tagCharacters }; delete tagCharacters[id];
     const tagColors = { ...settings.tagColors }; delete tagColors[id];
     update({ tagNames, tagCharacters, tagColors });
+    saveUnit(id, {});
   };
   const tagArtwork = (item: PrintItem, side: "front" | "back", suffix: string) => <div className={`ps-tag-ring${settings.cutLines ? " has-cut" : ""}`}>
     {side === "front"
-      ? <TagFront id={`${item.id}-${suffix}-front`} diameter={qrSize} color={colorOf(item)} character={characterOf(item)} name={settings.tagNames[item.id] || ""} />
-      : <TagBack id={`${item.id}-${suffix}-back`} qr={item.tagQr} diameter={qrSize} color={colorOf(item)} design="classic" />}
+      ? <TagFront id={`${item.id}-${suffix}-front`} diameter={qrSize} color={colorOf(item)} character={characterOf(item)} name={settings.tagNames[item.id] || ""} hole={settings.tagHole} />
+      : <TagBack id={`${item.id}-${suffix}-back`} qr={item.tagQr} diameter={qrSize} color={colorOf(item)} design="classic" hole={settings.tagHole} />}
   </div>;
   const tagCell = (item: PrintItem, side: "front" | "back") => <button type="button" className={`ps-tag-cell ps-selectable${previewItem?.id === item.id ? " is-selected" : ""}`} onClick={() => selectItem(item.id)} aria-label={`Seleccionar chapita con código ${item.code}`}>
     {tagArtwork(item, side, "sheet")}
@@ -252,6 +296,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
             <button type="button" className={settings.tagSides === "back" ? "is-on" : ""} onClick={() => update({ tagSides: "back" })}>Sólo dorso</button>
           </div>}
         </details>
+        <label className="ps-check"><input type="checkbox" checked={settings.tagHole} onChange={(event) => update({ tagHole: event.target.checked })} />Con agujero (marca un puntito para perforar)</label>
         {settings.tagOutput === "duplex" && <label className="ps-check"><input type="checkbox" checked={settings.qrNumber} onChange={(event) => update({ qrNumber: event.target.checked })} />Mostrar el N° de unidad debajo de cada chapita</label>}
       </fieldset>
 
@@ -274,7 +319,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
       </details>
 
       <section className="ps-personalize" aria-label="Personalización por unidad">
-        <div className="ps-personalize-head"><strong>Elegí una unidad</strong><small>Después personalizá sólo esa.</small></div>
+        <div className="ps-personalize-head"><strong>Elegí una unidad</strong><small className={`ps-save is-${saveState}`}>{{ idle: "Después personalizá sólo esa. Se guarda sola.", saving: "Guardando…", saved: "✓ Guardado en la chapita", error: "⚠ No se pudo guardar. Revisá la conexión." }[saveState]}</small></div>
         <div className="ps-unit-picker">{items.map((item) => <button type="button" key={item.id} className={previewItem?.id === item.id ? "is-on" : ""} onClick={() => setPreviewId(item.id)}>
           <span style={{ background: TAG_COLORS.find((color) => color.id === colorOf(item))?.value || colorOf(item) }} />
           <b>{unitNumber(item.number)} · {item.code}</b><small>{settings.tagNames[item.id]?.trim() || "Stock"}</small>
@@ -323,8 +368,8 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
       {mode === "qr" && previewItem && <section className="ps-tag-overview" aria-label={`Vista del código ${previewItem.code}`}>
         <div className="ps-tag-overview-head"><div><small>VISTA PREVIA</small><h2>{unit(previewItem.number)} · {previewItem.code}</h2></div><span>{settings.tagNames[previewItem.id]?.trim() || "Sin nombre · stock"}</span></div>
         <div className="ps-tag-overview-pair">
-          <figure><TagFront id={`preview-${previewItem.id}-front`} diameter={60} color={colorOf(previewItem)} character={characterOf(previewItem)} name={settings.tagNames[previewItem.id] || ""} /><figcaption>Frente</figcaption></figure>
-          <figure><TagBack id={`preview-${previewItem.id}-back`} qr={previewItem.tagQr} diameter={60} color={colorOf(previewItem)} design="classic" /><figcaption>Dorso original</figcaption></figure>
+          <figure><TagFront id={`preview-${previewItem.id}-front`} diameter={60} color={colorOf(previewItem)} character={characterOf(previewItem)} name={settings.tagNames[previewItem.id] || ""} hole={settings.tagHole} /><figcaption>Frente</figcaption></figure>
+          <figure><TagBack id={`preview-${previewItem.id}-back`} qr={previewItem.tagQr} diameter={60} color={colorOf(previewItem)} design="classic" hole={settings.tagHole} /><figcaption>Dorso original</figcaption></figure>
         </div>
       </section>}
       {single ? items.flatMap((item) => [

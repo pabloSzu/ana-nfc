@@ -5,6 +5,7 @@ import { activationPath, formatCode, shortTagCode, shortTagRange } from "@/lib/p
 import { createAdminClient } from "@/lib/supabase/admin";
 import QRCode from "qrcode";
 import PrintStudio, { type PrintItem } from "./print-studio";
+import { cleanTagPrint } from "./tag-face";
 import "./print-studio.css";
 
 // Imprimir el material de un lote (solo las chapitas sin activar):
@@ -22,7 +23,7 @@ export default async function PrintBatch({ params, searchParams }: { params: Pro
   if (!userId) redirect("/admin/login");
   const { data: batch } = await supabase.from("tag_batches").select("id,name").eq("id", id).eq("owner_id", userId).maybeSingle();
   if (!batch) notFound();
-  const { data: tags } = await supabase.from("landings").select("id,tag_number").eq("batch_id", id).eq("owner_id", userId).is("activated_at", null).order("tag_number");
+  const { data: tags } = await supabase.from("landings").select("id,tag_number,button_style").eq("batch_id", id).eq("owner_id", userId).is("activated_at", null).order("tag_number");
   const ids = (tags || []).map((tag) => tag.id);
   const { data: codes } = ids.length ? await supabase.from("tag_activations").select("landing_id,code").in("landing_id", ids) : { data: [] };
   const codeOf = new Map((codes || []).map((row) => [row.landing_id, row.code]));
@@ -44,6 +45,8 @@ export default async function PrintBatch({ params, searchParams }: { params: Pro
       id: tag.id,
       number: tag.tag_number,
       code: code ? formatCode(code) : "",
+      // Lo elegido para imprimir esta unidad (nombre, animal, color), guardado en la chapita.
+      print: cleanTagPrint(tag.button_style && typeof tag.button_style === "object" ? (tag.button_style as { print?: unknown }).print : null),
       activationQr: code ? await qr(`${origin}${activationPath(code)}`) : "",
       // El de la chapita: va dentro de un cuadrado blanco (tag-face.tsx), que ya le da el margen
       // que necesitan los celulares para leerlo.

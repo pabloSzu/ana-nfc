@@ -30,6 +30,23 @@ export type TagCharacterId = (typeof TAG_CHARACTERS)[number]["id"];
 export type TagCharacterChoice = TagCharacterId | "mix";
 export const tagCharacterFor = (choice: TagCharacterChoice, index: number): TagCharacterId =>
   choice === "mix" ? TAG_CHARACTERS[index % TAG_CHARACTERS.length].id : choice;
+// Lo que se eligió para imprimir cada unidad (nombre, animal y color). Se guarda en la chapita
+// (button_style.print, ver actions.ts) para no depender del navegador. Vacío = automático.
+export type TagPrint = { name?: string; character?: TagCharacterId; color?: string };
+
+export function cleanTagPrint(value: unknown): TagPrint {
+  const raw = value && typeof value === "object" ? value as Record<string, unknown> : {};
+  const name = typeof raw.name === "string" ? raw.name.trim().slice(0, 14) : "";
+  const character = TAG_CHARACTERS.find((item) => item.id === raw.character)?.id;
+  const color = typeof raw.color === "string" && (/^#[0-9a-f]{6}$/i.test(raw.color) || TAG_COLORS.some((item) => item.id === raw.color && item.id !== "mix")) ? raw.color : "";
+  return { ...(name ? { name } : {}), ...(character ? { character } : {}), ...(color ? { color } : {}) };
+}
+
+// El agujero (opcional): un puntito que marca el centro, en el mismo lugar en las dos caras, para
+// perforar y para que frente y dorso queden alineados al pegarlos. Se imprime.
+const HOLE = { cx: 50, cy: 10 };
+const HoleMark = () => <circle cx={HOLE.cx} cy={HOLE.cy} r=".9" fill="#fff" stroke="#00000059" strokeWidth=".3" />;
+
 export type TagBackStyle = "classic" | "cat" | "dog" | "paws";
 export type TagBackChoice = TagBackStyle | "mix";
 export const TAG_BACK_STYLES: { id: TagBackChoice; label: string }[] = [
@@ -77,7 +94,7 @@ function Paw({ x, y, size, rotate }: { x: number; y: number; size: number; rotat
   </g>;
 }
 
-export function TagFront({ id, diameter, color, character, name = "" }: { id: string; diameter: number; color: string; character: TagCharacterId; name?: string }) {
+export function TagFront({ id, diameter, color, character, name = "", hole = false }: { id: string; diameter: number; color: string; character: TagCharacterId; name?: string; hole?: boolean }) {
   const animal = TAG_CHARACTERS.find((item) => item.id === character) || TAG_CHARACTERS[0];
   const cleanName = tagNameText(name);
   const size = nameSize(cleanName);
@@ -85,7 +102,7 @@ export function TagFront({ id, diameter, color, character, name = "" }: { id: st
   const squeeze = nameWidth(cleanName) * size > NAME_MAX_WIDTH;
   return <svg className="ps-tag" viewBox="0 0 100 100" width={`${diameter}mm`} height={`${diameter}mm`} role="img" aria-label={cleanName ? `Frente de la chapita de ${cleanName}` : `Frente de chapita con ${animal.label}`}>
     <Background id={`tag-front-${id}`} color={color} />
-    <circle className="ps-tag-hole" cx="50" cy="9.5" r="5.7" fill="none" stroke="#fff" strokeWidth=".9" strokeDasharray="2 1.6" />
+    {hole && <HoleMark />}
     <text x="50" y="21.5" textAnchor="middle" fill="#fff" stroke="#00000030" strokeWidth=".45" paintOrder="stroke" fontFamily="Poppins, Arial, sans-serif" fontSize="4.3" fontWeight="800" letterSpacing=".22">CHAPITA INTELIGENTE</text>
     {cleanName ? <>
       {/* Personaje y nombre forman un solo bloque compacto, con espacio real para explicar el NFC. */}
@@ -107,13 +124,13 @@ export function TagFront({ id, diameter, color, character, name = "" }: { id: st
   </svg>;
 }
 
-export function TagBack({ id, qr, diameter, color, design }: { id: string; qr: string; diameter: number; color: string; design: TagBackStyle }) {
+export function TagBack({ id, qr, diameter, color, design, hole = false }: { id: string; qr: string; diameter: number; color: string; design: TagBackStyle; hole?: boolean }) {
   const bottom = `tag-back-bottom-${id}`;
   const ink = { fill: "#fff", stroke: "#00000038", strokeWidth: 1.1, paintOrder: "stroke" as const, fontWeight: 800, fontFamily: "Poppins, Arial, sans-serif" };
   return <svg className="ps-tag" viewBox="0 0 100 100" width={`${diameter}mm`} height={`${diameter}mm`} role="img" aria-label="Dorso de la chapita con QR">
     <defs><path id={bottom} d="M 11.5,50 A 38.5,38.5 0 0 0 88.5,50" /></defs>
     <Background id={`tag-back-${id}`} color={color} />
-    <circle className="ps-tag-hole" cx="50" cy="11" r="6" fill="none" stroke="#fff" strokeWidth=".8" strokeDasharray="2 1.6" />
+    {hole && <HoleMark />}
     {design === "paws" && <><Paw x={25} y={19} size={9} rotate={-20} /><Paw x={76} y={20} size={9} rotate={20} /><Paw x={87} y={63} size={7} rotate={-10} /></>}
     {design === "cat" && <>
       <path d="M 14.5,34 L 16.5,22.5 L 25.5,30.5 Z" fill="#fff" stroke="#fff" strokeWidth="2" strokeLinejoin="round" />
