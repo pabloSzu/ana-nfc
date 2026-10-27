@@ -87,7 +87,7 @@ export function cleanTagPrint(value: unknown): TagPrint {
 const HOLE = { cx: 50, cy: 10 };
 const HoleMark = () => <circle cx={HOLE.cx} cy={HOLE.cy} r=".9" fill="#fff" stroke="#00000059" strokeWidth=".3" />;
 
-export type TagBackStyle = "classic" | "v2" | "cat" | "dog" | "paws";
+export type TagBackStyle = "classic" | "v2" | "v3" | "v4" | "cat" | "dog" | "paws";
 export type TagBackChoice = TagBackStyle | "mix";
 export const TAG_BACK_STYLES: { id: TagBackChoice; label: string }[] = [
   { id: "mix", label: "Mezcla" },
@@ -184,10 +184,7 @@ export function TagBack({ id, qr, diameter, color, design, hole = false }: { id:
     <rect x="0" y="0" width="4.6" height="7.6" rx="1.1" />
     <path d="M 6.7,2.3 A 2.1,2.1 0 0 1 6.7,5.3" /><path d="M 8.6,1.1 A 3.7,3.7 0 0 1 8.6,6.5" /><path d="M 10.5,0 A 5.3,5.3 0 0 1 10.5,7.6" />
   </>;
-  // Dorso nuevo: arriba "ESCANEÁ O ACERCÁ / TU CELU" (sin fondo, con el borde oscuro); en el medio
-  // el QR en su tarjeta blanca y, a su derecha y apenas más chico, el dibujo de la chapita con el
-  // celu acercándose (lo que el NFC no muestra) en su círculo blanco, así se ve en cualquier color;
-  // abajo, derecho, "Y AVISALE A MI FAMILIA".
+  // Diseño 3: instrucción conjunta arriba, QR a la izquierda y gesto NFC a la derecha.
   if (design === "v2") return <svg className="ps-tag" viewBox="0 0 100 100" width={`${diameter}mm`} height={`${diameter}mm`} role="img" aria-label="Dorso de la chapita con QR">
     <Background id={`tag-back-${id}`} color={color} />
     {hole && <HoleMark />}
@@ -197,7 +194,37 @@ export function TagBack({ id, qr, diameter, color, design, hole = false }: { id:
     <image href={qr} x="12.5" y="32.7" width="35" height="35" />
     <circle cx="69.5" cy="50.2" r="16" fill="#fff" />
     <image href="/pet-tags/tap-phone-bold.png" x="57.3" y="39.4" width="24.4" height="21.5" />
-    <text x="50" y="77.4" textAnchor="middle" fontSize="5.2" letterSpacing=".1" {...ink}>Y AVISALE A MI FAMILIA</text>
+    <text x="50" y="80.4" textAnchor="middle" fontSize="5.2" letterSpacing=".1" {...ink}>Y AVISALE A MI FAMILIA</text>
+  </svg>;
+  // Diseño 1: cada acción sobre su elemento, gesto NFC primero y QR un poco más grande a la
+  // derecha. La "O" central deja claro que son dos alternativas.
+  if (design === "v3") return <svg className="ps-tag" viewBox="0 0 100 100" width={`${diameter}mm`} height={`${diameter}mm`} role="img" aria-label="Dorso de la chapita con QR y NFC separados">
+    <Background id={`tag-back-${id}`} color={color} />
+    {hole && <HoleMark />}
+    <text x="29.5" y="24.1" textAnchor="middle" fontSize="5.1" letterSpacing=".12" {...ink}>ACERCÁ</text>
+    <text x="29.5" y="30.1" textAnchor="middle" fontSize="5.1" letterSpacing=".12" {...ink}>TU CELU</text>
+    <text x="50" y="27" textAnchor="middle" fontSize="5.1" {...ink}>O</text>
+    <text x="71" y="27" textAnchor="middle" fontSize="5.4" letterSpacing=".15" {...ink}>ESCANEÁ</text>
+    <circle cx="29.5" cy="50.2" r="16" fill="#fff" />
+    <image href="/pet-tags/tap-phone-bold.png" x="17.3" y="39.4" width="24.4" height="21.5" />
+    <rect x="50.5" y="29.7" width="41" height="41" rx="5.8" fill="#fff" />
+    <image href={qr} x="51.9" y="31.1" width="38.2" height="38.2" />
+    <text x="50" y="80.4" textAnchor="middle" fontSize="5.2" letterSpacing=".1" {...ink}>Y AVISALE A MI FAMILIA</text>
+  </svg>;
+  // Diseño 4: la composición del Diseño 3, con el QR más grande y "TU CELU" alineado sobre el
+  // sector NFC para que la segunda línea complete visualmente la opción de la derecha.
+  if (design === "v4") return <svg className="ps-tag" viewBox="0 0 100 100" width={`${diameter}mm`} height={`${diameter}mm`} role="img" aria-label="Dorso de la chapita con QR grande">
+    <Background id={`tag-back-${id}`} color={color} />
+    {hole && <HoleMark />}
+    <text x="29.5" y="22.4" textAnchor="middle" fontSize="5.5" letterSpacing=".05" {...ink}>ESCANEÁ</text>
+    <text x="49.5" y="22.4" textAnchor="middle" fontSize="5.3" {...ink}>O</text>
+    <text x="69.5" y="22.4" textAnchor="middle" fontSize="5.5" letterSpacing=".05" {...ink}>ACERCÁ</text>
+    <text x="69.5" y="28.8" textAnchor="middle" fontSize="5.4" letterSpacing=".08" {...ink}>TU CELU</text>
+    <rect x="9" y="29.7" width="41" height="41" rx="5.8" fill="#fff" />
+    <image href={qr} x="10.4" y="31.1" width="38.2" height="38.2" />
+    <circle cx="69.5" cy="50.2" r="16" fill="#fff" />
+    <image href="/pet-tags/tap-phone-bold.png" x="57.3" y="39.4" width="24.4" height="21.5" />
+    <text x="50" y="80.4" textAnchor="middle" fontSize="5.2" letterSpacing=".1" {...ink}>Y AVISALE A MI FAMILIA</text>
   </svg>;
   return <svg className="ps-tag" viewBox="0 0 100 100" width={`${diameter}mm`} height={`${diameter}mm`} role="img" aria-label="Dorso de la chapita con QR">
     <defs><path id={bottom} d="M 11.5,50 A 38.5,38.5 0 0 0 88.5,50" /></defs>

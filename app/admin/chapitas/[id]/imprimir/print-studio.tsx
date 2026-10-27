@@ -39,7 +39,7 @@ type Settings = {
   tagCharacters: Record<string, TagCharacterId>;
   tagColors: Record<string, string>;
   tagHole: boolean;
-  tagLayout: "v1" | "v2";
+  tagLayout: "v1" | "v2" | "v3" | "v4";
   paper: Paper;
 };
 
@@ -49,7 +49,7 @@ const SIZES = [
   { id: "100x70", label: "Grande · 100×70 mm", width: 100, height: 70 },
   { id: "custom", label: "Otra medida", width: 85, height: 55 },
 ];
-const DEFAULTS: Settings = { design: "playful", size: "85x55", width: 85, height: 55, sides: "both", output: "single", cutLines: true, qrSize: 30, qrNumber: true, qrColor: "mix", tagSides: "both", tagOutput: "pairs", tagLayoutVersion: 2, tagCharacter: "mix", tagNames: {}, tagCharacters: {}, tagColors: {}, tagHole: false, paper: "A4", tagLayout: "v2" };
+const DEFAULTS: Settings = { design: "playful", size: "85x55", width: 85, height: 55, sides: "both", output: "single", cutLines: true, qrSize: 30, qrNumber: true, qrColor: "mix", tagSides: "both", tagOutput: "pairs", tagLayoutVersion: 2, tagCharacter: "mix", tagNames: {}, tagCharacters: {}, tagColors: {}, tagHole: false, paper: "A4", tagLayout: "v3" };
 const STORAGE_KEY = "bionfc-print-settings";
 // Lo de cada unidad no va al navegador: viene de la base (PrintItem.print).
 const UNIT_KEYS = ["tagNames", "tagCharacters", "tagColors"];
@@ -66,11 +66,13 @@ const unitsOf = (entries: { id: string; print: TagPrint }[]) => ({
 const PAPERS = { A4: { width: 210, height: 297 }, A3: { width: 297, height: 420 } } as const;
 type Paper = keyof typeof PAPERS;
 const PAGE_MARGIN = 7;
-// Los dos diseños de la chapita (cambia el dorso; el frente es el mismo). Cada uno con su color,
+// Los cuatro diseños de la chapita (cambia el dorso; el frente es el mismo). Cada uno con su color,
 // para que se note a simple vista cuál está elegido.
 const LAYOUTS = [
-  { value: "v2", label: "Diseño 1", hint: "QR + dibujo del celu · recomendado" },
+  { value: "v3", label: "Diseño 1", hint: "NFC a la izquierda + QR más grande · recomendado" },
   { value: "v1", label: "Diseño 2", hint: "QR con el texto al lado" },
+  { value: "v2", label: "Diseño 3", hint: "QR + dibujo del celu" },
+  { value: "v4", label: "Diseño 4", hint: "QR izquierdo + textos alineados" },
 ] as const;
 // Una por página: 2 mm de sangrado y 6 mm alrededor para las marcas de corte.
 const BLEED = 2;
@@ -137,6 +139,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
         const next = { ...DEFAULTS, ...stored, ...unitsOf([...items.filter((item) => Object.keys(item.print).length), ...legacy]) };
         // Un diseño guardado que ya no existe vuelve al primero.
         if (!DESIGNS.some((design) => design.id === next.design)) next.design = DEFAULTS.design;
+        if (!LAYOUTS.some((layout) => layout.value === next.tagLayout)) next.tagLayout = DEFAULTS.tagLayout;
         // La versión anterior dejaba el modo espejado demasiado visible. Una sola vez migramos a
         // pares para armado; si después alguien activa doble faz a propósito, la elección se guarda.
         if (!stored.tagLayoutVersion || stored.tagLayoutVersion < DEFAULTS.tagLayoutVersion) {
@@ -203,6 +206,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
   const singlePage = { width: width + (BLEED + MARKS) * 2, height: height + (BLEED + MARKS) * 2 };
   const gridStyle = (cols: number, cellWidth: number, gap: number) => ({ gridTemplateColumns: `repeat(${cols}, ${cellWidth}mm)`, gap: `${gap}mm` });
   const printOf = (id: string, patch: TagPrint): TagPrint => ({ name: settings.tagNames[id], character: settings.tagCharacters[id], color: settings.tagColors[id], ...patch });
+  const tagBackDesign = (layout: Settings["tagLayout"]) => layout === "v2" ? "v2" : layout === "v3" ? "v3" : layout === "v4" ? "v4" : "classic";
   const setTagName = (id: string, name: string) => {
     update({ tagNames: { ...settings.tagNames, [id]: name.slice(0, 14) } });
     saveUnit(id, printOf(id, { name: name.slice(0, 14) }), 700);
@@ -247,7 +251,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
   const tagArtwork = (item: PrintItem, side: "front" | "back", suffix: string) => <div className={`ps-tag-ring${settings.cutLines ? " has-cut" : ""}`}>
     {side === "front"
       ? <TagFront id={`${item.id}-${suffix}-front`} diameter={qrSize} color={colorOf(item)} character={characterOf(item)} name={settings.tagNames[item.id] || ""} hole={settings.tagHole} />
-      : <TagBack id={`${item.id}-${suffix}-back`} qr={item.tagQr} diameter={qrSize} color={colorOf(item)} design={settings.tagLayout === "v2" ? "v2" : "classic"} hole={settings.tagHole} />}
+      : <TagBack id={`${item.id}-${suffix}-back`} qr={item.tagQr} diameter={qrSize} color={colorOf(item)} design={tagBackDesign(settings.tagLayout)} hole={settings.tagHole} />}
   </div>;
   const tagCell = (item: PrintItem, side: "front" | "back") => <button type="button" className={`ps-tag-cell ps-selectable${previewItem?.id === item.id ? " is-selected" : ""}`} onClick={() => selectItem(item.id)} aria-label={`Seleccionar chapita con código ${item.code}`}>
     {tagArtwork(item, side, "sheet")}
@@ -303,7 +307,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
             {on && <em>✓ Elegido</em>}
             {previewItem && <span className="ps-layout-faces" aria-hidden="true">
               <TagFront id={`layout-${layout.value}-${previewItem.id}-front`} diameter={14} color={colorOf(previewItem)} character={characterOf(previewItem)} name={settings.tagNames[previewItem.id] || ""} />
-              <TagBack id={`layout-${layout.value}-${previewItem.id}-back`} qr={previewItem.tagQr} diameter={14} color={colorOf(previewItem)} design={layout.value === "v2" ? "v2" : "classic"} />
+              <TagBack id={`layout-${layout.value}-${previewItem.id}-back`} qr={previewItem.tagQr} diameter={14} color={colorOf(previewItem)} design={tagBackDesign(layout.value)} />
             </span>}
             <strong><b>{index + 1}</b>{layout.label}</strong>
             <small>{layout.hint}</small>
@@ -405,7 +409,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
         <div className="ps-tag-overview-head"><div><small>VISTA PREVIA</small><h2>{unit(previewItem.number)} · {previewItem.code}</h2></div><span>{settings.tagNames[previewItem.id]?.trim() || "Sin nombre · stock"}</span></div>
         <div className="ps-tag-overview-pair">
           <figure><TagFront id={`preview-${previewItem.id}-front`} diameter={60} color={colorOf(previewItem)} character={characterOf(previewItem)} name={settings.tagNames[previewItem.id] || ""} hole={settings.tagHole} /><figcaption>Frente</figcaption></figure>
-          <figure><TagBack id={`preview-${previewItem.id}-back`} qr={previewItem.tagQr} diameter={60} color={colorOf(previewItem)} design={settings.tagLayout === "v2" ? "v2" : "classic"} hole={settings.tagHole} /><figcaption>Dorso · {layoutLabel}</figcaption></figure>
+          <figure><TagBack id={`preview-${previewItem.id}-back`} qr={previewItem.tagQr} diameter={60} color={colorOf(previewItem)} design={tagBackDesign(settings.tagLayout)} hole={settings.tagHole} /><figcaption>Dorso · {layoutLabel}</figcaption></figure>
         </div>
       </section>}
       {single ? items.flatMap((item) => [
