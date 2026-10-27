@@ -18,6 +18,20 @@
 .ps-group .ps-check { display: flex; align-items: center; gap: 8px; font-weight: 600; }
 .ps-group .ps-check input { flex: none; width: 16px; height: 16px; min-height: 0; margin: 0; padding: 0; accent-color: #1d2130; }
 .ps-group input[type=range] { width: 100%; accent-color: #1d2130; }
+.ps-card-formats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ps-card-formats button { display: grid; grid-template-columns: 54px 1fr; grid-template-rows: auto auto; align-items: center; gap: 2px 9px; min-width: 0; padding: 10px; border: 1.5px solid #e1e4ea; border-radius: 13px; background: #fff; color: #1d2130; font: inherit; text-align: left; cursor: pointer; }
+.ps-card-formats button.is-on { border-color: #e9772f; background: #fff8f3; box-shadow: 0 0 0 3px #e9772f1f; }
+.ps-card-formats strong { font-size: 13px; }
+.ps-card-formats small { grid-column: 2; color: #6b7080; font-size: 10.5px; line-height: 1.3; }
+.ps-card-format-preview { position: relative; grid-row: span 2; width: 54px; height: 34px; overflow: hidden; border-radius: 4px; background: linear-gradient(145deg, #ffe0c2, #ffc6d9); box-shadow: inset 0 0 0 1px #0002; }
+.ps-card-format-preview i { position: absolute; top: 8px; right: 5px; width: 15px; height: 15px; border: 2px solid #fff; background: repeating-linear-gradient(45deg, #2b2130 0 2px, #fff 2px 4px); }
+.ps-card-format-preview.is-secure::after { content: ""; position: absolute; inset: 0 0 0 auto; width: 13px; border-left: 1px dashed #8a4053; background: #3a1730; }
+.ps-card-format-preview.is-secure i { right: 15px; }
+.ps-card-format-preview.is-secure b { position: absolute; top: 4px; bottom: 4px; right: 11px; border-left: 1px dashed #fff9; }
+.ps-fold-note { margin: 0; padding: 9px 10px; border-radius: 10px; background: #fff4e8; color: #8a3e16; font-size: 11.5px; line-height: 1.4; }
+.ps-fixed-size { display: grid; gap: 2px; padding: 10px 12px; border: 1px solid #e1e4ea; border-radius: 10px; background: #f7f8fa; }
+.ps-fixed-size strong { font-size: 13px; }
+.ps-fixed-size small { color: #6b7080; font-size: 11.5px; }
 .ps-designs { display: grid; gap: 6px; }
 .ps-designs button { display: grid; grid-template-columns: 34px 1fr; grid-template-rows: auto auto; column-gap: 10px; align-items: center; padding: 9px 10px; border: 1.5px solid #e4e6ec; border-radius: 12px; background: #fff; font: inherit; text-align: left; cursor: pointer; }
 .ps-designs button.is-on { border-color: #1d2130; box-shadow: 0 0 0 2px #1d213014; }
@@ -100,6 +114,37 @@
 .pc-qrbox img { width: 100%; height: 100%; }
 .pc-code { padding: .25em .6em; border-radius: 99em; background: #fff; color: #1d1410; font-family: "Courier New", monospace; font-size: 3.3em; font-weight: 700; letter-spacing: .1em; white-space: nowrap; }
 .pc-qr small { font-size: 2.2em; font-weight: 700; }
+
+/* Diseño 2: una sola faz. La solapa derecha se dobla hacia la izquierda, sobre el QR privado;
+   su reverso sin imprimir queda por fuera y funciona como tapa de seguridad. */
+.pc-front.is-secure { display: block; padding: 0; }
+.pc-secure-main { position: absolute; z-index: 1; inset: 0 25em 0 0; display: grid; grid-template-columns: 64em 21em; }
+.pc-secure-copy { display: grid; align-content: space-between; min-width: 0; padding: 3.5em 3.2em 3.5em 4.5em; }
+.pc-secure-top { display: flex; align-items: center; justify-content: space-between; gap: 1.5em; }
+.pc-front.is-secure .pc-unit { font-size: 1.65em; }
+.pc-product-chip { padding: .45em .75em; border: .15em solid currentColor; border-radius: 99em; font-size: 1.45em; font-weight: 850; letter-spacing: .06em; }
+.pc-secure-copy h2 { font-size: 4.4em; font-weight: 850; line-height: 1; letter-spacing: -.035em; }
+.pc-secure-copy > p:not(.pc-secure-benefit) { font-size: 2.2em; font-weight: 700; line-height: 1.2; }
+.pc-secure-copy ol { display: grid; gap: .55em; padding: 0; list-style: none; }
+.pc-secure-copy li { display: flex; align-items: center; gap: .75em; font-size: 2.05em; font-weight: 700; line-height: 1.18; }
+.pc-secure-copy li b { display: grid; flex: none; place-items: center; width: 1.8em; height: 1.8em; border-radius: 50%; background: #1d2130; color: #fff; font-size: .75em; }
+.pc-secure-benefit { padding: .75em 1em; border-radius: 1.3em; background: #ffffff75; font-size: 1.85em; font-weight: 650; line-height: 1.22; }
+.pc-secure-edit { display: flex; align-items: center; justify-content: space-between; gap: 1.5em; }
+.pc-secure-edit .pc-logo { flex: none; font-size: 2.45em; }
+.pc-secure-edit small { max-width: 25em; font-size: 1.35em; line-height: 1.2; text-align: right; }
+.pc-secure-secret { display: grid; align-content: center; justify-items: center; gap: .55em; padding: 2.2em .8em; }
+.pc-secure-secret > strong { display: flex; align-items: center; gap: .35em; font-size: 1.35em; font-weight: 900; text-transform: uppercase; }
+.pc-secure-secret > strong svg { width: 1em; height: 1em; }
+.pc-front.is-secure .pc-qrbox { width: 20.5em; height: 20.5em; padding: 1em; border-radius: 2.5em; transform: none; }
+.pc-front.is-secure .pc-code { padding: .2em .4em; font-size: 2.15em; }
+.pc-secure-secret small { font-size: 1.25em; font-weight: 750; }
+.pc-secure-secret em { font-size: 1.1em; font-style: normal; font-weight: 900; text-transform: uppercase; }
+.pc-secure-flap { position: absolute; z-index: 2; inset: 0 0 0 85em; display: grid; place-items: center; align-content: center; gap: 1em; padding: 4em 2.4em; border-left: .25em solid #ffffff99; background: #ffffff52; text-align: center; }
+.pc-secure-flap > span { font-size: 5em; font-weight: 900; line-height: 1; }
+.pc-secure-flap strong { font-size: 2.6em; font-weight: 900; line-height: 1.08; text-transform: uppercase; }
+.pc-secure-flap small { font-size: 1.75em; font-weight: 700; line-height: 1.3; }
+.pc-fold-line { position: absolute; z-index: 5; top: 0; bottom: 0; left: 84.8em; border-left: .35em dashed currentColor; opacity: .68; }
+.pc-fold-line i { position: absolute; top: 50%; left: 0; padding: .35em .6em; border-radius: 99em; background: #fff; color: #4a3a34; font-size: 1.15em; font-style: normal; font-weight: 900; letter-spacing: .06em; white-space: nowrap; transform: translate(-50%, -50%) rotate(-90deg); }
 
 /* Dorso: título y logo a la izquierda, los pasos a la derecha. */
 .pc-back { display: grid; grid-template-columns: 1fr 1.05fr; gap: 4em; padding: 5em; color: #fff; }

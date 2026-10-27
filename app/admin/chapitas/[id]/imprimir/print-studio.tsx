@@ -13,7 +13,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 import Link from "next/link";
 import { LuPrinter } from "react-icons/lu";
-import { CardBack, CardFront, DESIGNS, unit, unitNumber, type DesignId } from "./card-designs";
+import { CardBack, CardFront, DESIGNS, unit, unitNumber, type CardLayout, type DesignId } from "./card-designs";
 import { cleanTagPrint, TagBack, TagFront, TAG_CATS, TAG_COLORS, TAG_DOGS, tagCharacterFor, type TagCharacterChoice, type TagCharacterId, type TagPrint } from "./tag-face";
 import { saveTagPrint } from "./actions";
 import CharacterPicker from "./character-picker";
@@ -22,6 +22,7 @@ export type PrintItem = { id: string; number: number; code: string; activationQr
 type Mode = "cards" | "qr";
 type Settings = {
   design: DesignId;
+  cardLayout: CardLayout;
   size: string;
   width: number;
   height: number;
@@ -49,7 +50,7 @@ const SIZES = [
   { id: "100x70", label: "Grande · 100×70 mm", width: 100, height: 70 },
   { id: "custom", label: "Otra medida", width: 85, height: 55 },
 ];
-const DEFAULTS: Settings = { design: "playful", size: "85x55", width: 85, height: 55, sides: "both", output: "single", cutLines: true, qrSize: 30, qrNumber: true, qrColor: "mix", tagSides: "both", tagOutput: "pairs", tagLayoutVersion: 2, tagCharacter: "mix", tagNames: {}, tagCharacters: {}, tagColors: {}, tagHole: false, paper: "A4", tagLayout: "v3" };
+const DEFAULTS: Settings = { design: "playful", cardLayout: "secure", size: "85x55", width: 85, height: 55, sides: "front", output: "single", cutLines: true, qrSize: 30, qrNumber: true, qrColor: "mix", tagSides: "both", tagOutput: "pairs", tagLayoutVersion: 2, tagCharacter: "mix", tagNames: {}, tagCharacters: {}, tagColors: {}, tagHole: false, paper: "A4", tagLayout: "v3" };
 const STORAGE_KEY = "bionfc-print-settings";
 // Lo de cada unidad no va al navegador: viene de la base (PrintItem.print).
 const UNIT_KEYS = ["tagNames", "tagCharacters", "tagColors"];
@@ -139,6 +140,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
         const next = { ...DEFAULTS, ...stored, ...unitsOf([...items.filter((item) => Object.keys(item.print).length), ...legacy]) };
         // Un diseño guardado que ya no existe vuelve al primero.
         if (!DESIGNS.some((design) => design.id === next.design)) next.design = DEFAULTS.design;
+        if (next.cardLayout !== "classic" && next.cardLayout !== "secure") next.cardLayout = DEFAULTS.cardLayout;
         if (!LAYOUTS.some((layout) => layout.value === next.tagLayout)) next.tagLayout = DEFAULTS.tagLayout;
         // La versión anterior dejaba el modo espejado demasiado visible. Una sola vez migramos a
         // pares para armado; si después alguien activa doble faz a propósito, la elección se guarda.
@@ -159,8 +161,10 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
     return next;
   });
 
-  const width = clamp(settings.width, 40, 190);
-  const height = clamp(settings.height, 30, 270);
+  const secureCard = settings.cardLayout === "secure";
+  // La solapa suma 25 mm: abierta mide 110×55 y al plegarla vuelve al formato 85×55.
+  const width = secureCard ? 110 : clamp(settings.width, 40, 190);
+  const height = secureCard ? 55 : clamp(settings.height, 30, 270);
   // La chapita entera (el círculo), en mm. Desde 28 mm: más chica, el QR no se lee bien impreso.
   const qrSize = clamp(settings.qrSize, 28, 45);
   const single = mode === "cards" && settings.output === "single";
@@ -193,16 +197,18 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
   const cardPages = chunks(items, perCardPage);
   const qrPages = chunks(items, perQrPage);
   const pairPages = chunks(items, perPairPage);
-  const faces = settings.sides === "both" ? 2 : 1;
+  const cardBoth = !secureCard && settings.sides === "both";
+  const faces = cardBoth ? 2 : 1;
   const tagFaces = settings.tagSides === "both" ? 2 : 1;
   const pageCount = mode === "qr"
     ? settings.tagSides === "both" && settings.tagOutput === "pairs" ? pairPages.length : qrPages.length * tagFaces
     : single ? items.length * faces : cardPages.length * faces;
 
-  const cardStyle = { width: `${width}mm`, height: `${height}mm`, fontSize: `${width / 85}mm` };
+  const cardScale = secureCard ? 1 : width / 85;
+  const cardStyle = { width: `${width}mm`, height: `${height}mm`, fontSize: `${cardScale}mm` };
   // Con sangrado la tarjeta crece 2 mm por lado (el fondo sigue por debajo) y el contenido queda
   // en la medida final.
-  const bleedStyle = { width: `${width + BLEED * 2}mm`, height: `${height + BLEED * 2}mm`, borderWidth: `${BLEED}mm`, fontSize: `${width / 85}mm` };
+  const bleedStyle = { width: `${width + BLEED * 2}mm`, height: `${height + BLEED * 2}mm`, borderWidth: `${BLEED}mm`, fontSize: `${cardScale}mm` };
   const singlePage = { width: width + (BLEED + MARKS) * 2, height: height + (BLEED + MARKS) * 2 };
   const gridStyle = (cols: number, cellWidth: number, gap: number) => ({ gridTemplateColumns: `repeat(${cols}, ${cellWidth}mm)`, gap: `${gap}mm` });
   const printOf = (id: string, patch: TagPrint): TagPrint => ({ name: settings.tagNames[id], character: settings.tagCharacters[id], color: settings.tagColors[id], ...patch });
@@ -276,23 +282,29 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
       </div>
 
       {mode === "cards" ? <>
-        <fieldset className="ps-group"><legend>Diseño</legend>
+        <fieldset className="ps-group"><legend>Formato de tarjeta</legend>
+          <div className="ps-card-formats">
+            <button type="button" className={settings.cardLayout === "classic" ? "is-on" : ""} onClick={() => update({ cardLayout: "classic" })}><span className="ps-card-format-preview is-classic"><i /></span><strong>Diseño 1</strong><small>Clásica · QR visible · medida configurable</small></button>
+            <button type="button" className={settings.cardLayout === "secure" ? "is-on" : ""} onClick={() => update({ cardLayout: "secure", sides: "front" })}><span className="ps-card-format-preview is-secure"><i /><b /></span><strong>Diseño 2</strong><small>Una sola faz · solapa privada · recomendado</small></button>
+          </div>
+          {secureCard && <p className="ps-fold-note"><b>Recomendado:</b> doblá la solapa hacia adelante, sobre el QR. El reverso de la solapa funciona como tapa de seguridad.</p>}
+        </fieldset>
+        <fieldset className="ps-group"><legend>Estilo visual</legend>
           <div className="ps-designs">{DESIGNS.map((design) => <button key={design.id} type="button" className={settings.design === design.id ? "is-on" : ""} onClick={() => update({ design: design.id })}>
             <span className="ps-swatch" style={{ background: design.swatch }} /><strong>{design.label}</strong><small>{design.hint}</small>
           </button>)}</div>
         </fieldset>
         <fieldset className="ps-group"><legend>Tamaño</legend>
-          <select value={settings.size} onChange={(event) => { const size = SIZES.find((item) => item.id === event.target.value)!; update(size.id === "custom" ? { size: size.id } : { size: size.id, width: size.width, height: size.height }); }}>
+          {secureCard ? <div className="ps-fixed-size"><strong>110×55 mm abierta</strong><small>La parte terminada queda de 85×55 mm más la solapa doblada.</small></div> : <><select value={settings.size} onChange={(event) => { const size = SIZES.find((item) => item.id === event.target.value)!; update(size.id === "custom" ? { size: size.id } : { size: size.id, width: size.width, height: size.height }); }}>
             {SIZES.map((size) => <option key={size.id} value={size.id}>{size.label}</option>)}
           </select>
           {settings.size === "custom" && <div className="ps-row">
             <label>Ancho (mm)<input type="number" min={40} max={190} value={settings.width} onChange={(event) => update({ width: Number(event.target.value) })} /></label>
             <label>Alto (mm)<input type="number" min={30} max={270} value={settings.height} onChange={(event) => update({ height: Number(event.target.value) })} /></label>
-          </div>}
+          </div>}</>}
         </fieldset>
         <fieldset className="ps-group"><legend>Caras</legend>
-          <label className="ps-check"><input type="radio" checked={settings.sides === "both"} onChange={() => update({ sides: "both" })} />Frente y dorso</label>
-          <label className="ps-check"><input type="radio" checked={settings.sides === "front"} onChange={() => update({ sides: "front" })} />Solo frente (el dorso lo hago en Canva)</label>
+          {secureCard ? <div className="ps-fixed-size"><strong>Una sola faz</strong><small>Las instrucciones, el QR y el código salen juntos en la misma cara.</small></div> : <><label className="ps-check"><input type="radio" checked={settings.sides === "both"} onChange={() => update({ sides: "both" })} />Frente y dorso</label><label className="ps-check"><input type="radio" checked={settings.sides === "front"} onChange={() => update({ sides: "front" })} />Solo frente (el dorso lo hago en Canva)</label></>}
         </fieldset>
         <fieldset className="ps-group"><legend>Formato</legend>
           <label className="ps-check"><input type="radio" checked={settings.output === "single"} onChange={() => update({ output: "single" })} />Una por página, con sangrado (imprenta o Canva)</label>
@@ -394,8 +406,8 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
         <strong>{single ? "Para la imprenta o Canva" : "Para imprimir"}</strong>
         <span>En la ventana de impresión elegí <b>Guardar como PDF</b>, márgenes <b>Ninguno</b> y activá <b>Gráficos de fondo</b>.</span>
         {single
-          ? <span>Cada cara va en su página, a {width}×{height} mm con <b>2 mm de sangrado</b> y marcas de corte{settings.sides === "both" ? ", frente y dorso intercalados" : ""}. Así lo piden las imprentas, y en Canva se importa con <b>Subir → el PDF</b>.</span>
-          : settings.sides === "both" && mode === "cards" && <span>Doble faz, <b>girando por el lado largo</b>: los dorsos ya están ubicados para caer detrás de cada frente.</span>}
+          ? <span>Cada cara va en su página, a {width}×{height} mm con <b>2 mm de sangrado</b> y marcas de corte{cardBoth ? ", frente y dorso intercalados" : ""}. Así lo piden las imprentas, y en Canva se importa con <b>Subir → el PDF</b>.{secureCard ? " La línea interior es para doblar la solapa sobre el QR, no para cortar." : ""}</span>
+          : cardBoth && mode === "cards" && <span>Doble faz, <b>girando por el lado largo</b>: los dorsos ya están ubicados para caer detrás de cada frente.</span>}
         {mode === "qr" && settings.tagOutput === "pairs" && <span>Cada unidad sale como un par: <b>frente y dorso juntos</b> en la misma hoja, listos para cortar y emparejar.</span>}
         {mode === "qr" && settings.tagOutput === "duplex" && settings.tagSides === "both" && <span>Primero sale la hoja de frentes y después la de dorsos, ya <b>espejada por fila</b>. Imprimí doble faz girando por el lado largo.</span>}
         {mode === "qr" && <span>La hoja de chapitas no lleva códigos privados: cada par se empareja con su tarjeta por el <b>N° de unidad</b>. Al terminar de armar, controlá cada una con <b>Verificar armado</b>.</span>}
@@ -414,22 +426,22 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
       </section>}
       {single ? items.flatMap((item) => [
         <section key={`${item.id}-f`} className={`ps-single ps-selectable${previewItem?.id === item.id ? " is-selected" : ""}`} style={{ width: `${singlePage.width}mm`, height: `${singlePage.height}mm` }} aria-label={`Seleccionar tarjeta con código ${item.code}: frente`} role="button" tabIndex={0} onClick={() => selectItem(item.id)} onKeyDown={(event) => selectItemFromKeyboard(event, item.id)}>
-          <CardFront design={settings.design} item={item} host={host} style={bleedStyle} bleed />
+          <CardFront design={settings.design} layout={settings.cardLayout} item={item} host={host} style={bleedStyle} bleed />
           <CropMarks width={width} height={height} />
         </section>,
-        ...(settings.sides === "both" ? [<section key={`${item.id}-b`} className={`ps-single ps-selectable${previewItem?.id === item.id ? " is-selected" : ""}`} style={{ width: `${singlePage.width}mm`, height: `${singlePage.height}mm` }} aria-label={`Seleccionar tarjeta con código ${item.code}: dorso`} role="button" tabIndex={0} onClick={() => selectItem(item.id)} onKeyDown={(event) => selectItemFromKeyboard(event, item.id)}>
-          <CardBack design={settings.design} host={host} style={bleedStyle} bleed />
+        ...(cardBoth ? [<section key={`${item.id}-b`} className={`ps-single ps-selectable${previewItem?.id === item.id ? " is-selected" : ""}`} style={{ width: `${singlePage.width}mm`, height: `${singlePage.height}mm` }} aria-label={`Seleccionar tarjeta con código ${item.code}: dorso`} role="button" tabIndex={0} onClick={() => selectItem(item.id)} onKeyDown={(event) => selectItemFromKeyboard(event, item.id)}>
+          <CardBack design={settings.design} layout={settings.cardLayout} host={host} style={bleedStyle} bleed />
           <CropMarks width={width} height={height} />
         </section>] : []),
       ]) : mode === "cards" ? cardPages.map((page, pageIndex) => <div key={pageIndex} className="ps-pair">
         <section className="ps-page" aria-label={`Hoja ${pageIndex + 1}: frentes`}>
           <span className="ps-page-label">Hoja {pageIndex + 1} · frentes</span>
           <div className="ps-grid" style={gridStyle(cardCols, width, cardGap)}>
-            {page.map((item) => <button type="button" key={item.id} className={`ps-cell ps-selectable${settings.cutLines ? " has-cut" : ""}${previewItem?.id === item.id ? " is-selected" : ""}`} onClick={() => selectItem(item.id)} aria-label={`Seleccionar tarjeta con código ${item.code}`}><CardFront design={settings.design} item={item} host={host} style={cardStyle} /></button>)}
+            {page.map((item) => <button type="button" key={item.id} className={`ps-cell ps-selectable${settings.cutLines ? " has-cut" : ""}${previewItem?.id === item.id ? " is-selected" : ""}`} onClick={() => selectItem(item.id)} aria-label={`Seleccionar tarjeta con código ${item.code}`}><CardFront design={settings.design} layout={settings.cardLayout} item={item} host={host} style={cardStyle} /></button>)}
           </div>
           <SheetFoot batchName={batchName} page={pageIndex + 1} pages={cardPages.length} items={page} detail="Tarjetas · frentes" />
         </section>
-        {settings.sides === "both" && <section className="ps-page" aria-label={`Hoja ${pageIndex + 1}: dorsos`}>
+        {cardBoth && <section className="ps-page" aria-label={`Hoja ${pageIndex + 1}: dorsos`}>
           <span className="ps-page-label">Hoja {pageIndex + 1} · dorsos (atrás de la anterior)</span>
           <div className="ps-grid" style={gridStyle(cardCols, width, cardGap)}>
             {/* Espejado por fila: el dorso de la columna 1 va en la última, y así. */}
@@ -437,7 +449,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
               const row = Math.floor(cell / cardCols);
               const item = page[row * cardCols + (cardCols - 1 - (cell % cardCols))];
               return item
-                ? <button type="button" key={cell} className={`ps-cell ps-selectable${settings.cutLines ? " has-cut" : ""}${previewItem?.id === item.id ? " is-selected" : ""}`} onClick={() => selectItem(item.id)} aria-label={`Seleccionar dorso de la tarjeta con código ${item.code}`}><CardBack design={settings.design} host={host} style={cardStyle} /></button>
+                ? <button type="button" key={cell} className={`ps-cell ps-selectable${settings.cutLines ? " has-cut" : ""}${previewItem?.id === item.id ? " is-selected" : ""}`} onClick={() => selectItem(item.id)} aria-label={`Seleccionar dorso de la tarjeta con código ${item.code}`}><CardBack design={settings.design} layout={settings.cardLayout} host={host} style={cardStyle} /></button>
                 : <div key={cell} className="ps-cell"><div style={cardStyle} /></div>;
             })}
           </div>

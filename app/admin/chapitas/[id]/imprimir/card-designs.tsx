@@ -5,12 +5,13 @@
 // crece con el tamaño elegido (print-studio.tsx), así que todo escala junto. Ningún texto queda
 // por debajo de 2,2em (~6 puntos impreso). Estilos en print-studio.css (.pc-*).
 import type { CSSProperties, ReactNode } from "react";
-import { LuBone, LuCat, LuDog, LuFish, LuHeart, LuLeaf, LuPawPrint, LuSparkles, LuStar, LuSun } from "react-icons/lu";
+import { LuBone, LuCat, LuDog, LuFish, LuHeart, LuLeaf, LuLock, LuPawPrint, LuSparkles, LuStar, LuSun } from "react-icons/lu";
 import { LOGO_FONT_FAMILY } from "@/components/bionfc-logo";
 import { unitNumber } from "@/lib/pet-tags";
 import type { PrintItem } from "./print-studio";
 
 export type DesignId = "playful" | "paws" | "bones" | "kitty" | "park";
+export type CardLayout = "classic" | "secure";
 
 type Design = {
   id: DesignId;
@@ -75,8 +76,35 @@ export { unitNumber };
 export const unit = (number: number) => `UNIDAD ${unitNumber(number)}`;
 
 // bleed: la tarjeta con sangrado (el fondo sigue 2 mm más por fuera, ver .pc.is-bleed).
-export function CardFront({ design: id, item, host, style, bleed = false }: { design: DesignId; item: PrintItem; host: string; style: CSSProperties; bleed?: boolean }) {
+export function CardFront({ design: id, layout = "classic", item, host, style, bleed = false }: { design: DesignId; layout?: CardLayout; item: PrintItem; host: string; style: CSSProperties; bleed?: boolean }) {
   const design = designOf(id);
+  if (layout === "secure") return <article className={`pc pc-${design.id} pc-front is-secure${bleed ? " is-bleed" : ""}`} style={style}>
+    <Deco items={design.deco} />
+    <div className="pc-secure-main">
+      <div className="pc-secure-copy">
+        <div className="pc-secure-top"><span className="pc-unit">{unit(item.number)}</span><span className="pc-product-chip">NFC + QR</span></div>
+        <h2>Activá la chapita</h2>
+        <p>En 2 minutos queda lista.</p>
+        <ol>
+          <li><b>1</b><span>Abrí la solapa.</span></li>
+          <li><b>2</b><span>Escaneá el QR o usá el código.</span></li>
+          <li><b>3</b><span>Cargá la foto y tu WhatsApp.</span></li>
+        </ol>
+        <p className="pc-secure-benefit"><strong>Si se pierde,</strong> quien la encuentre puede avisarte.</p>
+        <div className="pc-secure-edit"><Logo /><small>Después podés editarla en <b>{host}/mi</b></small></div>
+      </div>
+      <div className="pc-secure-secret">
+        <strong><LuLock aria-hidden="true" /> Para activar</strong>
+        {/* eslint-disable-next-line @next/next/no-img-element -- QR secreto generado en el servidor */}
+        <div className="pc-qrbox">{item.activationQr && <img src={item.activationQr} alt="" />}</div>
+        <span className="pc-code">{item.code}</span>
+        <small>{host}/activar</small>
+        <em>Código privado</em>
+      </div>
+    </div>
+    <span className="pc-fold-line"><i>DOBLAR SOBRE EL QR</i></span>
+    <div className="pc-secure-flap"><span aria-hidden="true">←</span><strong>Doblá esta solapa sobre el QR</strong><small>Así el código queda oculto y protegido.</small></div>
+  </article>;
   return <article className={`pc pc-${design.id} pc-front${bleed ? " is-bleed" : ""}`} style={style}>
     <Deco items={design.deco} />
     <div className="pc-copy">
@@ -94,7 +122,7 @@ export function CardFront({ design: id, item, host, style, bleed = false }: { de
   </article>;
 }
 
-export function CardBack({ design: id, host, style, bleed = false }: { design: DesignId; host: string; style: CSSProperties; bleed?: boolean }) {
+export function CardBack({ design: id, host, style, bleed = false }: { design: DesignId; layout?: CardLayout; host: string; style: CSSProperties; bleed?: boolean }) {
   const design = designOf(id);
   return <article className={`pc pc-${design.id} pc-back${bleed ? " is-bleed" : ""}`} style={style}>
     <Deco items={design.backDeco} />
