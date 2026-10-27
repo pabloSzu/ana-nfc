@@ -30,7 +30,7 @@ export type Screen =
 export const TITLES: Record<Panel, { label: string; icon: string }> = {
   pet: { label: "Nombre y foto", icon: "🐶" },
   family: { label: "Contactos", icon: "📞" },
-  ficha: { label: "Datos importantes", icon: "📋" },
+  ficha: { label: "Su ficha", icon: "📋" },
   look: { label: "Diseño", icon: "🎨" },
   lost: { label: "Aviso de perdido", icon: "🚨" },
 };

@@ -79,6 +79,9 @@ export const PET_HEALTH_FIELDS = [
   { key: "vet", label: "Veterinaria", placeholder: "Patitas · 351 555-1234" },
 ] as const;
 
+// Qué es (botones). Vacío en las chapitas de antes de que existiera.
+export const PET_KINDS = ["Perro", "Gato", "Otro"] as const;
+
 export type PetAboutKey = (typeof PET_ABOUT_FIELDS)[number]["key"];
 export type PetHealthKey = (typeof PET_HEALTH_FIELDS)[number]["key"];
 
@@ -96,6 +99,12 @@ export type PetData = {
   reward: string;
   // Encuadre no destructivo de la foto. Vive en el JSON existente: no necesita migración.
   photo: PetPhotoPlacement;
+  // Perro, gato u otro (PET_KINDS).
+  kind: string;
+  // Cuándo nació: "2021-03" o, si no se sabe el mes, "2021". La edad se calcula sola (petAge);
+  // about.age queda solo para las chapitas de antes, que tenían la edad escrita a mano.
+  birth: string;
+  birthApprox: boolean;
 };
 
 export const PET_FAMILY_MAX = 2;
@@ -111,7 +120,7 @@ export type PetMissing = "photo" | "about" | "family";
 export function petMissing(pet: PetData, hasPhoto: boolean): PetMissing[] {
   const missing: PetMissing[] = [];
   if (!hasPhoto) missing.push("photo");
-  if (!Object.values(pet.about).some((value) => value.trim()) && !Object.values(pet.health).some((value) => value.trim())) missing.push("about");
+  if (!pet.birth && !Object.values(pet.about).some((value) => value.trim()) && !Object.values(pet.health).some((value) => value.trim())) missing.push("about");
   if (pet.family.filter((member) => member.phone.trim()).length < 2) missing.push("family");
   return missing;
 }
@@ -130,7 +139,7 @@ export function formatReward(value: string): string {
 // La versión de las imágenes para compartir (app/api/og/mascota): cambia con todo lo que se ve
 // en ellas. Con la versión en la dirección, la imagen queda guardada y solo se vuelve a armar si
 // algo cambió. PET_IMAGE_DESIGN se sube al cambiar el dibujo de las imágenes.
-const PET_IMAGE_DESIGN = 2;
+const PET_IMAGE_DESIGN = 6;
 export function petImageVersion(pet: PetData, name: string, photoUrl: string, slug: string): string {
   const text = JSON.stringify([PET_IMAGE_DESIGN, pet.lost, pet.about.sex, pet.lostZone, pet.reward, pet.greeting, pet.look, pet.photo, name, photoUrl, slug]);
   let hash = 5381;
@@ -139,6 +148,44 @@ export function petImageVersion(pet: PetData, name: string, photoUrl: string, sl
 }
 
 export const petGendered = (pet: Pick<PetData, "about">, male: string, female: string) => petIsFemale(pet) ? female : male;
+// Lo que cambia según qué es: el ícono y los ejemplos de los campos (para un gato, gatos).
+export const petKindEmoji = (kind: string) => kind === "Perro" ? "🐶" : kind === "Gato" ? "🐱" : "🐾";
+export const petNameExample = (kind: string) => kind === "Perro" ? "Ej: Toby" : kind === "Gato" ? "Ej: Mishi" : "Ej: Toby o Mishi";
+export const petFinderExample = (kind: string) => kind === "Gato"
+  ? "Ej: Soy miedoso, no me persigas: me escondo.\nDejame comida y avisale a mi familia."
+  : "Ej: Soy manso pero un poco miedoso.\nAcercate despacio y llamame por mi nombre.";
+
+// "perro", "perra", "gato", "gata" o vacío (otro animal, o sin cargar).
+export const petKindWord = (pet: Pick<PetData, "about" | "kind">) =>
+  pet.kind === "Perro" ? petGendered(pet, "perro", "perra") : pet.kind === "Gato" ? petGendered(pet, "gato", "gata") : "";
+
+// La edad a partir de cuándo nació: "8 meses", "1 año", "4 años" ("Aprox. 4 años" si es
+// aproximada). Vacío si no hay fecha o es del futuro.
+export function petAge(birth: string, approx = false, now = new Date()): string {
+  const match = /^(\d{4})(?:-(\d{2}))?$/.exec(birth);
+  if (!match) return "";
+  const year = Number(match[1]);
+  const month = match[2] ? Number(match[2]) : 0;
+  let age: string;
+  if (month) {
+    const months = (now.getFullYear() - year) * 12 + (now.getMonth() + 1 - month);
+    if (months < 0) return "";
+    const years = Math.floor(months / 12);
+    age = months < 1 ? "Menos de 1 mes" : months < 12 ? `${months} ${months === 1 ? "mes" : "meses"}` : `${years} ${years === 1 ? "año" : "años"}`;
+  } else {
+    const years = now.getFullYear() - year;
+    if (years < 0) return "";
+    age = years < 1 ? "Menos de 1 año" : `${years} ${years === 1 ? "año" : "años"}`;
+  }
+  return approx ? `Aprox. ${age.charAt(0).toLowerCase()}${age.slice(1)}` : age;
+}
+
+// "Sobre mí" de la página: qué es y los datos cargados, con la edad calculada si está la fecha.
+export function petAboutRows(pet: Pick<PetData, "about" | "kind" | "birth" | "birthApprox">, now = new Date()) {
+  const kind = pet.kind && pet.kind !== "Otro" ? [{ label: "Especie", value: pet.kind }] : [];
+  const about = { ...pet.about, age: pet.birth ? petAge(pet.birth, pet.birthApprox, now) : pet.about.age };
+  return [...kind, ...petRows(about, PET_ABOUT_FIELDS)];
+}
 // Los datos de salud con "Castrado" o "Castrada" según corresponda.
 export const petHealthFields = (pet: Pick<PetData, "about">) =>
   PET_HEALTH_FIELDS.map((item) => item.key === "neutered" ? { ...item, label: petGendered(pet, "Castrado", "Castrada") } : item);
@@ -174,6 +221,9 @@ export function parsePet(buttonStyle: unknown): PetData {
       y: boundedNumber(photo.y, 50, 0, 100),
       zoom: boundedNumber(photo.zoom, 1, 1, 2.5),
     },
+    kind: PET_KINDS.find((kind) => kind === pet.kind) || "",
+    birth: typeof pet.birth === "string" && /^\d{4}(-(0[1-9]|1[0-2]))?$/.test(pet.birth) ? pet.birth : "",
+    birthApprox: pet.birthApprox === true,
   };
 }
 
@@ -192,8 +242,9 @@ export function cleanPet(pet: PetData): PetData {
     message: multiLine(pet.message),
     family: pet.family.map((member) => ({ name: oneLine(member.name), phone: cleanPhoneInput(member.phone).trim() })).filter((member) => member.name || member.phone)
       .map((member) => ({ ...member, phone: member.phone && !petPhoneProblem(member.phone) ? normalizePhone(member.phone) : member.phone })),
-    about: lines(pet.about),
+    about: { ...lines(pet.about), ...(pet.birth ? { age: "" } : {}) },
     health: lines(pet.health),
+    birthApprox: Boolean(pet.birth) && pet.birthApprox,
     finder: multiLine(pet.finder),
     lostZone: oneLine(pet.lostZone),
     reward: oneLine(pet.reward),

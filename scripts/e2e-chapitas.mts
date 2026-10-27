@@ -149,14 +149,14 @@ async function run() {
     // Un segundo número a medio escribir y "Saltear": lo descarta y guarda lo demás antes de seguir.
     await type(".pet-wizard input[type=tel]", "351");
     await clickText("Saltear", "button");
-    check("Opcionales: termina en '¡Todo listo!' (sin el paso de si se pierde)", await waitFor("document.body.innerText.includes('Todo listo') && !document.body.innerText.includes('Si algún día se pierde')"));
+    check("Opcionales: termina en '¡… ya tiene su chapita!' (sin el paso de si se pierde)", await waitFor("document.body.innerText.includes('ya tiene su chapita') && !document.body.innerText.includes('Si algún día se pierde')"));
     // Sin esperar: lo elegido ya tiene que estar guardado cuando aparece la pantalla siguiente.
     const { data: afterSteps } = await admin.from("landings").select("button_style").eq("id", data.tagId).single();
     const savedPet = (afterSteps?.button_style as { pet?: { look?: string; about?: { sex?: string }; family?: unknown[] } })?.pet;
     check("Opcionales: se guardó lo elegido antes de seguir", savedPet?.look === "divertido" && savedPet?.about?.sex === "Hembra" && savedPet?.family?.length === 1, `${savedPet?.look} · ${savedPet?.about?.sex} · ${savedPet?.family?.length} contacto(s)`);
-    check("Opcionales: final con 'Mostrala en tus historias'", await waitFor("[...document.querySelectorAll('button')].some((b) => b.textContent.includes('Mostrala en tus historias'))"));
+    check("Opcionales: final con 'Subir a mi historia' y la imagen", await waitFor("[...document.querySelectorAll('button')].some((b) => b.textContent.includes('Subir a mi historia')) && Boolean(document.querySelector('.pet-story-preview img'))"));
     // "Listo" termina en Mis chapitas, con la bienvenida apuntando al botón rojo.
-    await clickText("Listo");
+    await click(".pet-done-card");
     check("Final: lleva a Mis chapitas con la bienvenida", await waitFor("location.pathname === '/mi' && Boolean(document.querySelector('.mi-welcome')) && Boolean(document.querySelector('.mi-lost-button.is-highlight'))", 30));
     check("Mis chapitas: avisa que a la ficha le falta la foto", await waitFor("document.querySelector('.mi-pet-incomplete')?.getAttribute('href')?.endsWith('?seccion=pet')", 10));
     check("Final: la bienvenida no vuelve al recargar", !(await js("location.search.includes('nueva')")));

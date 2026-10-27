@@ -33,7 +33,7 @@ export default async function OwnerHome({ searchParams }: { searchParams: Promis
       const photo = landingImageUrl(page.logo_url, 384);
       const live = page.published && !page.blocked_at;
       // Ficha incompleta: sin foto o sin ningún dato de la mascota. Lleva directo a lo que falta.
-      const hasFicha = petRows(pet.about, PET_ABOUT_FIELDS).length + petRows(pet.health, PET_HEALTH_FIELDS).length + (pet.finder.trim() ? 1 : 0) > 0;
+      const hasFicha = (pet.birth ? 1 : 0) + petRows(pet.about, PET_ABOUT_FIELDS).length + petRows(pet.health, PET_HEALTH_FIELDS).length + (pet.finder.trim() ? 1 : 0) > 0;
       const missing = live && !pet.lost && (!page.logo_url ? "pet" : !hasFicha ? "ficha" : "");      const publicPath = `/mascota/${encodeURIComponent(page.pet_slug || page.slug)}`;
       return <li key={page.id} className={`mi-pet${pet.lost ? " is-lost" : ""}`}>
         <Link className="mi-pet-card" href={`/mi/chapita/${page.id}`}>

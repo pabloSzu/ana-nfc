@@ -11,9 +11,10 @@ import CopyButton from "@/components/copy-button";
 import Link from "next/link";
 import { LuPrinter } from "react-icons/lu";
 import PetShareButton from "@/components/pet-share-button";
-import { PET_ABOUT_FIELDS, PET_FAMILY_MAX, PET_HEALTH_FIELDS, cleanPhoneInput, formatReward, petGendered, petHasContact, petImageVersion, petIsFemale, petLook, petPhotoStyle, petRows, phoneForInput } from "@/lib/pet";
+import { PET_ABOUT_FIELDS, PET_FAMILY_MAX, PET_HEALTH_FIELDS, cleanPhoneInput, formatReward, petGendered, petHasContact, petImageVersion, petIsFemale, petLook, petPhotoStyle, petRows, phoneForInput, petFinderExample, petKindEmoji, petNameExample } from "@/lib/pet";
 import { TITLES, useEditor, type Panel } from "./pet-editor-context";
-import { Choice, Field, LookGrid, MiniPreview, PhoneStatus } from "./pet-editor-fields";
+import { Choice, Field, LookGrid, MiniPreview, PhoneStatus, BirthField, KindChoice } from "./pet-editor-fields";
+import { breedExample } from "./pet-editor-flow";
 
 export function MenuScreen() {
   const { landing, isOwner, owner, pet, name, photoUrl, dirty, saving, go, save, publish, startTour } = useEditor();
@@ -30,7 +31,7 @@ export function MenuScreen() {
   const look = petLook(pet.look);
   // En la compu, cada opción muestra un adelanto de lo que tiene (en el celular no entra).
   const contacts = pet.family.filter((member) => member.phone.trim()).map((member) => `${member.name.trim() ? `${member.name.trim()} ` : ""}${phoneForInput(member.phone)}`).join(" · ");
-  const fichaPreview = [pet.about.sex, pet.about.size, pet.about.breed, pet.health.neutered === "Sí" ? petGendered(pet, "Castrado", "Castrada") : ""].filter(Boolean).join(" · ");
+  const fichaPreview = [pet.kind, pet.about.sex, pet.about.size, pet.about.breed, pet.health.neutered === "Sí" ? petGendered(pet, "Castrado", "Castrada") : ""].filter(Boolean).join(" · ");
   const preview: Record<Exclude<Panel, "lost">, string> = {
     pet: `${name.trim() || "Sin nombre"} · ${photoUrl ? "con foto" : "sin foto"}`,
     family: contacts || "Falta el WhatsApp",
@@ -59,7 +60,7 @@ export function MenuScreen() {
     <ul className="pet-menu">
       {rows.map((row) => <li key={row.id}>
         <button type="button" className="pet-menu-row" data-tour={`row-${row.id}`} onClick={() => go({ name: "panel", panel: row.id })}>
-          <span className="pet-menu-icon" aria-hidden="true">{TITLES[row.id].icon}</span>
+          <span className="pet-menu-icon" aria-hidden="true">{row.id === "pet" ? petKindEmoji(pet.kind) : TITLES[row.id].icon}</span>
           <span className="pet-menu-label">{TITLES[row.id].label}<small className="pet-menu-preview">{preview[row.id]}</small></span>
           {row.status && <span className={`pet-menu-status${row.tone ? ` is-${row.tone}` : ""}`}>{row.status}</span>}
           {row.id === "look" && <span className="pet-menu-swatch" role="img" aria-label={look.label} style={{ background: `linear-gradient(135deg, ${look.background} 0 58%, ${look.accent} 58% 100%)` }} />}
@@ -117,7 +118,7 @@ export function PanelScreen({ panel }: { panel: Panel }) {
         </div>
       </div>
       {photo.error && <p className="pet-phone-warn">{photo.error}</p>}
-      <Field label="Nombre"><input value={name} maxLength={60} placeholder="Ej: Toby" onChange={(event) => setName(event.target.value)} /></Field>
+      <Field label="Nombre"><input value={name} maxLength={60} placeholder={petNameExample(pet.kind)} onChange={(event) => setName(event.target.value)} /></Field>
       <Field label="Saludo" help="Va arriba del nombre. Vacío no se muestra."><input value={pet.greeting} maxLength={40} placeholder="¡Hola! Soy" onChange={(event) => change({ greeting: event.target.value })} /></Field>
       <Field label="Mensaje" help="Lo primero que lee quien la encuentra."><textarea rows={2} value={pet.message} maxLength={200} onChange={(event) => change({ message: event.target.value })} /></Field>
     </>}
@@ -132,13 +133,12 @@ export function PanelScreen({ panel }: { panel: Panel }) {
     </>}
 
     {panel === "ficha" && <>
-      <p className="pet-editor-help">Son datos opcionales que pueden ayudar a cuidarla y devolverla más rápido. Lo que quede vacío no se muestra.</p>
+      <p className="pet-editor-help">Son datos opcionales que pueden ayudar a {petGendered(pet, "cuidarlo y devolverlo", "cuidarla y devolverla")} más rápido. Lo que quede vacío no se muestra.</p>
       <fieldset className="pet-group"><legend>Sobre {petName}</legend>
-        <div className="pet-row">
-          <Field label="Raza"><input value={pet.about.breed} maxLength={80} placeholder="Ej: Mestizo" onChange={(event) => about({ breed: event.target.value })} /></Field>
-          <Field label="Edad"><input value={pet.about.age} maxLength={80} placeholder="Ej: 4 años" onChange={(event) => about({ age: event.target.value })} /></Field>
-        </div>
+        <KindChoice />
         <Choice label="Sexo" options={["Macho", "Hembra"]} value={pet.about.sex} onPick={(sex) => about({ sex })} />
+        <Field label="Raza"><input value={pet.about.breed} maxLength={80} placeholder={breedExample(pet.kind)} onChange={(event) => about({ breed: event.target.value })} /></Field>
+        <BirthField />
         <Choice label="Tamaño" options={["Chico", "Mediano", "Grande"]} value={pet.about.size} onPick={(size) => about({ size })} />
         <div className="pet-row">
           <Field label="Color"><input value={pet.about.color} maxLength={80} placeholder="Ej: Marrón" onChange={(event) => about({ color: event.target.value })} /></Field>
@@ -154,7 +154,7 @@ export function PanelScreen({ panel }: { panel: Panel }) {
         <Field label="Alergias"><input value={pet.health.allergies} maxLength={120} placeholder="Ej: Ninguna" onChange={(event) => health({ allergies: event.target.value })} /></Field>
         <Field label="Veterinaria"><input value={pet.health.vet} maxLength={120} placeholder="Ej: Patitas · 351 555-1234" onChange={(event) => health({ vet: event.target.value })} /></Field>
       </fieldset>
-      <Field label="Si alguien la encuentra…"><textarea rows={3} value={pet.finder} maxLength={500} placeholder={"Ej: Soy manso pero un poco miedoso.\nAcercate despacio y llamame por mi nombre."} onChange={(event) => change({ finder: event.target.value })} /></Field>
+      <Field label={petGendered(pet, "Si alguien lo encuentra…", "Si alguien la encuentra…")}><textarea rows={3} value={pet.finder} maxLength={500} placeholder={petFinderExample(pet.kind)} onChange={(event) => change({ finder: event.target.value })} /></Field>
     </>}
 
     {/* Modo perdido: un solo botón que dice lo que pasa al tocarlo, según lo guardado. */}

@@ -3,11 +3,12 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
+import { warmPetImages } from "@/lib/pet-images";
 import { sendWelcomeEmail } from "@/lib/welcome-email";
 import { deleteReplacedPetPhoto, validPetPhotoPath } from "@/lib/pet-photo";
 import { createClient } from "@/lib/supabase/server";
 import { revalidateLandingPage } from "@/lib/landing-cache";
-import { cleanPet, parsePet, petHasContact, petLook, petPhoneProblem, type PetSaveResult } from "@/lib/pet";
+import { cleanPet, parsePet, petHasContact, petLook, petPhoneProblem, type PetSaveResult, petImageVersion } from "@/lib/pet";
 
 const ERRORS: Record<string, string> = {
   sin_permiso: "Esta chapita no es tuya o ya no tenés acceso.",
@@ -72,10 +73,13 @@ export async function saveMyPet(fd: FormData): Promise<PetSaveResult> {
   const { data: savedLanding } = await supabase.from("landings").select("pet_slug,published").eq("id", landingId).maybeSingle();
   if (savedLanding?.pet_slug) revalidateLandingPage(savedLanding.pet_slug);
   const firstPublish = !landing.published && Boolean(savedLanding?.published);
+  // Las imágenes para compartir, listas antes de que las pidan (ver lib/pet-images.ts).
+  const savedSlug = savedLanding?.pet_slug || landing.slug;
+  if (savedLanding?.published && savedSlug) after(() => warmPetImages(savedSlug, petImageVersion(pet, name, logoUrl, savedSlug)));
   // Primera vez que queda publicada: mail de bienvenida, después de responder (no demora nada).
   const email = (claims?.claims as { email?: string } | undefined)?.email || "";
   if (firstPublish && email) {
-    after(() => sendWelcomeEmail({ to: email, petName: name, petSlug: savedLanding?.pet_slug || landing.slug }));
+    after(() => sendWelcomeEmail({ to: email, petName: name, petSlug: savedLanding?.pet_slug || landing.slug, photoUrl: logoUrl }));
   }
 
   // El aviso de arriba solo cuando la pantalla que sigue no cuenta lo que pasó, o hay un problema.

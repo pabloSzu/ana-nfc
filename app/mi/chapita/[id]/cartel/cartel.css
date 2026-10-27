@@ -15,6 +15,7 @@
 .poster-photo { position: relative; overflow: hidden; display: grid; place-items: center; background: #f1e4d8; }
 .poster-photo > span { font-size: 22cqw; opacity: .5; }
 .poster-red { padding: 2.2cqw 4cqw; background: #d92d20; color: #fff; text-align: center; font-size: 14cqw; font-weight: 900; line-height: 1; letter-spacing: -.04em; }
+.poster-red.is-long { padding-block: 3.4cqw; font-size: 9.4cqw; }
 .poster-name { display: flex; align-items: baseline; justify-content: center; gap: 2.4cqw; padding: 2.4cqw 5cqw 0; }
 .poster-name small { font-size: 3.6cqw; font-weight: 700; color: #7d6656; }
 .poster-name b { overflow: hidden; font-size: 10cqw; font-weight: 900; line-height: 1.05; letter-spacing: -.04em; text-overflow: ellipsis; white-space: nowrap; }

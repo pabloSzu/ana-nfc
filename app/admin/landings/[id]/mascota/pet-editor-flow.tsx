@@ -6,14 +6,16 @@
 //    Compartir.
 //  · SpreadScreen: "Ahora, difundilo", al activar el modo perdido.
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { FaInstagram } from "react-icons/fa6";
 import { LuPawPrint, LuPrinter } from "react-icons/lu";
-import PetShareButton, { PetSharePanel } from "@/components/pet-share-button";
-import { cleanPhoneInput, petGendered, petHasContact, petImageVersion, petIsFemale, petPhoneProblem, petPhotoStyle, type PetFamily } from "@/lib/pet";
+import { PetSharePanel, PetStoryShareButton } from "@/components/pet-share-button";
+import { cleanPhoneInput, petGendered, petNameExample, petHasContact, petImageVersion, petIsFemale, petPhoneProblem, petPhotoStyle, type PetFamily } from "@/lib/pet";
 import { AFTER_STEPS, useEditor, type AfterStep } from "./pet-editor-context";
-import { Choice, Field, LookGrid, MiniPreview, PhoneStatus } from "./pet-editor-fields";
+import { BirthField, Choice, Field, KindChoice, LookGrid, MiniPreview, PhoneStatus } from "./pet-editor-fields";
 
 export function SetupScreen({ step }: { step: 0 | 1 | 2 }) {
-  const { pet, name, setName, petName, photoUrl, photo, change, saving, go, publish } = useEditor();
+  const { pet, name, setName, petName, photoUrl, photo, change, about, saving, go, publish } = useEditor();
   const firstPhone = pet.family[0]?.phone || "";
   const setFirstPhone = (phone: string) => change({ family: pet.family.length ? pet.family.map((member, index) => index === 0 ? { ...member, phone } : member) : [{ name: "", phone }] });
   const phoneOk = petHasContact(pet) && !petPhoneProblem(firstPhone);
@@ -47,7 +49,9 @@ export function SetupScreen({ step }: { step: 0 | 1 | 2 }) {
       <h2>¿Cómo se llama?</h2>
       <p className="pet-wizard-lead">Es lo que va a leer en grande quien la encuentre.</p>
       {/* enterKeyHint: la tecla Enter del celular dice "Siguiente" y pasa al paso que sigue. */}
-      <label className="pet-field pet-wizard-field"><span className="sr-only">Nombre</span><input value={name} maxLength={60} placeholder="Ej: Toby" enterKeyHint="next" autoCapitalize="words" onChange={(event) => setName(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); if (name.trim()) go({ name: "setup", step: 2 }); } }} /></label>
+      <label className="pet-field pet-wizard-field"><span className="sr-only">Nombre</span><input value={name} maxLength={60} placeholder={petNameExample(pet.kind)} enterKeyHint="next" autoCapitalize="words" onChange={(event) => setName(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); if (name.trim()) go({ name: "setup", step: 2 }); } }} /></label>
+      <KindChoice />
+      <Choice label="Sexo" options={["Macho", "Hembra"]} value={pet.about.sex} onPick={(sex) => about({ sex })} />
       <button type="button" className="pet-step-next" disabled={!name.trim()} onClick={() => go({ name: "setup", step: 2 })}>{name.trim() ? "Siguiente →" : "Escribí el nombre"}</button>
     </>}
 
@@ -62,10 +66,20 @@ export function SetupScreen({ step }: { step: 0 | 1 | 2 }) {
   </section>;
 }
 
+const CONFETTI = ["#f5a25d", "#ff6fa3", "#ffd23f", "#3ecf8e", "#3aa0ff", "#8a5cf7", "#e9772f", "#ff4f6d", "#19c35a"];
+
+// El ejemplo de raza según lo que es.
+export const breedExample = (kind: string) => kind === "Gato" ? "Ej: Siamés, común europeo" : kind === "Perro" ? "Ej: Caniche, mestizo" : "Ej: Mestizo";
+
 const nextAfter = (step: AfterStep): AfterStep => AFTER_STEPS[AFTER_STEPS.indexOf(step) + 1] || "done";
 
 export function AfterScreen({ step }: { step: AfterStep }) {
   const { landing, savedPet, pet, name, petName, dirty, saving, change, about, health, go, save } = useEditor();
+  const version = petImageVersion(savedPet, name, landing.photoUrl, landing.slug);
+  const storyUrl = `/api/og/mascota/${landing.slug}?formato=historia&v=${version}`;
+  // Mientras completa los pasos, el navegador ya baja la imagen de la historia: al final se ve al instante.
+  useEffect(() => { if (landing.published) new Image().src = storyUrl; }, [landing.published, storyUrl]);
+  const [storyLoaded, setStoryLoaded] = useState(false);
   const second = pet.family[1] || { name: "", phone: "" };
   const setSecond = (patch: Partial<PetFamily>) => change({ family: [pet.family[0] || { name: "", phone: "" }, { ...second, ...patch }] });
   // Al pasar el último paso con datos ("¿Alguien más?") se guarda lo cargado, sin aviso: así no se
@@ -104,20 +118,34 @@ export function AfterScreen({ step }: { step: AfterStep }) {
     </div>
   </section>;
 
-  // Final del recorrido (un solo festejo corto, sin repetir la vista previa): a compartirla.
-  if (step === "done") return <section className="pet-wizard pet-celebrate is-done">
-    <div className="pet-wizard-progress is-done" aria-hidden="true"><span style={{ width: "100%" }} /></div>
-    <div className="pet-celebrate-mark" aria-hidden="true">🐾</div>
-    <h2>¡Todo listo!</h2>
-    <p className="pet-wizard-lead">La chapita de {petName} quedó lista. Mostrala en tus historias: así más gente {petGendered(pet, "lo", "la")} conoce.</p>
-    {/* El momento de más entusiasmo: la invitación a mostrarla en historias (cada una que se
-        sube es publicidad gratis). */}
-    <PetShareButton path={`/mascota/${landing.slug}`} petName={name} lost={false} version={petImageVersion(savedPet, name, landing.photoUrl, landing.slug)} className="pet-step-next is-publish" label="Mostrala en tus historias" />
-    {/* Termina en Mis chapitas: es su lugar (editar, compartir y, si se pierde, avisar). La
-        primera vez se le muestra qué hay ahí, también el botón para cuando se pierda (?nueva=,
-        ver app/mi/mi-welcome.tsx). */}
-    <Link className="pet-celebrate-more" href={`/mi?nueva=${landing.id}`}>Listo<small>Ir a Mis chapitas</small></Link>
-  </section>;
+  // Final del recorrido: festejo (papelitos) y la invitación a subir su historia. Primero lo que
+  // gana el dueño (que más gente conozca su cara) y después el gracias; cada historia que se sube
+  // es publicidad gratis. Se ve la imagen real que va a subir.
+  if (step === "done") {
+    return <section className="pet-wizard pet-celebrate is-done">
+      <div className="pet-confetti" aria-hidden="true">{CONFETTI.map((color, index) => <i key={index} style={{ left: `${6 + index * 11}%`, background: color, animationDelay: `${(index * 0.7) % 3}s` }} />)}</div>
+      <div className="pet-wizard-progress is-done" aria-hidden="true"><span style={{ width: "100%" }} /></div>
+      <div className="pet-celebrate-mark" aria-hidden="true">🎉</div>
+      <h2>¡{petName} ya tiene su chapita!</h2>
+      <p className="pet-wizard-lead">Mostrásela a tus amigos en tus historias.</p>
+      {/* La historia que va a subir. Mientras se arma, un esqueleto con brillo; después, un fundido. */}
+      <figure className={`pet-story-preview${storyLoaded ? " is-loaded" : ""}`}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- la imagen para historias, la misma que se comparte */}
+        <img src={storyUrl} alt={`La historia de ${petName}`} onLoad={() => setStoryLoaded(true)} ref={(image) => { if (image?.complete && image.naturalWidth) setStoryLoaded(true); }} />
+        <figcaption>Así queda tu historia</figcaption>
+      </figure>
+      <PetStoryShareButton path={`/mascota/${landing.slug}`} petName={name} version={version} className="pet-step-next pet-story-cta" label="Subir a mi historia" icon={<FaInstagram aria-hidden="true" />} />
+      <p className="pet-story-thanks">Y de paso nos ayudás a crecer 🧡</p>
+      {/* Termina en Mis chapitas: es su lugar (editar, compartir y, si se pierde, avisar). La
+          primera vez se le muestra qué hay ahí, también el botón para cuando se pierda (?nueva=,
+          ver app/mi/mi-welcome.tsx). */}
+      <Link className="pet-done-card" href={`/mi?nueva=${landing.id}`}>
+        <span className="pet-done-paw" aria-hidden="true">🐾</span>
+        <span><strong>Listo, ir a Mis chapitas</strong><small>Editar, compartir o avisar si se pierde</small></span>
+        <span className="pet-done-arrow" aria-hidden="true">→</span>
+      </Link>
+    </section>;
+  }
 
   // Pasos opcionales: uno por pantalla, con "Saltear".
   const index = AFTER_STEPS.indexOf(step);
@@ -139,11 +167,14 @@ export function AfterScreen({ step }: { step: AfterStep }) {
     {step === "about" && <>
       <h2>Contanos de {petName}</h2>
       <p className="pet-wizard-lead">Ayuda a reconocerl{petGendered(pet, "o", "a")} y a cuidarl{petGendered(pet, "o", "a")} si alguien l{petGendered(pet, "o", "a")} encuentra. Lo que no marques no se muestra.</p>
-      <Choice label="Sexo" options={["Macho", "Hembra"]} value={pet.about.sex} onPick={(sex) => about({ sex })} />
+      {/* El sexo ya se pregunta en el paso del nombre: acá solo si lo salteó (según lo guardado,
+          así no desaparece al tocarlo). */}
+      {!savedPet.about.sex && <Choice label="Sexo" options={["Macho", "Hembra"]} value={pet.about.sex} onPick={(sex) => about({ sex })} />}
       <Choice label="Tamaño" options={["Chico", "Mediano", "Grande"]} value={pet.about.size} onPick={(size) => about({ size })} />
+      <BirthField />
       <Choice label={petGendered(pet, "Castrado", "Castrada")} options={["Sí", "No"]} value={pet.health.neutered} onPick={(neutered) => health({ neutered })} />
       <Field label="Alergias o medicación"><input value={pet.health.allergies} maxLength={120} placeholder="Ej: Alérgico al pollo" onChange={(event) => health({ allergies: event.target.value })} /></Field>
-      <Field label="Raza"><input value={pet.about.breed} maxLength={80} placeholder="Ej: Mestizo" onChange={(event) => about({ breed: event.target.value })} /></Field>
+      <Field label="Raza"><input value={pet.about.breed} maxLength={80} placeholder={breedExample(pet.kind)} onChange={(event) => about({ breed: event.target.value })} /></Field>
     </>}
 
     {step === "family" && <>
@@ -176,6 +207,8 @@ export function SpreadScreen() {
     <div className="pet-spread-tips">
       <strong>Además</strong>
       <ul>
+        {pet.kind === "Gato" && <li>Los gatos casi siempre están <b>escondidos cerca de casa</b>, en silencio. {petGendered(pet, "Buscalo", "Buscala")} de noche con linterna en patios, garajes, techos y debajo de autos, llamándol{petGendered(pet, "o", "a")} bajito.</li>}
+        {pet.kind === "Perro" && <li>Los perros pueden <b>alejarse varias cuadras</b>. Recorré la zona y los lugares donde {petGendered(pet, "lo", "la")} paseás, y preguntá en refugios.</li>}
         <li>Publicalo en los <b>grupos de Facebook de mascotas perdidas</b> de tu zona y de la ciudad.</li>
         <li>Avisá en <b>veterinarias, petshops y negocios</b> cercanos.</li>
         <li>Tené el <b>teléfono a mano</b>: si alguien {petGendered(pet, "lo", "la")} encuentra, te escribe por WhatsApp desde su página.</li>

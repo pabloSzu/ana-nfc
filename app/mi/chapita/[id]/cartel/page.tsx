@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import QRCode from "qrcode";
 import { createClient } from "@/lib/supabase/server";
 import { getSiteOrigin } from "@/lib/site-url";
-import { parsePet, petGendered, petPhotoStyle, phoneForInput } from "@/lib/pet";
+import { parsePet, petAge, petGendered, petKindWord, petPhotoStyle, phoneForInput } from "@/lib/pet";
 import PrintPosterButton from "./print-button";
 import "./cartel.css";
 
@@ -28,14 +28,18 @@ export default async function LostPoster({ params }: { params: Promise<{ id: str
   const name = clip((landing.business_name || "").trim() || "Mi mascota", 22);
   const zone = pet.lostZone.trim();
   const reward = pet.reward.trim();
-  // "Mestizo, mediano, marrón." y, si hay, cómo acercarse o su carácter.
-  const traits = [pet.about.breed, pet.about.size, pet.about.color].map((value) => value.trim()).filter(Boolean);
+  // "Perro, mestizo, 4 años, mediano, marrón." y, si hay, cómo acercarse o su carácter.
+  const kindWord = petKindWord(pet);
+  const age = pet.birth ? petAge(pet.birth, pet.birthApprox) : pet.about.age;
+  const traits = [kindWord, pet.about.breed, age, pet.about.size, pet.about.color].map((value) => value.trim()).filter(Boolean);
+  if (traits[0]) traits[0] = traits[0].charAt(0).toUpperCase() + traits[0].slice(1);
   const looks = traits.length ? `${traits.map((value, index) => index ? value.toLowerCase() : value).join(", ")}.` : "";
   const tip = pet.finder.trim() ? clip(pet.finder.trim().replace(/\s+/g, " "), 140) : pet.about.character.trim() ? `Es ${pet.about.character.trim().toLowerCase()}.` : "";
   const phone = pet.family.find((member) => member.phone)?.phone || "";
   const link = `${getSiteOrigin()}/${landing.pet_slug || landing.slug}`;
   const qr = await QRCode.toDataURL(`${link}?s=qr`, { width: 520, margin: 1, errorCorrectionLevel: "M", color: { dark: "#1d1410", light: "#ffffff" } });
-  const lostWord = petGendered(pet, "¡PERDIDO!", "¡PERDIDA!");
+  // "¡PERRO PERDIDO!", "¡GATA PERDIDA!" o, si no se sabe qué es, "¡PERDIDO!".
+  const lostWord = `¡${kindWord ? `${kindWord.toUpperCase()} ` : ""}${petGendered(pet, "PERDIDO", "PERDIDA")}!`;
 
   return <div className="poster-page">
     <div className="poster-toolbar">
@@ -53,7 +57,7 @@ export default async function LostPoster({ params }: { params: Promise<{ id: str
         {/* eslint-disable-next-line @next/next/no-img-element -- la foto de la mascota, con su encuadre */}
         {landing.logo_url ? <img src={landing.logo_url} alt="" style={petPhotoStyle(pet.photo)} /> : <span aria-hidden="true">🐾</span>}
       </div>
-      <div className="poster-red">{lostWord}</div>
+      <div className={`poster-red${kindWord ? " is-long" : ""}`}>{lostWord}</div>
       <div className="poster-name"><small>Se llama</small><b>{name}</b></div>
       <div className="poster-info">
         <div>

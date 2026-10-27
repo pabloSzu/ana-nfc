@@ -129,6 +129,12 @@
 .pet-choice { display: flex; flex-wrap: wrap; gap: 6px; }
 .pet-choice button { flex: 1; min-height: 40px; padding: 0 10px; border: 1.5px solid #dfe2e8; border-radius: 999px; background: #fff; color: #3b4050; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
 .pet-choice button.active { border-color: #1d2130; background: #1d2130; color: #fff; }
+/* Cuándo nació: año y mes uno al lado del otro. */
+.pet-birth { display: grid; grid-template-columns: 1fr 1.3fr; gap: 8px; }
+.pet-birth select { min-height: 44px; padding: 0 10px; border: 1.5px solid #dfe2e8; border-radius: 12px; background: #fff; color: #1d2130; font: inherit; font-size: 15px; }
+.pet-birth select:disabled { opacity: .55; }
+.pet-birth-approx { display: inline-flex; align-items: center; gap: 8px; margin-top: 2px; color: #3b4050; font-size: 14px; font-weight: 600; cursor: pointer; }
+.pet-birth-approx input { width: 18px; height: 18px; margin: 0; accent-color: #1d2130; }
 .pet-photo-field { display: flex; align-items: center; gap: 14px; }
 .pet-photo-field > div { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
 .pet-photo-field small { flex-basis: 100%; color: #8a8f9c; font-size: 12px; }
@@ -492,3 +498,30 @@ a.pet-celebrate-more { align-items: center; text-decoration: none; }
 @media (min-width: 900px) { .mi-shell .pet-mini-hint { display: inline-flex; } }
 @keyframes pet-mini-hint { 0%, 100% { translate: 0 0; } 50% { translate: 0 -4px; } }
 @media (prefers-reduced-motion: reduce) { .mi-shell .pet-mini-hint { animation: none; } }
+
+/* "¡Que todos conozcan a…!": papelitos, la historia real flotando y "Subir a mi historia". */
+.pet-celebrate.is-done { position: relative; overflow: hidden; }
+.pet-confetti { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.pet-confetti i { position: absolute; top: -14px; width: 7px; height: 11px; border-radius: 2px; animation: pet-confetti-fall 3.8s linear infinite; }
+.pet-celebrate.is-done > :not(.pet-confetti) { position: relative; z-index: 1; }
+.pet-story-preview { display: grid; justify-items: center; gap: 10px; margin: 2px 0 0; padding: 18px 0 8px; border-radius: 24px; background: radial-gradient(circle at 50% 40%, #ffe3cf, #ffe3cf00 70%); }
+.pet-story-preview img { width: 138px; max-width: 100%; aspect-ratio: 9 / 16; border-radius: 16px; object-fit: cover; background: linear-gradient(100deg, #f6e2d2 30%, #fff3e9 50%, #f6e2d2 70%) 0 0 / 300% 100%; box-shadow: 0 14px 30px #2d1d1233; color: transparent; animation: pet-story-float 4s ease-in-out infinite, pet-story-skeleton 1.3s linear infinite; }
+.pet-story-preview.is-loaded img { animation: pet-story-float 4s ease-in-out infinite, pet-story-in .45s ease-out; }
+.pet-story-preview figcaption { color: #8a6a52; font-size: 12.5px; font-weight: 600; }
+@keyframes pet-story-skeleton { from { background-position: 100% 0; } to { background-position: -50% 0; } }
+@keyframes pet-story-in { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: scale(1); } }
+.pet-step-next.pet-story-cta { position: relative; gap: 10px; overflow: hidden; background: linear-gradient(115deg, #feda75, #fa7e1e 25%, #d62976 55%, #962fbf 80%, #4f5bd5); color: #fff; box-shadow: 0 10px 24px #d6297640; }
+.pet-step-next.pet-story-cta svg { width: 20px; height: 20px; margin: 0; }
+.pet-step-next.pet-story-cta::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, #ffffff66 48%, transparent 66%); transform: translateX(-120%); animation: pet-story-shine 2.8s ease-in-out infinite; pointer-events: none; }
+.pet-story-thanks { margin: -6px 0 0; color: #8a6a52; font-size: 14px; font-weight: 600; }
+.pet-done-card { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 12px 14px; border: 1.5px solid #f1e1d3; border-radius: 18px; background: #fff; color: #2d1d12; text-align: left; text-decoration: none; transition: border-color .2s, transform .2s; }
+.pet-done-card:hover { border-color: #f3b98c; transform: translateY(-1px); }
+.pet-done-card strong { display: block; font-size: 15.5px; font-weight: 800; }
+.pet-done-card small { display: block; color: #8a6a52; font-size: 12.5px; font-weight: 500; }
+.pet-done-paw { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 13px; background: #fff1e4; font-size: 21px; animation: pet-done-wiggle 3s ease-in-out infinite; }
+.pet-done-arrow { color: #e9772f; font-size: 21px; font-weight: 800; }
+@keyframes pet-confetti-fall { to { transform: translateY(900px) rotate(540deg); } }
+@keyframes pet-story-float { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-6px) rotate(2deg); } }
+@keyframes pet-story-shine { 0%, 40% { transform: translateX(-120%); } 80%, 100% { transform: translateX(120%); } }
+@keyframes pet-done-wiggle { 0%, 80%, 100% { transform: rotate(0); } 85% { transform: rotate(-12deg); } 90% { transform: rotate(10deg); } 95% { transform: rotate(-6deg); } }
+@media (prefers-reduced-motion: reduce) { .pet-confetti { display: none; } .pet-story-preview img, .pet-step-next.pet-story-cta::after, .pet-done-paw { animation: none !important; } }

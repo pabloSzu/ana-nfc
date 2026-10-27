@@ -8,7 +8,7 @@ import { IconPaw } from "@/components/icons";
 import PetShareLocation from "@/components/pet-share-location";
 import { FontLinks, getFontFamily } from "@/lib/fonts";
 import { landingImageUrl } from "@/lib/landing-image";
-import { PET_ABOUT_FIELDS, parsePet, petCallHref, petGendered, petHealthFields, petLook, petPhotoStyle, petRows, petWhatsappHref, type PetData } from "@/lib/pet";
+import { parsePet, petAboutRows, petCallHref, petGendered, petHealthFields, petLook, petPhotoStyle, petRows, petWhatsappHref, type PetData } from "@/lib/pet";
 import type { CSSProperties, ReactNode } from "react";
 
 export type PetSection = "design" | "pet" | "family" | "about" | "health" | "finder" | "lost";
@@ -22,7 +22,7 @@ export default function PetRenderer({ landing, pet: draft, photoUrl, edit }: { l
   const look = petLook(pet.look);
   const name = (landing.business_name || "").trim() || "Tu mascota";
   const photo = photoUrl ?? landingImageUrl(landing.logo_url, 384);
-  const about = petRows(pet.about, PET_ABOUT_FIELDS);
+  const about = petAboutRows(pet);
   const health = petRows(pet.health, petHealthFields(pet));
   const contacts = pet.family.filter((member) => petWhatsappHref(member.phone, name));
   const nameLength = Array.from(name).length;
@@ -49,7 +49,7 @@ export default function PetRenderer({ landing, pet: draft, photoUrl, edit }: { l
       <header {...part("pet", "pet-hero")}>
         <div className="pet-photo">
           {/* eslint-disable-next-line @next/next/no-img-element -- foto subida por el usuario, ya optimizada por landingImageUrl */}
-          {photo ? <img src={photo} alt={name} style={photoStyle} /> : <span className="pet-photo-placeholder" aria-hidden="true"><IconPaw /></span>}
+          {photo ? <img src={photo} alt={name} style={photoStyle} /> : <span className="pet-photo-placeholder" aria-hidden="true">{pet.kind === "Perro" ? <b>🐶</b> : pet.kind === "Gato" ? <b>🐱</b> : <IconPaw />}</span>}
         </div>
         {pet.greeting.trim() && <p className="pet-greeting">{pet.greeting.trim()}</p>}
         <h1 className={`pet-name${nameLength > 18 ? " is-long" : ""}${nameLength > 32 ? " is-very-long" : ""}`}>{name}</h1>

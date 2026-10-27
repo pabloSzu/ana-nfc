@@ -53,6 +53,9 @@ const OFFLINE = "No pudimos conectarnos. Revisá tu internet y probá de nuevo."
 const PHOTO_FAILED = "No se pudo subir la foto. Revisá tu internet y probá de nuevo.";
 
 // Qué parte de la chapita muestra la miniatura mientras se edita cada cosa (en la compu).
+// Solo en desarrollo (ver ?pantalla= más abajo).
+const DEV_SCREENS: Record<string, Screen> = { funciona: { name: "after", step: "ready" }, listo: { name: "after", step: "done" }, difundir: { name: "spread" } };
+
 const PART_OF: Record<Panel | "menu", string> = { menu: ".pet-page", pet: ".pet-hero", family: ".pet-family", ficha: ".pet-card, .pet-family", look: ".pet-page", lost: ".pet-page" };
 // Las partes de la chapita que se tocan en la miniatura (en la compu) llevan a su pantalla.
 const panelOf = (section: PetSection): Panel => section === "about" || section === "health" || section === "finder" ? "ficha" : section === "design" ? "look" : section;
@@ -80,6 +83,10 @@ export default function PetEditor({ landing: initialLanding, initialPet, saveAct
   // La primera vez del dueño (recién activada, sin publicar) arranca en los pasos; ?seccion=lost
   // (lo usa "Avisar que se perdió" en /mi) abre directo esa pantalla.
   const [screen, setScreen] = useState<Screen>(() => {
+    if (process.env.NODE_ENV === "development") {
+      const devScreen = DEV_SCREENS[searchParams.get("pantalla") || ""];
+      if (devScreen) return devScreen;
+    }
     if (isOwner && !landing.published && !landing.blocked) return { name: "setup", step: 0 };
     const requested = searchParams.get("seccion");
     return PANELS.includes(requested as Panel) ? { name: "panel", panel: requested as Panel } : { name: "menu" };

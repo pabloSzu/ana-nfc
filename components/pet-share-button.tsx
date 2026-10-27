@@ -10,7 +10,7 @@
 //
 // PetSharePanel son las opciones (las usa la pantalla "Ahora, difundilo" del editor, al activar el
 // modo perdido); PetShareButton es el botón que las abre en una hoja desde abajo.
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { FiDownload, FiImage, FiLink, FiShare2, FiSquare } from "react-icons/fi";
 
 type Kind = "historia" | "publicacion";
@@ -118,14 +118,73 @@ export function PetSharePanel({ path, petName, lost, lostZone = "", female = fal
   </>;
 }
 
-export default function PetShareButton({ className = "", label, ...props }: Props & { className?: string; label?: string }) {
+// "Subir a mi historia" (final del recorrido): un toque abre directo el menú del celular con la
+// historia lista, sin la hoja de opciones (ahí ya eligió la historia), y en el mismo toque copia el
+// link para el sticker "Enlace". Instagram igual pregunta Reel / Publicación / Historia: desde una
+// página web no se puede abrir directo su historia, así que después del toque se le dice qué elegir.
+// En la compu la descarga (subir historias desde la compu casi no se usa).
+export function PetStoryShareButton({ path, petName, version, className = "", label, icon }: { path: string; petName: string; version: string; className?: string; label: string; icon?: ReactNode }) {
+  const [file, setFile] = useState<File | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [done, setDone] = useState<"" | "shared" | "downloaded">("");
+  const [linkReady, setLinkReady] = useState(false);
+  const slug = path.split("/").pop() || "";
+  const name = petName.trim() || "mi mascota";
+
+  // Se baja apenas aparece (casi siempre ya está guardada): el menú del celular solo se abre justo
+  // después del toque, así que la imagen tiene que estar lista antes.
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/og/mascota/${slug}?formato=historia&v=${version}`)
+      .then((response) => { if (!response.ok) throw new Error(String(response.status)); return response.blob(); })
+      .then((blob) => { if (!cancelled) setFile(new File([blob], `${name.replace(/[^p{L}p{N}]+/gu, "-")}-bionfc-historia.jpg`, { type: blob.type || "image/jpeg" })); })
+      .catch(() => { if (!cancelled) setFailed(true); });
+    return () => { cancelled = true; };
+  }, [slug, version, name]);
+
+  function share() {
+    if (!file) return;
+    navigator.clipboard?.writeText(new URL(path, window.location.origin).toString()).then(() => setLinkReady(true), () => {});
+    const phone = window.matchMedia("(pointer: coarse)").matches;
+    if (phone && navigator.canShare?.({ files: [file] })) {
+      setDone("shared");
+      navigator.share({ files: [file] }).catch((error: Error) => { if (error.name !== "AbortError") download(file); });
+      return;
+    }
+    download(file);
+  }
+
+  function download(image: File) {
+    const url = URL.createObjectURL(image);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = image.name;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setDone("downloaded");
+  }
+
+  return <>
+    <button type="button" className={className} disabled={!file} onClick={share}>
+      {icon}{file ? label : failed ? "No pudimos prepararla" : "Preparando tu historia…"}
+    </button>
+    {done === "shared" && <ol className="pet-share-steps">
+      <li>Elegí <b>Instagram</b> y después <b>Historia</b>.</li>
+      <li>Tocá el ícono de <b>stickers</b> y elegí <b>“Enlace”</b>.</li>
+      <li><b>Pegá el link</b>{linkReady ? " (ya está copiado)" : ""} y ponelo sobre la dirección blanca.</li>
+    </ol>}
+    {done === "downloaded" && <p className="pet-share-tip">Listo, se descargó la imagen. Pasala al celu para subirla a tu historia{linkReady ? "; el link de su página quedó copiado" : ""}.</p>}
+  </>;
+}
+
+export default function PetShareButton({ className = "", label, icon, ...props }: Props & { className?: string; label?: string; icon?: ReactNode }) {
   const sheet = useRef<HTMLDialogElement>(null);
   // El panel se arma al abrir (y se desarma al cerrar): así las imágenes son siempre las últimas.
   const [open, setOpen] = useState(false);
   const name = props.petName.trim() || "mi mascota";
   return <>
     <button type="button" className={className} onClick={() => { setOpen(true); sheet.current?.showModal(); }}>
-      <FiShare2 aria-hidden="true" />{label || (props.lost ? "Compartir que se perdió" : "Compartir")}
+      {icon || <FiShare2 aria-hidden="true" />}{label || (props.lost ? "Compartir que se perdió" : "Compartir")}
     </button>
     <dialog ref={sheet} className="pet-share-sheet" aria-label="Compartir" onClose={() => setOpen(false)} onClick={(event) => { if (event.target === sheet.current) sheet.current.close(); }}>
       <div className="pet-share-head"><strong>{props.lost ? `Ayudá a encontrar a ${name}` : `Compartí la chapita de ${name}`}</strong><button type="button" onClick={() => sheet.current?.close()} aria-label="Cerrar">✕</button></div>

@@ -1,7 +1,7 @@
 // Chapita de mascota (lib/pet.ts). `npm test`.
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { cleanPet, cleanPhoneInput, formatPhone, newPet, petForEditing, phoneForInput, normalizePhone, petPhoneProblem, parsePet, petCallHref, petGendered, petHasContact, petHealthFields, petIsFemale, petLook, petMissing, petRows, petWhatsappHref, PET_ABOUT_FIELDS, DEFAULT_PET_MESSAGE } from "../lib/pet.ts";
+import { cleanPet, cleanPhoneInput, formatPhone, newPet, petForEditing, phoneForInput, normalizePhone, petPhoneProblem, parsePet, petCallHref, petGendered, petHasContact, petHealthFields, petIsFemale, petLook, petMissing, petRows, petWhatsappHref, petAge, petAboutRows, petKindWord, PET_ABOUT_FIELDS, DEFAULT_PET_MESSAGE } from "../lib/pet.ts";
 
 describe("datos de la chapita", () => {
   test("una chapita nueva arranca con el saludo, el mensaje y el WhatsApp cargado", () => {
@@ -149,5 +149,44 @@ describe("números de teléfono argentinos", () => {
     assert.equal(cleanPet(newPet("0351 15 555-1234")).family[0].phone, "5493515551234");
     assert.equal(formatPhone("351 555 1234"), "+54 9 351 555-1234");
     assert.equal(formatPhone("11 2345 6789"), "+54 9 11 2345-6789");
+  });
+});
+
+describe("qué es y cuándo nació", () => {
+  const now = new Date(2026, 9, 27);
+  test("la edad se calcula sola a partir de la fecha", () => {
+    assert.equal(petAge("2022-03", false, now), "4 años");
+    assert.equal(petAge("2025-10", false, now), "1 año");
+    assert.equal(petAge("2026-02", false, now), "8 meses");
+    assert.equal(petAge("2026-09", false, now), "1 mes");
+    assert.equal(petAge("2026-10", false, now), "Menos de 1 mes");
+    assert.equal(petAge("2021", false, now), "5 años");
+    assert.equal(petAge("2026", false, now), "Menos de 1 año");
+    assert.equal(petAge("2021", true, now), "Aprox. 5 años");
+    assert.equal(petAge("2027", false, now), "");
+    assert.equal(petAge("hace mucho", false, now), "");
+  });
+  test("se leen bien y se descarta lo raro", () => {
+    assert.deepEqual([parsePet({}).kind, parsePet({}).birth, parsePet({}).birthApprox], ["", "", false]);
+    const pet = parsePet({ pet: { kind: "Gato", birth: "2020-13", birthApprox: true } });
+    assert.equal(pet.kind, "Gato");
+    assert.equal(pet.birth, "");
+    assert.equal(parsePet({ pet: { kind: "Dragón" } }).kind, "");
+  });
+  test("con la fecha cargada se borra la edad escrita a mano", () => {
+    const pet = cleanPet({ ...newPet(), birth: "2022", about: { ...newPet().about, age: "4 años" } });
+    assert.equal(pet.about.age, "");
+    assert.equal(cleanPet({ ...newPet(), birthApprox: true }).birthApprox, false);
+  });
+  test("Sobre mí muestra la especie y la edad calculada; las de antes, la edad escrita", () => {
+    const rows = petAboutRows({ ...newPet(), kind: "Perro", birth: "2022-03" }, now);
+    assert.deepEqual(rows.slice(0, 2), [{ label: "Especie", value: "Perro" }, { label: "Edad", value: "4 años" }]);
+    assert.deepEqual(petAboutRows({ ...newPet(), kind: "Otro", about: { ...newPet().about, age: "3 años" } }, now), [{ label: "Edad", value: "3 años" }]);
+  });
+  test("perro, perra, gato o gata", () => {
+    const female = { ...newPet().about, sex: "Hembra" };
+    assert.equal(petKindWord({ ...newPet(), kind: "Perro" }), "perro");
+    assert.equal(petKindWord({ ...newPet(), kind: "Gato", about: female }), "gata");
+    assert.equal(petKindWord({ ...newPet(), kind: "Otro" }), "");
   });
 });
