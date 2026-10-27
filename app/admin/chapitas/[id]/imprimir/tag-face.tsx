@@ -162,13 +162,16 @@ export function TagFront({ id, diameter, color, character, name = "", hole = fal
     </>}
     {/* Un poco más arriba que antes: "ACERCÁ TU CELU" quedaba fuera del margen de seguridad. */}
     <g aria-label="BioNFC · Acercá tu celu" fill="#fff" {...EDGE} paintOrder="stroke">
-      <text x="47" y="82" textAnchor="middle" strokeWidth="1.4" fontFamily="Plus Jakarta Sans, Poppins, Arial, sans-serif" fontSize="7.2" fontWeight="800" letterSpacing="-.25">BIONFC</text>
-      <g transform="translate(68.5 75.2)" fill="none" strokeLinecap="round">
+      <text x="45.8" y="80.5" textAnchor="middle" strokeWidth="1.4" fontFamily="Plus Jakarta Sans, Poppins, Arial, sans-serif" fontSize="7.2" fontWeight="800" letterSpacing="-.25">BIONFC</text>
+      <g transform="translate(62.2 74.5) scale(.82)" fill="none" strokeLinecap="round">
         <g strokeWidth="2.4">{WAVES}</g>
         <g stroke="#fff" strokeOpacity="1" strokeWidth="1.2">{WAVES}</g>
       </g>
-      <text x="50" y="88.6" textAnchor="middle" strokeWidth="1" fontFamily="Poppins, Arial, sans-serif" fontSize="4.2" fontWeight="800" letterSpacing=".3">ACERCÁ TU CELU</text>
     </g>
+    {/* "ACERCÁ TU CELU" (el texto más chico y la instrucción) en una pastilla blanca con letra
+        oscura: se lee aunque la impresora corra la tinta. */}
+    <rect x="28" y="82.6" width="44" height="6.4" rx="3.2" fill="#fff" />
+    <text x="50" y="87.2" textAnchor="middle" fill="#1d2130" fontFamily="Poppins, Arial, sans-serif" fontSize="4.2" fontWeight="800" letterSpacing=".3">ACERCÁ TU CELU</text>
   </svg>;
 }
 

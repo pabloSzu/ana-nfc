@@ -49,7 +49,7 @@ const SIZES = [
   { id: "100x70", label: "Grande · 100×70 mm", width: 100, height: 70 },
   { id: "custom", label: "Otra medida", width: 85, height: 55 },
 ];
-const DEFAULTS: Settings = { design: "playful", size: "85x55", width: 85, height: 55, sides: "both", output: "single", cutLines: true, qrSize: 30, qrNumber: true, qrColor: "mix", tagSides: "both", tagOutput: "pairs", tagLayoutVersion: 2, tagCharacter: "mix", tagNames: {}, tagCharacters: {}, tagColors: {}, tagHole: false, paper: "A4", tagLayout: "v1" };
+const DEFAULTS: Settings = { design: "playful", size: "85x55", width: 85, height: 55, sides: "both", output: "single", cutLines: true, qrSize: 30, qrNumber: true, qrColor: "mix", tagSides: "both", tagOutput: "pairs", tagLayoutVersion: 2, tagCharacter: "mix", tagNames: {}, tagCharacters: {}, tagColors: {}, tagHole: false, paper: "A4", tagLayout: "v2" };
 const STORAGE_KEY = "bionfc-print-settings";
 // Lo de cada unidad no va al navegador: viene de la base (PrintItem.print).
 const UNIT_KEYS = ["tagNames", "tagCharacters", "tagColors"];
@@ -66,6 +66,12 @@ const unitsOf = (entries: { id: string; print: TagPrint }[]) => ({
 const PAPERS = { A4: { width: 210, height: 297 }, A3: { width: 297, height: 420 } } as const;
 type Paper = keyof typeof PAPERS;
 const PAGE_MARGIN = 7;
+// Los dos diseños de la chapita (cambia el dorso; el frente es el mismo). Cada uno con su color,
+// para que se note a simple vista cuál está elegido.
+const LAYOUTS = [
+  { value: "v2", label: "Diseño 1", hint: "QR + dibujo del celu · recomendado" },
+  { value: "v1", label: "Diseño 2", hint: "QR con el texto al lado" },
+] as const;
 // Una por página: 2 mm de sangrado y 6 mm alrededor para las marcas de corte.
 const BLEED = 2;
 const MARKS = 6;
@@ -156,6 +162,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
   const qrSize = clamp(settings.qrSize, 28, 45);
   const single = mode === "cards" && settings.output === "single";
   const paper: Paper = settings.paper in PAPERS ? settings.paper : "A4";
+  const layoutLabel = LAYOUTS.find((layout) => layout.value === settings.tagLayout)?.label || LAYOUTS[0].label;
   const PAGE = { ...PAPERS[paper], margin: PAGE_MARGIN };
 
   // Cuántas entran por hoja.
@@ -288,6 +295,21 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
           <label className="ps-check"><input type="radio" checked={settings.output === "sheet"} onChange={() => update({ output: "sheet" })} />Hoja {paper}, {perCardPage} por hoja (imprimir en casa)</label>
         </fieldset>
       </> : <>
+      <section className="ps-layouts" aria-label="Diseño de la chapita">
+        <span className="ps-layouts-title">Diseño de la chapita</span>
+        <div>{LAYOUTS.map((layout, index) => {
+          const on = settings.tagLayout === layout.value;
+          return <button key={layout.value} type="button" className={`ps-layout is-${layout.value}${on ? " is-on" : ""}`} aria-pressed={on} onClick={() => update({ tagLayout: layout.value })}>
+            {on && <em>✓ Elegido</em>}
+            {previewItem && <span className="ps-layout-faces" aria-hidden="true">
+              <TagFront id={`layout-${layout.value}-${previewItem.id}-front`} diameter={14} color={colorOf(previewItem)} character={characterOf(previewItem)} name={settings.tagNames[previewItem.id] || ""} />
+              <TagBack id={`layout-${layout.value}-${previewItem.id}-back`} qr={previewItem.tagQr} diameter={14} color={colorOf(previewItem)} design={layout.value === "v2" ? "v2" : "classic"} />
+            </span>}
+            <strong><b>{index + 1}</b>{layout.label}</strong>
+            <small>{layout.hint}</small>
+          </button>;
+        })}</div>
+      </section>
       <fieldset className="ps-group"><legend>Impresión de chapitas</legend>
         <label>Tamaño (diámetro): <b>{qrSize} mm</b><input type="range" min={28} max={45} value={qrSize} onChange={(event) => update({ qrSize: Number(event.target.value) })} /></label>
         <span className="ps-colors-label">Formato de hoja</span>
@@ -304,10 +326,6 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
             <button type="button" className={settings.tagSides === "back" ? "is-on" : ""} onClick={() => update({ tagSides: "back" })}>Sólo dorso</button>
           </div>}
         </details>
-        <span className="ps-colors-label">Diseño</span>
-        <div className="ps-tag-styles">
-          {([["v1", "Actual"], ["v2", "Nuevo"]] as const).map(([value, label]) => <button key={value} type="button" className={(settings.tagLayout || "v1") === value ? "is-on" : ""} onClick={() => update({ tagLayout: value })}>{label}</button>)}
-        </div>
         <label className="ps-check"><input type="checkbox" checked={settings.tagHole} onChange={(event) => update({ tagHole: event.target.checked })} />Con agujero (marca un puntito para perforar)</label>
         {settings.tagOutput === "duplex" && <label className="ps-check"><input type="checkbox" checked={settings.qrNumber} onChange={(event) => update({ qrNumber: event.target.checked })} />Mostrar el N° de unidad debajo de cada chapita</label>}
       </fieldset>
@@ -387,7 +405,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
         <div className="ps-tag-overview-head"><div><small>VISTA PREVIA</small><h2>{unit(previewItem.number)} · {previewItem.code}</h2></div><span>{settings.tagNames[previewItem.id]?.trim() || "Sin nombre · stock"}</span></div>
         <div className="ps-tag-overview-pair">
           <figure><TagFront id={`preview-${previewItem.id}-front`} diameter={60} color={colorOf(previewItem)} character={characterOf(previewItem)} name={settings.tagNames[previewItem.id] || ""} hole={settings.tagHole} /><figcaption>Frente</figcaption></figure>
-          <figure><TagBack id={`preview-${previewItem.id}-back`} qr={previewItem.tagQr} diameter={60} color={colorOf(previewItem)} design={settings.tagLayout === "v2" ? "v2" : "classic"} hole={settings.tagHole} /><figcaption>Dorso original</figcaption></figure>
+          <figure><TagBack id={`preview-${previewItem.id}-back`} qr={previewItem.tagQr} diameter={60} color={colorOf(previewItem)} design={settings.tagLayout === "v2" ? "v2" : "classic"} hole={settings.tagHole} /><figcaption>Dorso · {layoutLabel}</figcaption></figure>
         </div>
       </section>}
       {single ? items.flatMap((item) => [
@@ -432,7 +450,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
             </div>
           </button>)}
         </div>
-        <SheetFoot batchName={batchName} page={pageIndex + 1} pages={pairPages.length} items={page} detail={`Chapitas Ø ${qrSize} mm`} />
+        <SheetFoot batchName={batchName} page={pageIndex + 1} pages={pairPages.length} items={page} detail={`Chapitas Ø ${qrSize} mm · ${layoutLabel}`} />
       </section>) : qrPages.map((page, pageIndex) => <div key={pageIndex} className="ps-pair ps-tag-pages">
         {settings.tagSides !== "back" && <section className="ps-page" aria-label={`Hoja ${pageIndex + 1}: frentes de chapitas`}>
           <span className="ps-page-label">Hoja {pageIndex + 1} · frentes</span>
