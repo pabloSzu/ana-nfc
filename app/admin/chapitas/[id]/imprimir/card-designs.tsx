@@ -5,13 +5,18 @@
 // crece con el tamaño elegido (print-studio.tsx), así que todo escala junto. Ningún texto queda
 // por debajo de 2,2em (~6 puntos impreso). Estilos en print-studio.css (.pc-*).
 import type { CSSProperties, ReactNode } from "react";
-import { LuBone, LuCat, LuDog, LuFish, LuHeart, LuLeaf, LuLock, LuPawPrint, LuSparkles, LuStar, LuSun } from "react-icons/lu";
+import { LuBone, LuCat, LuDog, LuHeart, LuLeaf, LuLock, LuPawPrint, LuSparkles, LuStar, LuSun } from "react-icons/lu";
 import { LOGO_FONT_FAMILY } from "@/components/bionfc-logo";
 import { unitNumber } from "@/lib/pet-tags";
 import type { PrintItem } from "./print-studio";
 
 export type DesignId = "playful" | "paws" | "bones" | "kitty" | "park";
-export type CardLayout = "classic" | "secure";
+export type CardLayout = "classic" | "secure" | "flap-a" | "flap-b";
+// Las variantes con solapa: abiertas miden 115×55 (cuerpo de 85 + solapa de 30) y se imprimen de
+// una sola faz. Cerradas, la solapa tapa la zona 55–85 del cuerpo y se cierra con un calco redondo
+// sobre su borde (x = 55): esa franja de la tapa queda libre.
+export const isFlapCard = (layout: CardLayout) => layout === "flap-a" || layout === "flap-b";
+export const cardOpenWidth = (layout: CardLayout) => layout === "secure" ? 110 : isFlapCard(layout) ? 115 : 0;
 
 type Design = {
   id: DesignId;
@@ -26,12 +31,13 @@ type Design = {
   backDeco: { icon: ReactNode; x: number; y: number; size: number; rotate: number }[];
 };
 
-const LEAD = "Escaneá el código, confirmá tu email y cargá mi foto y tu WhatsApp.";
+// Lo mismo que pide la activación: entrar con el email y cargar el nombre y el WhatsApp (la foto es opcional).
+const LEAD = "Escaneá el código, entrá con tu email y poné mi nombre y tu WhatsApp.";
 
 export const DESIGNS: Design[] = [
   {
     id: "playful", label: "Juguetón", hint: "Durazno y rosa, con patitas", swatch: "linear-gradient(135deg, #ffd3cb 0 50%, #3a1730 50%)",
-    title: "¡Hola! Activame en 1 minuto", lead: LEAD, backTitle: "Así me ayudás a volver",
+    title: "¡Hola! Activame en 2 minutos", lead: LEAD, backTitle: "Así me ayudás a volver",
     deco: [{ icon: <LuPawPrint />, x: 44, y: 78, size: 18, rotate: -20 }, { icon: <LuHeart />, x: 36, y: 6, size: 6, rotate: 14 }],
     backDeco: [{ icon: <LuPawPrint />, x: 22, y: 42, size: 14, rotate: 18 }],
   },
@@ -49,9 +55,10 @@ export const DESIGNS: Design[] = [
   },
   {
     id: "kitty", label: "Michi", hint: "Lavanda, con orejitas de gato en el QR", swatch: "linear-gradient(135deg, #ece3ff 0 50%, #4b2a85 50%)",
-    title: "¡Miau! Activame en 1 minuto", lead: LEAD, backTitle: "Si me escapo, te avisan",
-    deco: [{ icon: <LuFish />, x: 4, y: 76, size: 9, rotate: -16 }, { icon: <LuCat />, x: 44, y: 72, size: 11, rotate: 0 }, { icon: <LuSparkles />, x: 40, y: 4, size: 5, rotate: 0 }],
-    backDeco: [{ icon: <LuCat />, x: 14, y: 42, size: 14, rotate: -8 }, { icon: <LuFish />, x: 38, y: 14, size: 6, rotate: 18 }],
+    title: "¡Miau! Activame en 2 minutos", lead: LEAD, backTitle: "Si me escapo, te avisan",
+    // Todo de michi: carita de gato y huellitas (los dos primeros son los que usa la tarjeta con solapa).
+    deco: [{ icon: <LuCat />, x: 44, y: 72, size: 11, rotate: -6 }, { icon: <LuPawPrint />, x: 4, y: 76, size: 9, rotate: -16 }, { icon: <LuSparkles />, x: 40, y: 4, size: 5, rotate: 0 }],
+    backDeco: [{ icon: <LuCat />, x: 14, y: 42, size: 14, rotate: -8 }, { icon: <LuPawPrint />, x: 38, y: 14, size: 6, rotate: 18 }],
   },
   {
     id: "park", label: "Parque", hint: "Verde y amarillo, sol y hojitas", swatch: "linear-gradient(135deg, #e5f6c9 0 50%, #2f6b2f 50%)",
@@ -78,6 +85,56 @@ export const unit = (number: number) => `UNIDAD ${unitNumber(number)}`;
 // bleed: la tarjeta con sangrado (el fondo sigue 2 mm más por fuera, ver .pc.is-bleed).
 export function CardFront({ design: id, layout = "classic", item, host, style, bleed = false }: { design: DesignId; layout?: CardLayout; item: PrintItem; host: string; style: CSSProperties; bleed?: boolean }) {
   const design = designOf(id);
+  if (isFlapCard(layout)) {
+    const clean = layout === "flap-a";
+    // Los pasos reales de la activación: escanear, entrar con el email y cargar nombre y WhatsApp
+    // (la foto es opcional, se puede saltear).
+    const steps = <ol>
+      <li><b>1</b>Escaneá el QR</li>
+      <li><b>2</b>Entrá con tu email</li>
+      <li><b>3</b>Poné su nombre y tu WhatsApp</li>
+    </ol>;
+    // Los adornos del estilo sólo en esquinas libres: arriba a la derecha de la tapa y abajo en la
+    // zona interior. Nunca detrás del texto ni donde va el calco.
+    const [first, second] = design.deco;
+    return <article className={`pc pc-${design.id} pc-front is-flap${bleed ? " is-bleed" : ""}`} style={style}>
+      <div className="pc-deco pc-flap-deco" aria-hidden="true">
+        {first && <span style={{ left: "40em", top: "3.5em", transform: `rotate(${first.rotate}deg)` }}><i style={{ display: "block", fontSize: "9em" }}>{first.icon}</i></span>}
+        {second && <span style={{ left: "76em", top: "44em", transform: `rotate(${second.rotate}deg)` }}><i style={{ display: "block", fontSize: "7em" }}>{second.icon}</i></span>}
+      </div>
+      {/* Tapa (0–55): lo que se ve con la tarjeta cerrada. */}
+      <div className="pc-flap-cover">
+        <Logo />
+        <div className="pc-flap-title">
+          <h2>{design.title}</h2>
+          {clean ? <span className="pc-flap-open">Abrí la solapa <i aria-hidden="true">→</i></span> : steps}
+        </div>
+        <small className="pc-flap-foot">{unit(item.number)} · Si se pierde, quien la encuentre te avisa</small>
+      </div>
+      {/* Bajo la solapa (55–85): se ve al abrirla, al lado del QR. */}
+      <div className="pc-flap-inside">
+        {clean ? <>
+          <strong>Así se activa</strong>
+          {steps}
+          <small>¿Sin cámara? Entrá a <b>{host}/activar</b> y escribí el código.</small>
+        </> : <>
+          <strong>¿No podés escanear?</strong>
+          <small>Entrá a <b>{host}/activar</b> y escribí el código.</small>
+          <small>Después la editás cuando quieras en <b>{host}/mi</b>.</small>
+        </>}
+      </div>
+      {/* Solapa (85–115): el QR y el código, enteros y a 4 mm del pliegue. */}
+      <div className="pc-flap-secret">
+        <strong><LuLock aria-hidden="true" /> Para activar</strong>
+        {/* eslint-disable-next-line @next/next/no-img-element -- QR secreto generado en el servidor */}
+        <div className="pc-qrbox">{item.activationQr && <img src={item.activationQr} alt="" />}</div>
+        <span className="pc-code">{item.code}</span>
+      </div>
+      <span className="pc-flap-fold" aria-hidden="true" />
+      {/* Sólo en pantalla: dónde va el calco que cierra la solapa. */}
+      <span className="pc-flap-sticker" aria-hidden="true"><i>calco</i></span>
+    </article>;
+  }
   if (layout === "secure") return <article className={`pc pc-${design.id} pc-front is-secure${bleed ? " is-bleed" : ""}`} style={style}>
     <Deco items={design.deco} />
     <div className="pc-secure-main">

@@ -13,7 +13,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 import Link from "next/link";
 import { LuPrinter } from "react-icons/lu";
-import { CardBack, CardFront, DESIGNS, unit, unitNumber, type CardLayout, type DesignId } from "./card-designs";
+import { CardBack, CardFront, DESIGNS, cardOpenWidth, isFlapCard, unit, unitNumber, type CardLayout, type DesignId } from "./card-designs";
 import { cleanTagPrint, TagBack, TagFront, TAG_CATS, TAG_COLORS, TAG_CUSTOM, TAG_DOGS, tagCharacterFor, type TagCharacterChoice, type TagCharacterId, type TagPrint } from "./tag-face";
 import { saveTagPrint } from "./actions";
 import CharacterPicker from "./character-picker";
@@ -140,7 +140,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
         const next = { ...DEFAULTS, ...stored, ...unitsOf([...items.filter((item) => Object.keys(item.print).length), ...legacy]) };
         // Un diseño guardado que ya no existe vuelve al primero.
         if (!DESIGNS.some((design) => design.id === next.design)) next.design = DEFAULTS.design;
-        if (next.cardLayout !== "classic" && next.cardLayout !== "secure") next.cardLayout = DEFAULTS.cardLayout;
+        if (!["classic", "secure", "flap-a", "flap-b"].includes(next.cardLayout)) next.cardLayout = DEFAULTS.cardLayout;
         if (!LAYOUTS.some((layout) => layout.value === next.tagLayout)) next.tagLayout = DEFAULTS.tagLayout;
         // La versión anterior dejaba el modo espejado demasiado visible. Una sola vez migramos a
         // pares para armado; si después alguien activa doble faz a propósito, la elección se guarda.
@@ -161,9 +161,10 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
     return next;
   });
 
-  const secureCard = settings.cardLayout === "secure";
+  // Diseño 2: la tarjeta con solapa (la actual o sus variantes A y B, más anchas).
+  const secureCard = settings.cardLayout !== "classic";
   // La solapa suma 25 mm: abierta mide 110×55 y al plegarla vuelve al formato 85×55.
-  const width = secureCard ? 110 : clamp(settings.width, 40, 190);
+  const width = secureCard ? cardOpenWidth(settings.cardLayout) : clamp(settings.width, 40, 190);
   const height = secureCard ? 55 : clamp(settings.height, 30, 270);
   // La chapita entera (el círculo), en mm. Desde 28 mm: más chica, el QR no se lee bien impreso.
   const qrSize = clamp(settings.qrSize, 28, 45);
@@ -285,9 +286,13 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
         <fieldset className="ps-group"><legend>Formato de tarjeta</legend>
           <div className="ps-card-formats">
             <button type="button" className={settings.cardLayout === "classic" ? "is-on" : ""} onClick={() => update({ cardLayout: "classic" })}><span className="ps-card-format-preview is-classic"><i /></span><strong>Diseño 1</strong><small>Clásica · QR visible · medida configurable</small></button>
-            <button type="button" className={settings.cardLayout === "secure" ? "is-on" : ""} onClick={() => update({ cardLayout: "secure", sides: "front" })}><span className="ps-card-format-preview is-secure"><i /><b /></span><strong>Diseño 2</strong><small>Una sola faz · solapa privada · recomendado</small></button>
+            <button type="button" className={secureCard ? "is-on" : ""} onClick={() => update({ cardLayout: secureCard ? settings.cardLayout : "secure", sides: "front" })}><span className="ps-card-format-preview is-secure"><i /><b /></span><strong>Diseño 2</strong><small>Una sola faz · solapa privada · recomendado</small></button>
           </div>
-          {secureCard && <p className="ps-fold-note"><b>Recomendado:</b> doblá la solapa hacia adelante, sobre el QR. El reverso de la solapa funciona como tapa de seguridad.</p>}
+          {secureCard && <div className="ps-tag-styles ps-flap-variants">
+            {([["secure", "Actual"], ["flap-a", "A · Tapa limpia"], ["flap-b", "B · Pasos a la vista"]] as const).map(([value, label]) => <button key={value} type="button" className={settings.cardLayout === value ? "is-on" : ""} onClick={() => update({ cardLayout: value, sides: "front" })}>{label}</button>)}
+          </div>}
+          {isFlapCard(settings.cardLayout) && <p className="ps-fold-note"><b>Armado:</b> doblá la solapa hacia adelante por la línea punteada (tapa el QR) y cerrala con un <b>calco redondo de ~16 mm</b> sobre su borde, mitad sobre la tapa. En pantalla te marco dónde va; no se imprime.</p>}
+          {settings.cardLayout === "secure" && <p className="ps-fold-note"><b>Recomendado:</b> doblá la solapa hacia adelante, sobre el QR. El reverso de la solapa funciona como tapa de seguridad.</p>}
         </fieldset>
         <fieldset className="ps-group"><legend>Estilo visual</legend>
           <div className="ps-designs">{DESIGNS.map((design) => <button key={design.id} type="button" className={settings.design === design.id ? "is-on" : ""} onClick={() => update({ design: design.id })}>
@@ -295,7 +300,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
           </button>)}</div>
         </fieldset>
         <fieldset className="ps-group"><legend>Tamaño</legend>
-          {secureCard ? <div className="ps-fixed-size"><strong>110×55 mm abierta</strong><small>La parte terminada queda de 85×55 mm más la solapa doblada.</small></div> : <><select value={settings.size} onChange={(event) => { const size = SIZES.find((item) => item.id === event.target.value)!; update(size.id === "custom" ? { size: size.id } : { size: size.id, width: size.width, height: size.height }); }}>
+          {secureCard ? <div className="ps-fixed-size"><strong>{width}×55 mm abierta</strong><small>La parte terminada queda de 85×55 mm más la solapa doblada.</small></div> : <><select value={settings.size} onChange={(event) => { const size = SIZES.find((item) => item.id === event.target.value)!; update(size.id === "custom" ? { size: size.id } : { size: size.id, width: size.width, height: size.height }); }}>
             {SIZES.map((size) => <option key={size.id} value={size.id}>{size.label}</option>)}
           </select>
           {settings.size === "custom" && <div className="ps-row">

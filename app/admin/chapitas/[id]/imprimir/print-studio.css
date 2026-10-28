@@ -371,3 +371,42 @@
 .ps-layout small { color: #6b7080; font-size: 11px; line-height: 1.3; text-align: center; }
 .ps-layout em { position: absolute; top: -10px; left: 50%; padding: 2px 9px; transform: translateX(-50%); white-space: nowrap; box-shadow: 0 2px 6px #1d213026; border-radius: 99px; background: var(--c); color: #fff; font-size: 10px; font-style: normal; font-weight: 800; }
 .ps-animal-tabs button.is-custom.is-on { background: linear-gradient(120deg, #fff3e6, #fff); color: #b8481a; }
+
+/* Tarjeta con solapa, variantes A y B (card-designs.tsx, isFlapCard). 1em = 1 mm. Abierta 115×55:
+   tapa 0–55 (siempre visible), bajo la solapa 55–85, solapa 85–115 (QR). El calco cierra la solapa
+   sobre x = 55: la tapa deja libre su borde derecho. */
+.pc-front.is-flap { display: block; padding: 0; }
+.pc-flap-cover { position: absolute; z-index: 1; top: 0; bottom: 0; left: 0; width: 55em; display: grid; grid-template-rows: auto 1fr auto; gap: 1.6em; padding: 4.2em 10em 3.8em 4.5em; }
+.pc-flap-cover .pc-logo { font-size: 2.5em; }
+.pc-flap-title { display: grid; align-content: center; gap: 1.2em; }
+.pc-flap-title h2 { font-size: 3.9em; font-weight: 850; line-height: 1.02; letter-spacing: -.03em; }
+.pc-flap-title p { font-size: 2.1em; font-weight: 700; line-height: 1.2; }
+.pc-flap-open { display: inline-flex; align-items: center; gap: .45em; justify-self: start; padding: .5em .85em; border-radius: 99em; background: var(--pc-accent, #1d2130); color: #fff; font-size: 1.8em; font-weight: 800; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.pc-flap-open i { font-style: normal; }
+.pc-flap-cover ol, .pc-flap-inside ol { display: grid; gap: .6em; margin: 0; padding: 0; list-style: none; }
+.pc-flap-cover li { display: flex; align-items: center; gap: .55em; font-size: 2em; font-weight: 700; line-height: 1.15; }
+.pc-flap-inside li { display: flex; align-items: flex-start; gap: .5em; font-size: 1.6em; font-weight: 700; line-height: 1.2; }
+.pc-flap-cover li b, .pc-flap-inside li b { display: grid; flex: none; place-items: center; width: 1.7em; height: 1.7em; border-radius: 50%; background: var(--pc-accent, #1d2130); color: #fff; font-size: .72em; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.pc-flap-foot { font-size: 1.35em; font-weight: 750; letter-spacing: .02em; }
+.pc-flap-inside { position: absolute; z-index: 1; top: 0; bottom: 0; left: 55em; width: 30em; display: grid; align-content: center; gap: 1.3em; padding: 3.5em 3.2em; background: #ffffff59; }
+.pc-flap-inside strong { font-size: 2.1em; font-weight: 850; line-height: 1.1; }
+.pc-flap-inside small { font-size: 1.4em; font-weight: 650; line-height: 1.3; }
+.pc-flap-secret { position: absolute; z-index: 1; top: 0; bottom: 0; left: 85em; width: 30em; display: grid; align-content: center; justify-items: center; gap: 1.1em; padding: 3em 4em; background: #fff; color: #1d2130; }
+.pc-flap-secret > strong { display: flex; align-items: center; gap: .35em; color: var(--pc-accent, #1d2130); font-size: 1.45em; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; }
+.pc-flap-secret > strong svg { width: 1em; height: 1em; }
+.pc-front.is-flap .pc-qrbox { width: 22em; height: 22em; padding: 1em; border: .35em solid var(--pc-accent, #1d2130); border-radius: 2em; background: #fff; box-shadow: none; transform: none; }
+.pc-front.is-flap .pc-qrbox::before, .pc-front.is-flap .pc-qrbox::after { content: none; }
+.pc-front.is-flap .pc-code { padding: .2em .5em; background: #f1f2f5; color: #1d2130; font-size: 2.1em; }
+.pc-flap-fold { position: absolute; z-index: 2; top: 0; bottom: 0; left: 85em; border-left: .25em dashed #1d213066; }
+/* La mitad del calco que cae sobre la tapa (la otra mitad va sobre el dorso de la solapa doblada). */
+.pc-flap-sticker { position: absolute; z-index: 3; top: 19.5em; left: 47em; display: grid; place-items: center; width: 8em; height: 16em; border: .3em dashed #1d213073; border-right: 0; border-radius: 8em 0 0 8em; pointer-events: none; }
+.pc-flap-sticker i { margin-left: 1.5em; padding: .2em .4em; border-radius: 99em; background: #ffffffcc; color: #1d2130; font-size: 1.2em; font-style: normal; font-weight: 800; }
+@media print { .pc-flap-sticker { display: none; } }
+.ps-flap-variants { margin-top: 2px; }
+/* Color de acento de cada estilo (números, botón "Abrí la solapa", borde del QR). */
+.pc-playful { --pc-accent: #c2185b; }
+.pc-paws { --pc-accent: #d4621c; }
+.pc-bones { --pc-accent: #1f6fd1; }
+.pc-kitty { --pc-accent: #7b4ddb; }
+.pc-park { --pc-accent: #3f8a2a; }
+.pc-flap-deco { z-index: 0; }
