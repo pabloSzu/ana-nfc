@@ -13,8 +13,8 @@
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 import Link from "next/link";
 import { LuPrinter } from "react-icons/lu";
-import { CardBack, CardFront, DESIGNS, FLAP_LIMITS, FLAP_WIDTH, isFlapCard, unit, unitNumber, type CardLayout, type DesignId } from "./card-designs";
-import { cleanTagPrint, isGenericCharacterId, TagBack, TagFront, TAG_CATS, TAG_COLORS, TAG_CUSTOM, TAG_DOGS, tagCharacterFor, type TagCharacterChoice, type TagCharacterId, type TagPrint } from "./tag-face";
+import { CardBack, CardFront, DESIGN_ANIMAL, DESIGNS, FLAP_LIMITS, FLAP_WIDTH, DESIGN_GROUPS, autoCardDesign, designClash, designLabel, designSays, isFlapCard, unit, unitNumber, type CardAnimal, type CardLayout, type DesignId } from "./card-designs";
+import { cleanTagPrint, isCat, isGenericCharacterId, TagBack, TagFront, TAG_CATS, TAG_CHARACTERS, TAG_COLORS, TAG_CUSTOM, TAG_DOGS, tagCharacterFor, type TagCharacterChoice, type TagCharacterId, type TagPrint } from "./tag-face";
 import { saveTagPrint } from "./actions";
 import CharacterPicker from "./character-picker";
 
@@ -42,6 +42,8 @@ type Settings = {
   tagNames: Record<string, string>;
   tagCharacters: Record<string, TagCharacterId>;
   tagColors: Record<string, string>;
+  tagCards: Record<string, DesignId>;
+  cardMatch: boolean;
   tagHole: boolean;
   tagLayout: "v1" | "v2" | "v3" | "v4";
   paper: Paper;
@@ -53,16 +55,17 @@ const SIZES = [
   { id: "100x70", label: "Grande · 100×70 mm", width: 100, height: 70 },
   { id: "custom", label: "Otra medida", width: 85, height: 55 },
 ];
-const DEFAULTS: Settings = { design: "playful", cardLayout: "flap-a", flapWidth: 85, flapHeight: 55, flapFresh: false, size: "85x55", width: 85, height: 55, sides: "front", output: "single", cutLines: true, qrSize: 30, qrNumber: true, qrColor: "mix", tagSides: "both", tagOutput: "pairs", tagLayoutVersion: 2, tagCharacter: "mix", tagNames: {}, tagCharacters: {}, tagColors: {}, tagHole: false, paper: "A4", tagLayout: "v3" };
+const DEFAULTS: Settings = { design: "playful", cardLayout: "flap-a", flapWidth: 85, flapHeight: 55, flapFresh: false, size: "85x55", width: 85, height: 55, sides: "front", output: "single", cutLines: true, qrSize: 30, qrNumber: true, qrColor: "mix", tagSides: "both", tagOutput: "pairs", tagLayoutVersion: 2, tagCharacter: "mix", tagNames: {}, tagCharacters: {}, tagColors: {}, tagCards: {}, cardMatch: true, tagHole: false, paper: "A4", tagLayout: "v3" };
 const STORAGE_KEY = "bionfc-print-settings";
 // Lo de cada unidad no va al navegador: viene de la base (PrintItem.print).
-const UNIT_KEYS = ["tagNames", "tagCharacters", "tagColors"];
+const UNIT_KEYS = ["tagNames", "tagCharacters", "tagColors", "tagCards"];
 const prefsOf = (value: Settings) => Object.fromEntries(Object.entries(value).filter(([key]) => !UNIT_KEYS.includes(key)));
 const savePrefs = (value: Settings) => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(prefsOf(value))); } catch {} };
 const unitsOf = (entries: { id: string; print: TagPrint }[]) => ({
   tagNames: Object.fromEntries(entries.filter((entry) => entry.print.name).map((entry) => [entry.id, entry.print.name!])),
   tagCharacters: Object.fromEntries(entries.filter((entry) => entry.print.character).map((entry) => [entry.id, entry.print.character!])) as Record<string, TagCharacterId>,
   tagColors: Object.fromEntries(entries.filter((entry) => entry.print.color).map((entry) => [entry.id, entry.print.color!])),
+  tagCards: Object.fromEntries(entries.filter((entry) => entry.print.card).map((entry) => [entry.id, entry.print.card!])) as Record<string, DesignId>,
 });
 // Hoja A4 (o A3, para imprenta o impresora grande) con 7 mm de margen (casi todas las impresoras
 // dejan ~5 mm sin imprimir): así en A4 entran
@@ -218,7 +221,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
   const bleedStyle = { width: `${width + BLEED * 2}mm`, height: `${height + BLEED * 2}mm`, borderWidth: `${BLEED}mm`, fontSize: `${cardScale}mm` };
   const singlePage = { width: width + (BLEED + MARKS) * 2, height: height + (BLEED + MARKS) * 2 };
   const gridStyle = (cols: number, cellWidth: number, gap: number) => ({ gridTemplateColumns: `repeat(${cols}, ${cellWidth}mm)`, gap: `${gap}mm` });
-  const printOf = (id: string, patch: TagPrint): TagPrint => ({ name: settings.tagNames[id], character: settings.tagCharacters[id], color: settings.tagColors[id], ...patch });
+  const printOf = (id: string, patch: TagPrint): TagPrint => ({ name: settings.tagNames[id], character: settings.tagCharacters[id], color: settings.tagColors[id], card: settings.tagCards[id], ...patch });
   const tagBackDesign = (layout: Settings["tagLayout"]) => layout === "v2" ? "v2" : layout === "v3" ? "v3" : layout === "v4" ? "v4" : "classic";
   const setTagName = (id: string, name: string) => {
     const cleanName = name.slice(0, 14);
@@ -248,7 +251,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
     const tagNames = { ...settings.tagNames }; delete tagNames[id];
     const tagCharacters = { ...settings.tagCharacters, [id]: character };
     update({ tagNames, tagCharacters });
-    saveUnit(id, { character, color: settings.tagColors[id] });
+    saveUnit(id, { character, color: settings.tagColors[id], card: settings.tagCards[id] });
     setEditorNotice({ id, message: previousName ? `Quitamos “${previousName}” y aplicamos el diseño genérico.` : "Diseño genérico aplicado." });
   };
   const setTagColor = (id: string, color: string) => {
@@ -271,6 +274,113 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
     const mix = ["blue", "violet", "pink", "orange", "green"];
     return choice === "mix" ? mix[(item.number - 1) % mix.length] : choice;
   };
+  // El estilo de la tarjeta de cada unidad: el fijado a mano o el automático según su animal.
+  const animalOf = (item: PrintItem): CardAnimal => {
+    const id = characterOf(item);
+    if (isCat(id)) return "cat";
+    const character = TAG_CHARACTERS.find((entry) => entry.id === id) as { generic?: unknown } | undefined;
+    return character?.generic === "symbol" ? "other" : "dog";
+  };
+  const autoCardOf = (item: PrintItem) => autoCardDesign(settings.design, animalOf(item), settings.cardMatch);
+  const cardDesignOf = (item: PrintItem) => settings.tagCards[item.id] || autoCardOf(item);
+  const setTagCard = (id: string, card: DesignId | "") => {
+    const next = { ...settings.tagCards };
+    if (!card) delete next[id];
+    else next[id] = card;
+    update({ tagCards: next });
+    saveUnit(id, printOf(id, { card: next[id] }));
+  };
+  // Un estilo de otro animal ("¡Miau!" para un perro): se puede, pero su botoncito queda en naranja.
+  const clashOf = (item: PrintItem, card: DesignId) => designClash(card, animalOf(item));
+  // Elegir el mismo estilo que le da la regla es volver a la regla: "estilo propio" es sólo el distinto.
+  // Si el estilo es del otro animal ("¡Miau!" para un perro), pregunta antes.
+  const chooseCard = (item: PrintItem, card: DesignId) => {
+    const apply = () => setTagCard(item.id, card === autoCardOf(item) ? "" : card);
+    if (!clashOf(item, card)) return apply();
+    const cat = animalOf(item) === "cat";
+    setAsk({
+      title: `Esta chapita es de ${cat ? "gato 🐱" : "perro 🐶"}`,
+      text: `${designLabel(card)} es de ${cat ? "perritos" : "gatitos"}${designSays(card)}. ¿La querés igual para esta tarjeta?`,
+      cancel: "Mejor no",
+      actions: [{ label: `Sí, usar ${designLabel(card)}`, run: apply, main: true }],
+    });
+  };
+  // El botoncito de estilo de cada tarjeta: uno abierto a la vez; se cierra tocando afuera o con Esc.
+  const [stylePicker, setStylePicker] = useState<string | null>(null);
+  // Confirmación (modal) y aviso de lo que cambió.
+  const [ask, setAsk] = useState<{ title: string; text: string; cancel?: string; actions: { label: string; run: () => void; main?: boolean }[] } | null>(null);
+  const [toast, setToast] = useState("");
+  useEffect(() => {
+    if (!stylePicker && !ask) return;
+    const closeAll = () => { setStylePicker(null); setAsk(null); };
+    const onKey = (event: globalThis.KeyboardEvent) => { if (event.key === "Escape") closeAll(); };
+    const onClick = () => setStylePicker(null);
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("click", onClick);
+    return () => { window.removeEventListener("keydown", onKey); window.removeEventListener("click", onClick); };
+  }, [stylePicker, ask]);
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(""), 5000);
+    return () => clearTimeout(timer);
+  }, [toast]);
+  const flashCards = (ids: string[]) => requestAnimationFrame(() => {
+    for (const id of ids) document.querySelectorAll<HTMLElement>(`[data-card="${id}"]`).forEach((element) => {
+      element.classList.remove("is-flash"); void element.offsetWidth; element.classList.add("is-flash");
+    });
+  });
+  // El estilo de la barra lateral cambia TODAS las tarjetas (también las elegidas a mano). Si no
+  // coincide con el animal de algunas chapitas (gatos con "¡Guau!" o perros con "¡Miau!"), antes
+  // pregunta qué hacer con esas. Avisa cómo quedó y hace brillar las tarjetas.
+  const ownCards = items.filter((item) => settings.tagCards[item.id]);
+  const applyStyle = (design: DesignId, match: boolean) => {
+    update({ design, cardMatch: match, tagCards: {} });
+    for (const item of ownCards) saveUnit(item.id, printOf(item.id, { card: undefined }));
+    const result = DESIGNS.map((entry) => [entry.label, items.filter((item) => autoCardDesign(design, animalOf(item), match) === entry.id).length] as const).filter(([, count]) => count);
+    setToast(`Listo, cambiaron todas: ${result.map(([label, count]) => `${count} ${label}`).join(" · ")}.`);
+    flashCards(items.map((item) => item.id));
+  };
+  const pickStyle = (design: DesignId) => {
+    const clashing = items.filter((item) => designClash(design, animalOf(item)));
+    if (!clashing.length) return applyStyle(design, settings.cardMatch);
+    const cats = DESIGN_ANIMAL[design] === "dog";
+    const other: DesignId = cats ? "kitty" : "paws";
+    const count = clashing.length;
+    setAsk({
+      title: `Hay ${count === 1 ? `1 chapita de ${cats ? "gato 🐱" : "perro 🐶"}` : `${count} chapitas de ${cats ? "gato 🐱" : "perro 🐶"}`}`,
+      text: `${designLabel(design)} es de ${cats ? "perritos" : "gatitos"}${designSays(design)}. ¿Qué hacemos con ${count === 1 ? "esa tarjeta" : "esas tarjetas"}?`,
+      actions: [
+        { label: `${designLabel(design)} en todas`, run: () => applyStyle(design, false) },
+        { label: `${cats ? "Gatitos" : "Perritos"} con ${designLabel(other)}`, run: () => applyStyle(design, true), main: true },
+      ],
+    });
+  };
+  // Para la nota de la barra lateral: cuántas tarjetas cambia la regla del animal.
+  const matched = settings.cardMatch ? items.filter((item) => !settings.tagCards[item.id] && designClash(settings.design, animalOf(item))) : [];
+  const styleCount = DESIGNS.map((design) => [design.label, items.filter((item) => cardDesignOf(item) === design.id).length] as const).filter(([, count]) => count);
+  // "Ver su chapita" / "Ver su tarjeta" sobre cada unidad (en la elegida y al pasar el mouse).
+  const partnerButton = (item: PrintItem) => <button type="button" className="ps-tool-partner" onClick={(event) => { event.stopPropagation(); selectItem(item.id); showPartner(); }}>
+    {mode === "qr" ? "Ver su tarjeta" : "Ver su chapita"} <i aria-hidden="true">→</i>
+  </button>;
+  const styleChip = (item: PrintItem) => {
+    const own = settings.tagCards[item.id];
+    const current = cardDesignOf(item);
+    const clash = clashOf(item, current);
+    const open = stylePicker === item.id;
+    return <div className={`ps-style${open ? " is-open" : ""}${own ? " is-own" : ""}`} onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+      <div className="ps-style-row">
+        <button type="button" className={`ps-style-chip${own ? ` is-${own}` : ""}${clash ? " is-clash" : ""}`} aria-expanded={open} aria-label={`Estilo de esta tarjeta: ${designLabel(current)}. Cambiar`} onClick={() => { selectItem(item.id); setStylePicker(open ? null : item.id); }}>
+          {clash ? <b aria-hidden="true">!</b> : <span aria-hidden="true">🎨</span>}{designLabel(current)}<i aria-hidden="true">▾</i>
+        </button>
+        {partnerButton(item)}
+      </div>
+      {open && <div className="ps-style-menu">
+        {clash && <p className="ps-style-warn">Esta chapita es de {animalOf(item) === "cat" ? "gato" : "perro"}.</p>}
+        {DESIGN_GROUPS.map(([title, ids]) => <div key={title}><small>{title}</small>{ids.map((id) => <button key={id} type="button" className={current === id ? "is-on" : ""} onClick={() => { chooseCard(item, id); setStylePicker(null); }}><span className={`ps-style-dot is-${id}`} />{designLabel(id)}{current === id && <em>✓</em>}</button>)}</div>)}
+        {own && <button type="button" className="ps-style-reset" onClick={() => { setTagCard(item.id, ""); setStylePicker(null); }}>↺ Como las demás <span>({designLabel(autoCardOf(item))})</span></button>}
+      </div>}
+    </div>;
+  };
   const previewItem = items.find((item) => item.id === previewId) || items[0];
   const selectItem = (id: string) => setPreviewId(id);
   // "Ver su tarjeta" / "Ver su chapita": la unidad elegida es la misma en las dos pestañas; se
@@ -287,6 +397,13 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
     });
     return () => cancelAnimationFrame(frame);
   }, [jump]);
+  const stepUnit = (step: number) => {
+    const index = previewItem ? items.indexOf(previewItem) : 0;
+    const next = items[(index + step + items.length) % items.length];
+    if (!next) return;
+    selectItem(next.id);
+    setJump((count) => count + 1);
+  };
   const selectItemFromKeyboard = (event: KeyboardEvent<HTMLElement>, id: string) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
@@ -298,7 +415,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
     const tagCharacters = { ...settings.tagCharacters }; delete tagCharacters[id];
     const tagColors = { ...settings.tagColors }; delete tagColors[id];
     update({ tagNames, tagCharacters, tagColors });
-    saveUnit(id, {});
+    saveUnit(id, settings.tagCards[id] ? { card: settings.tagCards[id] } : {});
     setEditorNotice(null);
   };
   const tagArtwork = (item: PrintItem, side: "front" | "back", suffix: string) => <div className={`ps-tag-ring${settings.cutLines ? " has-cut" : ""}`}>
@@ -306,10 +423,12 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
       ? <TagFront id={`${item.id}-${suffix}-front`} diameter={qrSize} color={colorOf(item)} character={characterOf(item)} name={settings.tagNames[item.id] || ""} hole={settings.tagHole} />
       : <TagBack id={`${item.id}-${suffix}-back`} qr={item.tagQr} diameter={qrSize} color={colorOf(item)} design={tagBackDesign(settings.tagLayout)} hole={settings.tagHole} />}
   </div>;
-  const tagCell = (item: PrintItem, side: "front" | "back") => <button type="button" className={`ps-tag-cell ps-selectable${previewItem?.id === item.id ? " is-selected" : ""}`} onClick={() => selectItem(item.id)} aria-label={`Seleccionar chapita con código ${item.code}`}>
+  // Divs (no botones) porque adentro va el botón "Ver su tarjeta".
+  const tagCell = (item: PrintItem, side: "front" | "back") => <div role="button" tabIndex={0} data-card={item.id} className={`ps-tag-cell ps-selectable${previewItem?.id === item.id ? " is-selected" : ""}`} onClick={() => selectItem(item.id)} onKeyDown={(event) => selectItemFromKeyboard(event, item.id)} aria-label={`Seleccionar chapita con código ${item.code}`}>
+    <span className="ps-tools">{partnerButton(item)}</span>
     {tagArtwork(item, side, "sheet")}
     {settings.qrNumber && <span className="ps-tag-number">{unit(item.number)}</span>}
-  </button>;
+  </div>;
 
   return <div className={`ps is-${paper.toLowerCase()}`} style={{ "--page-w": `${PAGE.width}mm`, "--page-h": `${PAGE.height}mm` } as CSSProperties}>
     {/* eslint-disable-next-line @next/next/no-page-custom-font -- solo para esta hoja de impresión */}
@@ -323,12 +442,14 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
 
       {isLocal && <p className="ps-local">Estás en desarrollo: estos QR y códigos apuntan a tu computadora ({host}). Para chapitas reales, imprimí desde el Admin de bionfc.com.</p>}
 
+      {/* En el orden del trabajo: primero las chapitas (cada tarjeta sigue al animal de la suya) y después las tarjetas. */}
       <div className="ps-tabs" role="tablist">
-        <button type="button" role="tab" aria-selected={mode === "cards"} className={mode === "cards" ? "is-on" : ""} onClick={() => setMode("cards")}>Tarjetas de activación</button>
-        <button type="button" role="tab" aria-selected={mode === "qr"} className={mode === "qr" ? "is-on" : ""} onClick={() => setMode("qr")}>Chapitas</button>
+        <button type="button" role="tab" aria-selected={mode === "qr"} className={mode === "qr" ? "is-on" : ""} onClick={() => setMode("qr")}><b>1</b>Chapitas</button>
+        <button type="button" role="tab" aria-selected={mode === "cards"} className={mode === "cards" ? "is-on" : ""} onClick={() => setMode("cards")}><b>2</b>Tarjetas</button>
       </div>
 
       {mode === "cards" ? <>
+        <p className="ps-flow-note">🐾 Cada tarjeta sigue al animal de su chapita: si cambiás una chapita, su tarjeta se actualiza sola. <b>Imprimí las tarjetas cuando las chapitas estén listas.</b></p>
         <div className="ps-stage-title"><span>1</span><div><strong>Diseño de tarjetas</strong><small>Elegí formato, estilo y tamaño.</small></div></div>
         <fieldset className="ps-group"><legend>Formato de tarjeta</legend>
           <div className="ps-card-formats">
@@ -343,10 +464,13 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
           </div>}
           {isFlapCard(settings.cardLayout) && <p className="ps-fold-note"><b>Armado:</b> doblá la solapa hacia adelante por la línea punteada (tapa el QR) y cerrala con un <b>calco redondo de ~16 mm</b> sobre su borde, mitad sobre la tapa. En pantalla te marco dónde va; no se imprime.</p>}
         </fieldset>
-        <fieldset className="ps-group"><legend>Estilo visual</legend>
-          <div className="ps-designs">{DESIGNS.map((design) => <button key={design.id} type="button" className={settings.design === design.id ? "is-on" : ""} onClick={() => update({ design: design.id })}>
+        <fieldset className="ps-group"><legend>Estilo de las tarjetas</legend>
+          {DESIGN_GROUPS.map(([title, ids]) => <div key={title} className="ps-design-group"><small>{title}</small><div className="ps-designs">{DESIGNS.filter((design) => ids.includes(design.id)).map((design) => <button key={design.id} type="button" className={settings.design === design.id ? "is-on" : ""} onClick={() => pickStyle(design.id)}>
             <span className="ps-swatch" style={{ background: design.swatch }} /><strong>{design.label}</strong><small>{design.hint}</small>
-          </button>)}</div>
+          </button>)}</div></div>)}
+          {!!matched.length && <p className="ps-muted ps-style-note">{DESIGN_ANIMAL[settings.design] === "dog" ? `🐱 ${matched.length === 1 ? "El gatito va" : `Los ${matched.length} gatitos van`} con Michi.` : `🐶 ${matched.length === 1 ? "El perrito va" : `Los ${matched.length} perritos van`} con Patitas.`}</p>}
+          <p className="ps-muted ps-style-note">Cambia todas las tarjetas. Para cambiar una sola, usá su botoncito 🎨 en la hoja.</p>
+          {!!styleCount.length && <p className="ps-style-count">En este lote: {styleCount.map(([label, count]) => `${count} ${label}`).join(" · ")}</p>}
         </fieldset>
         <fieldset className="ps-group"><legend>Tamaño</legend>
           {secureCard ? <>
@@ -433,11 +557,13 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
 
       <div className="ps-stage-title"><span>2</span><div><strong>Personalizar unidades</strong><small>Elegí una chapita y ajustala sin afectar las demás.</small></div></div>
       <section className="ps-personalize" aria-label="Personalización por unidad">
-        <div className="ps-personalize-head"><div><strong>Elegí una unidad</strong>{previewItem && <span className={settings.tagNames[previewItem.id]?.trim() ? "has-name" : "is-stock"}>{settings.tagNames[previewItem.id]?.trim() ? "Con nombre" : "Stock"}</span>}</div><small className={`ps-save is-${saveState}`}>{{ idle: "Se guarda automáticamente.", saving: "Guardando…", saved: "✓ Guardado en la chapita", error: "⚠ No se pudo guardar. Revisá la conexión." }[saveState]}</small></div>
-        <div className="ps-unit-picker">{items.map((item) => <button type="button" key={item.id} className={previewItem?.id === item.id ? "is-on" : ""} onClick={() => setPreviewId(item.id)}>
-          <span style={{ background: TAG_COLORS.find((color) => color.id === colorOf(item))?.value || colorOf(item) }} />
-          <span className="ps-unit-copy"><b>{item.code}</b><small>{unitNumber(item.number)}</small></span><em className={settings.tagNames[item.id]?.trim() ? "has-name" : "is-stock"}>{settings.tagNames[item.id]?.trim() || "Stock"}</em>
-        </button>)}</div>
+        <div className="ps-personalize-head"><div><strong>Editando esta chapita</strong>{previewItem && <span className={settings.tagNames[previewItem.id]?.trim() ? "has-name" : "is-stock"}>{settings.tagNames[previewItem.id]?.trim() ? "Con nombre" : "Stock"}</span>}</div><small className={`ps-save is-${saveState}`}>{{ idle: "Se guarda automáticamente.", saving: "Guardando…", saved: "✓ Guardado en la chapita", error: "⚠ No se pudo guardar. Revisá la conexión." }[saveState]}</small></div>
+        {/* La unidad se elige tocándola en la hoja; ‹ › pasa a la anterior o a la siguiente (y la muestra). */}
+        {previewItem && <div className="ps-unit-nav">
+          <button type="button" onClick={() => stepUnit(-1)} aria-label="Chapita anterior" disabled={items.length < 2}>‹</button>
+          <div><span style={{ background: TAG_COLORS.find((color) => color.id === colorOf(previewItem))?.value || colorOf(previewItem) }} /><b>{previewItem.code}</b><small>{unitNumber(previewItem.number)} · {items.indexOf(previewItem) + 1} de {items.length}</small></div>
+          <button type="button" onClick={() => stepUnit(1)} aria-label="Chapita siguiente" disabled={items.length < 2}>›</button>
+        </div>}
         {previewItem && <div className="ps-unit-editor">
           <label>Nombre <small>Opcional · vacío para stock</small><input value={settings.tagNames[previewItem.id] || ""} maxLength={14} placeholder="Ej: Luna" onChange={(event) => setTagName(previewItem.id, event.target.value)} /></label>
           <span className="ps-editor-label">Animal</span>
@@ -483,6 +609,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
       <div className="ps-print-dock">
         <div className="ps-print-summary"><div><strong>{paper} · {items.length} {items.length === 1 ? "unidad" : "unidades"}</strong><small>{pageCount} {pageCount === 1 ? "página" : "páginas"}{mode === "qr" && settings.tagOutput === "pairs" ? " · frente y dorso juntos" : ""}</small></div>{mode === "cards" ? <span className="is-warn">Códigos privados</span> : <span className="is-ready">Listo para imprimir</span>}</div>
         <button type="button" className="btn full ps-print" onClick={() => window.print()} disabled={!items.length}><LuPrinter aria-hidden="true" /> Imprimir o guardar PDF</button>
+        {mode === "qr" && <button type="button" className="ps-next-step" onClick={() => setMode("cards")}>Siguiente: <b>2</b> Tarjetas <i aria-hidden="true">→</i></button>}
       </div>
     </aside>
 
@@ -495,24 +622,22 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
           <figure><TagBack id={`preview-${previewItem.id}-back`} qr={previewItem.tagQr} diameter={60} color={colorOf(previewItem)} design={tagBackDesign(settings.tagLayout)} hole={settings.tagHole} /><figcaption>Dorso · {layoutLabel}</figcaption></figure>
         </div>
       </section>}
-      {mode === "cards" && previewItem && <section className="ps-unit-bar" aria-label={`Tarjeta elegida: ${previewItem.code}`}>
-        <div><small>TARJETA ELEGIDA · tocá otra para cambiar</small><strong>{unit(previewItem.number)} · {previewItem.code}</strong><span>{settings.tagNames[previewItem.id]?.trim() || "Sin nombre · stock"}</span></div>
-        <button type="button" className="ps-partner" onClick={showPartner}>Ver su chapita <i aria-hidden="true">→</i></button>
-      </section>}
       {single ? items.flatMap((item) => [
-        <section key={`${item.id}-f`} className={`ps-single ps-selectable${previewItem?.id === item.id ? " is-selected" : ""}`} style={{ width: `${singlePage.width}mm`, height: `${singlePage.height}mm` }} aria-label={`Seleccionar tarjeta con código ${item.code}: frente`} role="button" tabIndex={0} onClick={() => selectItem(item.id)} onKeyDown={(event) => selectItemFromKeyboard(event, item.id)}>
-          <CardFront design={settings.design} layout={settings.cardLayout} item={item} host={host} style={bleedStyle} bleed closed={flapClosed} fresh={settings.flapFresh} />
+        <section key={`${item.id}-f`} className={`ps-single ps-selectable${previewItem?.id === item.id ? " is-selected" : ""}`} style={{ width: `${singlePage.width}mm`, height: `${singlePage.height}mm` }} aria-label={`Seleccionar tarjeta con código ${item.code}: frente`} role="button" tabIndex={0} data-card={item.id} onClick={() => selectItem(item.id)} onKeyDown={(event) => selectItemFromKeyboard(event, item.id)}>
+          {styleChip(item)}
+          <CardFront design={cardDesignOf(item)} layout={settings.cardLayout} item={item} host={host} style={bleedStyle} bleed closed={flapClosed} fresh={settings.flapFresh} />
           <CropMarks width={width} height={height} />
         </section>,
         ...(cardBoth ? [<section key={`${item.id}-b`} className={`ps-single ps-selectable${previewItem?.id === item.id ? " is-selected" : ""}`} style={{ width: `${singlePage.width}mm`, height: `${singlePage.height}mm` }} aria-label={`Seleccionar tarjeta con código ${item.code}: dorso`} role="button" tabIndex={0} onClick={() => selectItem(item.id)} onKeyDown={(event) => selectItemFromKeyboard(event, item.id)}>
-          <CardBack design={settings.design} layout={settings.cardLayout} host={host} style={bleedStyle} bleed />
+          <CardBack design={cardDesignOf(item)} layout={settings.cardLayout} host={host} style={bleedStyle} bleed />
           <CropMarks width={width} height={height} />
         </section>] : []),
       ]) : mode === "cards" ? cardPages.map((page, pageIndex) => <div key={pageIndex} className="ps-pair">
         <section className="ps-page" aria-label={`Hoja ${pageIndex + 1}: frentes`}>
           <span className="ps-page-label">Hoja {pageIndex + 1} · frentes</span>
           <div className="ps-grid" style={gridStyle(cardCols, width, cardGap)}>
-            {page.map((item) => <button type="button" key={item.id} className={`ps-cell ps-selectable${settings.cutLines ? " has-cut" : ""}${previewItem?.id === item.id ? " is-selected" : ""}`} onClick={() => selectItem(item.id)} aria-label={`Seleccionar tarjeta con código ${item.code}`}><CardFront design={settings.design} layout={settings.cardLayout} item={item} host={host} style={cardStyle} closed={flapClosed} fresh={settings.flapFresh} /></button>)}
+            {/* Un div (no un botón) porque adentro va el botoncito de estilo de la tarjeta. */}
+            {page.map((item) => <div role="button" tabIndex={0} key={item.id} data-card={item.id} className={`ps-cell ps-selectable${settings.cutLines ? " has-cut" : ""}${previewItem?.id === item.id ? " is-selected" : ""}`} onClick={() => selectItem(item.id)} onKeyDown={(event) => selectItemFromKeyboard(event, item.id)} aria-label={`Seleccionar tarjeta con código ${item.code}`}>{styleChip(item)}<CardFront design={cardDesignOf(item)} layout={settings.cardLayout} item={item} host={host} style={cardStyle} closed={flapClosed} fresh={settings.flapFresh} /></div>)}
           </div>
           <SheetFoot batchName={batchName} page={pageIndex + 1} pages={cardPages.length} items={page} detail="Tarjetas · frentes" />
         </section>
@@ -524,7 +649,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
               const row = Math.floor(cell / cardCols);
               const item = page[row * cardCols + (cardCols - 1 - (cell % cardCols))];
               return item
-                ? <button type="button" key={cell} className={`ps-cell ps-selectable${settings.cutLines ? " has-cut" : ""}${previewItem?.id === item.id ? " is-selected" : ""}`} onClick={() => selectItem(item.id)} aria-label={`Seleccionar dorso de la tarjeta con código ${item.code}`}><CardBack design={settings.design} layout={settings.cardLayout} host={host} style={cardStyle} /></button>
+                ? <button type="button" key={cell} className={`ps-cell ps-selectable${settings.cutLines ? " has-cut" : ""}${previewItem?.id === item.id ? " is-selected" : ""}`} onClick={() => selectItem(item.id)} aria-label={`Seleccionar dorso de la tarjeta con código ${item.code}`}><CardBack design={cardDesignOf(item)} layout={settings.cardLayout} host={host} style={cardStyle} /></button>
                 : <div key={cell} className="ps-cell"><div style={cardStyle} /></div>;
             })}
           </div>
@@ -533,13 +658,14 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
       </div>) : settings.tagOutput === "pairs" ? pairPages.map((page, pageIndex) => <section key={pageIndex} className="ps-page ps-pair-page" aria-label={`Hoja ${pageIndex + 1}: frentes y dorsos de chapitas`}>
         <span className="ps-page-label">Hoja {pageIndex + 1} · pares para armado</span>
         <div className="ps-grid ps-pair-grid" style={{ gridTemplateColumns: `repeat(${pairCols}, ${pairWidth}mm)`, gap: `${pairGap}mm` }}>
-          {page.map((item) => <button type="button" key={item.id} className={`ps-print-pair ps-selectable${previewItem?.id === item.id ? " is-selected" : ""}`} onClick={() => selectItem(item.id)} aria-label={`Seleccionar chapita con código ${item.code}`}>
+          {page.map((item) => <div role="button" tabIndex={0} key={item.id} data-card={item.id} className={`ps-print-pair ps-selectable${previewItem?.id === item.id ? " is-selected" : ""}`} onClick={() => selectItem(item.id)} onKeyDown={(event) => selectItemFromKeyboard(event, item.id)} aria-label={`Seleccionar chapita con código ${item.code}`}>
+            <span className="ps-tools">{partnerButton(item)}</span>
             <div className="ps-print-pair-faces">
               {tagArtwork(item, "front", `pair-${pageIndex}`)}
               {tagArtwork(item, "back", `pair-${pageIndex}`)}
               <span className="ps-pair-code">{unit(item.number)}</span>
             </div>
-          </button>)}
+          </div>)}
         </div>
         <SheetFoot batchName={batchName} page={pageIndex + 1} pages={pairPages.length} items={page} detail={`Chapitas Ø ${qrSize} mm · ${layoutLabel}`} />
       </section>) : qrPages.map((page, pageIndex) => <div key={pageIndex} className="ps-pair ps-tag-pages">
@@ -563,5 +689,16 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
         </section>}
       </div>)}
     </main>
+    {ask && <div className="ps-modal" role="presentation" onClick={() => setAsk(null)}>
+      <div className="ps-modal-box" role="alertdialog" aria-modal="true" aria-labelledby="ps-modal-title" onClick={(event) => event.stopPropagation()}>
+        <h3 id="ps-modal-title">{ask.title}</h3>
+        <p>{ask.text}</p>
+        <div>
+          <button type="button" className="ps-modal-cancel" onClick={() => setAsk(null)}>{ask.cancel || "Cancelar"}</button>
+          {ask.actions.map((action) => <button key={action.label} type="button" className={action.main ? "ps-modal-ok" : "ps-modal-cancel"} autoFocus={action.main} onClick={() => { action.run(); setAsk(null); }}>{action.label}</button>)}
+        </div>
+      </div>
+    </div>}
+    {toast && <div className="ps-toast" role="status">{toast}<button type="button" onClick={() => setToast("")} aria-label="Cerrar">✕</button></div>}
   </div>;
 }

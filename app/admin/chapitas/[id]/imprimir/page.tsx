@@ -54,5 +54,5 @@ export default async function PrintBatch({ params, searchParams }: { params: Pro
     };
   }));
 
-  return <PrintStudio batchId={batch.id} batchName={batch.name} items={items} host={new URL(origin).host} isLocal={isLocalSite(origin)} initialMode={que === "qr" ? "qr" : "cards"} />;
+  return <PrintStudio batchId={batch.id} batchName={batch.name} items={items} host={new URL(origin).host} isLocal={isLocalSite(origin)} initialMode={que === "tarjetas" ? "cards" : "qr"} />;
 }

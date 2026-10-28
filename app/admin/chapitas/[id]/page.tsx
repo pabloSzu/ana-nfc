@@ -105,10 +105,10 @@ export default async function BatchPage({ params, searchParams }: { params: Prom
     {/* Lo que se hace con un lote, cada cosa con su color: imprimir (tarjetas y chapitas, en el
         mismo estudio) y, si algo se mezcló, verificar. Los links para grabar están en la tabla. */}
     <section className="ch-lot-actions" aria-label="Qué hacer con este lote">
-      <Link className="ch-action is-print" href={`/admin/chapitas/${id}/imprimir?que=tarjetas`} target="_blank">
+      <Link className="ch-action is-print" href={`/admin/chapitas/${id}/imprimir`} target="_blank">
         <span className="ch-action-icon"><IconPrinter /></span>
         <strong>Impresión</strong>
-        <small>Tarjetas del paquete y chapitas, listas para cortar.</small>
+        <small>Primero las chapitas, después las tarjetas del paquete. Listas para cortar.</small>
         <span className="ch-action-go">Abrir el estudio →</span>
       </Link>
       <Link className="ch-action is-verify" href="/admin/chapitas/verificar">

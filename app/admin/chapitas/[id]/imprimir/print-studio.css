@@ -222,14 +222,7 @@
 .ps-personalize-head span.has-name, .ps-unit-picker em.has-name { background: #e9efff; color: #3446c9; }
 .ps-save.is-saved { color: #17803d; font-weight: 700; }
 .ps-save.is-error { color: #b42318; font-weight: 700; }
-.ps-unit-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; max-height: 154px; overflow-y: auto; padding: 9px; background: #fbfcff; }
-.ps-unit-picker button { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; align-items: center; gap: 7px; min-height: 42px; padding: 6px 7px; border: 1.5px solid #e2e5ed; border-radius: 10px; background: #fff; color: #4d5362; font: inherit; text-align: left; cursor: pointer; }
-.ps-unit-picker button.is-on { border-color: #4b6bff; background: #eef2ff; color: #273a9d; box-shadow: 0 0 0 2px #4b6bff14; }
-.ps-unit-picker button > span:first-child { width: 12px; height: 12px; border-radius: 50%; box-shadow: inset 0 0 0 1px #0002; }
 .ps-unit-copy { display: grid; min-width: 0; gap: 1px; }
-.ps-unit-picker b { overflow: hidden; font-size: 10.5px; text-overflow: ellipsis; white-space: nowrap; }
-.ps-unit-picker small { color: #858b98; font-size: 9.5px; }
-.ps-unit-picker em { max-width: 62px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ps-unit-editor { display: grid; gap: 9px; padding: 11px 12px 12px; border-top: 1px solid #dce4ff; background: #f7f9ff; }
 .ps-unit-editor > label { display: grid; gap: 5px; color: #343947; font-size: 12px; font-weight: 800; }
 .ps-unit-editor > label small { color: #858b98; font-size: 10px; font-weight: 600; }
@@ -442,12 +435,170 @@
 .ps-partner:hover { background: #3a58e8; }
 .ps-partner i { font-style: normal; transition: transform .15s; }
 .ps-partner:hover i { transform: translateX(3px); }
-.ps-unit-bar { box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 16px; width: min(100%, 760px); padding: 14px 18px; border: 1px solid #d5d8e0; border-radius: 18px; background: #fff; box-shadow: 0 8px 28px #0000001a; }
-.ps-unit-bar > div { display: grid; gap: 2px; min-width: 0; }
-.ps-unit-bar small { color: #7c8290; font-size: 11px; font-weight: 800; letter-spacing: .08em; }
-.ps-unit-bar strong { font-size: 18px; }
-.ps-unit-bar span { color: #596071; font-size: 13px; font-weight: 700; }
 @keyframes ps-flash { 0%, 100% { outline-color: #4b6bff; outline-offset: 2px; } 30%, 70% { outline-color: #4b6bff; outline-offset: 7px; outline-width: 4px; } }
 @media screen { .ps-selectable.is-selected.is-flash { animation: ps-flash .5s ease-in-out 2; } }
-@media print { .ps-unit-bar { display: none !important; } }
-@media (max-width: 640px) { .ps-unit-bar { flex-direction: column; align-items: stretch; } .ps-overview-side { justify-items: start; } }
+
+/* Confirmación (modal). */
+.ps-modal { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 16px; background: #1d213066; backdrop-filter: blur(3px); animation: ps-modal-in .15s ease-out; }
+.ps-modal-box { box-sizing: border-box; width: min(100%, 420px); padding: 24px; border-radius: 20px; background: #fff; box-shadow: 0 24px 60px #0000004d; }
+.ps-modal-box h3 { margin: 0 0 8px; font-size: 20px; }
+.ps-modal-box p { margin: 0 0 20px; color: #464c5a; font-size: 15px; line-height: 1.45; }
+.ps-modal-box > div { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.ps-modal-box button { min-height: 42px; padding: 0 18px; border-radius: 99px; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
+.ps-modal-cancel { border: 1.5px solid #d5d8e0; background: #fff; color: #1d2130; }
+.ps-modal-ok { border: 0; background: #1d2130; color: #fff; }
+@keyframes ps-modal-in { from { opacity: 0; } }
+@media print { .ps-modal { display: none !important; } }
+.ps-style-note { margin: 0 0 8px; font-size: 12px; }
+.ps-cell { position: relative; }
+
+/* Estilo de cada tarjeta: botoncito sobre el borde de arriba (sólo en pantalla). Se ve en la tarjeta
+   elegida, al pasar el mouse y siempre en las que tienen estilo propio. */
+.ps-style { position: absolute; z-index: 6; top: -12px; left: 50%; transform: translateX(-50%); opacity: 0; transition: opacity .12s; }
+.ps-cell:hover .ps-style, .ps-single:hover .ps-style, .is-selected > .ps-style, .ps-style.is-own, .ps-style.is-open, .ps-style:focus-within { opacity: 1; }
+.ps-style-chip { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 10px 0 8px; border: 1.5px solid #d5d8e0; border-radius: 99px; background: #fff; color: #1d2130; font: inherit; font-size: 12px; font-weight: 800; white-space: nowrap; cursor: pointer; box-shadow: 0 2px 8px #0000002e; }
+.ps-style-chip i { font-style: normal; font-size: 10px; opacity: .7; }
+.ps-style-chip.is-playful, .ps-style-dot.is-playful { --style: #c2185b; }
+.ps-style-chip.is-paws, .ps-style-dot.is-paws { --style: #d4621c; }
+.ps-style-chip.is-bones, .ps-style-dot.is-bones { --style: #1f6fd1; }
+.ps-style-chip.is-kitty, .ps-style-dot.is-kitty { --style: #7b4ddb; }
+.ps-style-chip[class*=" is-"] { border-color: var(--style); background: var(--style); color: #fff; }
+.ps-style-chip.is-clash { border-color: #f08c00; background: #f08c00; color: #fff; }
+.ps-style-chip b { display: grid; place-items: center; width: 15px; height: 15px; border-radius: 50%; background: #fff; color: #f08c00; font-size: 11px; font-weight: 900; }
+.ps-style-menu { position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%); display: grid; gap: 8px; width: 210px; padding: 12px; border: 1px solid #d5d8e0; border-radius: 14px; background: #fff; box-shadow: 0 14px 34px #00000038; text-align: left; cursor: default; }
+.ps-style-menu > div { display: grid; gap: 3px; }
+.ps-style-menu small { color: #7c8290; font-size: 11px; font-weight: 800; }
+.ps-style-menu button { display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 0 10px; border: 0; border-radius: 9px; background: transparent; color: #1d2130; font: inherit; font-size: 14px; font-weight: 700; text-align: left; cursor: pointer; }
+.ps-style-menu button:hover { background: #f1f3f8; }
+.ps-style-menu button.is-on { background: #eef1ff; }
+.ps-style-menu em { margin-left: auto; color: #4b6bff; font-style: normal; font-weight: 900; }
+.ps-style-dot { flex: none; width: 14px; height: 14px; border-radius: 50%; background: var(--style); }
+.ps-style-menu .ps-style-reset { justify-content: center; margin-top: 2px; border: 1.5px dashed #c5cad6; color: #2c45c9; font-size: 13px; }
+.ps-style-reset span { color: #7c8290; font-weight: 700; }
+.ps-style-warn { margin: 0; padding: 7px 10px; border-radius: 9px; background: #fff4e0; color: #7a4100; font-size: 12px; font-weight: 800; }
+.ps-style-count { margin: 6px 0 0; padding: 8px 12px; border-radius: 10px; background: #f3f5f9; color: #3a4050; font-size: 12px; font-weight: 800; }
+.ps-toast { position: fixed; z-index: 1001; bottom: 22px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 14px; width: max-content; max-width: min(560px, calc(100vw - 32px)); padding: 12px 14px 12px 18px; border-radius: 14px; background: #1d2130; color: #fff; font-size: 14px; font-weight: 700; line-height: 1.4; box-shadow: 0 12px 30px #0000004d; animation: ps-modal-in .2s ease-out; }
+.ps-toast button { flex: none; border: 0; background: transparent; color: #fff; font-size: 14px; cursor: pointer; opacity: .7; }
+@media print { .ps-style, .ps-toast { display: none !important; } }
+
+/* Herramientas sobre cada unidad ("Ver su chapita/tarjeta"; en tarjetas, junto al estilo). */
+.ps-print-pair, .ps-tag-cell { position: relative; }
+.ps-tools { position: absolute; z-index: 6; top: -12px; left: 50%; transform: translateX(-50%); opacity: 0; transition: opacity .12s; }
+.ps-print-pair:hover > .ps-tools, .ps-tag-cell:hover > .ps-tools, .is-selected > .ps-tools, .ps-tools:focus-within { opacity: 1; }
+.ps-style-row { display: flex; gap: 6px; }
+.ps-tool-partner { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 10px; border: 0; border-radius: 99px; background: #4b6bff; color: #fff; font: inherit; font-size: 12px; font-weight: 800; white-space: nowrap; cursor: pointer; box-shadow: 0 2px 8px #4b6bff59; }
+.ps-tool-partner:hover { background: #3a58e8; }
+.ps-tool-partner i { font-style: normal; }
+/* En las de estilo propio el botoncito queda siempre a la vista; "Ver su chapita", sólo en la elegida o al pasar el mouse. */
+.ps-style .ps-tool-partner { display: none; }
+.ps-cell:hover .ps-style .ps-tool-partner, .ps-single:hover .ps-style .ps-tool-partner, .is-selected > .ps-style .ps-tool-partner { display: inline-flex; }
+/* La unidad con el mouse encima o con el menú abierto va por encima de las vecinas (si no, el menú queda tapado). */
+.ps-cell:hover, .ps-single:hover, .ps-print-pair:hover, .ps-tag-cell:hover { z-index: 10; }
+.ps-cell:has(.ps-style.is-open), .ps-single:has(.ps-style.is-open) { z-index: 30; }
+.ps-page:has(.ps-style.is-open) { z-index: 30; overflow: visible; }
+@media print { .ps-tools { display: none !important; } }
+
+/* Barra lateral: estilos agrupados para quién son. */
+.ps-design-group { display: grid; gap: 5px; }
+.ps-design-group + .ps-design-group { margin-top: 8px; }
+.ps-design-group > small { color: #7c8290; font-size: 11px; font-weight: 800; }
+.ps-style-chip.is-night, .ps-style-dot.is-night { --style: #262d52; }
+.ps-style-chip.is-rainbow { --style: #6a45e0; }
+.ps-style-dot.is-rainbow { background: linear-gradient(135deg, #ff4f6d, #ffd23f, #3ecf8e, #3aa0ff, #8a5cf7); }
+.ps-style-chip.is-rainbow { background: linear-gradient(90deg, #c93a62, #c4501a, #2a7f36, #1673b8, #6a45e0); border-color: transparent; }
+/* Chapita que se está editando, con ‹ › para pasar a la anterior o la siguiente. */
+.ps-unit-nav { display: grid; grid-template-columns: 34px 1fr 34px; align-items: center; gap: 6px; padding: 9px; background: #fbfcff; }
+.ps-unit-nav > button { height: 34px; border: 1.5px solid #e2e5ed; border-radius: 10px; background: #fff; color: #1d2130; font: inherit; font-size: 20px; font-weight: 800; line-height: 1; cursor: pointer; }
+.ps-unit-nav > button:hover:not(:disabled) { border-color: #4b6bff; color: #4b6bff; }
+.ps-unit-nav > button:disabled { opacity: .4; cursor: default; }
+.ps-unit-nav > div { display: grid; grid-template-columns: 12px 1fr; column-gap: 8px; align-items: center; min-width: 0; }
+.ps-unit-nav > div > span { grid-row: span 2; width: 12px; height: 12px; border-radius: 50%; box-shadow: inset 0 0 0 1px #0002; }
+.ps-unit-nav b { overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.ps-unit-nav small { color: #858b98; font-size: 11px; }
+
+
+/* Noche: azul noche liso con estrellas blancas y animalitos (huellas, huesos, pescados y corazones);
+   detalles en lavanda. Colores lisos: sale parejo en impresora casera. */
+.pc-night { --pc-accent: #a88bff; }
+.pc-night.pc-front, .pc-night.pc-back { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='36' viewBox='0 0 48 36'%3E%3Cg fill='%23343e78'%3E%3Cg transform='translate(7 6) rotate(-18) scale(1)'%3E%3Cellipse cx='0' cy='.9' rx='1.25' ry='1.05'/%3E%3Ccircle cx='-1.45' cy='-.55' r='.52'/%3E%3Ccircle cx='-.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='1.45' cy='-.55' r='.52'/%3E%3C/g%3E%3Cg transform='translate(26 4) rotate(24) scale(0.9)'%3E%3Crect x='-1.6' y='-.33' width='3.2' height='.66' rx='.3'/%3E%3Ccircle cx='-1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='-1.6' cy='.42' r='.48'/%3E%3Ccircle cx='1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='1.6' cy='.42' r='.48'/%3E%3C/g%3E%3Cg transform='translate(41 10) rotate(-10) scale(1)'%3E%3Cellipse cx='0' cy='0' rx='1.45' ry='.85'/%3E%3Cpath d='M1.1 0L2.4-.9V.9Z'/%3E%3C/g%3E%3Cpath transform='translate(16 17) rotate(8) scale(0.9)' d='M0 1.1L-1.25-.05A.72.72 0 0 1 0-.95A.72.72 0 0 1 1.25-.05Z'/%3E%3Cg transform='translate(33 22) rotate(16) scale(0.85)'%3E%3Cellipse cx='0' cy='.9' rx='1.25' ry='1.05'/%3E%3Ccircle cx='-1.45' cy='-.55' r='.52'/%3E%3Ccircle cx='-.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='1.45' cy='-.55' r='.52'/%3E%3C/g%3E%3Cg transform='translate(8 29) rotate(-30) scale(0.8)'%3E%3Crect x='-1.6' y='-.33' width='3.2' height='.66' rx='.3'/%3E%3Ccircle cx='-1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='-1.6' cy='.42' r='.48'/%3E%3Ccircle cx='1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='1.6' cy='.42' r='.48'/%3E%3C/g%3E%3Cg transform='translate(22 31) rotate(12) scale(0.8)'%3E%3Cellipse cx='0' cy='0' rx='1.45' ry='.85'/%3E%3Cpath d='M1.1 0L2.4-.9V.9Z'/%3E%3C/g%3E%3Cpath transform='translate(44 30) rotate(-12) scale(0.8)' d='M0 1.1L-1.25-.05A.72.72 0 0 1 0-.95A.72.72 0 0 1 1.25-.05Z'/%3E%3C/g%3E%3Cg fill='%23ffffff'%3E%3Cpath transform='translate(17 6) scale(0.9)' d='M0-1.2L.32-.32 1.2 0 .32.32 0 1.2-.32.32-1.2 0-.32-.32Z'/%3E%3Cpath transform='translate(40 19) scale(0.7)' d='M0-1.2L.32-.32 1.2 0 .32.32 0 1.2-.32.32-1.2 0-.32-.32Z'/%3E%3Cpath transform='translate(5 18) scale(0.6)' d='M0-1.2L.32-.32 1.2 0 .32.32 0 1.2-.32.32-1.2 0-.32-.32Z'/%3E%3Cpath transform='translate(30 13) scale(0.5)' d='M0-1.2L.32-.32 1.2 0 .32.32 0 1.2-.32.32-1.2 0-.32-.32Z'/%3E%3C/g%3E%3Cg fill='%23ffffff'%3E%3Ccircle cx='36' cy='3' r='.35'/%3E%3Ccircle cx='12' cy='12' r='.3'/%3E%3Ccircle cx='28' cy='27' r='.35'/%3E%3Ccircle cx='45' cy='24' r='.3'/%3E%3Ccircle cx='2' cy='33' r='.3'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 48em 36em, #161b33; color: #f4f2ff; }
+.pc-night.pc-front .pc-logo { justify-self: start; padding: .3em .55em .3em .6em; border-radius: 99em; background: #fff; color: #1d1410; }
+.pc-night .pc-deco, .pc-night.pc-front.is-flap.is-fresh .pc-flap-deco { color: #3a4380; }
+.pc-night .pc-deco span:nth-child(1), .pc-night.pc-back .pc-deco span:nth-child(3) { color: #6f78b8; }
+.pc-night .pc-qrbox { box-shadow: 0 0 0 .6em #a88bff; }
+.pc-night.pc-front.is-flap.is-fresh .pc-qrbox { box-shadow: 0 0 0 .5em #a88bff; }
+.pc-night .pc-qr small { color: #c9b8ff; }
+.pc-night li b { background: #a88bff; color: #161b33; }
+.pc-night .pc-flap-inside { background: #1e2446; }
+.pc-night.pc-front.is-flap.is-fresh .pc-flap-inside { background: transparent; }
+.pc-night .pc-flap-fold, .pc-night.pc-front.is-flap.is-fresh .pc-flap-fold { border-left-color: #6b72a8; }
+.pc-night .pc-flap-sticker { border-color: #8b92c4; }
+.pc-night .pc-flap-open, .pc-night.pc-front.is-flap.is-fresh .pc-flap-open { color: #161b33; box-shadow: none; }
+.pc-night.pc-front.is-flap.is-fresh .pc-flap-secret { color: #f4f2ff; }
+
+/* Números de los pasos dibujados (Num en card-designs.tsx): llenan su círculo. */
+.pc li b svg { display: block; width: 100%; height: 100%; }
+
+/* Arcoíris: la tapa (en la clásica, la mitad izquierda) con bandas de arcoíris y el texto en recuadros
+   blancos; la parte del QR, lisa y clara, con un arcoíris dibujado (RainbowArt). Botón violeta liso y
+   cada paso de un color liso. Dorso: violeta oscuro con el arcoíris dibujado y letra blanca. */
+.pc-rainbow { --pc-accent: #6a45e0; }
+.pc-rainbow.pc-front { background: #fffdf8; color: #2a1f3d; }
+.pc-rainbow.pc-front.is-flap { --pc-rainbow-right: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='34' viewBox='0 0 44 34'%3E%3Cg transform='translate(8 9) scale(1)' fill='none' stroke-width='.34'%3E%3Cpath stroke='%23f28b95' d='M-3.2 0A3.2 3.2 0 0 1 3.2 0'/%3E%3Cpath stroke='%23f7b26e' d='M-2.8600000000000003 0A2.8600000000000003 2.8600000000000003 0 0 1 2.8600000000000003 0'/%3E%3Cpath stroke='%23f5d462' d='M-2.52 0A2.52 2.52 0 0 1 2.52 0'/%3E%3Cpath stroke='%237fcf9b' d='M-2.18 0A2.18 2.18 0 0 1 2.18 0'/%3E%3Cpath stroke='%237fb6ec' d='M-1.84 0A1.84 1.84 0 0 1 1.84 0'/%3E%3Cpath stroke='%23a690ee' d='M-1.5 0A1.5 1.5 0 0 1 1.5 0'/%3E%3C/g%3E%3Cg transform='translate(36 28) scale(0.9)' fill='none' stroke-width='.34'%3E%3Cpath stroke='%23f28b95' d='M-3.2 0A3.2 3.2 0 0 1 3.2 0'/%3E%3Cpath stroke='%23f7b26e' d='M-2.8600000000000003 0A2.8600000000000003 2.8600000000000003 0 0 1 2.8600000000000003 0'/%3E%3Cpath stroke='%23f5d462' d='M-2.52 0A2.52 2.52 0 0 1 2.52 0'/%3E%3Cpath stroke='%237fcf9b' d='M-2.18 0A2.18 2.18 0 0 1 2.18 0'/%3E%3Cpath stroke='%237fb6ec' d='M-1.84 0A1.84 1.84 0 0 1 1.84 0'/%3E%3Cpath stroke='%23a690ee' d='M-1.5 0A1.5 1.5 0 0 1 1.5 0'/%3E%3C/g%3E%3Cg fill='%23ffbdc7'%3E%3Cg transform='translate(25 6) rotate(-16) scale(1)'%3E%3Cellipse cx='0' cy='.9' rx='1.25' ry='1.05'/%3E%3Ccircle cx='-1.45' cy='-.55' r='.52'/%3E%3Ccircle cx='-.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='1.45' cy='-.55' r='.52'/%3E%3C/g%3E%3Cg transform='translate(14 27) rotate(14) scale(0.85)'%3E%3Cellipse cx='0' cy='.9' rx='1.25' ry='1.05'/%3E%3Ccircle cx='-1.45' cy='-.55' r='.52'/%3E%3Ccircle cx='-.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='1.45' cy='-.55' r='.52'/%3E%3C/g%3E%3C/g%3E%3Cg fill='%23b4d4fa'%3E%3Cg transform='translate(15 16) rotate(28) scale(0.9)'%3E%3Crect x='-1.6' y='-.33' width='3.2' height='.66' rx='.3'/%3E%3Ccircle cx='-1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='-1.6' cy='.42' r='.48'/%3E%3Ccircle cx='1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='1.6' cy='.42' r='.48'/%3E%3C/g%3E%3Cg transform='translate(40 15) rotate(-24) scale(0.8)'%3E%3Crect x='-1.6' y='-.33' width='3.2' height='.66' rx='.3'/%3E%3Ccircle cx='-1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='-1.6' cy='.42' r='.48'/%3E%3Ccircle cx='1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='1.6' cy='.42' r='.48'/%3E%3C/g%3E%3C/g%3E%3Cg fill='%23ffd978'%3E%3Cpath transform='translate(37 5) rotate(10) scale(0.9)' d='M0 1.1L-1.25-.05A.72.72 0 0 1 0-.95A.72.72 0 0 1 1.25-.05Z'/%3E%3Cpath transform='translate(27 20) rotate(-8) scale(0.8)' d='M0 1.1L-1.25-.05A.72.72 0 0 1 0-.95A.72.72 0 0 1 1.25-.05Z'/%3E%3C/g%3E%3Cg fill='%23b3e6c6'%3E%3Cg transform='translate(4 21) rotate(-12) scale(0.85)'%3E%3Cellipse cx='0' cy='0' rx='1.45' ry='.85'/%3E%3Cpath d='M1.1 0L2.4-.9V.9Z'/%3E%3C/g%3E%3Cg transform='translate(24 31) rotate(8) scale(0.75)'%3E%3Cellipse cx='0' cy='0' rx='1.45' ry='.85'/%3E%3Cpath d='M1.1 0L2.4-.9V.9Z'/%3E%3C/g%3E%3C/g%3E%3Cg fill='%23cdbdfa'%3E%3Cpath transform='translate(31 12) scale(0.8)' d='M0-1.2L.32-.32 1.2 0 .32.32 0 1.2-.32.32-1.2 0-.32-.32Z'/%3E%3Cpath transform='translate(6 3) scale(0.6)' d='M0-1.2L.32-.32 1.2 0 .32.32 0 1.2-.32.32-1.2 0-.32-.32Z'/%3E%3Cpath transform='translate(42 33) scale(0.6)' d='M0-1.2L.32-.32 1.2 0 .32.32 0 1.2-.32.32-1.2 0-.32-.32Z'/%3E%3Cpath transform='translate(19 9) scale(0.5)' d='M0-1.2L.32-.32 1.2 0 .32.32 0 1.2-.32.32-1.2 0-.32-.32Z'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 44em 34em; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 100' preserveAspectRatio='none'%3E%3Cpath fill='%23ef4b5c' d='M0.00 0H28.27L-17.73 100H-46.00Z'/%3E%3Cpath fill='%23f7943a' d='M27.67 0H55.93L9.93 100H-18.33Z'/%3E%3Cpath fill='%23f8c932' d='M55.33 0H83.60L37.60 100H9.33Z'/%3E%3Cpath fill='%233dbb6c' d='M83.00 0H111.27L65.27 100H37.00Z'/%3E%3Cpath fill='%233b8fe0' d='M110.67 0H138.93L92.93 100H64.67Z'/%3E%3Cpath fill='%237a54e6' d='M138.33 0H166.60L120.60 100H92.33Z'/%3E%3C/svg%3E") 0 0 / var(--pc-c, 55em) 100% no-repeat, var(--pc-rainbow-right), #fffdf8; }
+.pc-rainbow.pc-front .pc-logo { justify-self: start; padding: .3em .55em .3em .6em; border-radius: 99em; background: #fff; }
+.pc-rainbow .pc-flap-title { padding: 1.4em 1.7em; border-radius: 2.4em; background: #fff; }
+/* Con las bandas, la tapa aprovecha más el espacio: el recuadro blanco ya separa el texto del borde. */
+.pc-rainbow.pc-front.is-flap .pc-flap-cover, .pc-rainbow.pc-front.is-flap.is-fresh .pc-flap-cover { gap: 1.2em; padding: 3.2em 8.8em 3em 3.2em; }
+.pc-rainbow.pc-front.is-flap.is-fresh.is-steps .pc-flap-title h2 { font-size: 3.6em; }
+.pc-rainbow.pc-front.is-flap.is-steps .pc-flap-cover li { font-size: 1.75em; }
+.pc-rainbow.pc-front.is-flap.is-steps .pc-flap-title { gap: .9em; }
+.pc-rainbow .pc-flap-foot, .pc-rainbow.pc-front.is-flap.is-fresh .pc-flap-foot { justify-self: start; padding: .45em .9em; border-radius: 99em; background: #fff; color: #2a1f3d; }
+.pc-rainbow .pc-flap-inside, .pc-rainbow.pc-front.is-flap.is-fresh .pc-flap-inside { background: transparent; }
+.pc-rainbow .pc-flap-deco span:first-child { display: none; }
+/* El arcoíris dibujado, abajo a la derecha de la parte de adentro. */
+/* Apoyado abajo; en tarjetas bajas se achica (6,5 mm a 40 de alto, 10 mm desde 54) para no quedar detrás de los pasos. */
+.pc-rainbow.pc-front.is-flap .pc-flap-deco span + span, .pc-rainbow.pc-front.is-flap.is-fresh .pc-flap-deco span + span { top: auto !important; bottom: .5em; translate: -3.2em 0; scale: 1; }
+.pc-rainbow.pc-front.is-flap .pc-flap-deco span + span i { font-size: clamp(6.5em, calc(var(--pc-h, 55em) * .25 - 3.5em), 10em) !important; }
+.pc-rainbow .pc-deco svg { width: 1em; height: 1em; }
+.pc-rainbow .pc-flap-fold, .pc-rainbow.pc-front.is-flap.is-fresh .pc-flap-fold { border-left-color: #b9a8e8; }
+.pc-rainbow.pc-front.is-flap .pc-qrbox { border-color: #2a1f3d; }
+.pc-rainbow.pc-front.is-flap.is-fresh .pc-qrbox { box-shadow: 0 0 0 .3em #2a1f3d; }
+.pc-rainbow.pc-front.is-flap.is-fresh .pc-code { background: #2a1f3d; color: #fff; }
+.pc-rainbow .pc-flap-open, .pc-rainbow.pc-front.is-flap.is-fresh .pc-flap-open { background: #6a45e0; color: #fff; box-shadow: none; }
+.pc-rainbow .pc-flap-cover li:nth-child(1) b, .pc-rainbow .pc-flap-inside li:nth-child(1) b { background: #e8414f; }
+.pc-rainbow .pc-flap-cover li:nth-child(2) b, .pc-rainbow .pc-flap-inside li:nth-child(2) b { background: #2f86d6; }
+.pc-rainbow .pc-flap-cover li:nth-child(3) b, .pc-rainbow .pc-flap-inside li:nth-child(3) b { background: #2fa35a; }
+/* Clásica: bandas sólo detrás del texto (la columna del QR, 26 mm + margen, queda lisa) y el arco sobre el QR. */
+.pc-rainbow.pc-front:not(.is-flap) { --pc-rainbow-right: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='34' viewBox='0 0 44 34'%3E%3Cg transform='translate(8 9) scale(1)' fill='none' stroke-width='.34'%3E%3Cpath stroke='%23f28b95' d='M-3.2 0A3.2 3.2 0 0 1 3.2 0'/%3E%3Cpath stroke='%23f7b26e' d='M-2.8600000000000003 0A2.8600000000000003 2.8600000000000003 0 0 1 2.8600000000000003 0'/%3E%3Cpath stroke='%23f5d462' d='M-2.52 0A2.52 2.52 0 0 1 2.52 0'/%3E%3Cpath stroke='%237fcf9b' d='M-2.18 0A2.18 2.18 0 0 1 2.18 0'/%3E%3Cpath stroke='%237fb6ec' d='M-1.84 0A1.84 1.84 0 0 1 1.84 0'/%3E%3Cpath stroke='%23a690ee' d='M-1.5 0A1.5 1.5 0 0 1 1.5 0'/%3E%3C/g%3E%3Cg transform='translate(36 28) scale(0.9)' fill='none' stroke-width='.34'%3E%3Cpath stroke='%23f28b95' d='M-3.2 0A3.2 3.2 0 0 1 3.2 0'/%3E%3Cpath stroke='%23f7b26e' d='M-2.8600000000000003 0A2.8600000000000003 2.8600000000000003 0 0 1 2.8600000000000003 0'/%3E%3Cpath stroke='%23f5d462' d='M-2.52 0A2.52 2.52 0 0 1 2.52 0'/%3E%3Cpath stroke='%237fcf9b' d='M-2.18 0A2.18 2.18 0 0 1 2.18 0'/%3E%3Cpath stroke='%237fb6ec' d='M-1.84 0A1.84 1.84 0 0 1 1.84 0'/%3E%3Cpath stroke='%23a690ee' d='M-1.5 0A1.5 1.5 0 0 1 1.5 0'/%3E%3C/g%3E%3Cg fill='%23ffbdc7'%3E%3Cg transform='translate(25 6) rotate(-16) scale(1)'%3E%3Cellipse cx='0' cy='.9' rx='1.25' ry='1.05'/%3E%3Ccircle cx='-1.45' cy='-.55' r='.52'/%3E%3Ccircle cx='-.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='1.45' cy='-.55' r='.52'/%3E%3C/g%3E%3Cg transform='translate(14 27) rotate(14) scale(0.85)'%3E%3Cellipse cx='0' cy='.9' rx='1.25' ry='1.05'/%3E%3Ccircle cx='-1.45' cy='-.55' r='.52'/%3E%3Ccircle cx='-.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='1.45' cy='-.55' r='.52'/%3E%3C/g%3E%3C/g%3E%3Cg fill='%23b4d4fa'%3E%3Cg transform='translate(15 16) rotate(28) scale(0.9)'%3E%3Crect x='-1.6' y='-.33' width='3.2' height='.66' rx='.3'/%3E%3Ccircle cx='-1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='-1.6' cy='.42' r='.48'/%3E%3Ccircle cx='1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='1.6' cy='.42' r='.48'/%3E%3C/g%3E%3Cg transform='translate(40 15) rotate(-24) scale(0.8)'%3E%3Crect x='-1.6' y='-.33' width='3.2' height='.66' rx='.3'/%3E%3Ccircle cx='-1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='-1.6' cy='.42' r='.48'/%3E%3Ccircle cx='1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='1.6' cy='.42' r='.48'/%3E%3C/g%3E%3C/g%3E%3Cg fill='%23ffd978'%3E%3Cpath transform='translate(37 5) rotate(10) scale(0.9)' d='M0 1.1L-1.25-.05A.72.72 0 0 1 0-.95A.72.72 0 0 1 1.25-.05Z'/%3E%3Cpath transform='translate(27 20) rotate(-8) scale(0.8)' d='M0 1.1L-1.25-.05A.72.72 0 0 1 0-.95A.72.72 0 0 1 1.25-.05Z'/%3E%3C/g%3E%3Cg fill='%23b3e6c6'%3E%3Cg transform='translate(4 21) rotate(-12) scale(0.85)'%3E%3Cellipse cx='0' cy='0' rx='1.45' ry='.85'/%3E%3Cpath d='M1.1 0L2.4-.9V.9Z'/%3E%3C/g%3E%3Cg transform='translate(24 31) rotate(8) scale(0.75)'%3E%3Cellipse cx='0' cy='0' rx='1.45' ry='.85'/%3E%3Cpath d='M1.1 0L2.4-.9V.9Z'/%3E%3C/g%3E%3C/g%3E%3Cg fill='%23cdbdfa'%3E%3Cpath transform='translate(31 12) scale(0.8)' d='M0-1.2L.32-.32 1.2 0 .32.32 0 1.2-.32.32-1.2 0-.32-.32Z'/%3E%3Cpath transform='translate(6 3) scale(0.6)' d='M0-1.2L.32-.32 1.2 0 .32.32 0 1.2-.32.32-1.2 0-.32-.32Z'/%3E%3Cpath transform='translate(42 33) scale(0.6)' d='M0-1.2L.32-.32 1.2 0 .32.32 0 1.2-.32.32-1.2 0-.32-.32Z'/%3E%3Cpath transform='translate(19 9) scale(0.5)' d='M0-1.2L.32-.32 1.2 0 .32.32 0 1.2-.32.32-1.2 0-.32-.32Z'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 44em 34em; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 100' preserveAspectRatio='none'%3E%3Cpath fill='%23ef4b5c' d='M0.00 0H28.27L-17.73 100H-46.00Z'/%3E%3Cpath fill='%23f7943a' d='M27.67 0H55.93L9.93 100H-18.33Z'/%3E%3Cpath fill='%23f8c932' d='M55.33 0H83.60L37.60 100H9.33Z'/%3E%3Cpath fill='%233dbb6c' d='M83.00 0H111.27L65.27 100H37.00Z'/%3E%3Cpath fill='%233b8fe0' d='M110.67 0H138.93L92.93 100H64.67Z'/%3E%3Cpath fill='%237a54e6' d='M138.33 0H166.60L120.60 100H92.33Z'/%3E%3C/svg%3E") 0 0 / calc(100% - 32.25em) 100% no-repeat, var(--pc-rainbow-right), #fffdf8; }
+.pc-rainbow.pc-front:not(.is-flap) .pc-deco { display: none; }
+.pc-rainbow.pc-front:not(.is-flap) .pc-copy { padding: 2.4em 2.6em; border-radius: 2.6em; background: #fff; }
+/* El arco va en la columna, justo arriba del QR, con las nubes apoyadas sobre su borde. El QR queda de 22 mm
+   (como en la tarjeta con solapa) para que entren los dos aun en tarjetas bajas. */
+.pc-qr-crown { justify-self: center; width: 14em; margin-bottom: -2.4em; line-height: 0; }
+.pc-rainbow.pc-front:not(.is-flap) .pc-qrbox { width: 22em; height: 22em; padding: 1.6em; }
+.pc-qr-crown svg { display: block; width: 100%; height: auto; }
+.pc-rainbow.pc-front:not(.is-flap) .pc-qrbox { box-shadow: 0 0 0 .35em #2a1f3d; transform: none; }
+.pc-rainbow.pc-front:not(.is-flap) .pc-code { background: #2a1f3d; color: #fff; }
+.pc-rainbow .pc-qr small { color: #4b2fb0; }
+.pc-rainbow.pc-back { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='36' viewBox='0 0 48 36'%3E%3Cg fill='%233b2d7a'%3E%3Cg transform='translate(7 6) rotate(-18) scale(1)'%3E%3Cellipse cx='0' cy='.9' rx='1.25' ry='1.05'/%3E%3Ccircle cx='-1.45' cy='-.55' r='.52'/%3E%3Ccircle cx='-.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='1.45' cy='-.55' r='.52'/%3E%3C/g%3E%3Cg transform='translate(26 4) rotate(24) scale(0.9)'%3E%3Crect x='-1.6' y='-.33' width='3.2' height='.66' rx='.3'/%3E%3Ccircle cx='-1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='-1.6' cy='.42' r='.48'/%3E%3Ccircle cx='1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='1.6' cy='.42' r='.48'/%3E%3C/g%3E%3Cg transform='translate(33 22) rotate(16) scale(0.85)'%3E%3Cellipse cx='0' cy='.9' rx='1.25' ry='1.05'/%3E%3Ccircle cx='-1.45' cy='-.55' r='.52'/%3E%3Ccircle cx='-.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='1.45' cy='-.55' r='.52'/%3E%3C/g%3E%3Cg transform='translate(8 29) rotate(-30) scale(0.8)'%3E%3Crect x='-1.6' y='-.33' width='3.2' height='.66' rx='.3'/%3E%3Ccircle cx='-1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='-1.6' cy='.42' r='.48'/%3E%3Ccircle cx='1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='1.6' cy='.42' r='.48'/%3E%3C/g%3E%3Cg transform='translate(44 31) rotate(-10) scale(0.7)'%3E%3Cellipse cx='0' cy='.9' rx='1.25' ry='1.05'/%3E%3Ccircle cx='-1.45' cy='-.55' r='.52'/%3E%3Ccircle cx='-.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='1.45' cy='-.55' r='.52'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") 0 0 / 48em 36em, #2a1f5c; }
+.pc-rainbow.pc-back .pc-deco span { color: #5a4aa8; }
+.pc-rainbow.pc-back li b { background: #fff; color: #2a1f5c; }
+.pc-rainbow.pc-back li:nth-child(1) b { background: #e8414f; color: #fff; }
+.pc-rainbow.pc-back li:nth-child(2) b { background: #f5c518; color: #2a1f5c; }
+.pc-rainbow.pc-back li:nth-child(3) b { background: #2fa35a; color: #fff; }
+.pc-rainbow.pc-back li:nth-child(4) b { background: #2f86d6; color: #fff; }
+/* Arcoíris: mascotitas blancas sobre las bandas (sólo en la zona de las bandas). */
+.pc-rainbow.pc-front::before { content: ""; position: absolute; z-index: 0; top: 0; bottom: 0; left: 0; width: var(--pc-c, 55em); background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='30' viewBox='0 0 40 30'%3E%3Cg fill='%23ffffff' fill-opacity='.55'%3E%3Cg transform='translate(6 6) rotate(-18) scale(1.1)'%3E%3Cellipse cx='0' cy='.9' rx='1.25' ry='1.05'/%3E%3Ccircle cx='-1.45' cy='-.55' r='.52'/%3E%3Ccircle cx='-.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='1.45' cy='-.55' r='.52'/%3E%3C/g%3E%3Cg transform='translate(22 5) rotate(24) scale(1)'%3E%3Crect x='-1.6' y='-.33' width='3.2' height='.66' rx='.3'/%3E%3Ccircle cx='-1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='-1.6' cy='.42' r='.48'/%3E%3Ccircle cx='1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='1.6' cy='.42' r='.48'/%3E%3C/g%3E%3Cpath transform='translate(34 11) rotate(10) scale(1)' d='M0 1.1L-1.25-.05A.72.72 0 0 1 0-.95A.72.72 0 0 1 1.25-.05Z'/%3E%3Cg transform='translate(28 22) rotate(16) scale(1)'%3E%3Cellipse cx='0' cy='.9' rx='1.25' ry='1.05'/%3E%3Ccircle cx='-1.45' cy='-.55' r='.52'/%3E%3Ccircle cx='-.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='1.45' cy='-.55' r='.52'/%3E%3C/g%3E%3Cpath transform='translate(14 16) scale(0.9)' d='M0-1.2L.32-.32 1.2 0 .32.32 0 1.2-.32.32-1.2 0-.32-.32Z'/%3E%3Cg transform='translate(7 25) rotate(-28) scale(0.9)'%3E%3Crect x='-1.6' y='-.33' width='3.2' height='.66' rx='.3'/%3E%3Ccircle cx='-1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='-1.6' cy='.42' r='.48'/%3E%3Ccircle cx='1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='1.6' cy='.42' r='.48'/%3E%3C/g%3E%3Cpath transform='translate(17 27) rotate(-8) scale(0.8)' d='M0 1.1L-1.25-.05A.72.72 0 0 1 0-.95A.72.72 0 0 1 1.25-.05Z'/%3E%3Cpath transform='translate(37 26) scale(0.7)' d='M0-1.2L.32-.32 1.2 0 .32.32 0 1.2-.32.32-1.2 0-.32-.32Z'/%3E%3Cg transform='translate(33 3) rotate(-8) scale(0.8)'%3E%3Cellipse cx='0' cy='0' rx='1.45' ry='.85'/%3E%3Cpath d='M1.1 0L2.4-.9V.9Z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") 0 0 / 40em 30em; pointer-events: none; }
+.pc-rainbow.pc-front:not(.is-flap)::before { width: calc(100% - 32.25em); }
+.pc-rainbow.pc-front:not(.is-flap) .pc-copy, .pc-rainbow.pc-front:not(.is-flap) .pc-qr { z-index: 1; }
+/* Arcoíris: los pasos en un recuadro blanco semitransparente y redondeado, centrado en la parte de adentro. */
+.pc-rainbow.pc-front.is-flap .pc-flap-inside, .pc-rainbow.pc-front.is-flap.is-fresh .pc-flap-inside { top: 50%; bottom: auto; left: calc(var(--pc-c, 55em) + 1.6em); width: 26.6em; max-height: calc(100% - 2.4em); padding: 2.3em 2.1em; border-radius: 2.6em; background: #ffffffdb; translate: 0 -50%; }
+/* Pestañas numeradas en el orden del trabajo, nota de la relación y botón para pasar a las tarjetas. */
+.ps-tabs button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+.ps-tabs button b { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: #dfe2ea; color: #4b5060; font-size: 11px; font-weight: 900; }
+.ps-tabs button.is-on b { background: #4b6bff; color: #fff; }
+.ps-flow-note { margin: 0; padding: 10px 12px; border-radius: 12px; background: #f2f5ff; color: #3a4258; font-size: 12.5px; line-height: 1.45; }
+.ps-flow-note b { color: #273a9d; }
+.ps-next-step { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; min-height: 40px; margin-top: 8px; border: 1.5px solid #4b6bff; border-radius: 12px; background: #fff; color: #2c45c9; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
+.ps-next-step:hover { background: #f2f5ff; }
+.ps-next-step b { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: #4b6bff; color: #fff; font-size: 11px; }
+.ps-next-step i { font-style: normal; }

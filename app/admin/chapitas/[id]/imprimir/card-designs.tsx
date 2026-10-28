@@ -10,7 +10,7 @@ import { LOGO_FONT_FAMILY } from "@/components/bionfc-logo";
 import { unitNumber } from "@/lib/pet-tags";
 import type { PrintItem } from "./print-studio";
 
-export type DesignId = "playful" | "paws" | "bones" | "kitty";
+export type DesignId = "playful" | "night" | "rainbow" | "paws" | "bones" | "kitty";
 export type CardLayout = "classic" | "flap-a" | "flap-b";
 // Las variantes con solapa se imprimen de una sola faz. Cerradas miden ancho × alto (85×55 por
 // defecto, ver FLAP_LIMITS); la solapa siempre mide 30 mm (lo que necesita el QR) y abierta suma
@@ -46,6 +46,23 @@ export const DESIGNS: Design[] = [
     backDeco: [{ icon: <LuPawPrint />, x: 22, y: 42, size: 14, rotate: 18 }],
   },
   {
+    // Para cualquier mascota: azul noche liso con estrellas (colores sólidos: salen parejos en
+    // impresora casera; no negro puro, que gasta más tinta y se raya).
+    id: "night", label: "Noche", hint: "Azul noche con estrellas y animalitos, para cualquier mascota", swatch: "linear-gradient(135deg, #161b33 0 50%, #a88bff 50%)",
+    title: "Activame y siempre vuelvo a casa", lead: LEAD, backTitle: "Siempre de vuelta a casa",
+    deco: [{ icon: <LuStar />, x: 46, y: 1, size: 6, rotate: 12 }, { icon: <LuPawPrint />, x: 46, y: 74, size: 12, rotate: -18 }, { icon: <LuDog />, x: 37, y: 84, size: 6, rotate: 0 }],
+    backDeco: [{ icon: <LuStar />, x: 14, y: 42, size: 12, rotate: 12 }, { icon: <LuCat />, x: 27, y: 80, size: 6, rotate: -8 }, { icon: <LuSparkles />, x: 44, y: 86, size: 4, rotate: 0 }],
+  },
+  {
+    // Para cualquier mascota: la tapa (o la mitad izquierda) con bandas de arcoíris y el texto en
+    // recuadros blancos; la parte del QR, lisa, con un arcoíris dibujado. En la tarjeta con solapa
+    // va el segundo adorno (abajo a la derecha, adentro); en la clásica, el arco sobre el QR.
+    id: "rainbow", label: "Arcoíris", hint: "Bandas de arcoíris y un arcoíris dibujado, para cualquier mascota", swatch: "linear-gradient(135deg, #e8414f 0 17%, #f08a1c 0 34%, #f5c518 0 50%, #2fa35a 0 67%, #2f86d6 0 84%, #6a45e0 0)",
+    title: "¡Hola! Ya casi tengo mi chapita", lead: LEAD, backTitle: "Con mi chapita, siempre vuelvo",
+    deco: [{ icon: <LuHeart />, x: 0, y: 0, size: 5, rotate: 0 }, { icon: <RainbowArt />, x: 0, y: 0, size: 10, rotate: 0 }],
+    backDeco: [{ icon: <RainbowArt />, x: 6, y: 44, size: 17, rotate: 0 }, { icon: <LuPawPrint />, x: 38, y: 14, size: 6, rotate: 18 }],
+  },
+  {
     id: "paws", label: "Patitas", hint: "Naranja y crema, lleno de huellas", swatch: "linear-gradient(135deg, #fff1e2 0 50%, #e9772f 50%)",
     title: "¡Guau! Ya casi tengo mi chapita", lead: LEAD, backTitle: "Si me pierdo, vuelvo a casa",
     deco: [{ icon: <LuPawPrint />, x: 2, y: 66, size: 10, rotate: -24 }, { icon: <LuPawPrint />, x: 14, y: 84, size: 7, rotate: -12 }, { icon: <LuPawPrint />, x: 40, y: 4, size: 6, rotate: 20 }, { icon: <LuDog />, x: 46, y: 70, size: 11, rotate: 0 }],
@@ -67,6 +84,48 @@ export const DESIGNS: Design[] = [
 ];
 
 const designOf = (id: DesignId) => DESIGNS.find((design) => design.id === id) || DESIGNS[0];
+export const designLabel = (id: DesignId) => designOf(id).label;
+
+// Todas las tarjetas llevan el estilo general. Con "match", las que no coinciden con el animal de
+// su chapita se cambian: los gatos con un estilo de perro van con Michi y los perros con Michi, con
+// Patitas (Juguetón es neutro: va con todos). Cada tarjeta se puede fijar a mano (TagPrint.card).
+export type CardAnimal = "cat" | "dog" | "other";
+export const DESIGN_ANIMAL: Record<DesignId, CardAnimal> = { playful: "other", night: "other", rainbow: "other", paws: "dog", bones: "dog", kitty: "cat" };
+// Cómo se agrupan en la barra lateral y en el botoncito de cada tarjeta.
+export const DESIGN_GROUPS: [string, DesignId[]][] = [["🐾 Para todas", ["playful", "night", "rainbow"]], ["🐶 Perritos", ["paws", "bones"]], ["🐱 Gatitos", ["kitty"]]];
+export const designClash = (design: DesignId, animal: CardAnimal) =>
+  DESIGN_ANIMAL[design] !== "other" && animal !== "other" && DESIGN_ANIMAL[design] !== animal;
+export const autoCardDesign = (general: DesignId, animal: CardAnimal, match: boolean): DesignId =>
+  match && designClash(general, animal) ? (animal === "cat" ? "kitty" : "paws") : general;
+// Lo que dice cada estilo que choca con el otro animal (para avisar).
+export const designSays = (design: DesignId) => design === "kitty" ? " y dice “¡Miau!”" : design === "paws" ? " y dice “¡Guau!”" : "";
+
+// Arcoíris dibujado: seis bandas lisas y una nube en cada punta (colores fijos, no los del adorno).
+function RainbowArt() {
+  // Cada banda es un medio anillo exacto (radio de afuera y de adentro), apenas solapado con la
+  // siguiente para que no quede una rayita entre colores. Las nubes tapan las puntas.
+  const bands = ["#e8414f", "#f08a1c", "#f5c518", "#2fa35a", "#2f86d6", "#6a45e0"];
+  const band = (index: number) => {
+    const outer = 44 - index * 5.2 + (index ? 0.3 : 0);
+    const inner = 44 - (index + 1) * 5.2;
+    return `M${50 - outer} 54A${outer} ${outer} 0 0 1 ${50 + outer} 54L${50 + inner} 54A${inner} ${inner} 0 0 0 ${50 - inner} 54Z`;
+  };
+  const cloud = (x: number) => [[x - 8, 52, 7], [x, 48, 9], [x + 8, 53, 6]] as const;
+  return <svg viewBox="0 0 100 62" aria-hidden="true">
+    {bands.map((color, index) => <path key={color} d={band(index)} fill={color} />)}
+    {[21.6, 78.4].map((x) => <g key={x}>
+      <g fill="#cdbff0">{cloud(x).map(([cx, cy, r]) => <circle key={cx} cx={cx} cy={cy} r={r + 1.6} />)}<rect x={x - 15.6} y="52" width="31.2" height="8.6" rx="4.3" /></g>
+      <g fill="#fff">{cloud(x).map(([cx, cy, r]) => <circle key={cx} cx={cx} cy={cy} r={r} />)}<rect x={x - 14} y="53" width="28" height="5.8" rx="2.9" /></g>
+    </g>)}
+  </svg>;
+}
+
+// El número de cada paso, dibujado: queda centrado en su círculo en pantalla y al imprimir (como
+// texto, a este tamaño la pantalla lo redondea al píxel y se ve corrido). Los dígitos de Poppins
+// miden 0,74 de alto: la base va 0,37 por debajo del centro.
+function Num({ n }: { n: string }) {
+  return <svg viewBox="0 0 20 20" aria-hidden="true"><text x="10" y={10 + 0.37 * 11.5} textAnchor="middle" fontSize="11.5" fontWeight="900" fill="currentColor">{n}</text></svg>;
+}
 
 function Logo({ light = false }: { light?: boolean }) {
   // Con la letra del logo de la marca (la misma que en la página).
@@ -89,11 +148,10 @@ export function CardFront({ design: id, layout = "classic", item, host, style, b
     // llega por mail y cargar nombre y WhatsApp (la foto es opcional). Hablan como la mascota, igual
     // que el título. En la tapa de la B el QR está tapado: el primer paso arranca abriendo la solapa.
     const steps = <ol>
-      <li><b>1</b>{clean ? "Escaneá el QR" : "Abrí la solapa y escaneá el QR"}</li>
-      <li><b>2</b>Poné tu email y el código que te llega</li>
-      <li><b>3</b>Cargá mi nombre y tu WhatsApp</li>
+      <li><b><Num n="1" /></b>{clean ? "Escaneá el QR" : "Abrí la solapa y escaneá el QR"}</li>
+      <li><b><Num n="2" /></b>Poné tu email y el código que te llega</li>
+      <li><b><Num n="3" /></b>Cargá mi nombre y tu WhatsApp</li>
     </ol>;
-    const later = <small>Después: editá mis datos o avisá si me pierdo en <b>{host}/mi</b>.</small>;
     // Los adornos del estilo sólo en esquinas libres: arriba a la derecha de la tapa y abajo en la
     // zona interior. Nunca detrás del texto ni donde va el calco.
     const [first, second] = design.deco;
@@ -118,11 +176,9 @@ export function CardFront({ design: id, layout = "classic", item, host, style, b
           <strong>Así se activa</strong>
           {steps}
           <small>¿Sin cámara? Entrá a <b>{host}/activar</b> y escribí el código.</small>
-          {later}
         </> : <>
           <strong>¿No podés escanear?</strong>
           <small>Entrá a <b>{host}/activar</b> y escribí el código.</small>
-          {later}
         </>}
       </div>
       {/* Solapa (85–115): el QR y el código, enteros y a 4 mm del pliegue. */}
@@ -146,6 +202,7 @@ export function CardFront({ design: id, layout = "classic", item, host, style, b
       <Logo />
     </div>
     <div className="pc-qr">
+      {design.id === "rainbow" && <span className="pc-qr-crown" aria-hidden="true"><RainbowArt /></span>}
       {/* eslint-disable-next-line @next/next/no-img-element -- QR secreto generado en el servidor */}
       <div className="pc-qrbox">{item.activationQr && <img src={item.activationQr} alt="" />}</div>
       <span className="pc-code">{item.code}</span>
@@ -160,10 +217,10 @@ export function CardBack({ design: id, host, style, bleed = false }: { design: D
     <Deco items={design.backDeco} />
     <div className="pc-left"><h2>{design.backTitle}</h2><Logo light /></div>
     <ul>
-      <li><b>1</b>Me encuentran y escanean mi chapita</li>
-      <li><b>2</b>Ven mi foto y tu WhatsApp</li>
-      <li><b>3</b>Te avisan al toque</li>
-      <li><b>!</b>¿Me perdí? Avisá en {host}/mi</li>
+      <li><b><Num n="1" /></b>Me encuentran y escanean mi chapita</li>
+      <li><b><Num n="2" /></b>Ven mi foto y tu WhatsApp</li>
+      <li><b><Num n="3" /></b>Te avisan al toque</li>
+      <li><b><Num n="!" /></b>¿Me perdí? Avisá en {host}/mi</li>
     </ul>
   </article>;
 }

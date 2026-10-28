@@ -3,6 +3,8 @@
 // aparece acá: va únicamente en la tarjeta del paquete.
 // Los colores lisos son lo bastante oscuros para que el texto blanco chico se lea impreso
 // (contraste de 4,5:1 o más). En los arcoíris, las letras se leen por su borde oscuro (EDGE).
+import type { DesignId } from "./card-designs";
+
 export const TAG_COLORS = [
   { id: "mix", label: "Mezcla de colores", value: "conic-gradient(#1673b8, #6a45e0, #c93a62, #c4501a, #2a7f36, #1673b8)" },
   { id: "rainbow", label: "Arcoíris", value: "linear-gradient(135deg, #ff4f6d, #ff9a3c, #ffd23f, #3ecf8e, #3aa0ff, #8a5cf7)" },
@@ -32,6 +34,14 @@ export const TAG_CHARACTERS = [
   { id: "boston-terrier", label: "Boston terrier", src: "/pet-tags/characters/boston-terrier.png", faceSrc: "/pet-tags/faces/boston-terrier.png" },
   { id: "pomeranian", label: "Pomerania", src: "/pet-tags/characters/pomeranian.png", faceSrc: "/pet-tags/faces/pomeranian.png" },
   { id: "australian-shepherd", label: "Pastor australiano", src: "/pet-tags/characters/australian-shepherd.png", faceSrc: "/pet-tags/faces/australian-shepherd.png" },
+  { id: "labrador-yellow", label: "Labrador amarillo", src: "/pet-tags/characters/labrador-yellow.png", faceSrc: "/pet-tags/faces/labrador-yellow.png" },
+  { id: "german-shepherd", label: "Pastor alemán", src: "/pet-tags/characters/german-shepherd.png", faceSrc: "/pet-tags/faces/german-shepherd.png" },
+  { id: "chihuahua-beige", label: "Chihuahua beige", src: "/pet-tags/characters/chihuahua-beige.png", faceSrc: "/pet-tags/faces/chihuahua-beige.png" },
+  { id: "boxer", label: "Boxer", src: "/pet-tags/characters/boxer.png", faceSrc: "/pet-tags/faces/boxer.png" },
+  { id: "american-staffordshire", label: "Pitbull / Amstaff", src: "/pet-tags/characters/american-staffordshire.png", faceSrc: "/pet-tags/faces/american-staffordshire.png" },
+  { id: "shih-tzu", label: "Shih Tzu", src: "/pet-tags/characters/shih-tzu.png", faceSrc: "/pet-tags/faces/shih-tzu.png" },
+  { id: "mixed-short-coat", label: "Mestizo de pelo corto", src: "/pet-tags/characters/mixed-short-coat.png", faceSrc: "/pet-tags/faces/mixed-short-coat.png" },
+  { id: "pug-fawn", label: "Pug beige", src: "/pet-tags/characters/pug-fawn.png", faceSrc: "/pet-tags/faces/pug-fawn.png" },
   { id: "terrier-beige", label: "Terrier beige", src: "/pet-tags/characters/terrier-beige.png", faceSrc: "/pet-tags/faces/terrier-beige.png", custom: true },
   { id: "mixed-gray-tan", label: "Mestizo gris y beige", src: "/pet-tags/characters/mixed-gray-tan.png", faceSrc: "/pet-tags/faces/mixed-gray-tan.png", custom: true },
   { id: "generic-dog-front", label: "Perrito clásico", src: "/pet-tags/generic-v2/dog-front.png", faceSrc: "/pet-tags/generic-v2/dog-front.png", generic: "dog" },
@@ -39,8 +49,10 @@ export const TAG_CHARACTERS = [
   { id: "generic-dog-symbol", label: "Perrito simple", src: "/pet-tags/generic-v2/dog-symbol.png", faceSrc: "/pet-tags/generic-v2/dog-symbol.png", generic: "dog" },
   { id: "generic-cat-front", label: "Gatito clásico", src: "/pet-tags/generic-v2/cat-front.png", faceSrc: "/pet-tags/generic-v2/cat-front.png", generic: "cat" },
   { id: "generic-cat-profile", label: "Gatito de perfil", src: "/pet-tags/generic-v2/cat-profile.png", faceSrc: "/pet-tags/generic-v2/cat-profile.png", generic: "cat" },
+  { id: "generic-cat-curled", label: "Gatito acurrucado", src: "/pet-tags/generic-v2/cat-curled.png", faceSrc: "/pet-tags/generic-v2/cat-curled.png", generic: "cat" },
   { id: "generic-paw", label: "Patita", src: "/pet-tags/generic-v2/paw.png", faceSrc: "/pet-tags/generic-v2/paw.png", generic: "symbol" },
   { id: "generic-heart-paw", label: "Corazón con patita", src: "/pet-tags/generic-v2/heart-paw.png", faceSrc: "/pet-tags/generic-v2/heart-paw.png", generic: "symbol" },
+  { id: "generic-paw-trail", label: "Caminito de huellas", src: "/pet-tags/generic-v2/paw-trail.png", faceSrc: "/pet-tags/generic-v2/paw-trail.png", generic: "symbol" },
   { id: "tabby-cat", label: "Gato atigrado", src: "/pet-tags/characters/tabby-cat.png", faceSrc: "/pet-tags/faces/tabby-cat.png" },
   { id: "black-cat", label: "Gato negro", src: "/pet-tags/characters/black-cat.png", faceSrc: "/pet-tags/faces/black-cat.png" },
   { id: "white-persian-cat", label: "Persa blanco", src: "/pet-tags/characters/white-persian-cat.png", faceSrc: "/pet-tags/faces/white-persian-cat.png" },
@@ -89,14 +101,17 @@ export const tagCharacterFor = (choice: TagCharacterChoice, index: number): TagC
 
 // Lo que se eligió para imprimir cada unidad (nombre, animal y color). Se guarda en la chapita
 // (button_style.print, ver actions.ts) para no depender del navegador. Vacío = automático.
-export type TagPrint = { name?: string; character?: TagCharacterId; color?: string };
+export type TagPrint = { name?: string; character?: TagCharacterId; color?: string; card?: DesignId };
+// Estilos de tarjeta válidos (los de card-designs.tsx; acá en texto porque esto también corre en el servidor).
+const CARD_STYLES: readonly string[] = ["playful", "night", "rainbow", "paws", "bones", "kitty"];
 
 export function cleanTagPrint(value: unknown): TagPrint {
   const raw = value && typeof value === "object" ? value as Record<string, unknown> : {};
   const name = typeof raw.name === "string" ? raw.name.trim().slice(0, 14) : "";
   const character = TAG_CHARACTERS.find((item) => item.id === raw.character)?.id;
   const color = typeof raw.color === "string" && (/^#[0-9a-f]{6}$/i.test(raw.color) || TAG_COLORS.some((item) => item.id === raw.color && item.id !== "mix")) ? raw.color : "";
-  return { ...(name ? { name } : {}), ...(character ? { character } : {}), ...(color ? { color } : {}) };
+  const card = typeof raw.card === "string" && CARD_STYLES.includes(raw.card) ? raw.card as DesignId : undefined;
+  return { ...(name ? { name } : {}), ...(character ? { character } : {}), ...(color ? { color } : {}), ...(card ? { card } : {}) };
 }
 
 // El agujero (opcional): un puntito que marca el centro, en el mismo lugar en las dos caras, para
