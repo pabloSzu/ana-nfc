@@ -103,7 +103,7 @@ export const tagCharacterFor = (choice: TagCharacterChoice, index: number): TagC
 // (button_style.print, ver actions.ts) para no depender del navegador. Vacío = automático.
 export type TagPrint = { name?: string; character?: TagCharacterId; color?: string; card?: DesignId };
 // Estilos de tarjeta válidos (los de card-designs.tsx; acá en texto porque esto también corre en el servidor).
-const CARD_STYLES: readonly string[] = ["playful", "night", "rainbow", "paws", "bones", "kitty"];
+const CARD_STYLES: readonly string[] = ["playful", "night", "rainbow", "paws", "kitty"];
 
 export function cleanTagPrint(value: unknown): TagPrint {
   const raw = value && typeof value === "object" ? value as Record<string, unknown> : {};

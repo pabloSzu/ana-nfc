@@ -10,7 +10,7 @@ import { LOGO_FONT_FAMILY } from "@/components/bionfc-logo";
 import { unitNumber } from "@/lib/pet-tags";
 import type { PrintItem } from "./print-studio";
 
-export type DesignId = "playful" | "night" | "rainbow" | "paws" | "bones" | "kitty";
+export type DesignId = "playful" | "night" | "rainbow" | "paws" | "kitty";
 export type CardLayout = "classic" | "flap-a" | "flap-b";
 // Las variantes con solapa se imprimen de una sola faz. Cerradas miden ancho × alto (85×55 por
 // defecto, ver FLAP_LIMITS); la solapa siempre mide 30 mm (lo que necesita el QR) y abierta suma
@@ -33,6 +33,8 @@ type Design = {
   // Adornos del fondo: ícono, posición (en % de la tarjeta), tamaño (em) y giro.
   deco: { icon: ReactNode; x: number; y: number; size: number; rotate: number }[];
   backDeco: { icon: ReactNode; x: number; y: number; size: number; rotate: number }[];
+  // Dibujo enorme y muy clarito de fondo (marca de agua), detrás del texto y de los adornos.
+  watermark?: ReactNode;
 };
 
 // Lo mismo que pide la activación: entrar con el email y cargar el nombre y el WhatsApp (la foto es opcional).
@@ -63,22 +65,21 @@ export const DESIGNS: Design[] = [
     backDeco: [{ icon: <RainbowArt />, x: 6, y: 44, size: 17, rotate: 0 }, { icon: <LuPawPrint />, x: 38, y: 14, size: 6, rotate: 18 }],
   },
   {
-    id: "paws", label: "Patitas", hint: "Naranja y crema, lleno de huellas", swatch: "linear-gradient(135deg, #fff1e2 0 50%, #e9772f 50%)",
+    // Lo de perritos: un perrito enorme y clarito de fondo, huellitas, huesitos y corazones (en el CSS), y
+    // arriba una huella y abajo un huesito (los dos primeros adornos son los de la tarjeta con solapa).
+    id: "paws", label: "Patitas", hint: "Naranja y crema, lleno de huellas y huesitos", swatch: "linear-gradient(135deg, #fff1e2 0 50%, #e9772f 50%)",
     title: "¡Guau! Ya casi tengo mi chapita", lead: LEAD, backTitle: "Si me pierdo, vuelvo a casa",
-    deco: [{ icon: <LuPawPrint />, x: 2, y: 66, size: 10, rotate: -24 }, { icon: <LuPawPrint />, x: 14, y: 84, size: 7, rotate: -12 }, { icon: <LuPawPrint />, x: 40, y: 4, size: 6, rotate: 20 }, { icon: <LuDog />, x: 46, y: 70, size: 11, rotate: 0 }],
-    backDeco: [{ icon: <LuPawPrint />, x: 8, y: 44, size: 11, rotate: -18 }, { icon: <LuPawPrint />, x: 26, y: 56, size: 8, rotate: -6 }],
-  },
-  {
-    id: "bones", label: "Huesitos", hint: "Celeste, con huesitos y estrellas", swatch: "linear-gradient(135deg, #d9efff 0 50%, #1f4e8c 50%)",
-    title: "¡Activame y salgamos a pasear!", lead: LEAD, backTitle: "Mi chapita me cuida",
-    deco: [{ icon: <LuBone />, x: 4, y: 74, size: 12, rotate: -28 }, { icon: <LuBone />, x: 40, y: 2, size: 7, rotate: 24 }, { icon: <LuStar />, x: 52, y: 80, size: 5, rotate: 10 }, { icon: <LuSparkles />, x: 30, y: 60, size: 4, rotate: 0 }],
-    backDeco: [{ icon: <LuBone />, x: 12, y: 44, size: 14, rotate: 20 }, { icon: <LuStar />, x: 40, y: 10, size: 5, rotate: 0 }],
+    watermark: <LuDog />,
+    deco: [{ icon: <LuPawPrint />, x: 47, y: 2, size: 6, rotate: 16 }, { icon: <LuBone />, x: 47, y: 76, size: 9, rotate: -24 }, { icon: <LuPawPrint />, x: 2, y: 66, size: 10, rotate: -24 }, { icon: <LuPawPrint />, x: 14, y: 84, size: 7, rotate: -12 }],
+    backDeco: [{ icon: <LuPawPrint />, x: 8, y: 44, size: 11, rotate: -18 }, { icon: <LuBone />, x: 26, y: 58, size: 8, rotate: -20 }, { icon: <LuDog />, x: 30, y: 80, size: 6, rotate: 0 }],
   },
   {
     id: "kitty", label: "Michi", hint: "Lavanda, con orejitas de gato en el QR", swatch: "linear-gradient(135deg, #ece3ff 0 50%, #4b2a85 50%)",
     title: "¡Miau! Activame en 2 minutos", lead: LEAD, backTitle: "Si me escapo, te avisan",
-    // Todo de michi: carita de gato y huellitas (los dos primeros son los que usa la tarjeta con solapa).
-    deco: [{ icon: <LuCat />, x: 44, y: 72, size: 11, rotate: -6 }, { icon: <LuPawPrint />, x: 4, y: 76, size: 9, rotate: -16 }, { icon: <LuSparkles />, x: 40, y: 4, size: 5, rotate: 0 }],
+    // Todo de michi (sin pescado): un gatito enorme y clarito de fondo, huellitas, ovillos, caritas de gato y
+    // corazones (en el CSS), y adornos de huella y corazón (los dos primeros, en la tarjeta con solapa).
+    watermark: <LuCat />,
+    deco: [{ icon: <LuPawPrint />, x: 46, y: 3, size: 6, rotate: 14 }, { icon: <LuHeart />, x: 46, y: 76, size: 8, rotate: -10 }, { icon: <LuSparkles />, x: 4, y: 78, size: 5, rotate: 0 }],
     backDeco: [{ icon: <LuCat />, x: 14, y: 42, size: 14, rotate: -8 }, { icon: <LuPawPrint />, x: 38, y: 14, size: 6, rotate: 18 }],
   },
 ];
@@ -90,9 +91,9 @@ export const designLabel = (id: DesignId) => designOf(id).label;
 // su chapita se cambian: los gatos con un estilo de perro van con Michi y los perros con Michi, con
 // Patitas (Juguetón es neutro: va con todos). Cada tarjeta se puede fijar a mano (TagPrint.card).
 export type CardAnimal = "cat" | "dog" | "other";
-export const DESIGN_ANIMAL: Record<DesignId, CardAnimal> = { playful: "other", night: "other", rainbow: "other", paws: "dog", bones: "dog", kitty: "cat" };
+export const DESIGN_ANIMAL: Record<DesignId, CardAnimal> = { playful: "other", night: "other", rainbow: "other", paws: "dog", kitty: "cat" };
 // Cómo se agrupan en la barra lateral y en el botoncito de cada tarjeta.
-export const DESIGN_GROUPS: [string, DesignId[]][] = [["🐾 Para todas", ["playful", "night", "rainbow"]], ["🐶 Perritos", ["paws", "bones"]], ["🐱 Gatitos", ["kitty"]]];
+export const DESIGN_GROUPS: [string, DesignId[]][] = [["🐾 Para todas", ["playful", "night", "rainbow"]], ["🐶 Perritos", ["paws"]], ["🐱 Gatitos", ["kitty"]]];
 export const designClash = (design: DesignId, animal: CardAnimal) =>
   DESIGN_ANIMAL[design] !== "other" && animal !== "other" && DESIGN_ANIMAL[design] !== animal;
 export const autoCardDesign = (general: DesignId, animal: CardAnimal, match: boolean): DesignId =>
@@ -157,6 +158,7 @@ export function CardFront({ design: id, layout = "classic", item, host, style, b
     const [first, second] = design.deco;
     const sizes = { "--pc-c": `${closed.width - FLAP_WIDTH}em`, "--pc-w": `${closed.width}em`, "--pc-h": `${closed.height}em` } as CSSProperties;
     return <article className={`pc pc-${design.id} pc-front is-flap${clean ? "" : " is-steps"}${fresh ? " is-fresh" : ""}${bleed ? " is-bleed" : ""}`} style={{ ...style, ...sizes }}>
+      {design.watermark && <span className="pc-watermark" aria-hidden="true">{design.watermark}</span>}
       <div className="pc-deco pc-flap-deco" aria-hidden="true">
         {first && <span style={{ left: "calc(var(--pc-c) - 15em)", top: "3.5em", transform: `rotate(${first.rotate}deg)` }}><i style={{ display: "block", fontSize: "9em" }}>{first.icon}</i></span>}
         {second && <span style={{ left: "calc(var(--pc-w) - 9em)", top: "calc(var(--pc-h) - 11em)", transform: `rotate(${second.rotate}deg)` }}><i style={{ display: "block", fontSize: "7em" }}>{second.icon}</i></span>}
@@ -195,6 +197,7 @@ export function CardFront({ design: id, layout = "classic", item, host, style, b
     </article>;
   }
   return <article className={`pc pc-${design.id} pc-front${bleed ? " is-bleed" : ""}`} style={style}>
+    {design.watermark && <span className="pc-watermark" aria-hidden="true">{design.watermark}</span>}
     <Deco items={design.deco} />
     <div className="pc-copy">
       <h2>{design.title}</h2>

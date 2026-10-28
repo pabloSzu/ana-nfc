@@ -144,28 +144,19 @@
 .pc-playful li b { background: #ffc6d9; color: #3a1730; }
 
 /* Patitas */
-.pc-paws.pc-front { background: radial-gradient(circle at 92% 8%, #ffd9b8 0 18%, transparent 19%), #fff1e2; color: #3b2314; }
+.pc-paws.pc-front { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='34' viewBox='0 0 44 34'%3E%3Cg fill='%23ffdcbe'%3E%3Cg transform='translate(6 6) rotate(-18) scale(1)'%3E%3Cellipse cx='0' cy='.9' rx='1.25' ry='1.05'/%3E%3Ccircle cx='-1.45' cy='-.55' r='.52'/%3E%3Ccircle cx='-.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='1.45' cy='-.55' r='.52'/%3E%3C/g%3E%3Cg transform='translate(31 20) rotate(16) scale(0.9)'%3E%3Cellipse cx='0' cy='.9' rx='1.25' ry='1.05'/%3E%3Ccircle cx='-1.45' cy='-.55' r='.52'/%3E%3Ccircle cx='-.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='1.45' cy='-.55' r='.52'/%3E%3C/g%3E%3Cg transform='translate(19 30) rotate(-8) scale(0.75)'%3E%3Cellipse cx='0' cy='.9' rx='1.25' ry='1.05'/%3E%3Ccircle cx='-1.45' cy='-.55' r='.52'/%3E%3Ccircle cx='-.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='1.45' cy='-.55' r='.52'/%3E%3C/g%3E%3C/g%3E%3Cg fill='%23f9d0ab'%3E%3Cg transform='translate(24 6) rotate(24) scale(0.95)'%3E%3Crect x='-1.6' y='-.33' width='3.2' height='.66' rx='.3'/%3E%3Ccircle cx='-1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='-1.6' cy='.42' r='.48'/%3E%3Ccircle cx='1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='1.6' cy='.42' r='.48'/%3E%3C/g%3E%3Cg transform='translate(9 21) rotate(-30) scale(0.85)'%3E%3Crect x='-1.6' y='-.33' width='3.2' height='.66' rx='.3'/%3E%3Ccircle cx='-1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='-1.6' cy='.42' r='.48'/%3E%3Ccircle cx='1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='1.6' cy='.42' r='.48'/%3E%3C/g%3E%3Cg transform='translate(40 31) rotate(12) scale(0.8)'%3E%3Crect x='-1.6' y='-.33' width='3.2' height='.66' rx='.3'/%3E%3Ccircle cx='-1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='-1.6' cy='.42' r='.48'/%3E%3Ccircle cx='1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='1.6' cy='.42' r='.48'/%3E%3C/g%3E%3C/g%3E%3Cg fill='%23ffcbbb'%3E%3Cpath transform='translate(39 9) rotate(10) scale(0.8)' d='M0 1.1L-1.25-.05A.72.72 0 0 1 0-.95A.72.72 0 0 1 1.25-.05Z'/%3E%3Cpath transform='translate(17 15) rotate(-10) scale(0.7)' d='M0 1.1L-1.25-.05A.72.72 0 0 1 0-.95A.72.72 0 0 1 1.25-.05Z'/%3E%3C/g%3E%3Cg fill='%23f5c196'%3E%3Ccircle cx='33' cy='3' r='0.45'/%3E%3Ccircle cx='3' cy='15' r='0.4'/%3E%3Ccircle cx='27' cy='27' r='0.4'/%3E%3Ccircle cx='42' cy='22' r='0.35'/%3E%3Ccircle cx='13' cy='2' r='0.35'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 44em 34em, radial-gradient(circle at 92% 8%, #ffd9b8 0 18%, transparent 19%), #fff1e2; color: #3b2314; }
 .pc-paws .pc-unit { color: #d4621c; }
-.pc-paws .pc-deco { color: #e9772f40; }
-.pc-paws .pc-qrbox { transform: rotate(-2deg); box-shadow: 0 0 0 .8em #ffd9b8, 0 1em 3em #e9772f33; }
+.pc-paws .pc-deco { color: #e9772f59; }
+.pc-paws .pc-qrbox { transform: none; box-shadow: 0 0 0 .8em #ffd9b8, 0 1em 3em #e9772f33; }
 .pc-paws .pc-code { background: #3b2314; color: #fff; }
 .pc-paws .pc-qr small { color: #b4541a; }
-.pc-paws.pc-back { background: #e9772f; }
+.pc-paws.pc-back { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='34' viewBox='0 0 44 34'%3E%3Cg fill='%23ffffff3d'%3E%3Cg transform='translate(6 6) rotate(-18) scale(1)'%3E%3Cellipse cx='0' cy='.9' rx='1.25' ry='1.05'/%3E%3Ccircle cx='-1.45' cy='-.55' r='.52'/%3E%3Ccircle cx='-.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='1.45' cy='-.55' r='.52'/%3E%3C/g%3E%3Cg transform='translate(31 20) rotate(16) scale(0.9)'%3E%3Cellipse cx='0' cy='.9' rx='1.25' ry='1.05'/%3E%3Ccircle cx='-1.45' cy='-.55' r='.52'/%3E%3Ccircle cx='-.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='1.45' cy='-.55' r='.52'/%3E%3C/g%3E%3Cg transform='translate(19 30) rotate(-8) scale(0.75)'%3E%3Cellipse cx='0' cy='.9' rx='1.25' ry='1.05'/%3E%3Ccircle cx='-1.45' cy='-.55' r='.52'/%3E%3Ccircle cx='-.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='1.45' cy='-.55' r='.52'/%3E%3C/g%3E%3C/g%3E%3Cg fill='%23ffffff33'%3E%3Cg transform='translate(24 6) rotate(24) scale(0.95)'%3E%3Crect x='-1.6' y='-.33' width='3.2' height='.66' rx='.3'/%3E%3Ccircle cx='-1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='-1.6' cy='.42' r='.48'/%3E%3Ccircle cx='1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='1.6' cy='.42' r='.48'/%3E%3C/g%3E%3Cg transform='translate(9 21) rotate(-30) scale(0.85)'%3E%3Crect x='-1.6' y='-.33' width='3.2' height='.66' rx='.3'/%3E%3Ccircle cx='-1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='-1.6' cy='.42' r='.48'/%3E%3Ccircle cx='1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='1.6' cy='.42' r='.48'/%3E%3C/g%3E%3Cg transform='translate(40 31) rotate(12) scale(0.8)'%3E%3Crect x='-1.6' y='-.33' width='3.2' height='.66' rx='.3'/%3E%3Ccircle cx='-1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='-1.6' cy='.42' r='.48'/%3E%3Ccircle cx='1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='1.6' cy='.42' r='.48'/%3E%3C/g%3E%3C/g%3E%3Cg fill='%23ffffff33'%3E%3Cpath transform='translate(39 9) rotate(10) scale(0.8)' d='M0 1.1L-1.25-.05A.72.72 0 0 1 0-.95A.72.72 0 0 1 1.25-.05Z'/%3E%3Cpath transform='translate(17 15) rotate(-10) scale(0.7)' d='M0 1.1L-1.25-.05A.72.72 0 0 1 0-.95A.72.72 0 0 1 1.25-.05Z'/%3E%3C/g%3E%3Cg fill='%23ffffff4d'%3E%3Ccircle cx='33' cy='3' r='0.45'/%3E%3Ccircle cx='3' cy='15' r='0.4'/%3E%3Ccircle cx='27' cy='27' r='0.4'/%3E%3Ccircle cx='42' cy='22' r='0.35'/%3E%3Ccircle cx='13' cy='2' r='0.35'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 44em 34em, #e9772f; }
 .pc-paws.pc-back .pc-deco { color: #ffffff38; }
 .pc-paws li b { background: #fff; color: #e9772f; }
 
-/* Huesitos */
-.pc-bones.pc-front { background: linear-gradient(160deg, #e6f4ff, #bfe0ff); color: #12345f; }
-.pc-bones .pc-unit { color: #1f6fd1; }
-.pc-bones .pc-deco { color: #1f6fd12e; }
-.pc-bones .pc-qrbox { border: .5em dashed #8cc3f5; box-shadow: 0 1em 3em #1f6fd126; }
-.pc-bones .pc-qr small { color: #1f5aa8; }
-.pc-bones.pc-back { background: #1f4e8c; }
-.pc-bones.pc-back .pc-deco { color: #ffffff1f; }
-.pc-bones li b { background: #bfe0ff; color: #12345f; }
 
 /* Michi: el QR con orejitas de gato. */
-.pc-kitty.pc-front { background: linear-gradient(150deg, #f4eeff, #dccbff); color: #2e1a57; }
+.pc-kitty.pc-front { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='34' viewBox='0 0 44 34' color='%23d3c2f8'%3E%3Cg fill='%23d3c2f8'%3E%3Cg transform='translate(6 6) rotate(-18) scale(1)'%3E%3Cellipse cx='0' cy='.9' rx='1.25' ry='1.05'/%3E%3Ccircle cx='-1.45' cy='-.55' r='.52'/%3E%3Ccircle cx='-.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='1.45' cy='-.55' r='.52'/%3E%3C/g%3E%3Cg transform='translate(32 21) rotate(16) scale(0.9)'%3E%3Cellipse cx='0' cy='.9' rx='1.25' ry='1.05'/%3E%3Ccircle cx='-1.45' cy='-.55' r='.52'/%3E%3Ccircle cx='-.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='1.45' cy='-.55' r='.52'/%3E%3C/g%3E%3C/g%3E%3Cg fill='%23efc9e6'%3E%3Cpath transform='translate(39 8) rotate(10) scale(0.85)' d='M0 1.1L-1.25-.05A.72.72 0 0 1 0-.95A.72.72 0 0 1 1.25-.05Z'/%3E%3Cpath transform='translate(18 29) rotate(-8) scale(0.75)' d='M0 1.1L-1.25-.05A.72.72 0 0 1 0-.95A.72.72 0 0 1 1.25-.05Z'/%3E%3C/g%3E%3Cg fill='%23c9b8f4'%3E%3Cg transform='translate(22 8) rotate(-8) scale(0.95)'%3E%3Ccircle cy='.35' r='1.3'/%3E%3Cpath d='M-1.2-.15L-1.1-1.7L-.25-.95ZM1.2-.15L1.1-1.7L.25-.95Z'/%3E%3C/g%3E%3Cg transform='translate(9 22) rotate(10) scale(0.85)'%3E%3Ccircle cy='.35' r='1.3'/%3E%3Cpath d='M-1.2-.15L-1.1-1.7L-.25-.95ZM1.2-.15L1.1-1.7L.25-.95Z'/%3E%3C/g%3E%3Cg transform='translate(41 30) rotate(-6) scale(0.75)'%3E%3Ccircle cy='.35' r='1.3'/%3E%3Cpath d='M-1.2-.15L-1.1-1.7L-.25-.95ZM1.2-.15L1.1-1.7L.25-.95Z'/%3E%3C/g%3E%3C/g%3E%3Cg fill='%23e1d5fc'%3E%3Cg transform='translate(29 4) rotate(0) scale(0.9)'%3E%3Ccircle r='1.35'/%3E%3Cpath d='M-1 -.7Q0 .2 1.1-.6M-1.15.35Q0 1.1 1.05.6' fill='none' stroke='%23f4eeff' stroke-width='.22' stroke-linecap='round'/%3E%3Cpath d='M1.1.8Q2 1.5 2.6 1' fill='none' stroke='currentColor' stroke-width='.25' stroke-linecap='round'/%3E%3C/g%3E%3Cg transform='translate(18 18) rotate(20) scale(0.8)'%3E%3Ccircle r='1.35'/%3E%3Cpath d='M-1 -.7Q0 .2 1.1-.6M-1.15.35Q0 1.1 1.05.6' fill='none' stroke='%23f4eeff' stroke-width='.22' stroke-linecap='round'/%3E%3Cpath d='M1.1.8Q2 1.5 2.6 1' fill='none' stroke='currentColor' stroke-width='.25' stroke-linecap='round'/%3E%3C/g%3E%3C/g%3E%3Cg fill='%23dacbfa'%3E%3Cpath transform='translate(36 15) scale(0.7)' d='M0-1.2L.32-.32 1.2 0 .32.32 0 1.2-.32.32-1.2 0-.32-.32Z'/%3E%3Cpath transform='translate(3 13) scale(0.55)' d='M0-1.2L.32-.32 1.2 0 .32.32 0 1.2-.32.32-1.2 0-.32-.32Z'/%3E%3Cpath transform='translate(27 30) scale(0.55)' d='M0-1.2L.32-.32 1.2 0 .32.32 0 1.2-.32.32-1.2 0-.32-.32Z'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 44em 34em, linear-gradient(150deg, #f4eeff, #dccbff); color: #2e1a57; }
 .pc-kitty .pc-unit { color: #7b4ddb; }
 .pc-kitty .pc-deco { color: #7b4ddb2e; }
 .pc-kitty .pc-qrbox { transform: rotate(-1.5deg); box-shadow: 0 1em 3em #7b4ddb2e; }
@@ -173,7 +164,7 @@
 .pc-kitty .pc-qrbox::before { left: 1.6em; transform: rotate(-8deg); }
 .pc-kitty .pc-qrbox::after { right: 1.6em; transform: rotate(8deg); }
 .pc-kitty .pc-qr small { color: #6a3fc4; }
-.pc-kitty.pc-back { background: #4b2a85; }
+.pc-kitty.pc-back { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='34' viewBox='0 0 44 34' color='%23ffffff38'%3E%3Cg fill='%23ffffff2e'%3E%3Cg transform='translate(6 6) rotate(-18) scale(1)'%3E%3Cellipse cx='0' cy='.9' rx='1.25' ry='1.05'/%3E%3Ccircle cx='-1.45' cy='-.55' r='.52'/%3E%3Ccircle cx='-.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='1.45' cy='-.55' r='.52'/%3E%3C/g%3E%3Cg transform='translate(32 21) rotate(16) scale(0.9)'%3E%3Cellipse cx='0' cy='.9' rx='1.25' ry='1.05'/%3E%3Ccircle cx='-1.45' cy='-.55' r='.52'/%3E%3Ccircle cx='-.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='1.45' cy='-.55' r='.52'/%3E%3C/g%3E%3Cpath transform='translate(39 8) rotate(10) scale(0.85)' d='M0 1.1L-1.25-.05A.72.72 0 0 1 0-.95A.72.72 0 0 1 1.25-.05Z'/%3E%3Cg transform='translate(22 8) rotate(-8) scale(0.95)'%3E%3Ccircle cy='.35' r='1.3'/%3E%3Cpath d='M-1.2-.15L-1.1-1.7L-.25-.95ZM1.2-.15L1.1-1.7L.25-.95Z'/%3E%3C/g%3E%3Cg transform='translate(9 22) rotate(10) scale(0.85)'%3E%3Ccircle cy='.35' r='1.3'/%3E%3Cpath d='M-1.2-.15L-1.1-1.7L-.25-.95ZM1.2-.15L1.1-1.7L.25-.95Z'/%3E%3C/g%3E%3Cg transform='translate(18 18) rotate(20) scale(0.8)'%3E%3Ccircle r='1.35'/%3E%3Cpath d='M-1 -.7Q0 .2 1.1-.6M-1.15.35Q0 1.1 1.05.6' fill='none' stroke='%234b2a85' stroke-width='.22' stroke-linecap='round'/%3E%3Cpath d='M1.1.8Q2 1.5 2.6 1' fill='none' stroke='currentColor' stroke-width='.25' stroke-linecap='round'/%3E%3C/g%3E%3Cpath transform='translate(36 15) scale(0.7)' d='M0-1.2L.32-.32 1.2 0 .32.32 0 1.2-.32.32-1.2 0-.32-.32Z'/%3E%3Cpath transform='translate(27 30) scale(0.55)' d='M0-1.2L.32-.32 1.2 0 .32.32 0 1.2-.32.32-1.2 0-.32-.32Z'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 44em 34em, #4b2a85; }
 .pc-kitty.pc-back .pc-deco { color: #ffffff1f; }
 .pc-kitty li b { background: #dccbff; color: #2e1a57; }
 
@@ -393,11 +384,10 @@
 /* Color de acento de cada estilo (números, botón "Abrí la solapa", borde del QR). */
 .pc-playful { --pc-accent: #c2185b; }
 .pc-paws { --pc-accent: #d4621c; }
-.pc-bones { --pc-accent: #1f6fd1; }
 .pc-kitty { --pc-accent: #7b4ddb; }
 .pc-flap-deco { z-index: 0; }
 /* En la tarjeta con solapa la burbuja de Patitas caía bajo el QR; con medidas grandes se asomaba. */
-.pc-paws.pc-front.is-flap { background: #fff1e2; }
+.pc-paws.pc-front.is-flap { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='34' viewBox='0 0 44 34'%3E%3Cg fill='%23ffdcbe'%3E%3Cg transform='translate(6 6) rotate(-18) scale(1)'%3E%3Cellipse cx='0' cy='.9' rx='1.25' ry='1.05'/%3E%3Ccircle cx='-1.45' cy='-.55' r='.52'/%3E%3Ccircle cx='-.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='1.45' cy='-.55' r='.52'/%3E%3C/g%3E%3Cg transform='translate(31 20) rotate(16) scale(0.9)'%3E%3Cellipse cx='0' cy='.9' rx='1.25' ry='1.05'/%3E%3Ccircle cx='-1.45' cy='-.55' r='.52'/%3E%3Ccircle cx='-.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='1.45' cy='-.55' r='.52'/%3E%3C/g%3E%3Cg transform='translate(19 30) rotate(-8) scale(0.75)'%3E%3Cellipse cx='0' cy='.9' rx='1.25' ry='1.05'/%3E%3Ccircle cx='-1.45' cy='-.55' r='.52'/%3E%3Ccircle cx='-.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='.52' cy='-1.35' r='.52'/%3E%3Ccircle cx='1.45' cy='-.55' r='.52'/%3E%3C/g%3E%3C/g%3E%3Cg fill='%23f9d0ab'%3E%3Cg transform='translate(24 6) rotate(24) scale(0.95)'%3E%3Crect x='-1.6' y='-.33' width='3.2' height='.66' rx='.3'/%3E%3Ccircle cx='-1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='-1.6' cy='.42' r='.48'/%3E%3Ccircle cx='1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='1.6' cy='.42' r='.48'/%3E%3C/g%3E%3Cg transform='translate(9 21) rotate(-30) scale(0.85)'%3E%3Crect x='-1.6' y='-.33' width='3.2' height='.66' rx='.3'/%3E%3Ccircle cx='-1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='-1.6' cy='.42' r='.48'/%3E%3Ccircle cx='1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='1.6' cy='.42' r='.48'/%3E%3C/g%3E%3Cg transform='translate(40 31) rotate(12) scale(0.8)'%3E%3Crect x='-1.6' y='-.33' width='3.2' height='.66' rx='.3'/%3E%3Ccircle cx='-1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='-1.6' cy='.42' r='.48'/%3E%3Ccircle cx='1.6' cy='-.42' r='.48'/%3E%3Ccircle cx='1.6' cy='.42' r='.48'/%3E%3C/g%3E%3C/g%3E%3Cg fill='%23ffcbbb'%3E%3Cpath transform='translate(39 9) rotate(10) scale(0.8)' d='M0 1.1L-1.25-.05A.72.72 0 0 1 0-.95A.72.72 0 0 1 1.25-.05Z'/%3E%3Cpath transform='translate(17 15) rotate(-10) scale(0.7)' d='M0 1.1L-1.25-.05A.72.72 0 0 1 0-.95A.72.72 0 0 1 1.25-.05Z'/%3E%3C/g%3E%3Cg fill='%23f5c196'%3E%3Ccircle cx='33' cy='3' r='0.45'/%3E%3Ccircle cx='3' cy='15' r='0.4'/%3E%3Ccircle cx='27' cy='27' r='0.4'/%3E%3Ccircle cx='42' cy='22' r='0.35'/%3E%3Ccircle cx='13' cy='2' r='0.35'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 44em 34em, #fff1e2; }
 
 /* Tarjeta con solapa, aspecto nuevo (is-fresh): un solo fondo de punta a punta y el QR como en el
    Diseño 1 (caja blanca con sombra del color del estilo, apenas girada). Mismas medidas que el original. */
@@ -409,8 +399,7 @@
 .pc-front.is-flap.is-fresh .pc-flap-secret > strong { font-size: 1.55em; }
 .pc-front.is-flap.is-fresh .pc-flap-fold { border-left-color: color-mix(in srgb, var(--pc-accent) 45%, transparent); }
 .pc-front.is-flap.is-fresh .pc-qrbox { padding: 1.6em; border: 0; border-radius: 3.2em; transform: rotate(2deg); box-shadow: 0 .8em 2.4em color-mix(in srgb, var(--pc-accent) 28%, transparent); }
-.pc-paws.pc-front.is-flap.is-fresh .pc-qrbox { transform: rotate(-2deg); box-shadow: 0 0 0 .7em #ffd9b8, 0 .8em 2.4em #e9772f33; }
-.pc-bones.pc-front.is-flap.is-fresh .pc-qrbox { border: .45em dashed #8cc3f5; }
+.pc-paws.pc-front.is-flap.is-fresh .pc-qrbox { transform: none; box-shadow: 0 0 0 .7em #ffd9b8, 0 .8em 2.4em #e9772f33; }
 .pc-kitty.pc-front.is-flap.is-fresh .pc-qrbox::before, .pc-kitty.pc-front.is-flap.is-fresh .pc-qrbox::after { content: ""; top: -2.9em; border-right-width: 2.7em; border-bottom-width: 3.6em; border-left-width: 2.7em; }
 .pc-kitty.pc-front.is-flap.is-fresh .pc-flap-secret > strong { margin-bottom: 2.2em; }
 .pc-front.is-flap.is-fresh .pc-code { padding: .25em .6em; border-radius: 99em; background: #fff; font-size: 2.4em; }
@@ -460,7 +449,6 @@
 .ps-style-chip i { font-style: normal; font-size: 10px; opacity: .7; }
 .ps-style-chip.is-playful, .ps-style-dot.is-playful { --style: #c2185b; }
 .ps-style-chip.is-paws, .ps-style-dot.is-paws { --style: #d4621c; }
-.ps-style-chip.is-bones, .ps-style-dot.is-bones { --style: #1f6fd1; }
 .ps-style-chip.is-kitty, .ps-style-dot.is-kitty { --style: #7b4ddb; }
 .ps-style-chip[class*=" is-"] { border-color: var(--style); background: var(--style); color: #fff; }
 .ps-style-chip.is-clash { border-color: #f08c00; background: #f08c00; color: #fff; }
@@ -602,3 +590,27 @@
 .ps-next-step:hover { background: #f2f5ff; }
 .ps-next-step b { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: #4b6bff; color: #fff; font-size: 11px; }
 .ps-next-step i { font-style: normal; }
+/* Marca de agua: un perrito o un gatito enorme, en línea y muy clarito, detrás de todo. En la tarjeta con
+   solapa ocupa la tapa (lo que se ve cerrada); en la clásica, la parte del texto. */
+.pc-watermark { position: absolute; z-index: 0; aspect-ratio: 1; line-height: 0; pointer-events: none; }
+.pc-watermark svg { width: 100%; height: 100%; stroke-width: 1.15; }
+.pc-front.is-flap .pc-watermark { top: 6%; left: calc(var(--pc-c, 55em) / 2); height: 88%; translate: -50% 0; }
+.pc-front:not(.is-flap) .pc-watermark { top: 5%; left: 33%; height: 90%; translate: -50% 0; }
+/* Más claros que el fondo (y las formitas, más oscuras): así el dibujo grande se separa de la textura. */
+.pc-paws .pc-watermark { color: #fffaf4; }
+.pc-paws .pc-watermark svg { stroke-width: 1.3; }
+.pc-kitty .pc-watermark { color: #e6d9ff; }
+/* Patitas y Michi: los pasos en un recuadro blanco semitransparente (como Arcoíris), para que las formitas
+   del fondo no molesten la lectura; el adorno de abajo, apoyado abajo y más chico en tarjetas bajas. */
+:is(.pc-paws, .pc-kitty).pc-front.is-flap .pc-flap-inside, :is(.pc-paws, .pc-kitty).pc-front.is-flap.is-fresh .pc-flap-inside { top: 50%; bottom: auto; left: calc(var(--pc-c, 55em) + 1.6em); width: 26.6em; max-height: calc(100% - 2.4em); padding: 2.3em 2.1em; border-radius: 2.6em; background: #ffffffc2; translate: 0 -50%; }
+:is(.pc-paws, .pc-kitty).pc-front.is-flap .pc-flap-deco span + span, :is(.pc-paws, .pc-kitty).pc-front.is-flap.is-fresh .pc-flap-deco span + span { top: auto !important; bottom: .6em; translate: -1em 0; scale: 1; }
+/* Con menos de 47 mm de alto el recuadro de los pasos ocupa casi todo: ahí el adorno de abajo no va. */
+:is(.pc-paws, .pc-kitty).pc-front.is-flap .pc-flap-deco span + span i { font-size: clamp(0em, calc((var(--pc-h, 55em) - 47em) * 1000), 7.5em) !important; }
+/* Arriba de la tapa no va adorno: ya está el dibujo grande de fondo. */
+:is(.pc-paws, .pc-kitty).pc-front.is-flap .pc-flap-deco span:first-child { display: none; }
+/* Clásica: sólo el adorno que cae en un lugar libre (huesito / corazón, abajo al medio); los demás pisaban el texto. */
+:is(.pc-paws, .pc-kitty).pc-front:not(.is-flap) .pc-deco span:not(:nth-child(2)) { display: none; }
+/* Patitas: el perrito grande va detrás del QR (se asoma alrededor de la caja blanca, con las orejas a los costados). */
+.pc-paws.pc-front.is-flap .pc-watermark { top: 50%; left: calc(var(--pc-w, 85em) + 15em); height: min(36em, 92%); translate: -50% -50%; }
+.pc-paws.pc-front:not(.is-flap) .pc-watermark { top: 50%; left: calc(100% - 17.5em); height: min(40em, 96%); translate: -50% -50%; }
+.pc-paws.pc-front .pc-watermark { color: #ffc99c; }
