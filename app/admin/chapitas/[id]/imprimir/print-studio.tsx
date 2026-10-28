@@ -8,13 +8,13 @@
 //     - Una por página: cada cara en su página, con 2 mm de sangrado y marcas de corte. Es como
 //       la piden las imprentas (ellas arman las planchas) y como se importa en Canva.
 //  · QR de las chapitas: el tamaño en mm se elige según la chapita.
-// Las opciones generales quedan guardadas en esta compu; lo de cada unidad (nombre, animal, color)
+// Las opciones generales quedan guardadas en esta compu; lo de cada unidad (nombre, animal y color)
 // se guarda en la chapita misma (actions.ts), así no se pierde ni lo pisa otra pestaña.
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 import Link from "next/link";
 import { LuPrinter } from "react-icons/lu";
-import { CardBack, CardFront, DESIGNS, cardOpenWidth, isFlapCard, unit, unitNumber, type CardLayout, type DesignId } from "./card-designs";
-import { cleanTagPrint, TagBack, TagFront, TAG_CATS, TAG_COLORS, TAG_CUSTOM, TAG_DOGS, tagCharacterFor, type TagCharacterChoice, type TagCharacterId, type TagPrint } from "./tag-face";
+import { CardBack, CardFront, DESIGNS, FLAP_LIMITS, FLAP_WIDTH, isFlapCard, unit, unitNumber, type CardLayout, type DesignId } from "./card-designs";
+import { cleanTagPrint, isGenericCharacterId, TagBack, TagFront, TAG_CATS, TAG_COLORS, TAG_CUSTOM, TAG_DOGS, tagCharacterFor, type TagCharacterChoice, type TagCharacterId, type TagPrint } from "./tag-face";
 import { saveTagPrint } from "./actions";
 import CharacterPicker from "./character-picker";
 
@@ -23,6 +23,9 @@ type Mode = "cards" | "qr";
 type Settings = {
   design: DesignId;
   cardLayout: CardLayout;
+  flapWidth: number;
+  flapHeight: number;
+  flapFresh: boolean;
   size: string;
   width: number;
   height: number;
@@ -50,7 +53,7 @@ const SIZES = [
   { id: "100x70", label: "Grande · 100×70 mm", width: 100, height: 70 },
   { id: "custom", label: "Otra medida", width: 85, height: 55 },
 ];
-const DEFAULTS: Settings = { design: "playful", cardLayout: "secure", size: "85x55", width: 85, height: 55, sides: "front", output: "single", cutLines: true, qrSize: 30, qrNumber: true, qrColor: "mix", tagSides: "both", tagOutput: "pairs", tagLayoutVersion: 2, tagCharacter: "mix", tagNames: {}, tagCharacters: {}, tagColors: {}, tagHole: false, paper: "A4", tagLayout: "v3" };
+const DEFAULTS: Settings = { design: "playful", cardLayout: "flap-a", flapWidth: 85, flapHeight: 55, flapFresh: false, size: "85x55", width: 85, height: 55, sides: "front", output: "single", cutLines: true, qrSize: 30, qrNumber: true, qrColor: "mix", tagSides: "both", tagOutput: "pairs", tagLayoutVersion: 2, tagCharacter: "mix", tagNames: {}, tagCharacters: {}, tagColors: {}, tagHole: false, paper: "A4", tagLayout: "v3" };
 const STORAGE_KEY = "bionfc-print-settings";
 // Lo de cada unidad no va al navegador: viene de la base (PrintItem.print).
 const UNIT_KEYS = ["tagNames", "tagCharacters", "tagColors"];
@@ -111,6 +114,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
   const [settings, setSettings] = useState<Settings>(() => ({ ...DEFAULTS, ...unitsOf(items) }));
   const [previewId, setPreviewId] = useState(items[0]?.id || "");
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [editorNotice, setEditorNotice] = useState<{ id: string; message: string } | null>(null);
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   // Guarda una unidad en la chapita. Mientras se escribe el nombre, espera a que se deje de tipear.
   const saveUnit = (id: string, print: TagPrint, delay = 0) => {
@@ -140,7 +144,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
         const next = { ...DEFAULTS, ...stored, ...unitsOf([...items.filter((item) => Object.keys(item.print).length), ...legacy]) };
         // Un diseño guardado que ya no existe vuelve al primero.
         if (!DESIGNS.some((design) => design.id === next.design)) next.design = DEFAULTS.design;
-        if (!["classic", "secure", "flap-a", "flap-b"].includes(next.cardLayout)) next.cardLayout = DEFAULTS.cardLayout;
+        if (!["classic", "flap-a", "flap-b"].includes(next.cardLayout)) next.cardLayout = DEFAULTS.cardLayout;
         if (!LAYOUTS.some((layout) => layout.value === next.tagLayout)) next.tagLayout = DEFAULTS.tagLayout;
         // La versión anterior dejaba el modo espejado demasiado visible. Una sola vez migramos a
         // pares para armado; si después alguien activa doble faz a propósito, la elección se guarda.
@@ -164,8 +168,10 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
   // Diseño 2: la tarjeta con solapa (la actual o sus variantes A y B, más anchas).
   const secureCard = settings.cardLayout !== "classic";
   // La solapa suma 25 mm: abierta mide 110×55 y al plegarla vuelve al formato 85×55.
-  const width = secureCard ? cardOpenWidth(settings.cardLayout) : clamp(settings.width, 40, 190);
-  const height = secureCard ? 55 : clamp(settings.height, 30, 270);
+  // Con solapa: el tamaño de la tarjeta cerrada se elige dentro de FLAP_LIMITS; abierta suma la solapa.
+  const flapClosed = { width: clamp(settings.flapWidth, ...FLAP_LIMITS.width), height: clamp(settings.flapHeight, ...FLAP_LIMITS.height) };
+  const width = secureCard ? flapClosed.width + FLAP_WIDTH : clamp(settings.width, 40, 190);
+  const height = secureCard ? flapClosed.height : clamp(settings.height, 30, 270);
   // La chapita entera (el círculo), en mm. Desde 28 mm: más chica, el QR no se lee bien impreso.
   const qrSize = clamp(settings.qrSize, 28, 45);
   const single = mode === "cards" && settings.output === "single";
@@ -215,8 +221,19 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
   const printOf = (id: string, patch: TagPrint): TagPrint => ({ name: settings.tagNames[id], character: settings.tagCharacters[id], color: settings.tagColors[id], ...patch });
   const tagBackDesign = (layout: Settings["tagLayout"]) => layout === "v2" ? "v2" : layout === "v3" ? "v3" : layout === "v4" ? "v4" : "classic";
   const setTagName = (id: string, name: string) => {
-    update({ tagNames: { ...settings.tagNames, [id]: name.slice(0, 14) } });
-    saveUnit(id, printOf(id, { name: name.slice(0, 14) }), 700);
+    const cleanName = name.slice(0, 14);
+    const tagNames = { ...settings.tagNames, [id]: cleanName };
+    if (cleanName.trim() && isGenericCharacterId(settings.tagCharacters[id] || "")) {
+      const tagCharacters = { ...settings.tagCharacters };
+      delete tagCharacters[id];
+      update({ tagNames, tagCharacters });
+      saveUnit(id, printOf(id, { name: cleanName, character: undefined }), 700);
+      setEditorNotice({ id, message: "Agregaste un nombre: cambiamos el diseño genérico por uno compatible." });
+      return;
+    }
+    setEditorNotice(null);
+    update({ tagNames });
+    saveUnit(id, printOf(id, { name: cleanName }), 700);
   };
   const setTagCharacter = (id: string, character: string) => {
     const next = { ...settings.tagCharacters };
@@ -224,6 +241,15 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
     else next[id] = character as TagCharacterId;
     update({ tagCharacters: next });
     saveUnit(id, printOf(id, { character: next[id] }));
+    setEditorNotice(null);
+  };
+  const setGenericCharacter = (id: string, character: TagCharacterId) => {
+    const previousName = settings.tagNames[id]?.trim();
+    const tagNames = { ...settings.tagNames }; delete tagNames[id];
+    const tagCharacters = { ...settings.tagCharacters, [id]: character };
+    update({ tagNames, tagCharacters });
+    saveUnit(id, { character, color: settings.tagColors[id] });
+    setEditorNotice({ id, message: previousName ? `Quitamos “${previousName}” y aplicamos el diseño genérico.` : "Diseño genérico aplicado." });
   };
   const setTagColor = (id: string, color: string) => {
     const next = { ...settings.tagColors };
@@ -234,7 +260,12 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
   };
   // Lo automático sale del N° de unidad (no del orden en la lista): así no cambia cuando se
   // activa otra chapita del lote y se reimprime.
-  const characterOf = (item: PrintItem) => settings.tagCharacters[item.id] || tagCharacterFor(settings.tagCharacter, item.number - 1);
+  const characterOf = (item: PrintItem) => {
+    const chosen = settings.tagCharacters[item.id];
+    return chosen && (!settings.tagNames[item.id]?.trim() || !isGenericCharacterId(chosen))
+      ? chosen
+      : tagCharacterFor(settings.tagCharacter, item.number - 1);
+  };
   const colorOf = (item: PrintItem) => {
     const choice = settings.tagColors[item.id] || settings.qrColor;
     const mix = ["blue", "violet", "pink", "orange", "green"];
@@ -254,6 +285,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
     const tagColors = { ...settings.tagColors }; delete tagColors[id];
     update({ tagNames, tagCharacters, tagColors });
     saveUnit(id, {});
+    setEditorNotice(null);
   };
   const tagArtwork = (item: PrintItem, side: "front" | "back", suffix: string) => <div className={`ps-tag-ring${settings.cutLines ? " has-cut" : ""}`}>
     {side === "front"
@@ -283,16 +315,19 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
       </div>
 
       {mode === "cards" ? <>
+        <div className="ps-stage-title"><span>1</span><div><strong>Diseño de tarjetas</strong><small>Elegí formato, estilo y tamaño.</small></div></div>
         <fieldset className="ps-group"><legend>Formato de tarjeta</legend>
           <div className="ps-card-formats">
             <button type="button" className={settings.cardLayout === "classic" ? "is-on" : ""} onClick={() => update({ cardLayout: "classic" })}><span className="ps-card-format-preview is-classic"><i /></span><strong>Diseño 1</strong><small>Clásica · QR visible · medida configurable</small></button>
-            <button type="button" className={secureCard ? "is-on" : ""} onClick={() => update({ cardLayout: secureCard ? settings.cardLayout : "secure", sides: "front" })}><span className="ps-card-format-preview is-secure"><i /><b /></span><strong>Diseño 2</strong><small>Una sola faz · solapa privada · recomendado</small></button>
+            <button type="button" className={secureCard ? "is-on" : ""} onClick={() => update({ cardLayout: secureCard ? settings.cardLayout : "flap-a", sides: "front" })}><span className="ps-card-format-preview is-secure"><i /><b /></span><strong>Diseño 2</strong><small>Una sola faz · solapa privada · recomendado</small></button>
           </div>
           {secureCard && <div className="ps-tag-styles ps-flap-variants">
-            {([["secure", "Actual"], ["flap-a", "A · Tapa limpia"], ["flap-b", "B · Pasos a la vista"]] as const).map(([value, label]) => <button key={value} type="button" className={settings.cardLayout === value ? "is-on" : ""} onClick={() => update({ cardLayout: value, sides: "front" })}>{label}</button>)}
+            {([["flap-a", "A · Tapa limpia"], ["flap-b", "B · Pasos a la vista"]] as const).map(([value, label]) => <button key={value} type="button" className={settings.cardLayout === value ? "is-on" : ""} onClick={() => update({ cardLayout: value, sides: "front" })}>{label}</button>)}
+          </div>}
+          {secureCard && <div className="ps-tag-styles ps-flap-variants">
+            {([[false, "Aspecto original"], [true, "Aspecto nuevo ✨"]] as const).map(([value, label]) => <button key={label} type="button" className={settings.flapFresh === value ? "is-on" : ""} onClick={() => update({ flapFresh: value })}>{label}</button>)}
           </div>}
           {isFlapCard(settings.cardLayout) && <p className="ps-fold-note"><b>Armado:</b> doblá la solapa hacia adelante por la línea punteada (tapa el QR) y cerrala con un <b>calco redondo de ~16 mm</b> sobre su borde, mitad sobre la tapa. En pantalla te marco dónde va; no se imprime.</p>}
-          {settings.cardLayout === "secure" && <p className="ps-fold-note"><b>Recomendado:</b> doblá la solapa hacia adelante, sobre el QR. El reverso de la solapa funciona como tapa de seguridad.</p>}
         </fieldset>
         <fieldset className="ps-group"><legend>Estilo visual</legend>
           <div className="ps-designs">{DESIGNS.map((design) => <button key={design.id} type="button" className={settings.design === design.id ? "is-on" : ""} onClick={() => update({ design: design.id })}>
@@ -300,7 +335,13 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
           </button>)}</div>
         </fieldset>
         <fieldset className="ps-group"><legend>Tamaño</legend>
-          {secureCard ? <div className="ps-fixed-size"><strong>{width}×55 mm abierta</strong><small>La parte terminada queda de 85×55 mm más la solapa doblada.</small></div> : <><select value={settings.size} onChange={(event) => { const size = SIZES.find((item) => item.id === event.target.value)!; update(size.id === "custom" ? { size: size.id } : { size: size.id, width: size.width, height: size.height }); }}>
+          {secureCard ? <>
+            <div className="ps-row">
+              <label>Ancho cerrada (mm)<input type="number" min={FLAP_LIMITS.width[0]} max={FLAP_LIMITS.width[1]} value={settings.flapWidth} onChange={(event) => update({ flapWidth: Number(event.target.value) })} /></label>
+              <label>Alto (mm)<input type="number" min={FLAP_LIMITS.height[0]} max={FLAP_LIMITS.height[1]} value={settings.flapHeight} onChange={(event) => update({ flapHeight: Number(event.target.value) })} /></label>
+            </div>
+            <small className="ps-muted">Cerrada {flapClosed.width}×{flapClosed.height} mm · abierta {width}×{height} mm (la solapa del QR suma {FLAP_WIDTH} mm). Ancho de {FLAP_LIMITS.width[0]} a {FLAP_LIMITS.width[1]} y alto de {FLAP_LIMITS.height[0]} a {FLAP_LIMITS.height[1]}.</small>
+          </> : <><select value={settings.size} onChange={(event) => { const size = SIZES.find((item) => item.id === event.target.value)!; update(size.id === "custom" ? { size: size.id } : { size: size.id, width: size.width, height: size.height }); }}>
             {SIZES.map((size) => <option key={size.id} value={size.id}>{size.label}</option>)}
           </select>
           {settings.size === "custom" && <div className="ps-row">
@@ -316,6 +357,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
           <label className="ps-check"><input type="radio" checked={settings.output === "sheet"} onChange={() => update({ output: "sheet" })} />Hoja {paper}, {perCardPage} por hoja (imprimir en casa)</label>
         </fieldset>
       </> : <>
+      <div className="ps-stage-title"><span>1</span><div><strong>Diseño general</strong><small>Definí cómo se imprimen todas las chapitas.</small></div></div>
       <section className="ps-layouts" aria-label="Diseño de la chapita">
         <span className="ps-layouts-title">Diseño de la chapita</span>
         <div>{LAYOUTS.map((layout, index) => {
@@ -375,19 +417,21 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
         </div>
       </details>
 
+      <div className="ps-stage-title"><span>2</span><div><strong>Personalizar unidades</strong><small>Elegí una chapita y ajustala sin afectar las demás.</small></div></div>
       <section className="ps-personalize" aria-label="Personalización por unidad">
-        <div className="ps-personalize-head"><strong>Elegí una unidad</strong><small className={`ps-save is-${saveState}`}>{{ idle: "Después personalizá sólo esa. Se guarda sola.", saving: "Guardando…", saved: "✓ Guardado en la chapita", error: "⚠ No se pudo guardar. Revisá la conexión." }[saveState]}</small></div>
+        <div className="ps-personalize-head"><div><strong>Elegí una unidad</strong>{previewItem && <span className={settings.tagNames[previewItem.id]?.trim() ? "has-name" : "is-stock"}>{settings.tagNames[previewItem.id]?.trim() ? "Con nombre" : "Stock"}</span>}</div><small className={`ps-save is-${saveState}`}>{{ idle: "Se guarda automáticamente.", saving: "Guardando…", saved: "✓ Guardado en la chapita", error: "⚠ No se pudo guardar. Revisá la conexión." }[saveState]}</small></div>
         <div className="ps-unit-picker">{items.map((item) => <button type="button" key={item.id} className={previewItem?.id === item.id ? "is-on" : ""} onClick={() => setPreviewId(item.id)}>
           <span style={{ background: TAG_COLORS.find((color) => color.id === colorOf(item))?.value || colorOf(item) }} />
-          <b>{unitNumber(item.number)} · {item.code}</b><small>{settings.tagNames[item.id]?.trim() || "Stock"}</small>
+          <span className="ps-unit-copy"><b>{item.code}</b><small>{unitNumber(item.number)}</small></span><em className={settings.tagNames[item.id]?.trim() ? "has-name" : "is-stock"}>{settings.tagNames[item.id]?.trim() || "Stock"}</em>
         </button>)}</div>
         {previewItem && <div className="ps-unit-editor">
           <label>Nombre <small>Opcional · vacío para stock</small><input value={settings.tagNames[previewItem.id] || ""} maxLength={14} placeholder="Ej: Luna" onChange={(event) => setTagName(previewItem.id, event.target.value)} /></label>
           <span className="ps-editor-label">Animal</span>
-          <CharacterPicker value={settings.tagCharacters[previewItem.id] || ""} auto={tagCharacterFor(settings.tagCharacter, previewItem.number - 1)} color={colorOf(previewItem)} onChange={(id) => setTagCharacter(previewItem.id, id)} />
+          {editorNotice?.id === previewItem.id && <p className="ps-editor-notice" role="status">{editorNotice.message}</p>}
+          <CharacterPicker value={settings.tagCharacters[previewItem.id] || ""} auto={tagCharacterFor(settings.tagCharacter, previewItem.number - 1)} color={colorOf(previewItem)} name={settings.tagNames[previewItem.id] || ""} onChange={(id) => setTagCharacter(previewItem.id, id)} onChooseGeneric={(id) => setGenericCharacter(previewItem.id, id)} />
           <span className="ps-editor-label">Color</span>
           <div className="ps-colors ps-unit-colors">
-            <button type="button" className={!settings.tagColors[previewItem.id] ? "is-on" : ""} onClick={() => setTagColor(previewItem.id, "")} title="Automático"><span className="is-auto">A</span></button>
+            <button type="button" className={`ps-auto-color${!settings.tagColors[previewItem.id] ? " is-on" : ""}`} onClick={() => setTagColor(previewItem.id, "")} aria-label="Color automático" title="Color automático"><span className="is-auto">A</span><small>Auto</small></button>
             {TAG_COLORS.filter((color) => color.id !== "mix").map((color) => <button key={color.id} type="button" className={settings.tagColors[previewItem.id] === color.id ? "is-on" : ""} onClick={() => setTagColor(previewItem.id, color.id)} aria-label={color.label} title={color.label}><span style={{ background: color.value }} /></button>)}
           </div>
           <button type="button" className="ps-reset-unit" onClick={() => resetTag(previewItem.id)}>Restablecer esta unidad</button>
@@ -396,6 +440,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
       <small className="ps-muted">El dorso conserva siempre el diseño original y el QR público. El código privado va sólo en la tarjeta de activación.</small>
       </>}
 
+      <div className="ps-stage-title"><span>{mode === "qr" ? 3 : 2}</span><div><strong>Preparar impresión</strong><small>Revisá hoja, corte y cantidad de páginas.</small></div></div>
       {!single && <fieldset className="ps-group"><legend>Hoja</legend>
         <div className="ps-tag-styles">
           {(Object.keys(PAPERS) as Paper[]).map((size) => <button key={size} type="button" className={paper === size ? "is-on" : ""} onClick={() => update({ paper: size })}>{size} · {PAPERS[size].width}×{PAPERS[size].height} mm</button>)}
@@ -407,17 +452,23 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
         <label className="ps-check"><input type="checkbox" checked={settings.cutLines} onChange={(event) => update({ cutLines: event.target.checked })} />Líneas de corte punteadas</label>
       </fieldset>}
 
-      <button type="button" className="btn full ps-print" onClick={() => window.print()} disabled={!items.length}><LuPrinter aria-hidden="true" /> Imprimir o guardar PDF</button>
-      <div className="ps-help">
-        <strong>{single ? "Para la imprenta o Canva" : "Para imprimir"}</strong>
-        <span>En la ventana de impresión elegí <b>Guardar como PDF</b>, márgenes <b>Ninguno</b> y activá <b>Gráficos de fondo</b>.</span>
-        {single
-          ? <span>Cada cara va en su página, a {width}×{height} mm con <b>2 mm de sangrado</b> y marcas de corte{cardBoth ? ", frente y dorso intercalados" : ""}. Así lo piden las imprentas, y en Canva se importa con <b>Subir → el PDF</b>.{secureCard ? " La línea interior es para doblar la solapa sobre el QR, no para cortar." : ""}</span>
-          : cardBoth && mode === "cards" && <span>Doble faz, <b>girando por el lado largo</b>: los dorsos ya están ubicados para caer detrás de cada frente.</span>}
-        {mode === "qr" && settings.tagOutput === "pairs" && <span>Cada unidad sale como un par: <b>frente y dorso juntos</b> en la misma hoja, listos para cortar y emparejar.</span>}
-        {mode === "qr" && settings.tagOutput === "duplex" && settings.tagSides === "both" && <span>Primero sale la hoja de frentes y después la de dorsos, ya <b>espejada por fila</b>. Imprimí doble faz girando por el lado largo.</span>}
-        {mode === "qr" && <span>La hoja de chapitas no lleva códigos privados: cada par se empareja con su tarjeta por el <b>N° de unidad</b>. Al terminar de armar, controlá cada una con <b>Verificar armado</b>.</span>}
-        {mode === "cards" && <span className="is-warn">Las tarjetas tienen los códigos para activar: no compartas el PDF por cualquier lado.</span>}
+      <details className="ps-help-details">
+        <summary>¿Cómo imprimir correctamente?</summary>
+        <div className="ps-help">
+          <span>Elegí <b>Guardar como PDF</b>, márgenes <b>Ninguno</b> y activá <b>Gráficos de fondo</b>.</span>
+          {single
+            ? <span>Cada cara va en su página, a {width}×{height} mm con <b>2 mm de sangrado</b> y marcas de corte{cardBoth ? ", frente y dorso intercalados" : ""}.{secureCard ? " La línea interior es para doblar la solapa, no para cortar." : ""}</span>
+            : cardBoth && mode === "cards" && <span>Doble faz: imprimí girando por el <b>lado largo</b>.</span>}
+          {mode === "qr" && settings.tagOutput === "pairs" && <span>Cada unidad sale como <b>frente y dorso juntos</b>, lista para cortar y emparejar.</span>}
+          {mode === "qr" && settings.tagOutput === "duplex" && settings.tagSides === "both" && <span>Los dorsos ya salen espejados. Imprimí doble faz girando por el lado largo.</span>}
+          {mode === "qr" && <span>Al terminar, controlá cada chapita con <b>Verificar armado</b>.</span>}
+          {mode === "cards" && <span className="is-warn">No compartas el PDF: contiene códigos de activación.</span>}
+        </div>
+      </details>
+
+      <div className="ps-print-dock">
+        <div className="ps-print-summary"><div><strong>{paper} · {items.length} {items.length === 1 ? "unidad" : "unidades"}</strong><small>{pageCount} {pageCount === 1 ? "página" : "páginas"}{mode === "qr" && settings.tagOutput === "pairs" ? " · frente y dorso juntos" : ""}</small></div>{mode === "cards" ? <span className="is-warn">Códigos privados</span> : <span className="is-ready">Listo para imprimir</span>}</div>
+        <button type="button" className="btn full ps-print" onClick={() => window.print()} disabled={!items.length}><LuPrinter aria-hidden="true" /> Imprimir o guardar PDF</button>
       </div>
     </aside>
 
@@ -432,7 +483,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
       </section>}
       {single ? items.flatMap((item) => [
         <section key={`${item.id}-f`} className={`ps-single ps-selectable${previewItem?.id === item.id ? " is-selected" : ""}`} style={{ width: `${singlePage.width}mm`, height: `${singlePage.height}mm` }} aria-label={`Seleccionar tarjeta con código ${item.code}: frente`} role="button" tabIndex={0} onClick={() => selectItem(item.id)} onKeyDown={(event) => selectItemFromKeyboard(event, item.id)}>
-          <CardFront design={settings.design} layout={settings.cardLayout} item={item} host={host} style={bleedStyle} bleed />
+          <CardFront design={settings.design} layout={settings.cardLayout} item={item} host={host} style={bleedStyle} bleed closed={flapClosed} fresh={settings.flapFresh} />
           <CropMarks width={width} height={height} />
         </section>,
         ...(cardBoth ? [<section key={`${item.id}-b`} className={`ps-single ps-selectable${previewItem?.id === item.id ? " is-selected" : ""}`} style={{ width: `${singlePage.width}mm`, height: `${singlePage.height}mm` }} aria-label={`Seleccionar tarjeta con código ${item.code}: dorso`} role="button" tabIndex={0} onClick={() => selectItem(item.id)} onKeyDown={(event) => selectItemFromKeyboard(event, item.id)}>
@@ -443,7 +494,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
         <section className="ps-page" aria-label={`Hoja ${pageIndex + 1}: frentes`}>
           <span className="ps-page-label">Hoja {pageIndex + 1} · frentes</span>
           <div className="ps-grid" style={gridStyle(cardCols, width, cardGap)}>
-            {page.map((item) => <button type="button" key={item.id} className={`ps-cell ps-selectable${settings.cutLines ? " has-cut" : ""}${previewItem?.id === item.id ? " is-selected" : ""}`} onClick={() => selectItem(item.id)} aria-label={`Seleccionar tarjeta con código ${item.code}`}><CardFront design={settings.design} layout={settings.cardLayout} item={item} host={host} style={cardStyle} /></button>)}
+            {page.map((item) => <button type="button" key={item.id} className={`ps-cell ps-selectable${settings.cutLines ? " has-cut" : ""}${previewItem?.id === item.id ? " is-selected" : ""}`} onClick={() => selectItem(item.id)} aria-label={`Seleccionar tarjeta con código ${item.code}`}><CardFront design={settings.design} layout={settings.cardLayout} item={item} host={host} style={cardStyle} closed={flapClosed} fresh={settings.flapFresh} /></button>)}
           </div>
           <SheetFoot batchName={batchName} page={pageIndex + 1} pages={cardPages.length} items={page} detail="Tarjetas · frentes" />
         </section>

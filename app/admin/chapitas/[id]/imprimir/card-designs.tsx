@@ -5,18 +5,22 @@
 // crece con el tamaño elegido (print-studio.tsx), así que todo escala junto. Ningún texto queda
 // por debajo de 2,2em (~6 puntos impreso). Estilos en print-studio.css (.pc-*).
 import type { CSSProperties, ReactNode } from "react";
-import { LuBone, LuCat, LuDog, LuHeart, LuLeaf, LuLock, LuPawPrint, LuSparkles, LuStar, LuSun } from "react-icons/lu";
+import { LuBone, LuCat, LuDog, LuHeart, LuLock, LuPawPrint, LuSparkles, LuStar } from "react-icons/lu";
 import { LOGO_FONT_FAMILY } from "@/components/bionfc-logo";
 import { unitNumber } from "@/lib/pet-tags";
 import type { PrintItem } from "./print-studio";
 
-export type DesignId = "playful" | "paws" | "bones" | "kitty" | "park";
-export type CardLayout = "classic" | "secure" | "flap-a" | "flap-b";
-// Las variantes con solapa: abiertas miden 115×55 (cuerpo de 85 + solapa de 30) y se imprimen de
-// una sola faz. Cerradas, la solapa tapa la zona 55–85 del cuerpo y se cierra con un calco redondo
-// sobre su borde (x = 55): esa franja de la tapa queda libre.
+export type DesignId = "playful" | "paws" | "bones" | "kitty";
+export type CardLayout = "classic" | "flap-a" | "flap-b";
+// Las variantes con solapa se imprimen de una sola faz. Cerradas miden ancho × alto (85×55 por
+// defecto, ver FLAP_LIMITS); la solapa siempre mide 30 mm (lo que necesita el QR) y abierta suma
+// esos 30. Cerrada, la solapa tapa los últimos 30 mm del cuerpo y se cierra con un calco redondo
+// sobre su borde: esa franja de la tapa queda libre.
 export const isFlapCard = (layout: CardLayout) => layout === "flap-a" || layout === "flap-b";
-export const cardOpenWidth = (layout: CardLayout) => layout === "secure" ? 110 : isFlapCard(layout) ? 115 : 0;
+export const FLAP_WIDTH = 30;
+// WhatsApp de ayuda que se imprime debajo del código (vacío: no se imprime).
+const HELP_WHATSAPP = "351 787 3628";
+export const FLAP_LIMITS = { width: [80, 95], height: [40, 60] } as const;
 
 type Design = {
   id: DesignId;
@@ -60,12 +64,6 @@ export const DESIGNS: Design[] = [
     deco: [{ icon: <LuCat />, x: 44, y: 72, size: 11, rotate: -6 }, { icon: <LuPawPrint />, x: 4, y: 76, size: 9, rotate: -16 }, { icon: <LuSparkles />, x: 40, y: 4, size: 5, rotate: 0 }],
     backDeco: [{ icon: <LuCat />, x: 14, y: 42, size: 14, rotate: -8 }, { icon: <LuPawPrint />, x: 38, y: 14, size: 6, rotate: 18 }],
   },
-  {
-    id: "park", label: "Parque", hint: "Verde y amarillo, sol y hojitas", swatch: "linear-gradient(135deg, #e5f6c9 0 50%, #2f6b2f 50%)",
-    title: "¡A jugar! Pero primero, activame", lead: LEAD, backTitle: "Para que siempre vuelva",
-    deco: [{ icon: <LuSun />, x: 40, y: 2, size: 9, rotate: 0 }, { icon: <LuLeaf />, x: 2, y: 74, size: 10, rotate: -30 }, { icon: <LuLeaf />, x: 16, y: 86, size: 6, rotate: 20 }, { icon: <LuPawPrint />, x: 48, y: 78, size: 7, rotate: -14 }],
-    backDeco: [{ icon: <LuLeaf />, x: 12, y: 46, size: 13, rotate: -24 }, { icon: <LuSun />, x: 38, y: 8, size: 7, rotate: 0 }],
-  },
 ];
 
 const designOf = (id: DesignId) => DESIGNS.find((design) => design.id === id) || DESIGNS[0];
@@ -83,24 +81,27 @@ export { unitNumber };
 export const unit = (number: number) => `UNIDAD ${unitNumber(number)}`;
 
 // bleed: la tarjeta con sangrado (el fondo sigue 2 mm más por fuera, ver .pc.is-bleed).
-export function CardFront({ design: id, layout = "classic", item, host, style, bleed = false }: { design: DesignId; layout?: CardLayout; item: PrintItem; host: string; style: CSSProperties; bleed?: boolean }) {
+export function CardFront({ design: id, layout = "classic", item, host, style, bleed = false, closed = { width: 85, height: 55 }, fresh = false }: { design: DesignId; layout?: CardLayout; item: PrintItem; host: string; style: CSSProperties; bleed?: boolean; closed?: { width: number; height: number }; fresh?: boolean }) {
   const design = designOf(id);
   if (isFlapCard(layout)) {
     const clean = layout === "flap-a";
-    // Los pasos reales de la activación: escanear, entrar con el email y cargar nombre y WhatsApp
-    // (la foto es opcional, se puede saltear).
+    // Los pasos reales de la activación: escanear, confirmar el email con el código de 6 dígitos que
+    // llega por mail y cargar nombre y WhatsApp (la foto es opcional). Hablan como la mascota, igual
+    // que el título. En la tapa de la B el QR está tapado: el primer paso arranca abriendo la solapa.
     const steps = <ol>
-      <li><b>1</b>Escaneá el QR</li>
-      <li><b>2</b>Entrá con tu email</li>
-      <li><b>3</b>Poné su nombre y tu WhatsApp</li>
+      <li><b>1</b>{clean ? "Escaneá el QR" : "Abrí la solapa y escaneá el QR"}</li>
+      <li><b>2</b>Poné tu email y el código que te llega</li>
+      <li><b>3</b>Cargá mi nombre y tu WhatsApp</li>
     </ol>;
+    const later = <small>Después: editá mis datos o avisá si me pierdo en <b>{host}/mi</b>.</small>;
     // Los adornos del estilo sólo en esquinas libres: arriba a la derecha de la tapa y abajo en la
     // zona interior. Nunca detrás del texto ni donde va el calco.
     const [first, second] = design.deco;
-    return <article className={`pc pc-${design.id} pc-front is-flap${bleed ? " is-bleed" : ""}`} style={style}>
+    const sizes = { "--pc-c": `${closed.width - FLAP_WIDTH}em`, "--pc-w": `${closed.width}em`, "--pc-h": `${closed.height}em` } as CSSProperties;
+    return <article className={`pc pc-${design.id} pc-front is-flap${clean ? "" : " is-steps"}${fresh ? " is-fresh" : ""}${bleed ? " is-bleed" : ""}`} style={{ ...style, ...sizes }}>
       <div className="pc-deco pc-flap-deco" aria-hidden="true">
-        {first && <span style={{ left: "40em", top: "3.5em", transform: `rotate(${first.rotate}deg)` }}><i style={{ display: "block", fontSize: "9em" }}>{first.icon}</i></span>}
-        {second && <span style={{ left: "76em", top: "44em", transform: `rotate(${second.rotate}deg)` }}><i style={{ display: "block", fontSize: "7em" }}>{second.icon}</i></span>}
+        {first && <span style={{ left: "calc(var(--pc-c) - 15em)", top: "3.5em", transform: `rotate(${first.rotate}deg)` }}><i style={{ display: "block", fontSize: "9em" }}>{first.icon}</i></span>}
+        {second && <span style={{ left: "calc(var(--pc-w) - 9em)", top: "calc(var(--pc-h) - 11em)", transform: `rotate(${second.rotate}deg)` }}><i style={{ display: "block", fontSize: "7em" }}>{second.icon}</i></span>}
       </div>
       {/* Tapa (0–55): lo que se ve con la tarjeta cerrada. */}
       <div className="pc-flap-cover">
@@ -109,7 +110,7 @@ export function CardFront({ design: id, layout = "classic", item, host, style, b
           <h2>{design.title}</h2>
           {clean ? <span className="pc-flap-open">Abrí la solapa <i aria-hidden="true">→</i></span> : steps}
         </div>
-        <small className="pc-flap-foot">{unit(item.number)} · Si se pierde, quien la encuentre te avisa</small>
+        <small className="pc-flap-foot">Si me pierdo, quien me encuentre te avisa</small>
       </div>
       {/* Bajo la solapa (55–85): se ve al abrirla, al lado del QR. */}
       <div className="pc-flap-inside">
@@ -117,10 +118,11 @@ export function CardFront({ design: id, layout = "classic", item, host, style, b
           <strong>Así se activa</strong>
           {steps}
           <small>¿Sin cámara? Entrá a <b>{host}/activar</b> y escribí el código.</small>
+          {later}
         </> : <>
           <strong>¿No podés escanear?</strong>
           <small>Entrá a <b>{host}/activar</b> y escribí el código.</small>
-          <small>Después la editás cuando quieras en <b>{host}/mi</b>.</small>
+          {later}
         </>}
       </div>
       {/* Solapa (85–115): el QR y el código, enteros y a 4 mm del pliegue. */}
@@ -129,43 +131,16 @@ export function CardFront({ design: id, layout = "classic", item, host, style, b
         {/* eslint-disable-next-line @next/next/no-img-element -- QR secreto generado en el servidor */}
         <div className="pc-qrbox">{item.activationQr && <img src={item.activationQr} alt="" />}</div>
         <span className="pc-code">{item.code}</span>
+        {HELP_WHATSAPP && <small className="pc-flap-help">¿Ayuda? WhatsApp <b>{HELP_WHATSAPP}</b></small>}
       </div>
       <span className="pc-flap-fold" aria-hidden="true" />
       {/* Sólo en pantalla: dónde va el calco que cierra la solapa. */}
       <span className="pc-flap-sticker" aria-hidden="true"><i>calco</i></span>
     </article>;
   }
-  if (layout === "secure") return <article className={`pc pc-${design.id} pc-front is-secure${bleed ? " is-bleed" : ""}`} style={style}>
-    <Deco items={design.deco} />
-    <div className="pc-secure-main">
-      <div className="pc-secure-copy">
-        <div className="pc-secure-top"><span className="pc-unit">{unit(item.number)}</span><span className="pc-product-chip">NFC + QR</span></div>
-        <h2>Activá la chapita</h2>
-        <p>En 2 minutos queda lista.</p>
-        <ol>
-          <li><b>1</b><span>Abrí la solapa.</span></li>
-          <li><b>2</b><span>Escaneá el QR o usá el código.</span></li>
-          <li><b>3</b><span>Cargá la foto y tu WhatsApp.</span></li>
-        </ol>
-        <p className="pc-secure-benefit"><strong>Si se pierde,</strong> quien la encuentre puede avisarte.</p>
-        <div className="pc-secure-edit"><Logo /><small>Después podés editarla en <b>{host}/mi</b></small></div>
-      </div>
-      <div className="pc-secure-secret">
-        <strong><LuLock aria-hidden="true" /> Para activar</strong>
-        {/* eslint-disable-next-line @next/next/no-img-element -- QR secreto generado en el servidor */}
-        <div className="pc-qrbox">{item.activationQr && <img src={item.activationQr} alt="" />}</div>
-        <span className="pc-code">{item.code}</span>
-        <small>{host}/activar</small>
-        <em>Código privado</em>
-      </div>
-    </div>
-    <span className="pc-fold-line"><i>DOBLAR SOBRE EL QR</i></span>
-    <div className="pc-secure-flap"><span aria-hidden="true">←</span><strong>Doblá esta solapa sobre el QR</strong><small>Así el código queda oculto y protegido.</small></div>
-  </article>;
   return <article className={`pc pc-${design.id} pc-front${bleed ? " is-bleed" : ""}`} style={style}>
     <Deco items={design.deco} />
     <div className="pc-copy">
-      <span className="pc-unit">{unit(item.number)}</span>
       <h2>{design.title}</h2>
       <p>{design.lead}</p>
       <Logo />

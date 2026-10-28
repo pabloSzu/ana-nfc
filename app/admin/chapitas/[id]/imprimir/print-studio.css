@@ -16,11 +16,11 @@
 .ps-group label { display: grid; gap: 4px; font-size: 13px; font-weight: 700; }
 .ps-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .ps-group .ps-check { display: flex; align-items: center; gap: 8px; font-weight: 600; }
-.ps-group .ps-check input { flex: none; width: 16px; height: 16px; min-height: 0; margin: 0; padding: 0; accent-color: #1d2130; }
-.ps-group input[type=range] { width: 100%; accent-color: #1d2130; }
+.ps-group .ps-check input { flex: none; width: 16px; height: 16px; min-height: 0; margin: 0; padding: 0; accent-color: #4b6bff; }
+.ps-group input[type=range] { width: 100%; accent-color: #4b6bff; }
 .ps-card-formats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .ps-card-formats button { display: grid; grid-template-columns: 54px 1fr; grid-template-rows: auto auto; align-items: center; gap: 2px 9px; min-width: 0; padding: 10px; border: 1.5px solid #e1e4ea; border-radius: 13px; background: #fff; color: #1d2130; font: inherit; text-align: left; cursor: pointer; }
-.ps-card-formats button.is-on { border-color: #e9772f; background: #fff8f3; box-shadow: 0 0 0 3px #e9772f1f; }
+.ps-card-formats button.is-on { border-color: #4b6bff; background: #f2f5ff; box-shadow: 0 0 0 3px #4b6bff1f; }
 .ps-card-formats strong { font-size: 13px; }
 .ps-card-formats small { grid-column: 2; color: #6b7080; font-size: 10.5px; line-height: 1.3; }
 .ps-card-format-preview { position: relative; grid-row: span 2; width: 54px; height: 34px; overflow: hidden; border-radius: 4px; background: linear-gradient(145deg, #ffe0c2, #ffc6d9); box-shadow: inset 0 0 0 1px #0002; }
@@ -34,13 +34,19 @@
 .ps-fixed-size small { color: #6b7080; font-size: 11.5px; }
 .ps-designs { display: grid; gap: 6px; }
 .ps-designs button { display: grid; grid-template-columns: 34px 1fr; grid-template-rows: auto auto; column-gap: 10px; align-items: center; padding: 9px 10px; border: 1.5px solid #e4e6ec; border-radius: 12px; background: #fff; font: inherit; text-align: left; cursor: pointer; }
-.ps-designs button.is-on { border-color: #1d2130; box-shadow: 0 0 0 2px #1d213014; }
+.ps-designs button.is-on { border-color: #4b6bff; background: #f2f5ff; box-shadow: 0 0 0 2px #4b6bff14; }
 .ps-designs strong { font-size: 14px; }
 .ps-designs small { grid-column: 2; color: #6b7080; font-size: 11.5px; }
 .ps-swatch { grid-row: span 2; width: 34px; height: 24px; border-radius: 6px; box-shadow: inset 0 0 0 1px #0002; }
-.ps-print { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.ps-print { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 50px; border-color: #3f5df5; border-radius: 11px; background: linear-gradient(135deg, #4b6bff, #334dcc); color: #fff; font-size: 14px; font-weight: 800; box-shadow: 0 8px 18px #3f5df52d; }
+.ps-print:hover { background: linear-gradient(135deg, #405ff5, #2d45c1); box-shadow: 0 10px 22px #3f5df53d; }
 .ps-help { display: grid; gap: 6px; padding: 12px; border-radius: 12px; background: #f6f7f9; font-size: 12.5px; line-height: 1.45; }
 .ps-help .is-warn { color: #9a3412; }
+.ps-stage-title { display: flex; align-items: center; gap: 10px; margin-top: 3px; padding-top: 13px; border-top: 1px solid #e8eaf0; }
+.ps-stage-title > span { display: grid; flex: none; place-items: center; width: 27px; height: 27px; border-radius: 50%; background: #e9efff; color: #3446c9; font-size: 12px; font-weight: 900; }
+.ps-stage-title > div { display: grid; gap: 1px; }
+.ps-stage-title strong { color: #252b3a; font-size: 14px; }
+.ps-stage-title small { color: #777d8c; font-size: 10.5px; }
 .ps-sheets { display: grid; justify-content: center; align-content: start; gap: 28px; padding: 28px; overflow-x: auto; }
 .ps-sheets.is-single { display: flex; flex-wrap: wrap; align-content: flex-start; justify-content: center; gap: 16px; }
 .ps-pair { display: grid; gap: 28px; }
@@ -117,34 +123,6 @@
 
 /* Diseño 2: una sola faz. La solapa derecha se dobla hacia la izquierda, sobre el QR privado;
    su reverso sin imprimir queda por fuera y funciona como tapa de seguridad. */
-.pc-front.is-secure { display: block; padding: 0; }
-.pc-secure-main { position: absolute; z-index: 1; inset: 0 25em 0 0; display: grid; grid-template-columns: 64em 21em; }
-.pc-secure-copy { display: grid; align-content: space-between; min-width: 0; padding: 3.5em 3.2em 3.5em 4.5em; }
-.pc-secure-top { display: flex; align-items: center; justify-content: space-between; gap: 1.5em; }
-.pc-front.is-secure .pc-unit { font-size: 1.65em; }
-.pc-product-chip { padding: .45em .75em; border: .15em solid currentColor; border-radius: 99em; font-size: 1.45em; font-weight: 850; letter-spacing: .06em; }
-.pc-secure-copy h2 { font-size: 4.4em; font-weight: 850; line-height: 1; letter-spacing: -.035em; }
-.pc-secure-copy > p:not(.pc-secure-benefit) { font-size: 2.2em; font-weight: 700; line-height: 1.2; }
-.pc-secure-copy ol { display: grid; gap: .55em; padding: 0; list-style: none; }
-.pc-secure-copy li { display: flex; align-items: center; gap: .75em; font-size: 2.05em; font-weight: 700; line-height: 1.18; }
-.pc-secure-copy li b { display: grid; flex: none; place-items: center; width: 1.8em; height: 1.8em; border-radius: 50%; background: #1d2130; color: #fff; font-size: .75em; }
-.pc-secure-benefit { padding: .75em 1em; border-radius: 1.3em; background: #ffffff75; font-size: 1.85em; font-weight: 650; line-height: 1.22; }
-.pc-secure-edit { display: flex; align-items: center; justify-content: space-between; gap: 1.5em; }
-.pc-secure-edit .pc-logo { flex: none; font-size: 2.45em; }
-.pc-secure-edit small { max-width: 25em; font-size: 1.35em; line-height: 1.2; text-align: right; }
-.pc-secure-secret { display: grid; align-content: center; justify-items: center; gap: .55em; padding: 2.2em .8em; }
-.pc-secure-secret > strong { display: flex; align-items: center; gap: .35em; font-size: 1.35em; font-weight: 900; text-transform: uppercase; }
-.pc-secure-secret > strong svg { width: 1em; height: 1em; }
-.pc-front.is-secure .pc-qrbox { width: 20.5em; height: 20.5em; padding: 1em; border-radius: 2.5em; transform: none; }
-.pc-front.is-secure .pc-code { padding: .2em .4em; font-size: 2.15em; }
-.pc-secure-secret small { font-size: 1.25em; font-weight: 750; }
-.pc-secure-secret em { font-size: 1.1em; font-style: normal; font-weight: 900; text-transform: uppercase; }
-.pc-secure-flap { position: absolute; z-index: 2; inset: 0 0 0 85em; display: grid; place-items: center; align-content: center; gap: 1em; padding: 4em 2.4em; border-left: .25em solid #ffffff99; background: #ffffff52; text-align: center; }
-.pc-secure-flap > span { font-size: 5em; font-weight: 900; line-height: 1; }
-.pc-secure-flap strong { font-size: 2.6em; font-weight: 900; line-height: 1.08; text-transform: uppercase; }
-.pc-secure-flap small { font-size: 1.75em; font-weight: 700; line-height: 1.3; }
-.pc-fold-line { position: absolute; z-index: 5; top: 0; bottom: 0; left: 84.8em; border-left: .35em dashed currentColor; opacity: .68; }
-.pc-fold-line i { position: absolute; top: 50%; left: 0; padding: .35em .6em; border-radius: 99em; background: #fff; color: #4a3a34; font-size: 1.15em; font-style: normal; font-weight: 900; letter-spacing: .06em; white-space: nowrap; transform: translate(-50%, -50%) rotate(-90deg); }
 
 /* Dorso: título y logo a la izquierda, los pasos a la derecha. */
 .pc-back { display: grid; grid-template-columns: 1fr 1.05fr; gap: 4em; padding: 5em; color: #fff; }
@@ -199,17 +177,6 @@
 .pc-kitty.pc-back .pc-deco { color: #ffffff1f; }
 .pc-kitty li b { background: #dccbff; color: #2e1a57; }
 
-/* Parque */
-.pc-park.pc-front { background: linear-gradient(160deg, #f6fcdf, #d4efa4); color: #20441f; }
-.pc-park .pc-unit { color: #3f8a2a; }
-.pc-park .pc-deco { color: #3f8a2a33; }
-.pc-park .pc-deco span:first-child { color: #f2b70599; }
-.pc-park .pc-qrbox { transform: rotate(1.5deg); box-shadow: 0 1em 3em #3f8a2a2e; }
-.pc-park .pc-qr small { color: #2f6b2f; }
-.pc-park.pc-back { background: #2f6b2f; }
-.pc-park.pc-back .pc-deco { color: #ffffff1f; }
-.pc-park.pc-back .pc-deco span:nth-child(2) { color: #f2d64b55; }
-.pc-park li b { background: #f2d64b; color: #20441f; }
 
 /* La cara de la chapita (tag-face.tsx): círculos juntos; la línea de corte, un círculo punteado. */
 .ps-tag-cell { display: grid; justify-items: center; align-content: start; }
@@ -219,13 +186,13 @@
 .ps-colors-label { font-size: 13px; font-weight: 700; }
 .ps-colors { display: flex; gap: 8px; }
 .ps-colors button { display: grid; place-items: center; width: 38px; height: 38px; padding: 0; border: 2px solid transparent; border-radius: 50%; background: none; cursor: pointer; }
-.ps-colors button.is-on { border-color: #1d2130; }
+.ps-colors button.is-on { border-color: #4b6bff; }
 .ps-colors span { width: 28px; height: 28px; border-radius: 50%; box-shadow: inset 0 0 0 1px #0002; }
 
 .ps-tag-number { margin-top: .4mm; color: #9aa0ad; font: 700 2.4mm/1 Arial, sans-serif; }
 .ps-tag-styles { display: flex; flex-wrap: wrap; gap: 6px; }
 .ps-tag-styles button { min-height: 34px; padding: 0 12px; border: 1.5px solid #e4e6ec; border-radius: 99px; background: #fff; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
-.ps-tag-styles button.is-on { border-color: #1d2130; background: #1d2130; color: #fff; }
+.ps-tag-styles button.is-on { border-color: #4b6bff; background: #4b6bff; color: #fff; }
 .ps-output-options { display: grid; gap: 7px; }
 .ps-output-options button { display: grid; gap: 2px; min-height: 62px; padding: 9px; border: 1.5px solid #dfe2e8; border-radius: 11px; background: #fff; color: #303544; font: inherit; text-align: left; cursor: pointer; }
 .ps-output-options button.is-on { border-color: #4b6bff; background: #f2f5ff; box-shadow: 0 0 0 2px #4b6bff12; }
@@ -236,7 +203,7 @@
 .ps-print-advanced[open] { display: grid; gap: 8px; padding-bottom: 10px; }
 .ps-print-advanced p { margin: 0 10px; color: #747a89; font-size: 11px; line-height: 1.4; }
 .ps-print-advanced > button { min-height: 34px; margin: 0 10px; padding: 0 10px; border: 1.5px solid #d9dce4; border-radius: 8px; background: #fff; color: #4f5564; font: inherit; font-size: 11.5px; font-weight: 800; cursor: pointer; }
-.ps-print-advanced > button.is-on { border-color: #1d2130; background: #1d2130; color: #fff; }
+.ps-print-advanced > button.is-on { border-color: #4b6bff; background: #4b6bff; color: #fff; }
 .ps-print-advanced .ps-tag-styles { margin: 0 10px; }
 .ps-defaults { border: 1px solid #dfe2e8; border-radius: 12px; background: #fff; }
 .ps-defaults summary { padding: 11px 12px; color: #555b6c; font-size: 12.5px; font-weight: 800; cursor: pointer; }
@@ -245,28 +212,48 @@
 .ps-defaults > label, .ps-defaults > span, .ps-defaults > div { margin-right: 12px; margin-left: 12px; }
 .ps-defaults label { display: grid; gap: 5px; font-size: 12px; font-weight: 700; }
 .ps-defaults select { width: 100%; min-height: 36px; padding: 0 8px; border: 1px solid #dfe2e8; border-radius: 9px; background: #fff; font: inherit; font-size: 12px; }
-.ps-personalize { overflow: hidden; border: 1px solid #d9dce5; border-radius: 14px; background: #fff; }
-.ps-personalize-head { display: grid; gap: 2px; padding: 11px 12px 9px; }
+.ps-personalize { overflow: hidden; border: 1.5px solid #b9c8ff; border-radius: 15px; background: #fff; box-shadow: 0 5px 18px #4b6bff12; }
+.ps-personalize-head { display: grid; gap: 3px; padding: 11px 12px 9px; background: #f2f5ff; }
+.ps-personalize-head > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .ps-personalize-head strong { font-size: 13px; }
 .ps-personalize-head small { color: #777d8c; font-size: 11px; }
+.ps-personalize-head span, .ps-unit-picker em { padding: 2px 7px; border-radius: 99px; font-size: 9.5px; font-style: normal; font-weight: 900; line-height: 1.4; }
+.ps-personalize-head span.is-stock, .ps-unit-picker em.is-stock { background: #e9edf4; color: #5d6574; }
+.ps-personalize-head span.has-name, .ps-unit-picker em.has-name { background: #e9efff; color: #3446c9; }
 .ps-save.is-saved { color: #17803d; font-weight: 700; }
 .ps-save.is-error { color: #b42318; font-weight: 700; }
-.ps-unit-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; max-height: 150px; overflow-y: auto; padding: 0 9px 9px; }
-.ps-unit-picker button { display: grid; grid-template-columns: 12px auto minmax(0, 1fr); align-items: center; gap: 6px; min-height: 34px; padding: 5px 7px; border: 1.5px solid #e2e4ea; border-radius: 9px; background: #fafbfc; color: #4d5362; font: inherit; text-align: left; cursor: pointer; }
-.ps-unit-picker button.is-on { border-color: #4b6bff; background: #eef2ff; color: #273a9d; }
-.ps-unit-picker button > span { width: 12px; height: 12px; border-radius: 50%; box-shadow: inset 0 0 0 1px #0002; }
-.ps-unit-picker b { font-size: 11px; }
-.ps-unit-picker small { overflow: hidden; font-size: 10.5px; text-overflow: ellipsis; white-space: nowrap; }
-.ps-unit-editor { display: grid; gap: 9px; padding: 11px 12px 12px; border-top: 1px solid #e7e9ef; background: #f7f8fb; }
+.ps-unit-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; max-height: 154px; overflow-y: auto; padding: 9px; background: #fbfcff; }
+.ps-unit-picker button { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; align-items: center; gap: 7px; min-height: 42px; padding: 6px 7px; border: 1.5px solid #e2e5ed; border-radius: 10px; background: #fff; color: #4d5362; font: inherit; text-align: left; cursor: pointer; }
+.ps-unit-picker button.is-on { border-color: #4b6bff; background: #eef2ff; color: #273a9d; box-shadow: 0 0 0 2px #4b6bff14; }
+.ps-unit-picker button > span:first-child { width: 12px; height: 12px; border-radius: 50%; box-shadow: inset 0 0 0 1px #0002; }
+.ps-unit-copy { display: grid; min-width: 0; gap: 1px; }
+.ps-unit-picker b { overflow: hidden; font-size: 10.5px; text-overflow: ellipsis; white-space: nowrap; }
+.ps-unit-picker small { color: #858b98; font-size: 9.5px; }
+.ps-unit-picker em { max-width: 62px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ps-unit-editor { display: grid; gap: 9px; padding: 11px 12px 12px; border-top: 1px solid #dce4ff; background: #f7f9ff; }
 .ps-unit-editor > label { display: grid; gap: 5px; color: #343947; font-size: 12px; font-weight: 800; }
 .ps-unit-editor > label small { color: #858b98; font-size: 10px; font-weight: 600; }
 .ps-unit-editor > label input { text-transform: uppercase; width: 100%; min-height: 38px; padding: 0 10px; border: 1px solid #d8dce5; border-radius: 9px; background: #fff; font: inherit; font-size: 13px; }
 .ps-editor-label { color: #555b69; font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.ps-editor-notice { margin: -2px 0 0; padding: 8px 10px; border: 1px solid #cbd7ff; border-radius: 9px; background: #eef3ff; color: #3349a8; font-size: 11px; font-weight: 700; line-height: 1.35; }
 .ps-unit-colors { gap: 4px; }
 .ps-unit-colors button { width: 31px; height: 31px; }
 .ps-unit-colors button > span { width: 22px; height: 22px; }
 .ps-unit-colors .is-auto { display: grid; place-items: center; background: #fff; color: #6b7080; font-size: 10px; font-weight: 900; }
+.ps-unit-colors .ps-auto-color { display: flex; width: 52px; gap: 3px; border-radius: 99px; }
+.ps-unit-colors .ps-auto-color small { color: #62697a; font-size: 9px; font-weight: 800; }
 .ps-reset-unit { justify-self: start; padding: 0; border: 0; background: none; color: #6b7080; font: inherit; font-size: 11px; font-weight: 700; text-decoration: underline; cursor: pointer; }
+.ps-print-dock { display: grid; gap: 10px; margin-top: 6px; padding: 14px; border: 1.5px solid #becaff; border-radius: 15px; background: linear-gradient(145deg, #f2f5ff, #fff); box-shadow: 0 8px 22px #334dcc12; }
+.ps-print-summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ps-print-summary > div { display: grid; gap: 1px; }
+.ps-print-summary strong { color: #263259; font-size: 13.5px; }
+.ps-print-summary small { color: #737988; font-size: 10.5px; }
+.ps-print-summary > span { padding: 4px 8px; border-radius: 99px; font-size: 9.5px; font-weight: 900; white-space: nowrap; }
+.ps-print-summary .is-ready { background: #e8f7ed; color: #18743a; }
+.ps-print-summary .is-warn { background: #fff1df; color: #9a4a12; }
+.ps-help-details { border-radius: 10px; background: #f6f7f9; }
+.ps-help-details summary { padding: 8px 10px; color: #596071; font-size: 10.5px; font-weight: 800; cursor: pointer; }
+.ps-help-details .ps-help { padding-top: 2px; font-size: 11px; }
 
 /* Una unidad impresa: frente y dorso quedan físicamente juntos en la misma plancha. */
 .ps-pair-grid { padding-top: 1mm; }
@@ -303,6 +290,7 @@
   .ps-unit-picker button { flex: 0 0 132px; }
   .ps-unit-editor { gap: 7px; padding: 9px 11px 10px; }
   .ps-help { padding: 10px; }
+  .ps-print-dock { padding: 10px; }
 }
 
 @media screen and (max-width: 800px) {
@@ -311,7 +299,7 @@
 
 /* Color propio: un círculo con "+" que abre el selector de colores. */
 .ps-color-custom { position: relative; display: grid; place-items: center; width: 38px; height: 38px; border: 2px solid transparent; border-radius: 50%; cursor: pointer; }
-.ps-color-custom.is-on { border-color: #1d2130; }
+.ps-color-custom.is-on { border-color: #4b6bff; }
 .ps-color-custom span { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: conic-gradient(#ff4f6d, #ffd23f, #3ecf8e, #3aa0ff, #8a5cf7, #ff4f6d); color: #fff; font-size: 18px; font-weight: 800; box-shadow: inset 0 0 0 1px #0002; text-shadow: 0 1px 2px #0006; }
 .ps-color-custom input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 .ps-colors { flex-wrap: wrap; }
@@ -340,7 +328,7 @@
 .ps-animal-box header small { color: #6b7080; font-size: 13px; }
 .ps-animal-close { display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 50%; background: #f1f2f5; color: #4b5060; font-size: 15px; cursor: pointer; }
 .ps-animal-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 0 22px 14px; border-bottom: 1px solid #eceef2; }
-.ps-animal-tabs { display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: #f1f2f5; }
+.ps-animal-tabs { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; border-radius: 12px; background: #f1f2f5; }
 .ps-animal-tabs button { display: flex; align-items: center; gap: 7px; min-height: 36px; padding: 0 14px; border: 0; border-radius: 9px; background: none; color: #4b5060; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; }
 .ps-animal-tabs button span { padding: 1px 7px; border-radius: 99px; background: #0000000f; font-size: 11.5px; }
 .ps-animal-tabs button.is-on { background: #fff; color: #1d2130; box-shadow: 0 1px 4px #0002; }
@@ -353,6 +341,12 @@
 .ps-animal-option small { margin-top: -4px; color: #7a8090; font-size: 11px; }
 .ps-animal-option.is-auto { border-style: dashed; }
 .ps-animal-empty { grid-column: 1 / -1; margin: 20px 0; color: #6b7080; text-align: center; }
+.ps-generic-confirm { grid-column: 1 / -1; display: grid; justify-items: center; gap: 10px; max-width: 440px; margin: 10px auto; padding: 22px; border: 1px solid #dfe3ee; border-radius: 20px; background: #f8f9fc; text-align: center; }
+.ps-generic-confirm strong { font-size: 18px; }
+.ps-generic-confirm p { margin: 0; color: #62697a; font-size: 13px; line-height: 1.45; }
+.ps-generic-confirm > div { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 4px; }
+.ps-generic-confirm button { min-height: 38px; padding: 0 14px; border: 1px solid #d5d9e4; border-radius: 10px; background: #fff; color: #343947; font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
+.ps-generic-confirm button.is-primary { border-color: #3446c9; background: #3446c9; color: #fff; }
 /* Los cuatro diseños de la chapita (arriba en "Chapitas"): tarjetas grandes con miniatura, cada una
    con su color; la elegida, resaltada. */
 .ps-layouts { display: grid; gap: 8px; }
@@ -376,7 +370,7 @@
    tapa 0–55 (siempre visible), bajo la solapa 55–85, solapa 85–115 (QR). El calco cierra la solapa
    sobre x = 55: la tapa deja libre su borde derecho. */
 .pc-front.is-flap { display: block; padding: 0; }
-.pc-flap-cover { position: absolute; z-index: 1; top: 0; bottom: 0; left: 0; width: 55em; display: grid; grid-template-rows: auto 1fr auto; gap: 1.6em; padding: 4.2em 10em 3.8em 4.5em; }
+.pc-flap-cover { position: absolute; z-index: 1; top: 0; bottom: 0; left: 0; width: var(--pc-c, 55em); display: grid; grid-template-rows: auto 1fr auto; gap: 1.6em; padding: 4.2em 10em 3.8em 4.5em; }
 .pc-flap-cover .pc-logo { font-size: 2.5em; }
 .pc-flap-title { display: grid; align-content: center; gap: 1.2em; }
 .pc-flap-title h2 { font-size: 3.9em; font-weight: 850; line-height: 1.02; letter-spacing: -.03em; }
@@ -388,18 +382,18 @@
 .pc-flap-inside li { display: flex; align-items: flex-start; gap: .5em; font-size: 1.6em; font-weight: 700; line-height: 1.2; }
 .pc-flap-cover li b, .pc-flap-inside li b { display: grid; flex: none; place-items: center; width: 1.7em; height: 1.7em; border-radius: 50%; background: var(--pc-accent, #1d2130); color: #fff; font-size: .72em; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .pc-flap-foot { font-size: 1.35em; font-weight: 750; letter-spacing: .02em; }
-.pc-flap-inside { position: absolute; z-index: 1; top: 0; bottom: 0; left: 55em; width: 30em; display: grid; align-content: center; gap: 1.3em; padding: 3.5em 3.2em; background: #ffffff59; }
+.pc-flap-inside { position: absolute; z-index: 1; top: 0; bottom: 0; left: var(--pc-c, 55em); width: 30em; display: grid; align-content: center; gap: 1.3em; padding: 3.5em 3.2em; background: #ffffff59; }
 .pc-flap-inside strong { font-size: 2.1em; font-weight: 850; line-height: 1.1; }
 .pc-flap-inside small { font-size: 1.4em; font-weight: 650; line-height: 1.3; }
-.pc-flap-secret { position: absolute; z-index: 1; top: 0; bottom: 0; left: 85em; width: 30em; display: grid; align-content: center; justify-items: center; gap: 1.1em; padding: 3em 4em; background: #fff; color: #1d2130; }
+.pc-flap-secret { position: absolute; z-index: 1; top: 0; bottom: 0; left: var(--pc-w, 85em); width: 30em; display: grid; align-content: center; justify-items: center; gap: 1.1em; padding: 3em 4em; background: #fff; color: #1d2130; }
 .pc-flap-secret > strong { display: flex; align-items: center; gap: .35em; color: var(--pc-accent, #1d2130); font-size: 1.45em; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; }
 .pc-flap-secret > strong svg { width: 1em; height: 1em; }
 .pc-front.is-flap .pc-qrbox { width: 22em; height: 22em; padding: 1em; border: .35em solid var(--pc-accent, #1d2130); border-radius: 2em; background: #fff; box-shadow: none; transform: none; }
 .pc-front.is-flap .pc-qrbox::before, .pc-front.is-flap .pc-qrbox::after { content: none; }
 .pc-front.is-flap .pc-code { padding: .2em .5em; background: #f1f2f5; color: #1d2130; font-size: 2.1em; }
-.pc-flap-fold { position: absolute; z-index: 2; top: 0; bottom: 0; left: 85em; border-left: .25em dashed #1d213066; }
+.pc-flap-fold { position: absolute; z-index: 2; top: 0; bottom: 0; left: var(--pc-w, 85em); border-left: .25em dashed #1d213066; }
 /* La mitad del calco que cae sobre la tapa (la otra mitad va sobre el dorso de la solapa doblada). */
-.pc-flap-sticker { position: absolute; z-index: 3; top: 19.5em; left: 47em; display: grid; place-items: center; width: 8em; height: 16em; border: .3em dashed #1d213073; border-right: 0; border-radius: 8em 0 0 8em; pointer-events: none; }
+.pc-flap-sticker { position: absolute; z-index: 3; top: calc(var(--pc-h, 55em) / 2 - 8em); left: calc(var(--pc-c, 55em) - 8em); display: grid; place-items: center; width: 8em; height: 16em; border: .3em dashed #1d213073; border-right: 0; border-radius: 8em 0 0 8em; pointer-events: none; }
 .pc-flap-sticker i { margin-left: 1.5em; padding: .2em .4em; border-radius: 99em; background: #ffffffcc; color: #1d2130; font-size: 1.2em; font-style: normal; font-weight: 800; }
 @media print { .pc-flap-sticker { display: none; } }
 .ps-flap-variants { margin-top: 2px; }
@@ -408,5 +402,36 @@
 .pc-paws { --pc-accent: #d4621c; }
 .pc-bones { --pc-accent: #1f6fd1; }
 .pc-kitty { --pc-accent: #7b4ddb; }
-.pc-park { --pc-accent: #3f8a2a; }
 .pc-flap-deco { z-index: 0; }
+/* En la tarjeta con solapa la burbuja de Patitas caía bajo el QR; con medidas grandes se asomaba. */
+.pc-paws.pc-front.is-flap { background: #fff1e2; }
+
+/* Tarjeta con solapa, aspecto nuevo (is-fresh): un solo fondo de punta a punta y el QR como en el
+   Diseño 1 (caja blanca con sombra del color del estilo, apenas girada). Mismas medidas que el original. */
+.pc-front.is-flap.is-fresh .pc-flap-inside { gap: 1.5em; padding: 3.5em 3em 3.5em 3.4em; background: transparent; }
+.pc-front.is-flap.is-fresh .pc-flap-inside strong { font-size: 2.5em; }
+.pc-front.is-flap.is-fresh .pc-flap-inside li { font-size: 1.85em; }
+.pc-front.is-flap.is-fresh .pc-flap-inside small { font-size: 1.5em; }
+.pc-front.is-flap.is-fresh .pc-flap-secret { gap: 1.4em; padding: 3em 3.6em; background: transparent; }
+.pc-front.is-flap.is-fresh .pc-flap-secret > strong { font-size: 1.55em; }
+.pc-front.is-flap.is-fresh .pc-flap-fold { border-left-color: color-mix(in srgb, var(--pc-accent) 45%, transparent); }
+.pc-front.is-flap.is-fresh .pc-qrbox { padding: 1.6em; border: 0; border-radius: 3.2em; transform: rotate(2deg); box-shadow: 0 .8em 2.4em color-mix(in srgb, var(--pc-accent) 28%, transparent); }
+.pc-paws.pc-front.is-flap.is-fresh .pc-qrbox { transform: rotate(-2deg); box-shadow: 0 0 0 .7em #ffd9b8, 0 .8em 2.4em #e9772f33; }
+.pc-bones.pc-front.is-flap.is-fresh .pc-qrbox { border: .45em dashed #8cc3f5; }
+.pc-kitty.pc-front.is-flap.is-fresh .pc-qrbox::before, .pc-kitty.pc-front.is-flap.is-fresh .pc-qrbox::after { content: ""; top: -2.9em; border-right-width: 2.7em; border-bottom-width: 3.6em; border-left-width: 2.7em; }
+.pc-kitty.pc-front.is-flap.is-fresh .pc-flap-secret > strong { margin-bottom: 2.2em; }
+.pc-front.is-flap.is-fresh .pc-code { padding: .25em .6em; border-radius: 99em; background: #fff; font-size: 2.4em; }
+.pc-paws.pc-front.is-flap.is-fresh .pc-code { background: #3b2314; color: #fff; }
+.pc-front.is-flap.is-fresh .pc-flap-cover { padding: 4.4em 9.5em 4em 4.6em; }
+.pc-front.is-flap.is-fresh .pc-flap-cover .pc-logo { font-size: 3em; }
+.pc-front.is-flap.is-fresh .pc-flap-title { gap: 1.6em; }
+.pc-front.is-flap.is-fresh .pc-flap-title h2 { font-size: 4.6em; font-weight: 800; }
+.pc-front.is-flap.is-fresh .pc-flap-open { padding: .55em 1em; font-size: 2em; box-shadow: 0 .5em 1.4em color-mix(in srgb, var(--pc-accent) 30%, transparent); }
+.pc-front.is-flap.is-fresh .pc-flap-foot { color: var(--pc-accent); font-size: 1.45em; letter-spacing: .04em; }
+.pc-front.is-flap.is-fresh .pc-flap-deco { color: color-mix(in srgb, var(--pc-accent) 22%, transparent); }
+.pc-front.is-flap.is-fresh .pc-flap-deco span:first-child { scale: 1.15; translate: 0 -1.5em; }
+.pc-front.is-flap.is-fresh .pc-flap-deco span + span { translate: 1em 1.5em; }
+.pc-flap-help { font-size: 1.25em; font-weight: 700; line-height: 1.2; text-align: center; white-space: nowrap; }
+/* B con aspecto nuevo: la tapa lleva título y pasos, el título un poco más chico para que entre en 40 mm. */
+.pc-front.is-flap.is-fresh.is-steps .pc-flap-title { gap: 1.2em; }
+.pc-front.is-flap.is-fresh.is-steps .pc-flap-title h2 { font-size: 4em; }

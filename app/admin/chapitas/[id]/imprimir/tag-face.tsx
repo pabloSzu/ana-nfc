@@ -34,6 +34,13 @@ export const TAG_CHARACTERS = [
   { id: "australian-shepherd", label: "Pastor australiano", src: "/pet-tags/characters/australian-shepherd.png", faceSrc: "/pet-tags/faces/australian-shepherd.png" },
   { id: "terrier-beige", label: "Terrier beige", src: "/pet-tags/characters/terrier-beige.png", faceSrc: "/pet-tags/faces/terrier-beige.png", custom: true },
   { id: "mixed-gray-tan", label: "Mestizo gris y beige", src: "/pet-tags/characters/mixed-gray-tan.png", faceSrc: "/pet-tags/faces/mixed-gray-tan.png", custom: true },
+  { id: "generic-dog-front", label: "Perrito clásico", src: "/pet-tags/generic-v2/dog-front.png", faceSrc: "/pet-tags/generic-v2/dog-front.png", generic: "dog" },
+  { id: "generic-dog-profile", label: "Perrito de perfil", src: "/pet-tags/generic-v2/dog-profile.png", faceSrc: "/pet-tags/generic-v2/dog-profile.png", generic: "dog" },
+  { id: "generic-dog-symbol", label: "Perrito simple", src: "/pet-tags/generic-v2/dog-symbol.png", faceSrc: "/pet-tags/generic-v2/dog-symbol.png", generic: "dog" },
+  { id: "generic-cat-front", label: "Gatito clásico", src: "/pet-tags/generic-v2/cat-front.png", faceSrc: "/pet-tags/generic-v2/cat-front.png", generic: "cat" },
+  { id: "generic-cat-profile", label: "Gatito de perfil", src: "/pet-tags/generic-v2/cat-profile.png", faceSrc: "/pet-tags/generic-v2/cat-profile.png", generic: "cat" },
+  { id: "generic-paw", label: "Patita", src: "/pet-tags/generic-v2/paw.png", faceSrc: "/pet-tags/generic-v2/paw.png", generic: "symbol" },
+  { id: "generic-heart-paw", label: "Corazón con patita", src: "/pet-tags/generic-v2/heart-paw.png", faceSrc: "/pet-tags/generic-v2/heart-paw.png", generic: "symbol" },
   { id: "tabby-cat", label: "Gato atigrado", src: "/pet-tags/characters/tabby-cat.png", faceSrc: "/pet-tags/faces/tabby-cat.png" },
   { id: "black-cat", label: "Gato negro", src: "/pet-tags/characters/black-cat.png", faceSrc: "/pet-tags/faces/black-cat.png" },
   { id: "white-persian-cat", label: "Persa blanco", src: "/pet-tags/characters/white-persian-cat.png", faceSrc: "/pet-tags/faces/white-persian-cat.png" },
@@ -59,13 +66,16 @@ export const TAG_CHARACTERS = [
 export type TagCharacterId = (typeof TAG_CHARACTERS)[number]["id"];
 export type TagCharacterChoice = TagCharacterId | "mix" | "mix-dogs" | "mix-cats";
 export type TagCharacter = (typeof TAG_CHARACTERS)[number];
-export const isCat = (id: string) => id.endsWith("cat");
+export const isCat = (id: string) => id.endsWith("cat") || id.startsWith("generic-cat-");
 // Personalizados: animales hechos a pedido (custom: true). Van en su propia pestaña y no entran en
 // la mezcla automática del lote.
 export const isCustom = (character: TagCharacter) => "custom" in character && character.custom;
+export const isGeneric = (character: TagCharacter) => "generic" in character && character.generic;
 export const TAG_CUSTOM: TagCharacter[] = TAG_CHARACTERS.filter(isCustom);
-export const TAG_DOGS: TagCharacter[] = TAG_CHARACTERS.filter((character) => !isCat(character.id) && !isCustom(character));
-export const TAG_CATS: TagCharacter[] = TAG_CHARACTERS.filter((character) => isCat(character.id) && !isCustom(character));
+export const TAG_GENERIC: TagCharacter[] = TAG_CHARACTERS.filter(isGeneric);
+export const TAG_DOGS: TagCharacter[] = TAG_CHARACTERS.filter((character) => !isCat(character.id) && !isCustom(character) && !isGeneric(character));
+export const TAG_CATS: TagCharacter[] = TAG_CHARACTERS.filter((character) => isCat(character.id) && !isCustom(character) && !isGeneric(character));
+export const isGenericCharacterId = (id: string) => TAG_GENERIC.some((character) => character.id === id);
 // Para la mezcla automática: perro, gato, perro, gato… (en orden de la lista, una raza distinta cada vez).
 const MIXED = Array.from({ length: Math.max(TAG_DOGS.length, TAG_CATS.length) * 2 }, (_, index) => {
   const list = index % 2 ? TAG_CATS : TAG_DOGS;
@@ -76,6 +86,7 @@ export const tagCharacterFor = (choice: TagCharacterChoice, index: number): TagC
     : choice === "mix-dogs" ? TAG_DOGS[index % TAG_DOGS.length].id
     : choice === "mix-cats" ? TAG_CATS[index % TAG_CATS.length].id
     : choice;
+
 // Lo que se eligió para imprimir cada unidad (nombre, animal y color). Se guarda en la chapita
 // (button_style.print, ver actions.ts) para no depender del navegador. Vacío = automático.
 export type TagPrint = { name?: string; character?: TagCharacterId; color?: string };
