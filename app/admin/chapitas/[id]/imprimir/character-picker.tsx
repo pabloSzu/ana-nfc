@@ -5,7 +5,11 @@
 // buscador y las caritas grandes. Las imágenes van achicadas (next/image) para que abra rápido.
 import { useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { TAG_CATS, TAG_CHARACTERS, TAG_COLORS, TAG_DOGS, isCat, type TagCharacterId } from "./tag-face";
+import { TAG_CATS, TAG_CHARACTERS, TAG_COLORS, TAG_CUSTOM, TAG_DOGS, isCat, type TagCharacterId } from "./tag-face";
+
+type Tab = "dogs" | "cats" | "custom";
+const tabOf = (id: string): Tab => TAG_CUSTOM.some((item) => item.id === id) ? "custom" : isCat(id) ? "cats" : "dogs";
+const LISTS: Record<Tab, typeof TAG_DOGS> = { dogs: TAG_DOGS, cats: TAG_CATS, custom: TAG_CUSTOM };
 
 const colorValue = (color: string) => color.startsWith("#") ? color : TAG_COLORS.find((item) => item.id === color)?.value || "#1673b8";
 const normalize = (text: string) => text.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
@@ -13,7 +17,8 @@ const normalize = (text: string) => text.toLowerCase().normalize("NFD").replace(
 function Face({ id, color, size }: { id: TagCharacterId; color: string; size: number }) {
   const character = TAG_CHARACTERS.find((item) => item.id === id) || TAG_CHARACTERS[0];
   return <span className="ps-animal-face" style={{ width: size, height: size, background: colorValue(color) }}>
-    <Image src={character.faceSrc} alt="" width={size} height={size} />
+    {/* Miniatura recortada al dibujo (public/pet-tags/thumbs): todas del mismo tamaño y centradas. */}
+    <Image src={`/pet-tags/thumbs/${character.id}.png`} alt="" width={size} height={size} />
   </span>;
 }
 
@@ -21,15 +26,15 @@ function Face({ id, color, size }: { id: TagCharacterId; color: string; size: nu
 export default function CharacterPicker({ value, auto, color, onChange }: { value: TagCharacterId | ""; auto: TagCharacterId; color: string; onChange: (id: TagCharacterId | "") => void }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const current = value || auto;
-  const [tab, setTab] = useState<"dogs" | "cats">(isCat(current) ? "cats" : "dogs");
+  const [tab, setTab] = useState<Tab>(tabOf(current));
   const [query, setQuery] = useState("");
   const label = TAG_CHARACTERS.find((item) => item.id === current)?.label || "";
   const list = useMemo(() => {
     const search = normalize(query.trim());
     // Buscando, se busca en todos; si no, en la pestaña elegida.
-    return search ? TAG_CHARACTERS.filter((item) => normalize(item.label).includes(search)) : tab === "cats" ? TAG_CATS : TAG_DOGS;
+    return search ? TAG_CHARACTERS.filter((item) => normalize(item.label).includes(search)) : LISTS[tab];
   }, [query, tab]);
-  const open = () => { setTab(isCat(current) ? "cats" : "dogs"); setQuery(""); dialog.current?.showModal(); };
+  const open = () => { setTab(tabOf(current)); setQuery(""); dialog.current?.showModal(); };
   const choose = (id: TagCharacterId | "") => { onChange(id); dialog.current?.close(); };
 
   return <>
@@ -48,6 +53,7 @@ export default function CharacterPicker({ value, auto, color, onChange }: { valu
           <div className="ps-animal-tabs" role="tablist">
             <button type="button" role="tab" aria-selected={!query && tab === "dogs"} className={!query && tab === "dogs" ? "is-on" : ""} onClick={() => { setTab("dogs"); setQuery(""); }}>🐶 Perros <span>{TAG_DOGS.length}</span></button>
             <button type="button" role="tab" aria-selected={!query && tab === "cats"} className={!query && tab === "cats" ? "is-on" : ""} onClick={() => { setTab("cats"); setQuery(""); }}>🐱 Gatos <span>{TAG_CATS.length}</span></button>
+            {!!TAG_CUSTOM.length && <button type="button" role="tab" aria-selected={!query && tab === "custom"} className={`is-custom${!query && tab === "custom" ? " is-on" : ""}`} onClick={() => { setTab("custom"); setQuery(""); }}>✨ Personalizados <span>{TAG_CUSTOM.length}</span></button>}
           </div>
           <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar raza…" aria-label="Buscar raza" />
         </div>

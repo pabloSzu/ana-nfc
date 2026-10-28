@@ -14,7 +14,7 @@ import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } f
 import Link from "next/link";
 import { LuPrinter } from "react-icons/lu";
 import { CardBack, CardFront, DESIGNS, unit, unitNumber, type CardLayout, type DesignId } from "./card-designs";
-import { cleanTagPrint, TagBack, TagFront, TAG_CATS, TAG_COLORS, TAG_DOGS, tagCharacterFor, type TagCharacterChoice, type TagCharacterId, type TagPrint } from "./tag-face";
+import { cleanTagPrint, TagBack, TagFront, TAG_CATS, TAG_COLORS, TAG_CUSTOM, TAG_DOGS, tagCharacterFor, type TagCharacterChoice, type TagCharacterId, type TagPrint } from "./tag-face";
 import { saveTagPrint } from "./actions";
 import CharacterPicker from "./character-picker";
 
@@ -357,6 +357,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
             </optgroup>
             <optgroup label="Todas iguales · perro">{TAG_DOGS.map((character) => <option key={character.id} value={character.id}>{character.label}</option>)}</optgroup>
             <optgroup label="Todas iguales · gato">{TAG_CATS.map((character) => <option key={character.id} value={character.id}>{character.label}</option>)}</optgroup>
+            {!!TAG_CUSTOM.length && <optgroup label="Todas iguales · personalizado">{TAG_CUSTOM.map((character) => <option key={character.id} value={character.id}>{character.label}</option>)}</optgroup>}
           </select>
         </label>
         <span className="ps-colors-label">Colores</span>

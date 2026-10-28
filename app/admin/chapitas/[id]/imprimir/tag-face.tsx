@@ -32,8 +32,8 @@ export const TAG_CHARACTERS = [
   { id: "boston-terrier", label: "Boston terrier", src: "/pet-tags/characters/boston-terrier.png", faceSrc: "/pet-tags/faces/boston-terrier.png" },
   { id: "pomeranian", label: "Pomerania", src: "/pet-tags/characters/pomeranian.png", faceSrc: "/pet-tags/faces/pomeranian.png" },
   { id: "australian-shepherd", label: "Pastor australiano", src: "/pet-tags/characters/australian-shepherd.png", faceSrc: "/pet-tags/faces/australian-shepherd.png" },
-  { id: "terrier-beige", label: "Terrier beige", src: "/pet-tags/characters/terrier-beige.png", faceSrc: "/pet-tags/faces/terrier-beige.png", namedArt: { x: 28, y: 22, width: 44, height: 36 } },
-  { id: "mixed-gray-tan", label: "Mestizo gris y beige", src: "/pet-tags/characters/mixed-gray-tan.png", faceSrc: "/pet-tags/faces/mixed-gray-tan.png", namedArt: { x: 28, y: 22, width: 44, height: 36 } },
+  { id: "terrier-beige", label: "Terrier beige", src: "/pet-tags/characters/terrier-beige.png", faceSrc: "/pet-tags/faces/terrier-beige.png", custom: true },
+  { id: "mixed-gray-tan", label: "Mestizo gris y beige", src: "/pet-tags/characters/mixed-gray-tan.png", faceSrc: "/pet-tags/faces/mixed-gray-tan.png", custom: true },
   { id: "tabby-cat", label: "Gato atigrado", src: "/pet-tags/characters/tabby-cat.png", faceSrc: "/pet-tags/faces/tabby-cat.png" },
   { id: "black-cat", label: "Gato negro", src: "/pet-tags/characters/black-cat.png", faceSrc: "/pet-tags/faces/black-cat.png" },
   { id: "white-persian-cat", label: "Persa blanco", src: "/pet-tags/characters/white-persian-cat.png", faceSrc: "/pet-tags/faces/white-persian-cat.png" },
@@ -60,8 +60,12 @@ export type TagCharacterId = (typeof TAG_CHARACTERS)[number]["id"];
 export type TagCharacterChoice = TagCharacterId | "mix" | "mix-dogs" | "mix-cats";
 export type TagCharacter = (typeof TAG_CHARACTERS)[number];
 export const isCat = (id: string) => id.endsWith("cat");
-export const TAG_DOGS: TagCharacter[] = TAG_CHARACTERS.filter((character) => !isCat(character.id));
-export const TAG_CATS: TagCharacter[] = TAG_CHARACTERS.filter((character) => isCat(character.id));
+// Personalizados: animales hechos a pedido (custom: true). Van en su propia pestaña y no entran en
+// la mezcla automática del lote.
+export const isCustom = (character: TagCharacter) => "custom" in character && character.custom;
+export const TAG_CUSTOM: TagCharacter[] = TAG_CHARACTERS.filter(isCustom);
+export const TAG_DOGS: TagCharacter[] = TAG_CHARACTERS.filter((character) => !isCat(character.id) && !isCustom(character));
+export const TAG_CATS: TagCharacter[] = TAG_CHARACTERS.filter((character) => isCat(character.id) && !isCustom(character));
 // Para la mezcla automática: perro, gato, perro, gato… (en orden de la lista, una raza distinta cada vez).
 const MIXED = Array.from({ length: Math.max(TAG_DOGS.length, TAG_CATS.length) * 2 }, (_, index) => {
   const list = index % 2 ? TAG_CATS : TAG_DOGS;
@@ -144,7 +148,6 @@ const WAVES = <><path d="M 0,2.3 A 2.2,2.2 0 0 1 0,5.7" /><path d="M 2.2,1.1 A 4
 
 export function TagFront({ id, diameter, color, character, name = "", hole = false }: { id: string; diameter: number; color: string; character: TagCharacterId; name?: string; hole?: boolean }) {
   const animal = TAG_CHARACTERS.find((item) => item.id === character) || TAG_CHARACTERS[0];
-  const namedArt = "namedArt" in animal ? animal.namedArt : { x: 31, y: 26, width: 38, height: 32 };
   const cleanName = tagNameText(name);
   const size = nameSize(cleanName);
   // Si aun en el tamaño mínimo no entra (nombres muy anchos), se angosta para que quepa justo.
@@ -157,7 +160,9 @@ export function TagFront({ id, diameter, color, character, name = "", hole = fal
       {/* Personaje y nombre forman un solo bloque compacto, con espacio real para explicar el NFC. */}
       {/* Las patitas apoyan sólo en el borde de arriba de la placa: el nombre queda libre debajo. */}
       <rect x="19" y="55" width="62" height="17" rx="7.5" fill="#fff" stroke="#171717" strokeWidth="1.1" />
-      <image href={animal.src} {...namedArt} preserveAspectRatio="xMidYMax meet" />
+      {/* La versión limpia (public/pet-tags/named): sin franjas ni aire alrededor, así todos los
+          animales llenan la misma caja y apoyan las patas en la placa. */}
+      <image href={`/pet-tags/named/${animal.id}.png`} x="28" y="23" width="44" height="35" preserveAspectRatio="xMidYMax meet" />
       <text x="50" y={64.6 + size * .35} textAnchor="middle" fill="#1d1a18" fontFamily="Poppins, Arial, sans-serif" fontSize={size} fontWeight="800" {...(squeeze ? { textLength: NAME_MAX_WIDTH, lengthAdjust: "spacingAndGlyphs" } : {})}>{cleanName}</text>
     </> : <>
       {/* Las de stock usan una ilustración creada como cabeza aislada: no es un recorte del personaje con patas. */}
