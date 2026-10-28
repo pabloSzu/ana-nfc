@@ -331,6 +331,14 @@
 .ps-generic-confirm > div { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 4px; }
 .ps-generic-confirm button { min-height: 38px; padding: 0 14px; border: 1px solid #d5d9e4; border-radius: 10px; background: #fff; color: #343947; font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
 .ps-generic-confirm button.is-primary { border-color: #3446c9; background: #3446c9; color: #fff; }
+.ps-coat-picker { grid-column: 1 / -1; display: grid; justify-items: center; gap: 8px; width: min(100%, 570px); margin: 4px auto; padding: 18px; border: 1px solid #dfe3ee; border-radius: 20px; background: #f8f9fc; text-align: center; }
+.ps-coat-picker > strong { font-size: 18px; }
+.ps-coat-picker > p { margin: 0 0 4px; color: #62697a; font-size: 12px; }
+.ps-coat-picker > div { display: grid; grid-template-columns: repeat(3, minmax(110px, 1fr)); gap: 10px; width: 100%; }
+.ps-coat-picker > div > button { display: grid; justify-items: center; gap: 7px; padding: 10px 8px; border: 1.5px solid #e1e4eb; border-radius: 15px; background: #fff; color: #303544; font: inherit; cursor: pointer; }
+.ps-coat-picker > div > button:hover, .ps-coat-picker > div > button.is-on { border-color: #4b6bff; background: #f2f5ff; box-shadow: 0 0 0 2px #4b6bff1c; }
+.ps-coat-picker > div b { font-size: 12px; }
+.ps-coat-back { justify-self: start; padding: 0; border: 0; background: none; color: #4b5fc7; font: inherit; font-size: 11px; font-weight: 800; cursor: pointer; }
 /* Los cuatro diseños de la chapita (arriba en "Chapitas"): tarjetas grandes con miniatura, cada una
    con su color; la elegida, resaltada. */
 .ps-layouts { display: grid; gap: 8px; }
