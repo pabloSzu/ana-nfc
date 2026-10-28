@@ -273,6 +273,20 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
   };
   const previewItem = items.find((item) => item.id === previewId) || items[0];
   const selectItem = (id: string) => setPreviewId(id);
+  // "Ver su tarjeta" / "Ver su chapita": la unidad elegida es la misma en las dos pestañas; se
+  // cambia de pestaña y, ya dibujada, se lleva a la vista y brilla un momento.
+  const [jump, setJump] = useState(0);
+  const showPartner = () => { setMode(mode === "qr" ? "cards" : "qr"); setJump((count) => count + 1); };
+  useEffect(() => {
+    if (!jump) return;
+    const frame = requestAnimationFrame(() => {
+      const target = document.querySelector<HTMLElement>(".ps-sheets .ps-page .is-selected, .ps-sheets .ps-single.is-selected");
+      if (!target) return;
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+      target.classList.remove("is-flash"); void target.offsetWidth; target.classList.add("is-flash");
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [jump]);
   const selectItemFromKeyboard = (event: KeyboardEvent<HTMLElement>, id: string) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
@@ -475,11 +489,15 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
     <main className={`ps-sheets${single ? " is-single" : ""}`}>
       {!items.length && <p className="ps-empty">Todas las chapitas de este lote ya están activadas: no hay nada para imprimir.</p>}
       {mode === "qr" && previewItem && <section className="ps-tag-overview" aria-label={`Vista del código ${previewItem.code}`}>
-        <div className="ps-tag-overview-head"><div><small>VISTA PREVIA</small><h2>{unit(previewItem.number)} · {previewItem.code}</h2></div><span>{settings.tagNames[previewItem.id]?.trim() || "Sin nombre · stock"}</span></div>
+        <div className="ps-tag-overview-head"><div><small>VISTA PREVIA</small><h2>{unit(previewItem.number)} · {previewItem.code}</h2></div><div className="ps-overview-side"><span>{settings.tagNames[previewItem.id]?.trim() || "Sin nombre · stock"}</span><button type="button" className="ps-partner" onClick={showPartner}>Ver su tarjeta <i aria-hidden="true">→</i></button></div></div>
         <div className="ps-tag-overview-pair">
           <figure><TagFront id={`preview-${previewItem.id}-front`} diameter={60} color={colorOf(previewItem)} character={characterOf(previewItem)} name={settings.tagNames[previewItem.id] || ""} hole={settings.tagHole} /><figcaption>Frente</figcaption></figure>
           <figure><TagBack id={`preview-${previewItem.id}-back`} qr={previewItem.tagQr} diameter={60} color={colorOf(previewItem)} design={tagBackDesign(settings.tagLayout)} hole={settings.tagHole} /><figcaption>Dorso · {layoutLabel}</figcaption></figure>
         </div>
+      </section>}
+      {mode === "cards" && previewItem && <section className="ps-unit-bar" aria-label={`Tarjeta elegida: ${previewItem.code}`}>
+        <div><small>TARJETA ELEGIDA · tocá otra para cambiar</small><strong>{unit(previewItem.number)} · {previewItem.code}</strong><span>{settings.tagNames[previewItem.id]?.trim() || "Sin nombre · stock"}</span></div>
+        <button type="button" className="ps-partner" onClick={showPartner}>Ver su chapita <i aria-hidden="true">→</i></button>
       </section>}
       {single ? items.flatMap((item) => [
         <section key={`${item.id}-f`} className={`ps-single ps-selectable${previewItem?.id === item.id ? " is-selected" : ""}`} style={{ width: `${singlePage.width}mm`, height: `${singlePage.height}mm` }} aria-label={`Seleccionar tarjeta con código ${item.code}: frente`} role="button" tabIndex={0} onClick={() => selectItem(item.id)} onKeyDown={(event) => selectItemFromKeyboard(event, item.id)}>

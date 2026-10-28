@@ -435,3 +435,19 @@
 /* B con aspecto nuevo: la tapa lleva título y pasos, el título un poco más chico para que entre en 40 mm. */
 .pc-front.is-flap.is-fresh.is-steps .pc-flap-title { gap: 1.2em; }
 .pc-front.is-flap.is-fresh.is-steps .pc-flap-title h2 { font-size: 4em; }
+/* "Ver su tarjeta" / "Ver su chapita": salto a la otra mitad de la unidad elegida. */
+.ps-overview-side { display: grid; justify-items: end; gap: 8px; }
+.ps-overview-side > span { color: #596071; font-size: 13px; font-weight: 700; }
+.ps-partner { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 14px; border: 0; border-radius: 99px; background: #4b6bff; color: #fff; font: inherit; font-size: 13px; font-weight: 800; white-space: nowrap; cursor: pointer; box-shadow: 0 6px 16px #4b6bff40; }
+.ps-partner:hover { background: #3a58e8; }
+.ps-partner i { font-style: normal; transition: transform .15s; }
+.ps-partner:hover i { transform: translateX(3px); }
+.ps-unit-bar { box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 16px; width: min(100%, 760px); padding: 14px 18px; border: 1px solid #d5d8e0; border-radius: 18px; background: #fff; box-shadow: 0 8px 28px #0000001a; }
+.ps-unit-bar > div { display: grid; gap: 2px; min-width: 0; }
+.ps-unit-bar small { color: #7c8290; font-size: 11px; font-weight: 800; letter-spacing: .08em; }
+.ps-unit-bar strong { font-size: 18px; }
+.ps-unit-bar span { color: #596071; font-size: 13px; font-weight: 700; }
+@keyframes ps-flash { 0%, 100% { outline-color: #4b6bff; outline-offset: 2px; } 30%, 70% { outline-color: #4b6bff; outline-offset: 7px; outline-width: 4px; } }
+@media screen { .ps-selectable.is-selected.is-flash { animation: ps-flash .5s ease-in-out 2; } }
+@media print { .ps-unit-bar { display: none !important; } }
+@media (max-width: 640px) { .ps-unit-bar { flex-direction: column; align-items: stretch; } .ps-overview-side { justify-items: start; } }
