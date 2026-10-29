@@ -38,13 +38,13 @@ export default async function OwnerHome({ searchParams }: { searchParams: Promis
       return <li key={page.id} className={`mi-pet${pet.lost ? " is-lost" : ""}`}>
         <Link className="mi-pet-card" href={`/mi/chapita/${page.id}`}>
           <span className="mi-pet-photo">{/* eslint-disable-next-line @next/next/no-img-element -- foto de la mascota */}{photo ? <img src={photo} alt="" style={petPhotoStyle(pet.photo)} /> : "🐾"}{pet.lost && <em className="mi-pet-badge">🚨 {petGendered(pet, "Perdido", "Perdida")}</em>}</span>
-          <span className="mi-pet-copy"><strong>{page.business_name || "Sin nombre todavía"}</strong><small>{page.blocked_at ? "Pausada por BIONFC" : pet.lost ? "🚨 Aviso de perdido activo" : page.published ? "Funcionando" : "Falta cargar tu WhatsApp"}</small></span>
+          <span className="mi-pet-copy"><strong>{page.business_name || "Sin nombre todavía"}</strong><small>{page.blocked_at ? "Pausada por BIONFC" : pet.lost ? "🚨 Aviso de perdido activo" : page.published ? "Chapita activa" : "Falta cargar tu WhatsApp"}</small></span>
         </Link>
         {missing && <Link className="mi-pet-incomplete" href={`/mi/chapita/${page.id}?seccion=${missing}`}>Ficha incompleta · <b>Completar</b></Link>}
         <div className="mi-pet-actions">
           <Link href={`/mi/chapita/${page.id}`}><FiEdit2 aria-hidden="true" />Editar</Link>
           {live && <PetShareButton path={publicPath} petName={page.business_name || ""} lost={pet.lost} lostZone={pet.lostZone} female={petIsFemale(pet)} version={petImageVersion(pet, page.business_name || "", page.logo_url || "", page.pet_slug || page.slug)} className={pet.lost ? "is-urgent" : ""} />}
-          {live && <a href={publicPath} target="_blank" rel="noopener noreferrer"><FiEye aria-hidden="true" />Ver</a>}
+          {live && <a href={publicPath} target="_blank" rel="noopener noreferrer"><FiEye aria-hidden="true" />Ver página</a>}
           {/* Perdida: el cartel A4 para pegar en la calle. */}
           {live && pet.lost && <Link href={`/mi/chapita/${page.id}/cartel`}><FiPrinter aria-hidden="true" />Cartel</Link>}
         </div>

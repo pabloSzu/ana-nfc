@@ -14,6 +14,29 @@ import { cleanPhoneInput, petGendered, petNameExample, petHasContact, petImageVe
 import { AFTER_STEPS, useEditor, type AfterStep } from "./pet-editor-context";
 import { BirthField, Choice, Field, KindChoice, LookGrid, MiniPreview, PhoneStatus } from "./pet-editor-fields";
 
+// "Guardá tu acceso" (final del recorrido): antes de irse (por ejemplo, a subir la historia), que se
+// lleve cómo volver. Mandárselo por WhatsApp a sí mismo anda en cualquier celular (elige su propio
+// chat); "Copiar link" para quien no lo usa. El día que se pierda, la chapita no la va a tener a mano.
+function AccessCard({ petName }: { petName: string }) {
+  const [copied, setCopied] = useState(false);
+  const portalUrl = () => `${window.location.origin}/mi`;
+  function sendToMe() {
+    const text = `Mi acceso a la chapita de ${petName} 🐾 Para editarla o avisar si se pierde: ${portalUrl()} (entro con mi email)`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener");
+  }
+  async function copy() {
+    try { await navigator.clipboard.writeText(portalUrl()); setCopied(true); setTimeout(() => setCopied(false), 2500); }
+    catch { window.prompt("Copiá este link:", portalUrl()); }
+  }
+  return <div className="pet-access">
+    <strong>📌 Guardá tu acceso</strong>
+    <p>Para editarla o avisar si se pierde, entrá a <b>bionfc.com/mi</b> con tu email. Mandátelo y lo tenés siempre a mano:</p>
+    <button type="button" className="pet-access-wa" onClick={sendToMe}>💬 Mandármelo por WhatsApp</button>
+    <button type="button" className="pet-access-copy" onClick={copy}>{copied ? "¡Link copiado!" : "Copiar link"}</button>
+    <small>También llegás escaneando su chapita y tocando <b>“¿Es tu mascota?”</b>, abajo de todo.</small>
+  </div>;
+}
+
 export function SetupScreen({ step }: { step: 0 | 1 | 2 }) {
   const { pet, name, setName, petName, photoUrl, photo, change, about, saving, go, publish } = useEditor();
   const firstPhone = pet.family[0]?.phone || "";
@@ -128,6 +151,7 @@ export function AfterScreen({ step }: { step: AfterStep }) {
       <div className="pet-celebrate-mark" aria-hidden="true">🎉</div>
       <h2>¡{petName} ya tiene su chapita!</h2>
       <p className="pet-wizard-lead">Mostrásela a tus amigos en tus historias.</p>
+      <AccessCard petName={petName} />
       {/* La historia que va a subir. Mientras se arma, un esqueleto con brillo; después, un fundido. */}
       <figure className={`pet-story-preview${storyLoaded ? " is-loaded" : ""}`}>
         {/* eslint-disable-next-line @next/next/no-img-element -- la imagen para historias, la misma que se comparte */}

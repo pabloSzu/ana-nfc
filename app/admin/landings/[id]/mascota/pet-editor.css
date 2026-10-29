@@ -513,6 +513,13 @@ a.pet-celebrate-more { align-items: center; text-decoration: none; }
 .pet-step-next.pet-story-cta { position: relative; gap: 10px; overflow: hidden; background: linear-gradient(115deg, #feda75, #fa7e1e 25%, #d62976 55%, #962fbf 80%, #4f5bd5); color: #fff; box-shadow: 0 10px 24px #d6297640; }
 .pet-step-next.pet-story-cta svg { width: 20px; height: 20px; margin: 0; }
 .pet-step-next.pet-story-cta::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, #ffffff66 48%, transparent 66%); transform: translateX(-120%); animation: pet-story-shine 2.8s ease-in-out infinite; pointer-events: none; }
+/* "Guardá tu acceso" (final del recorrido): cómo volver otro día, antes de la historia. */
+.pet-access { display: grid; gap: 10px; margin: 4px 0 6px; padding: 15px 16px; border: 1.5px solid #cfe0ff; border-radius: 16px; background: #f3f7ff; text-align: left; }
+.pet-access > strong { color: #1d2130; font-size: 16px; }
+.pet-access > p { margin: 0; color: #4b5060; font-size: 13.5px; line-height: 1.45; }
+.pet-access-wa { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; border: 0; border-radius: 12px; background: #25d366; color: #fff; font: inherit; font-size: 15px; font-weight: 800; cursor: pointer; }
+.pet-access-copy { justify-self: center; padding: 2px 6px; border: 0; background: none; color: #2f6fed; font: inherit; font-size: 13.5px; font-weight: 700; text-decoration: underline; cursor: pointer; }
+.pet-access > small { color: #6a6f80; font-size: 12.5px; line-height: 1.4; }
 .pet-story-thanks { margin: -6px 0 0; color: #8a6a52; font-size: 14px; font-weight: 600; }
 .pet-done-card { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 12px 14px; border: 1.5px solid #f1e1d3; border-radius: 18px; background: #fff; color: #2d1d12; text-align: left; text-decoration: none; transition: border-color .2s, transform .2s; }
 .pet-done-card:hover { border-color: #f3b98c; transform: translateY(-1px); }

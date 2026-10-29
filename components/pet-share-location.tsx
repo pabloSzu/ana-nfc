@@ -1,6 +1,6 @@
 "use client";
 
-// "Mandar mi ubicación": quien encuentra a la mascota toca, el celular pide permiso y se abre
+// "Mandar dónde está Toby": quien encuentra a la mascota toca, el celular pide permiso y se abre
 // WhatsApp con un mensaje ya escrito y un link de Google Maps al lugar donde está. Si no da
 // permiso o el celular no puede ubicarse, igual se abre WhatsApp, sin el mapa.
 // Se muestra siempre (no solo en modo perdido): casi siempre la encuentran antes de que la
@@ -36,7 +36,7 @@ export default function PetShareLocation({ phone, petName, preview = false }: { 
   return <>
     {/* Con el estilo del botón de llamar (pet-call): toma la forma y los colores de cada diseño. */}
     <button type="button" className="pet-call pet-location" onClick={share} disabled={state === "locating"}>
-      <FiMapPin aria-hidden="true" /><span>{state === "locating" ? "Buscando tu ubicación…" : "Mandar mi ubicación"}</span>
+      <FiMapPin aria-hidden="true" /><span>{state === "locating" ? "Buscando tu ubicación…" : `Mandar dónde está ${name}`}</span>
     </button>
     {state === "denied" && <small className="pet-location-note">No pudimos ver tu ubicación. Contales por WhatsApp dónde estás.</small>}
   </>;
