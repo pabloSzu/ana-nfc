@@ -14,7 +14,7 @@ import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } f
 import Link from "next/link";
 import { LuPrinter } from "react-icons/lu";
 import { CardBack, CardFront, DESIGN_ANIMAL, DESIGNS, FLAP_LIMITS, FLAP_WIDTH, DESIGN_GROUPS, autoCardDesign, designClash, designLabel, designSays, isFlapCard, unit, unitNumber, type CardAnimal, type CardLayout, type DesignId } from "./card-designs";
-import { cleanTagPrint, isCat, isGenericCharacterId, TagBack, TagFront, TAG_CATS, TAG_CHARACTERS, TAG_COLORS, TAG_CUSTOM, TAG_DOGS, tagCharacterFor, type TagCharacterChoice, type TagCharacterId, type TagPrint } from "./tag-face";
+import { cleanTagPrint, isCat, isGenericCharacterId, TagBack, TagFront, isLightTagColor, TAG_CATS, TAG_CHARACTERS, TAG_COLORS, TAG_CUSTOM, TAG_DOGS, tagCharacterFor, type TagCharacterChoice, type TagCharacterId, type TagPrint } from "./tag-face";
 import { saveTagPrint } from "./actions";
 import CharacterPicker from "./character-picker";
 
@@ -46,6 +46,7 @@ type Settings = {
   cardMatch: boolean;
   tagHole: boolean;
   tagLayout: "v1" | "v2" | "v3" | "v4";
+  tagFront: "classic" | "brand";
   paper: Paper;
 };
 
@@ -55,7 +56,7 @@ const SIZES = [
   { id: "100x70", label: "Grande · 100×70 mm", width: 100, height: 70 },
   { id: "custom", label: "Otra medida", width: 85, height: 55 },
 ];
-const DEFAULTS: Settings = { design: "playful", cardLayout: "flap-a", flapWidth: 85, flapHeight: 55, flapFresh: false, size: "85x55", width: 85, height: 55, sides: "front", output: "single", cutLines: true, qrSize: 30, qrNumber: true, qrColor: "mix", tagSides: "both", tagOutput: "pairs", tagLayoutVersion: 2, tagCharacter: "mix", tagNames: {}, tagCharacters: {}, tagColors: {}, tagCards: {}, cardMatch: true, tagHole: false, paper: "A4", tagLayout: "v3" };
+const DEFAULTS: Settings = { design: "playful", cardLayout: "flap-a", flapWidth: 85, flapHeight: 55, flapFresh: false, size: "85x55", width: 85, height: 55, sides: "front", output: "single", cutLines: true, qrSize: 30, qrNumber: true, qrColor: "mix", tagSides: "both", tagOutput: "pairs", tagLayoutVersion: 2, tagCharacter: "mix", tagNames: {}, tagCharacters: {}, tagColors: {}, tagCards: {}, cardMatch: true, tagHole: false, paper: "A4", tagLayout: "v3", tagFront: "classic" };
 const STORAGE_KEY = "bionfc-print-settings";
 // Lo de cada unidad no va al navegador: viene de la base (PrintItem.print).
 const UNIT_KEYS = ["tagNames", "tagCharacters", "tagColors", "tagCards"];
@@ -254,12 +255,13 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
     saveUnit(id, { character, color: settings.tagColors[id], card: settings.tagCards[id] });
     setEditorNotice({ id, message: previousName ? `Quitamos “${previousName}” y aplicamos el diseño genérico.` : "Diseño genérico aplicado." });
   };
-  const setTagColor = (id: string, color: string) => {
+  // delay: el selector de color libre manda un cambio por cada movimiento; se guarda al soltar.
+  const setTagColor = (id: string, color: string, delay = 0) => {
     const next = { ...settings.tagColors };
     if (!color) delete next[id];
     else next[id] = color;
     update({ tagColors: next });
-    saveUnit(id, printOf(id, { color: next[id] }));
+    saveUnit(id, printOf(id, { color: next[id] }), delay);
   };
   // Lo automático sale del N° de unidad (no del orden en la lista): así no cambia cuando se
   // activa otra chapita del lote y se reimprime.
@@ -420,7 +422,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
   };
   const tagArtwork = (item: PrintItem, side: "front" | "back", suffix: string) => <div className={`ps-tag-ring${settings.cutLines ? " has-cut" : ""}`}>
     {side === "front"
-      ? <TagFront id={`${item.id}-${suffix}-front`} diameter={qrSize} color={colorOf(item)} character={characterOf(item)} name={settings.tagNames[item.id] || ""} hole={settings.tagHole} />
+      ? <TagFront brand={settings.tagFront === "brand"} id={`${item.id}-${suffix}-front`} diameter={qrSize} color={colorOf(item)} character={characterOf(item)} name={settings.tagNames[item.id] || ""} hole={settings.tagHole} />
       : <TagBack id={`${item.id}-${suffix}-back`} qr={item.tagQr} diameter={qrSize} color={colorOf(item)} design={tagBackDesign(settings.tagLayout)} hole={settings.tagHole} />}
   </div>;
   // Divs (no botones) porque adentro va el botón "Ver su tarjeta".
@@ -503,13 +505,18 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
           return <button key={layout.value} type="button" className={`ps-layout is-${layout.value}${on ? " is-on" : ""}`} aria-pressed={on} onClick={() => update({ tagLayout: layout.value })}>
             {on && <em>✓ Elegido</em>}
             {previewItem && <span className="ps-layout-faces" aria-hidden="true">
-              <TagFront id={`layout-${layout.value}-${previewItem.id}-front`} diameter={14} color={colorOf(previewItem)} character={characterOf(previewItem)} name={settings.tagNames[previewItem.id] || ""} />
+              <TagFront brand={settings.tagFront === "brand"} id={`layout-${layout.value}-${previewItem.id}-front`} diameter={14} color={colorOf(previewItem)} character={characterOf(previewItem)} name={settings.tagNames[previewItem.id] || ""} />
               <TagBack id={`layout-${layout.value}-${previewItem.id}-back`} qr={previewItem.tagQr} diameter={14} color={colorOf(previewItem)} design={tagBackDesign(layout.value)} />
             </span>}
             <strong><b>{index + 1}</b>{layout.label}</strong>
             <small>{layout.hint}</small>
           </button>;
         })}</div>
+      </section>
+      {/* El frente: el actual o el nuevo (sin "ACERCÁ TU CELU", con el logo en pastilla). */}
+      <section className="ps-front-pick" aria-label="Frente de la chapita">
+        <span className="ps-layouts-title">Frente</span>
+        <div className="ps-tag-styles">{([["classic", "Actual"], ["brand", "Nuevo ✨"]] as const).map(([value, label]) => <button key={value} type="button" className={settings.tagFront === value ? "is-on" : ""} onClick={() => update({ tagFront: value })}>{label}</button>)}</div>
       </section>
       <fieldset className="ps-group"><legend>Impresión de chapitas</legend>
         <label>Tamaño (diámetro): <b>{qrSize} mm</b><input type="range" min={28} max={45} value={qrSize} onChange={(event) => update({ qrSize: Number(event.target.value) })} /></label>
@@ -573,7 +580,16 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
           <div className="ps-colors ps-unit-colors">
             <button type="button" className={`ps-auto-color${!settings.tagColors[previewItem.id] ? " is-on" : ""}`} onClick={() => setTagColor(previewItem.id, "")} aria-label="Color automático" title="Color automático"><span className="is-auto">A</span><small>Auto</small></button>
             {TAG_COLORS.filter((color) => color.id !== "mix").map((color) => <button key={color.id} type="button" className={settings.tagColors[previewItem.id] === color.id ? "is-on" : ""} onClick={() => setTagColor(previewItem.id, color.id)} aria-label={color.label} title={color.label}><span style={{ background: color.value }} /></button>)}
+            {(() => {
+              const own = settings.tagColors[previewItem.id] || "";
+              const custom = own.startsWith("#");
+              return <label className={`ps-color-custom${custom ? " is-on" : ""}`} title="Otro color">
+                <span style={custom ? { background: own } : undefined}>{custom ? "" : "+"}</span>
+                <input type="color" value={custom ? own : "#3a7bd5"} onChange={(event) => setTagColor(previewItem.id, event.target.value, 600)} aria-label="Elegir otro color para esta chapita" />
+              </label>;
+            })()}
           </div>
+          {isLightTagColor(colorOf(previewItem)) && <small className="ps-light-note">Color claro: las letras van oscuras para que se lean.</small>}
           <button type="button" className="ps-reset-unit" onClick={() => resetTag(previewItem.id)}>Restablecer esta unidad</button>
         </div>}
       </section>
@@ -618,7 +634,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
       {mode === "qr" && previewItem && <section className="ps-tag-overview" aria-label={`Vista del código ${previewItem.code}`}>
         <div className="ps-tag-overview-head"><div><small>VISTA PREVIA</small><h2>{unit(previewItem.number)} · {previewItem.code}</h2></div><div className="ps-overview-side"><span>{settings.tagNames[previewItem.id]?.trim() || "Sin nombre · stock"}</span><button type="button" className="ps-partner" onClick={showPartner}>Ver su tarjeta <i aria-hidden="true">→</i></button></div></div>
         <div className="ps-tag-overview-pair">
-          <figure><TagFront id={`preview-${previewItem.id}-front`} diameter={60} color={colorOf(previewItem)} character={characterOf(previewItem)} name={settings.tagNames[previewItem.id] || ""} hole={settings.tagHole} /><figcaption>Frente</figcaption></figure>
+          <figure><TagFront brand={settings.tagFront === "brand"} id={`preview-${previewItem.id}-front`} diameter={60} color={colorOf(previewItem)} character={characterOf(previewItem)} name={settings.tagNames[previewItem.id] || ""} hole={settings.tagHole} /><figcaption>Frente</figcaption></figure>
           <figure><TagBack id={`preview-${previewItem.id}-back`} qr={previewItem.tagQr} diameter={60} color={colorOf(previewItem)} design={tagBackDesign(settings.tagLayout)} hole={settings.tagHole} /><figcaption>Dorso · {layoutLabel}</figcaption></figure>
         </div>
       </section>}

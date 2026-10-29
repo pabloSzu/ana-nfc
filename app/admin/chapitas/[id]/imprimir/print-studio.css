@@ -622,3 +622,11 @@
 .pc-paws.pc-front.is-flap .pc-watermark { top: 50%; left: calc(var(--pc-w, 85em) + 15em); height: min(36em, 92%); translate: -50% -50%; }
 .pc-paws.pc-front:not(.is-flap) .pc-watermark { top: 50%; left: calc(100% - 17.5em); height: min(40em, 96%); translate: -50% -50%; }
 .pc-paws.pc-front .pc-watermark { color: #ffc99c; }
+/* Frente de la chapita: actual o nuevo. */
+.ps-front-pick { display: grid; gap: 6px; }
+/* Chapita con fondo claro (isLightTagColor): letras oscuras; donde tenían borde oscuro, borde blanco.
+   Las pastillas y los círculos blancos quedan igual. */
+.ps-tag.is-light :is(text, tspan, g)[fill="#fff"] { fill: #1d2130; }
+.ps-tag.is-light :is(text, g)[fill="#fff"][stroke] { stroke: #fff; stroke-opacity: .9; }
+.ps-tag.is-light g[stroke="#fff"] { stroke: #1d2130; }
+.ps-light-note { color: #7a5a14; font-size: 11.5px; font-weight: 700; }

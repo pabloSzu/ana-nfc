@@ -173,16 +173,26 @@ function Paw({ x, y, size, rotate }: { x: number; y: number; size: number; rotat
 // Letras blancas con un borde oscuro marcado (mismo tamaño y grosor). Probado simulando una
 // impresora común (tinta que se corre, 150 ppp): sobre colores claros y arcoíris, sin borde no se
 // leen; con borde, sí. Sobre colores oscuros no cambia nada.
+// Fondo claro (un color libre elegido a mano): con letras blancas el contraste quedaría por debajo de
+// 3 a 1 (luminancia mayor a 0,30), así que las letras pasan a oscuras con borde blanco (ver
+// .ps-tag.is-light en print-studio.css). Los colores fijos y los arcoíris son todos oscuros.
+export const isLightTagColor = (color: string) => {
+  if (!/^#[0-9a-f]{6}$/i.test(color)) return false;
+  const [r, g, b] = [1, 3, 5].map((index) => parseInt(color.slice(index, index + 2), 16) / 255).map((c) => c <= .03928 ? c / 12.92 : ((c + .055) / 1.055) ** 2.4);
+  return .2126 * r + .7152 * g + .0722 * b > .3;
+};
+const tagClass = (color: string) => `ps-tag${isLightTagColor(color) ? " is-light" : ""}`;
+
 const EDGE = { stroke: "#151826", strokeOpacity: .72, strokeLinejoin: "round" as const };
 const WAVES = <><path d="M 0,2.3 A 2.2,2.2 0 0 1 0,5.7" /><path d="M 2.2,1.1 A 4,4 0 0 1 2.2,6.9" /><path d="M 4.4,0 A 5.8,5.8 0 0 1 4.4,8" /></>;
 
-export function TagFront({ id, diameter, color, character, name = "", hole = false }: { id: string; diameter: number; color: string; character: TagCharacterId; name?: string; hole?: boolean }) {
+export function TagFront({ id, diameter, color, character, name = "", hole = false, brand = false }: { id: string; diameter: number; color: string; character: TagCharacterId; name?: string; hole?: boolean; brand?: boolean }) {
   const animal = TAG_CHARACTERS.find((item) => item.id === character) || TAG_CHARACTERS[0];
   const cleanName = tagNameText(name);
   const size = nameSize(cleanName);
   // Si aun en el tamaño mínimo no entra (nombres muy anchos), se angosta para que quepa justo.
   const squeeze = nameWidth(cleanName) * size > NAME_MAX_WIDTH;
-  return <svg className="ps-tag" viewBox="0 0 100 100" width={`${diameter}mm`} height={`${diameter}mm`} role="img" aria-label={cleanName ? `Frente de la chapita de ${cleanName}` : `Frente de chapita con ${animal.label}`}>
+  return <svg className={tagClass(color)} viewBox="0 0 100 100" width={`${diameter}mm`} height={`${diameter}mm`} role="img" aria-label={cleanName ? `Frente de la chapita de ${cleanName}` : `Frente de chapita con ${animal.label}`}>
     <Background id={`tag-front-${id}`} color={color} />
     {hole && <HoleMark />}
     <text x="50" y="21.5" textAnchor="middle" fill="#fff" {...EDGE} strokeWidth="1" paintOrder="stroke" fontFamily="Poppins, Arial, sans-serif" fontSize="4.3" fontWeight="800" letterSpacing=".35">CHAPITA INTELIGENTE</text>
@@ -198,6 +208,16 @@ export function TagFront({ id, diameter, color, character, name = "", hole = fal
       {/* Las de stock usan una ilustración creada como cabeza aislada: no es un recorte del personaje con patas. */}
       <image href={animal.faceSrc} x="18" y="22" width="64" height="54" preserveAspectRatio="xMidYMid meet" />
     </>}
+    {brand ? <>
+    {/* Frente nuevo (brand): sin "ACERCÁ TU CELU"; el logo en una pastilla blanca con sus colores
+        (degradé un poco más oscuro, para que se lea impreso). Medidas tomadas de la letra real:
+        "BIONFC" en Plus Jakarta Sans 800 a 7,6 mide 28,5 de ancho y 5,8 de alto de mayúscula; las
+        ondas van a esa misma altura, centradas en la misma línea, a 1,8 de la C. Todo centrado. */}
+    <defs><linearGradient id={`tag-brand-${id}`} x1="0" x2="1"><stop offset="0" stopColor="#0e9fbf" /><stop offset=".6" stopColor="#3350e0" /><stop offset="1" stopColor="#6a3fd6" /></linearGradient></defs>
+    <rect x="28.95" y="75.6" width="42.1" height="10.6" rx="5.3" fill="#fff" />
+    <text x="32.55" y="83.8" fontFamily="Plus Jakarta Sans, Poppins, Arial, sans-serif" fontSize="7.6" fontWeight="800" letterSpacing="-.25"><tspan fill="#17120f">BIO</tspan><tspan fill={`url(#tag-brand-${id})`}>NFC</tspan></text>
+    <g transform="translate(62.84 77.86) scale(.76)" fill="none" stroke="#6a3fd6" strokeWidth="1.55" strokeLinecap="round">{WAVES}</g>
+    </> : <>
     {/* Un poco más arriba que antes: "ACERCÁ TU CELU" quedaba fuera del margen de seguridad. */}
     <g aria-label="BioNFC · Acercá tu celu" fill="#fff" {...EDGE} paintOrder="stroke">
       <text x="45.8" y="80.5" textAnchor="middle" strokeWidth="1.4" fontFamily="Plus Jakarta Sans, Poppins, Arial, sans-serif" fontSize="7.2" fontWeight="800" letterSpacing="-.25">BIONFC</text>
@@ -210,6 +230,7 @@ export function TagFront({ id, diameter, color, character, name = "", hole = fal
         oscura: se lee aunque la impresora corra la tinta. */}
     <rect x="28" y="82.6" width="44" height="6.4" rx="3.2" fill="#fff" />
     <text x="50" y="87.2" textAnchor="middle" fill="#1d2130" fontFamily="Poppins, Arial, sans-serif" fontSize="4.2" fontWeight="800" letterSpacing=".3">ACERCÁ TU CELU</text>
+    </>}
   </svg>;
 }
 
@@ -223,7 +244,7 @@ export function TagBack({ id, qr, diameter, color, design, hole = false }: { id:
     <path d="M 6.7,2.3 A 2.1,2.1 0 0 1 6.7,5.3" /><path d="M 8.6,1.1 A 3.7,3.7 0 0 1 8.6,6.5" /><path d="M 10.5,0 A 5.3,5.3 0 0 1 10.5,7.6" />
   </>;
   // Diseño 3: instrucción conjunta arriba, QR a la izquierda y gesto NFC a la derecha.
-  if (design === "v2") return <svg className="ps-tag" viewBox="0 0 100 100" width={`${diameter}mm`} height={`${diameter}mm`} role="img" aria-label="Dorso de la chapita con QR">
+  if (design === "v2") return <svg className={tagClass(color)} viewBox="0 0 100 100" width={`${diameter}mm`} height={`${diameter}mm`} role="img" aria-label="Dorso de la chapita con QR">
     <Background id={`tag-back-${id}`} color={color} />
     {hole && <HoleMark />}
     <text x="50" y="22" textAnchor="middle" fontSize="5.6" letterSpacing=".15" {...ink}>ESCANEÁ O ACERCÁ</text>
@@ -236,7 +257,7 @@ export function TagBack({ id, qr, diameter, color, design, hole = false }: { id:
   </svg>;
   // Diseño 1: cada acción sobre su elemento, gesto NFC primero y QR un poco más grande a la
   // derecha. La "O" central deja claro que son dos alternativas.
-  if (design === "v3") return <svg className="ps-tag" viewBox="0 0 100 100" width={`${diameter}mm`} height={`${diameter}mm`} role="img" aria-label="Dorso de la chapita con QR y NFC separados">
+  if (design === "v3") return <svg className={tagClass(color)} viewBox="0 0 100 100" width={`${diameter}mm`} height={`${diameter}mm`} role="img" aria-label="Dorso de la chapita con QR y NFC separados">
     <Background id={`tag-back-${id}`} color={color} />
     {hole && <HoleMark />}
     <text x="29.5" y="24.1" textAnchor="middle" fontSize="5.1" letterSpacing=".12" {...ink}>ACERCÁ</text>
@@ -251,7 +272,7 @@ export function TagBack({ id, qr, diameter, color, design, hole = false }: { id:
   </svg>;
   // Diseño 4: la composición del Diseño 3, con el QR más grande y "TU CELU" alineado sobre el
   // sector NFC para que la segunda línea complete visualmente la opción de la derecha.
-  if (design === "v4") return <svg className="ps-tag" viewBox="0 0 100 100" width={`${diameter}mm`} height={`${diameter}mm`} role="img" aria-label="Dorso de la chapita con QR grande">
+  if (design === "v4") return <svg className={tagClass(color)} viewBox="0 0 100 100" width={`${diameter}mm`} height={`${diameter}mm`} role="img" aria-label="Dorso de la chapita con QR grande">
     <Background id={`tag-back-${id}`} color={color} />
     {hole && <HoleMark />}
     <text x="29.5" y="22.4" textAnchor="middle" fontSize="5.5" letterSpacing=".05" {...ink}>ESCANEÁ</text>
@@ -264,7 +285,7 @@ export function TagBack({ id, qr, diameter, color, design, hole = false }: { id:
     <image href="/pet-tags/tap-phone-bold.png" x="57.3" y="39.4" width="24.4" height="21.5" />
     <text x="50" y="80.4" textAnchor="middle" fontSize="5.2" letterSpacing=".1" {...ink}>Y AVISALE A MI FAMILIA</text>
   </svg>;
-  return <svg className="ps-tag" viewBox="0 0 100 100" width={`${diameter}mm`} height={`${diameter}mm`} role="img" aria-label="Dorso de la chapita con QR">
+  return <svg className={tagClass(color)} viewBox="0 0 100 100" width={`${diameter}mm`} height={`${diameter}mm`} role="img" aria-label="Dorso de la chapita con QR">
     <defs><path id={bottom} d="M 11.5,50 A 38.5,38.5 0 0 0 88.5,50" /></defs>
     <Background id={`tag-back-${id}`} color={color} />
     {hole && <HoleMark />}
