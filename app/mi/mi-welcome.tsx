@@ -18,3 +18,18 @@ export default function MiWelcome({ petName }: { petName: string }) {
     <button type="button" onClick={() => setOpen(false)} aria-label="Cerrar">✕</button>
   </div>;
 }
+
+// Al volver de completar la ficha (?completa=id): un aviso que se va solo y no vuelve al recargar.
+// Si salteó todo y todavía falta algo, no se le dice que está completa.
+export function MiDone({ complete }: { complete: boolean }) {
+  const [open, setOpen] = useState(true);
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("completa");
+    window.history.replaceState(window.history.state, "", url.pathname + url.search);
+    const timer = setTimeout(() => setOpen(false), 4500);
+    return () => clearTimeout(timer);
+  }, []);
+  if (!open) return null;
+  return <p className="mi-done" role="status">{complete ? "✓ Ficha completa. Ya se ve en su página." : "✓ Guardado. Lo que falta lo completás cuando quieras."}</p>;
+}

@@ -6,6 +6,7 @@
 //    Compartir.
 //  · SpreadScreen: "Ahora, difundilo", al activar el modo perdido.
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FaInstagram } from "react-icons/fa6";
 import { LuPawPrint, LuPrinter } from "react-icons/lu";
@@ -94,10 +95,12 @@ const CONFETTI = ["#f5a25d", "#ff6fa3", "#ffd23f", "#3ecf8e", "#3aa0ff", "#8a5cf
 // El ejemplo de raza según lo que es.
 export const breedExample = (kind: string) => kind === "Gato" ? "Ej: Siamés, común europeo" : kind === "Perro" ? "Ej: Caniche, mestizo" : "Ej: Mestizo";
 
-const nextAfter = (step: AfterStep): AfterStep => AFTER_STEPS[AFTER_STEPS.indexOf(step) + 1] || "done";
-
-export function AfterScreen({ step }: { step: AfterStep }) {
-  const { landing, savedPet, pet, name, petName, dirty, saving, change, about, health, go, save } = useEditor();
+export function AfterScreen({ step, steps }: { step: AfterStep; steps?: AfterStep[] }) {
+  const { landing, savedPet, pet, name, petName, photoUrl, photo, dirty, saving, change, about, health, go, save, toMi, leaving } = useEditor();
+  const router = useRouter();
+  // Completando la ficha más tarde (steps): mismos pasos, y al terminar vuelve a Mis chapitas.
+  const list = steps || AFTER_STEPS;
+  const to = (next: AfterStep) => go({ name: "after", step: next, ...(steps ? { steps } : {}) });
   const version = petImageVersion(savedPet, name, landing.photoUrl, landing.slug);
   const storyUrl = `/api/og/mascota/${landing.slug}?formato=historia&v=${version}`;
   // Mientras completa los pasos, el navegador ya baja la imagen de la historia: al final se ve al instante.
@@ -105,19 +108,19 @@ export function AfterScreen({ step }: { step: AfterStep }) {
   const [storyLoaded, setStoryLoaded] = useState(false);
   const second = pet.family[1] || { name: "", phone: "" };
   const setSecond = (patch: Partial<PetFamily>) => change({ family: [pet.family[0] || { name: "", phone: "" }, { ...second, ...patch }] });
-  // Al pasar el último paso con datos ("¿Alguien más?") se guarda lo cargado, sin aviso: así no se
-  // pierde aunque después cierre sin terminar. Espera a que se guarde: lo que sigue es compartir y
-  // las imágenes salen de lo guardado. Si falla, se queda acá con el aviso de error.
-  // "Saltear" en ese paso descarta el segundo contacto (aunque haya quedado a medio escribir).
+  // Al pasar cada paso ("Siguiente" o "Saltear") se guarda lo cargado, sin aviso: así no se pierde
+  // aunque se vaya a mitad de camino. Espera a que se guarde: al final se comparte y las imágenes
+  // salen de lo guardado. Si falla, se queda acá con el aviso de error.
+  // "Saltear" en "¿Alguien más?" descarta el segundo contacto (aunque haya quedado a medio escribir).
   const goNext = async (skip = false) => {
-    if (step === "family") {
-      const next = skip && pet.family.length > 1 ? { ...pet, family: pet.family.slice(0, 1) } : pet;
-      if (dirty || next !== pet) {
-        const result = await save({ quiet: true, pet: next });
-        if (!result?.ok) return;
-      }
+    const next = step === "family" && skip && pet.family.length > 1 ? { ...pet, family: pet.family.slice(0, 1) } : pet;
+    if (dirty || next !== pet) {
+      const result = await save({ quiet: true, pet: next });
+      if (!result?.ok) return;
     }
-    go({ name: "after", step: nextAfter(step) });
+    const following = list[list.indexOf(step) + 1] || "done";
+    if (following === "done" && steps) { router.push(`/mi?completa=${landing.id}`); return; }
+    to(following);
   };
 
   // Recién publicada: ya funciona. Lo principal es seguir completándola.
@@ -133,7 +136,7 @@ export function AfterScreen({ step }: { step: AfterStep }) {
       <span className="pet-ficha-copy">Completar su ficha<small>Son 2 minutos · {AFTER_STEPS.length} pasos cortitos</small></span>
       <span className="pet-ficha-arrow" aria-hidden="true">→</span>
     </button>
-    <Link className="pet-celebrate-home" href={`/mi?nueva=${landing.id}`}>Lo hago después</Link>
+    <button type="button" className="pet-celebrate-home" onClick={() => go({ name: "after", step: "done" })}>Lo hago después</button>
     <div className="pet-celebrate-preview">
       <p>Así la ve quien la escanea:</p>
       <MiniPreview />
@@ -172,14 +175,27 @@ export function AfterScreen({ step }: { step: AfterStep }) {
   }
 
   // Pasos opcionales: uno por pantalla, con "Saltear".
-  const index = AFTER_STEPS.indexOf(step);
+  const index = list.indexOf(step);
   const blocked = step === "family" && Boolean(second.phone.trim()) && Boolean(petPhoneProblem(second.phone));
   return <section className="pet-wizard">
     <div className="pet-wizard-head">
-      <button type="button" className="pet-wizard-back" onClick={() => go({ name: "after", step: AFTER_STEPS[index - 1] || "ready" })}>← Atrás</button>
-      <span className="pet-wizard-count">Opcional · {index + 1} de {AFTER_STEPS.length}</span>
+      {steps && index === 0
+        ? <Link className="pet-wizard-back" href="/mi" onClick={toMi}>{leaving ? "Guardando…" : "← Mis chapitas"}</Link>
+        : <button type="button" className="pet-wizard-back" onClick={() => to(list[index - 1] || "ready")}>← Atrás</button>}
+      <span className="pet-wizard-count">{steps ? "Completar ficha" : "Opcional"} · {index + 1} de {list.length}</span>
     </div>
-    <div className="pet-wizard-progress" aria-hidden="true"><span style={{ width: `${((index + 1) / AFTER_STEPS.length) * 100}%` }} /></div>
+    <div className="pet-wizard-progress" aria-hidden="true"><span style={{ width: `${((index + 1) / list.length) * 100}%` }} /></div>
+
+    {step === "photo" && <>
+      <h2>Subí una foto de {petName}</h2>
+      <p className="pet-wizard-lead">Ayuda a que l{petGendered(pet, "o", "a")} reconozcan. Podés cambiarla cuando quieras.</p>
+      <button type="button" className="pet-wizard-photo" onClick={photo.pick} aria-label={photoUrl ? "Cambiar foto" : "Elegir foto"}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- vista previa local */}
+        {photo.preparing ? <span><i className="spin" aria-hidden="true" />Preparando foto…</span> : photoUrl ? <img src={photoUrl} alt="" style={petPhotoStyle(pet.photo)} /> : <span><b aria-hidden="true">📷</b>Tocá para elegirla</span>}
+      </button>
+      {photo.error && <p className="pet-phone-warn">{photo.error}</p>}
+      {photoUrl && <div className="pet-wizard-links"><button type="button" onClick={photo.adjust}>Ajustar foto</button><button type="button" onClick={photo.pick}>Cambiar foto</button></div>}
+    </>}
 
     {step === "look" && <>
       <h2>Elegí un diseño</h2>

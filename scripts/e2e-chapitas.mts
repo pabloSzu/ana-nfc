@@ -142,10 +142,12 @@ async function run() {
     await clickText("Completar");
     check("Opcionales: elegir diseño", await waitFor("document.body.innerText.includes('Elegí un diseño')"));
     await js("[...document.querySelectorAll('.pet-look-grid button')][3].click()");
+    // Cada "Siguiente" guarda antes de pasar: se espera el paso que sigue.
     await clickText("Siguiente");
+    await waitFor("document.body.innerText.includes('Contanos de')", 20);
     await clickText("Hembra");
     await clickText("Siguiente");
-    check("Opcionales: segundo contacto", await waitFor("document.body.innerText.includes('Alguien más')"));
+    check("Opcionales: segundo contacto", await waitFor("document.body.innerText.includes('Alguien más')", 20));
     // Un segundo número a medio escribir y "Saltear": lo descarta y guarda lo demás antes de seguir.
     await type(".pet-wizard input[type=tel]", "351");
     await clickText("Saltear", "button");
@@ -158,7 +160,7 @@ async function run() {
     // "Listo" termina en Mis chapitas, con la bienvenida apuntando al botón rojo.
     await click(".pet-done-card");
     check("Final: lleva a Mis chapitas con la bienvenida", await waitFor("location.pathname === '/mi' && Boolean(document.querySelector('.mi-welcome')) && Boolean(document.querySelector('.mi-lost-button.is-highlight'))", 30));
-    check("Mis chapitas: avisa que a la ficha le falta la foto", await waitFor("document.querySelector('.mi-pet-incomplete')?.getAttribute('href')?.endsWith('?seccion=pet')", 10));
+    check("Mis chapitas: avisa que a la ficha le falta (abre los pasos)", await waitFor("document.querySelector('.mi-pet-incomplete')?.getAttribute('href')?.endsWith('?completar')", 10));
     check("Final: la bienvenida no vuelve al recargar", !(await js("location.search.includes('nueva')")));
     await go(`${BASE}/mi/chapita/${data.tagId}`);
     check("Opcionales: llega al menú", await waitFor("Boolean(document.querySelector('.pet-menu'))"));

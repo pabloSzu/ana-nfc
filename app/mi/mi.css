@@ -274,3 +274,5 @@
 @media (hover: none) {
   .mi-home-new:hover, .mi-home .mi-pets .mi-pet:hover { transform: none; }
 }
+/* Aviso de ficha completa (MiDone). */
+.mi-done { margin: 10px 0 0; padding: 10px 14px; border-radius: 12px; background: #e6f5ec; color: #17673a; font-size: 14px; font-weight: 700; }

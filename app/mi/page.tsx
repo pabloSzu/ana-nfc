@@ -5,11 +5,12 @@ import { landingImageUrl } from "@/lib/landing-image";
 import { PET_ABOUT_FIELDS, PET_HEALTH_FIELDS, parsePet, petGendered, petImageVersion, petIsFemale, petPhotoStyle, petRows } from "@/lib/pet";
 import { FiEdit2, FiEye, FiPrinter } from "react-icons/fi";
 import PetShareButton from "@/components/pet-share-button";
-import MiWelcome from "./mi-welcome";
+import MiWelcome, { MiDone } from "./mi-welcome";
 // Las chapitas del dueño: las de los clientes de los que es miembro (ver client_members).
-export default async function OwnerHome({ searchParams }: { searchParams: Promise<{ nueva?: string }> }) {
+export default async function OwnerHome({ searchParams }: { searchParams: Promise<{ nueva?: string; completa?: string }> }) {
   // Recién terminada (?nueva=id, desde el final del recorrido): se le muestra qué hay acá.
-  const { nueva } = await searchParams;
+  // Recién completada la ficha (?completa=id, desde los pasos de "Completar"): un aviso.
+  const { nueva, completa } = await searchParams;
   const supabase = await createClient();
   const { data: claims } = await supabase.auth.getClaims();
   const userId = String(claims?.claims?.sub || "");
@@ -40,7 +41,7 @@ export default async function OwnerHome({ searchParams }: { searchParams: Promis
           <span className="mi-pet-photo">{/* eslint-disable-next-line @next/next/no-img-element -- foto de la mascota */}{photo ? <img src={photo} alt="" style={petPhotoStyle(pet.photo)} /> : "🐾"}{pet.lost && <em className="mi-pet-badge">🚨 {petGendered(pet, "Perdido", "Perdida")}</em>}</span>
           <span className="mi-pet-copy"><strong>{page.business_name || "Sin nombre todavía"}</strong><small>{page.blocked_at ? "Pausada por BIONFC" : pet.lost ? "🚨 Aviso de perdido activo" : page.published ? "Chapita activa" : "Falta cargar tu WhatsApp"}</small></span>
         </Link>
-        {missing && <Link className="mi-pet-incomplete" href={`/mi/chapita/${page.id}?seccion=${missing}`}>Ficha incompleta · <b>Completar</b></Link>}
+        {missing && <Link className="mi-pet-incomplete" href={`/mi/chapita/${page.id}?completar`}>Ficha incompleta · <b>Completar</b></Link>}
         <div className="mi-pet-actions">
           <Link href={`/mi/chapita/${page.id}`}><FiEdit2 aria-hidden="true" />Editar</Link>
           {live && <PetShareButton path={publicPath} petName={page.business_name || ""} lost={pet.lost} lostZone={pet.lostZone} female={petIsFemale(pet)} version={petImageVersion(pet, page.business_name || "", page.logo_url || "", page.pet_slug || page.slug)} className={pet.lost ? "is-urgent" : ""} />}
@@ -49,6 +50,7 @@ export default async function OwnerHome({ searchParams }: { searchParams: Promis
           {live && pet.lost && <Link href={`/mi/chapita/${page.id}/cartel`}><FiPrinter aria-hidden="true" />Cartel</Link>}
         </div>
         {live && nueva === page.id && <MiWelcome petName={page.business_name || "tu mascota"} />}
+        {completa === page.id && <MiDone complete={!missing} />}
         {/* Lo urgente, a un toque: abre el editor directo en "¿Se perdió?". */}
         {live && <Link className={`mi-lost-button${pet.lost ? " is-on" : ""}${live && nueva === page.id ? " is-highlight" : ""}`} href={`/mi/chapita/${page.id}?seccion=lost`}>{pet.lost ? "Sacar el aviso · ya volvió" : "🚨 Avisar que se perdió"}</Link>}
       </li>;

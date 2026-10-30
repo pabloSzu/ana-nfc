@@ -11,7 +11,7 @@ export type EditorOwner = { email: string; host: string };
 export type Panel = "pet" | "family" | "ficha" | "look" | "lost";
 // Pasos opcionales después de publicar por primera vez.
 // Solo cosas para completar: qué hacer si se pierde se muestra en Mis chapitas, junto al botón.
-export type AfterStep = "ready" | "look" | "about" | "family" | "done";
+export type AfterStep = "ready" | "photo" | "look" | "about" | "family" | "done";
 export const AFTER_STEPS: AfterStep[] = ["look", "about", "family"];
 
 // Qué pantalla se ve. Una sola variable: no hay combinaciones posibles entre pantallas.
@@ -22,7 +22,9 @@ export const AFTER_STEPS: AfterStep[] = ["look", "about", "family"];
 //  · panel: la pantalla de una opción, con "Cancelar · Guardar".
 export type Screen =
   | { name: "setup"; step: 0 | 1 | 2 }
-  | { name: "after"; step: AfterStep }
+  // steps: completar la ficha más tarde (desde "Ficha incompleta" en Mis chapitas). Los mismos pasos
+  // de a uno (con "foto" primero si falta) y al terminar vuelve a Mis chapitas.
+  | { name: "after"; step: AfterStep; steps?: AfterStep[] }
   | { name: "spread" }
   | { name: "menu" }
   | { name: "panel"; panel: Panel };
@@ -70,6 +72,10 @@ export type Editor = {
   // patch: guarda con esto cambiado (lo usan "Activar aviso" y "Desactivar aviso").
   savePanel: (patch?: Partial<PetData>) => Promise<void>;
   cancelPanel: () => void;
+  // Los links a Mis chapitas: en los pasos de la ficha, si quedó algo sin guardar, lo guarda y recién
+  // ahí se va (sin preguntar). En el resto del editor es un link común.
+  toMi: (event: React.MouseEvent) => void;
+  leaving: boolean;
   openBig: () => void;
   startTour: () => void;
 };

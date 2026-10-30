@@ -28,7 +28,7 @@ import { compressImage } from "@/lib/compress-image";
 import { uploadPetPhoto } from "@/lib/pet-photo-upload";
 import { FontLinks } from "@/lib/fonts";
 import { PET_LOOKS, parsePet, petForEditing, petGendered, petHasContact, type PetData, type PetFamily, type PetSaveResult } from "@/lib/pet";
-import { EditorProvider, PANELS, type Editor, type EditorLanding, type EditorOwner, type Panel, type Screen } from "./pet-editor-context";
+import { AFTER_STEPS, EditorProvider, PANELS, type AfterStep, type Editor, type EditorLanding, type EditorOwner, type Panel, type Screen } from "./pet-editor-context";
 import BioNFCLogo from "@/components/bionfc-logo";
 import PetShareButton from "@/components/pet-share-button";
 import AccountMenu from "@/app/mi/account-menu";
@@ -88,6 +88,11 @@ export default function PetEditor({ landing: initialLanding, initialPet, saveAct
       if (devScreen) return devScreen;
     }
     if (isOwner && !landing.published && !landing.blocked) return { name: "setup", step: 0 };
+    // ?completar (desde "Ficha incompleta · Completar" en Mis chapitas): los pasos de la ficha.
+    if (searchParams.get("completar") !== null) {
+      const steps: AfterStep[] = [...(landing.photoUrl ? [] : ["photo" as const]), ...AFTER_STEPS];
+      return { name: "after", step: steps[0], steps };
+    }
     const requested = searchParams.get("seccion");
     return PANELS.includes(requested as Panel) ? { name: "panel", panel: requested as Panel } : { name: "menu" };
   });
@@ -105,6 +110,7 @@ export default function PetEditor({ landing: initialLanding, initialPet, saveAct
   const [preparingPhoto, setPreparingPhoto] = useState(false);
   const [adjustingPhoto, setAdjustingPhoto] = useState(false);
   const [draft, setDraft] = useState<{ name: string; pet: PetData } | null>(null);
+  const [leaving, setLeaving] = useState(false);
   const [bigOpen, setBigOpen] = useState(false);
   // En la compu el celular del dueño se scrollea con el mouse. Para que se note: un degradado abajo
   // (se va al llegar al final) y, la primera vez, "Deslizá para ver más" hasta que scrollea.
@@ -334,6 +340,16 @@ export default function PetEditor({ landing: initialLanding, initialPet, saveAct
     driver({ showProgress: true, progressText: "{{current}} de {{total}}", nextBtnText: "Siguiente", prevBtnText: "Atrás", doneBtnText: "Entendido", overlayOpacity: 0.65, stagePadding: 6, stageRadius: 14, popoverClass: isOwner ? "pet-tour is-owner" : "pet-tour", steps }).drive();
   }
 
+  async function toMi(event: React.MouseEvent) {
+    if (screen.name !== "after" || !dirty) return;
+    event.preventDefault();
+    if (leaving) return;
+    setLeaving(true);
+    const result = await save({ quiet: true });
+    if (result?.ok) router.push("/mi");
+    else setLeaving(false);
+  }
+
   const editor: Editor = {
     landing, isOwner, owner: owner || null, savedPet: saved.pet, pet, name, petName: name.trim() || "tu mascota", photoUrl, dirty, saving, screen,
     go: setScreen,
@@ -343,7 +359,7 @@ export default function PetEditor({ landing: initialLanding, initialPet, saveAct
     health: (patch) => change({ health: { ...pet.health, ...patch } }),
     setMember: (index, patch: Partial<PetFamily>) => change({ family: pet.family.map((member, current) => current === index ? { ...member, ...patch } : member) }),
     photo: { preparing: preparingPhoto, error: photoError, pick: () => photoInput.current?.click(), adjust: () => setAdjustingPhoto(true), remove: removePhoto },
-    save, publish, savePanel, cancelPanel, openBig, startTour,
+    save, publish, savePanel, cancelPanel, openBig, startTour, toMi, leaving,
   };
 
   return <EditorProvider value={editor}>
@@ -352,9 +368,9 @@ export default function PetEditor({ landing: initialLanding, initialPet, saveAct
       <header className={`pet-editor-top${isOwner ? " is-owner" : ""}`}>
         {isOwner
           ? <>
-            <Link href="/mi" className="pet-top-logo" aria-label="BIONFC · Mis chapitas"><BioNFCLogo /></Link>
+            <Link href="/mi" className="pet-top-logo" aria-label="BIONFC · Mis chapitas" onClick={toMi}><BioNFCLogo /></Link>
             <div className="pet-editor-portal-wrap">
-              <Link className={`pet-editor-portal${portalTip ? " is-pulse" : ""}`} href="/mi" aria-label="Ir a Mis chapitas"><LuPawPrint aria-hidden="true" /><span>Mis chapitas</span></Link>
+              <Link className={`pet-editor-portal${portalTip ? " is-pulse" : ""}`} href="/mi" aria-label="Ir a Mis chapitas" onClick={toMi}><LuPawPrint aria-hidden="true" /><span>{leaving ? "Guardando…" : "Mis chapitas"}</span></Link>
               {portalTip && <span className="pet-portal-tip" role="status">Acá están tus chapitas. Si se pierde, avisás desde ahí.</span>}
             </div>
             <span className="pet-top-crumb" aria-hidden="true">›</span>
@@ -433,7 +449,7 @@ export default function PetEditor({ landing: initialLanding, initialPet, saveAct
           target.blur();
         }}>
           {screen.name === "setup" && <SetupScreen step={screen.step} />}
-          {screen.name === "after" && <AfterScreen step={screen.step} />}
+          {screen.name === "after" && <AfterScreen step={screen.step} steps={screen.steps} />}
           {screen.name === "spread" && <SpreadScreen />}
           {screen.name === "menu" && <MenuScreen />}
           {screen.name === "panel" && <PanelScreen panel={screen.panel} />}
