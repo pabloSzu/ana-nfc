@@ -13,12 +13,13 @@
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 import Link from "next/link";
 import { LuPrinter } from "react-icons/lu";
+import { tagCutContourSvg } from "@/lib/pet-tags";
 import { CardBack, CardFront, DESIGN_ANIMAL, DESIGNS, FLAP_LIMITS, FLAP_WIDTH, DESIGN_GROUPS, autoCardDesign, designClash, designLabel, designSays, isFlapCard, unit, unitNumber, type CardAnimal, type CardLayout, type DesignId } from "./card-designs";
-import { cleanTagPrint, isCat, isGenericCharacterId, TagBack, TagFront, isLightTagColor, TAG_CATS, TAG_CHARACTERS, TAG_COLORS, TAG_CUSTOM, TAG_DOGS, tagCharacterFor, type TagCharacterChoice, type TagCharacterId, type TagPrint } from "./tag-face";
+import { cleanTagPrint, isCat, isGenericCharacterId, TagBack, TagFront, isLightTagColor, TAG_CATS, TAG_CHARACTERS, TAG_COLORS, TAG_CUSTOM, TAG_DOGS, tagCharacterFor, type TagCharacterChoice, type TagCharacterId, type TagFrontStyle, type TagPrint, type VectorQr } from "./tag-face";
 import { saveTagPrint } from "./actions";
 import CharacterPicker from "./character-picker";
 
-export type PrintItem = { id: string; number: number; code: string; activationQr: string; tagQr: string; print: TagPrint };
+export type PrintItem = { id: string; number: number; code: string; activationQr: string; tagQr: VectorQr; print: TagPrint };
 type Mode = "cards" | "qr";
 type Settings = {
   design: DesignId;
@@ -32,8 +33,8 @@ type Settings = {
   sides: "both" | "front";
   output: "sheet" | "single";
   cutLines: boolean;
+  tagCutGuides: boolean;
   qrSize: number;
-  qrNumber: boolean;
   qrColor: string;
   tagSides: "both" | "front" | "back";
   tagOutput: "pairs" | "duplex";
@@ -46,7 +47,7 @@ type Settings = {
   cardMatch: boolean;
   tagHole: boolean;
   tagLayout: "v1" | "v2" | "v3" | "v4";
-  tagFront: "classic" | "brand";
+  tagFront: TagFrontStyle;
   paper: Paper;
 };
 
@@ -56,7 +57,7 @@ const SIZES = [
   { id: "100x70", label: "Grande · 100×70 mm", width: 100, height: 70 },
   { id: "custom", label: "Otra medida", width: 85, height: 55 },
 ];
-const DEFAULTS: Settings = { design: "playful", cardLayout: "flap-a", flapWidth: 85, flapHeight: 55, flapFresh: false, size: "85x55", width: 85, height: 55, sides: "front", output: "single", cutLines: true, qrSize: 30, qrNumber: true, qrColor: "mix", tagSides: "both", tagOutput: "pairs", tagLayoutVersion: 2, tagCharacter: "mix", tagNames: {}, tagCharacters: {}, tagColors: {}, tagCards: {}, cardMatch: true, tagHole: false, paper: "A4", tagLayout: "v3", tagFront: "classic" };
+const DEFAULTS: Settings = { design: "playful", cardLayout: "flap-a", flapWidth: 85, flapHeight: 55, flapFresh: false, size: "85x55", width: 85, height: 55, sides: "front", output: "single", cutLines: true, tagCutGuides: true, qrSize: 30, qrColor: "mix", tagSides: "both", tagOutput: "pairs", tagLayoutVersion: 2, tagCharacter: "mix", tagNames: {}, tagCharacters: {}, tagColors: {}, tagCards: {}, cardMatch: true, tagHole: false, paper: "A4", tagLayout: "v3", tagFront: "classic" };
 const STORAGE_KEY = "bionfc-print-settings";
 // Lo de cada unidad no va al navegador: viene de la base (PrintItem.print).
 const UNIT_KEYS = ["tagNames", "tagCharacters", "tagColors", "tagCards"];
@@ -105,10 +106,9 @@ function CropMarks({ width, height }: { width: number; height: number }) {
 // Pie de cada hoja, en el margen (fuera del corte): de qué lote es, qué unidades lleva y una línea
 // de 50 mm para comprobar que se imprimió al 100% (con "Ajustar a la página" todo sale más chico y
 // la chapita ya no entra en su base).
-function SheetFoot({ batchName, page, pages, items, detail }: { batchName: string; page: number; pages: number; items: PrintItem[]; detail: string }) {
-  const range = items.length ? `Unidades ${unitNumber(items[0].number)}–${unitNumber(items[items.length - 1].number)}` : "";
+function SheetFoot({ batchName, page, pages, detail }: { batchName: string; page: number; pages: number; detail: string }) {
   return <footer className="ps-sheet-foot">
-    <span>{[batchName, `Hoja ${page}/${pages}`, range, detail].filter(Boolean).join(" · ")}</span>
+    <span>{[batchName, `Hoja ${page}/${pages}`, detail].filter(Boolean).join(" · ")}</span>
     <span className="ps-ruler"><i />Esta línea mide 50 mm</span>
   </footer>;
 }
@@ -176,11 +176,15 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
   const flapClosed = { width: clamp(settings.flapWidth, ...FLAP_LIMITS.width), height: clamp(settings.flapHeight, ...FLAP_LIMITS.height) };
   const width = secureCard ? flapClosed.width + FLAP_WIDTH : clamp(settings.width, 40, 190);
   const height = secureCard ? flapClosed.height : clamp(settings.height, 30, 270);
-  // La chapita entera (el círculo), en mm. Desde 28 mm: más chica, el QR no se lee bien impreso.
-  const qrSize = clamp(settings.qrSize, 28, 45);
+  // La chapita entera (el círculo), en mm. El QR vectorial de 25×25 módulos permite llegar a
+  // 26 mm; por debajo los módulos quedan demasiado chicos para impresión doméstica confiable.
+  const qrSize = clamp(settings.qrSize, 26, 45);
   const single = mode === "cards" && settings.output === "single";
   const paper: Paper = settings.paper in PAPERS ? settings.paper : "A4";
   const layoutLabel = LAYOUTS.find((layout) => layout.value === settings.tagLayout)?.label || LAYOUTS[0].label;
+  // Las pruebas se pueden elegir únicamente en localhost. Aunque quedara una preferencia vieja,
+  // una pantalla no local vuelve al frente nuevo estable.
+  const frontStyle: TagFrontStyle = isLocal || settings.tagFront === "classic" || settings.tagFront === "brand" ? settings.tagFront : "brand";
   const PAGE = { ...PAPERS[paper], margin: PAGE_MARGIN };
 
   // Cuántas entran por hoja.
@@ -190,8 +194,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
   const perCardPage = cardCols * cardRows;
   // Bien juntas para no gastar hojas (2 mm entre una y otra para cortar).
   const qrGap = 2;
-  // Abajo de cada círculo, el código de activación (afuera: se recorta; es una guía para armar).
-  const qrCell = qrSize + (settings.qrNumber ? 4 : 0);
+  const qrCell = qrSize;
   const qrCols = Math.max(1, Math.floor((PAGE.width - PAGE.margin * 2 + qrGap) / (qrSize + qrGap)));
   const qrRows = Math.max(1, Math.floor((PAGE.height - PAGE.margin * 2 + qrGap) / (qrCell + qrGap)));
   const perQrPage = qrCols * qrRows;
@@ -200,7 +203,6 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
   const pairGap = 3;
   const pairWidth = qrSize * 2 + pairInnerGap;
   const pairCols = Math.max(1, Math.floor((PAGE.width - PAGE.margin * 2 + pairGap) / (pairWidth + pairGap)));
-  // En pares el código va vertical entre ambas caras: no consume una franja debajo.
   const pairRows = Math.max(1, Math.floor((PAGE.height - PAGE.margin * 2 + pairGap) / (qrSize + pairGap)));
   const perPairPage = pairCols * pairRows;
 
@@ -420,16 +422,37 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
     saveUnit(id, settings.tagCards[id] ? { card: settings.tagCards[id] } : {});
     setEditorNotice(null);
   };
-  const tagArtwork = (item: PrintItem, side: "front" | "back", suffix: string) => <div className={`ps-tag-ring${settings.cutLines ? " has-cut" : ""}`}>
+  const downloadSvg = (svg: string, filename: string) => {
+    const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  };
+  const downloadQrSvg = (item: PrintItem) => {
+    const margin = 4;
+    const total = item.tagQr.modules + margin * 2;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${total} ${total}" shape-rendering="crispEdges"><rect width="${total}" height="${total}" fill="#fff"/><path d="${item.tagQr.path}" transform="translate(${margin} ${margin})" fill="#1d1410"/></svg>`;
+    downloadSvg(svg, `chapita-${unitNumber(item.number)}-qr.svg`);
+  };
+  const downloadCutContourSvg = () => {
+    downloadSvg(tagCutContourSvg(qrSize), `corte-chapita-${qrSize}mm.svg`);
+  };
+  const tagArtwork = (item: PrintItem, side: "front" | "back", suffix: string) => <div className="ps-tag-ring">
     {side === "front"
-      ? <TagFront brand={settings.tagFront === "brand"} id={`${item.id}-${suffix}-front`} diameter={qrSize} color={colorOf(item)} character={characterOf(item)} name={settings.tagNames[item.id] || ""} hole={settings.tagHole} />
+      ? <TagFront design={frontStyle} id={`${item.id}-${suffix}-front`} diameter={qrSize} color={colorOf(item)} character={characterOf(item)} name={settings.tagNames[item.id] || ""} hole={settings.tagHole} />
       : <TagBack id={`${item.id}-${suffix}-back`} qr={item.tagQr} diameter={qrSize} color={colorOf(item)} design={tagBackDesign(settings.tagLayout)} hole={settings.tagHole} />}
+    {settings.tagCutGuides && <svg className="ps-cut-contour" viewBox="0 0 100 100" width={`${qrSize}mm`} height={`${qrSize}mm`} overflow="visible" aria-hidden="true">
+      <g id={`CUT_CONTOUR-${item.id}-${suffix}-${side}`} fill="none" stroke="#ff00ff" strokeWidth=".01mm">
+        <circle cx="50" cy="50" r="50" />
+      </g>
+    </svg>}
   </div>;
   // Divs (no botones) porque adentro va el botón "Ver su tarjeta".
   const tagCell = (item: PrintItem, side: "front" | "back") => <div role="button" tabIndex={0} data-card={item.id} className={`ps-tag-cell ps-selectable${previewItem?.id === item.id ? " is-selected" : ""}`} onClick={() => selectItem(item.id)} onKeyDown={(event) => selectItemFromKeyboard(event, item.id)} aria-label={`Seleccionar chapita con código ${item.code}`}>
     <span className="ps-tools">{partnerButton(item)}</span>
     {tagArtwork(item, side, "sheet")}
-    {settings.qrNumber && <span className="ps-tag-number">{unit(item.number)}</span>}
   </div>;
 
   return <div className={`ps is-${paper.toLowerCase()}`} style={{ "--page-w": `${PAGE.width}mm`, "--page-h": `${PAGE.height}mm` } as CSSProperties}>
@@ -505,7 +528,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
           return <button key={layout.value} type="button" className={`ps-layout is-${layout.value}${on ? " is-on" : ""}`} aria-pressed={on} onClick={() => update({ tagLayout: layout.value })}>
             {on && <em>✓ Elegido</em>}
             {previewItem && <span className="ps-layout-faces" aria-hidden="true">
-              <TagFront brand={settings.tagFront === "brand"} id={`layout-${layout.value}-${previewItem.id}-front`} diameter={14} color={colorOf(previewItem)} character={characterOf(previewItem)} name={settings.tagNames[previewItem.id] || ""} />
+              <TagFront design={frontStyle} id={`layout-${layout.value}-${previewItem.id}-front`} diameter={14} color={colorOf(previewItem)} character={characterOf(previewItem)} name={settings.tagNames[previewItem.id] || ""} />
               <TagBack id={`layout-${layout.value}-${previewItem.id}-back`} qr={previewItem.tagQr} diameter={14} color={colorOf(previewItem)} design={tagBackDesign(layout.value)} />
             </span>}
             <strong><b>{index + 1}</b>{layout.label}</strong>
@@ -516,10 +539,14 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
       {/* El frente: el actual o el nuevo (sin "ACERCÁ TU CELU", con el logo en pastilla). */}
       <section className="ps-front-pick" aria-label="Frente de la chapita">
         <span className="ps-layouts-title">Frente</span>
-        <div className="ps-tag-styles">{([["classic", "Actual"], ["brand", "Nuevo ✨"]] as const).map(([value, label]) => <button key={value} type="button" className={settings.tagFront === value ? "is-on" : ""} onClick={() => update({ tagFront: value })}>{label}</button>)}</div>
+        <div className="ps-tag-styles">{([
+          ["classic", "Actual"], ["brand", "Nuevo ✨"],
+          ...(isLocal ? [["test1", "PRUEBA1"], ["test2", "PRUEBA2"], ["test3", "PRUEBA3"], ["test4", "PRUEBA4"], ["test5", "PRUEBA5"]] : []),
+        ] as [TagFrontStyle, string][]).map(([value, label]) => <button key={value} type="button" className={frontStyle === value ? "is-on" : ""} onClick={() => update({ tagFront: value })}>{label}</button>)}</div>
       </section>
       <fieldset className="ps-group"><legend>Impresión de chapitas</legend>
-        <label>Tamaño (diámetro): <b>{qrSize} mm</b><input type="range" min={28} max={45} value={qrSize} onChange={(event) => update({ qrSize: Number(event.target.value) })} /></label>
+        <label>Tamaño (diámetro): <b>{qrSize} mm</b><input type="range" min={26} max={45} value={qrSize} onChange={(event) => update({ qrSize: Number(event.target.value) })} /></label>
+        {qrSize < 30 && <small className="ps-compact-note">Modo compacto: el contenido se mete dentro del margen de corte y el QR usa 25×25 módulos. No recomendamos bajar de 26 mm.</small>}
         <span className="ps-colors-label">Formato de hoja</span>
         <div className="ps-output-options">
           <button type="button" className={settings.tagOutput === "pairs" ? "is-on" : ""} onClick={() => update({ tagOutput: "pairs", tagSides: "both", tagLayoutVersion: 2 })}><strong>Pares para armado</strong><small>Frente y dorso juntos, en orden normal · recomendado</small></button>
@@ -535,7 +562,6 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
           </div>}
         </details>
         <label className="ps-check"><input type="checkbox" checked={settings.tagHole} onChange={(event) => update({ tagHole: event.target.checked })} />Con agujero (marca un puntito para perforar)</label>
-        {settings.tagOutput === "duplex" && <label className="ps-check"><input type="checkbox" checked={settings.qrNumber} onChange={(event) => update({ qrNumber: event.target.checked })} />Mostrar el N° de unidad debajo de cada chapita</label>}
       </fieldset>
 
       <details className="ps-defaults">
@@ -590,6 +616,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
             })()}
           </div>
           {isLightTagColor(colorOf(previewItem)) && <small className="ps-light-note">Color claro: las letras van oscuras para que se lean.</small>}
+          <button type="button" className="ps-download-qr" onClick={() => downloadQrSvg(previewItem)}>Descargar QR vectorial (.SVG)</button>
           <button type="button" className="ps-reset-unit" onClick={() => resetTag(previewItem.id)}>Restablecer esta unidad</button>
         </div>}
       </section>
@@ -605,13 +632,17 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
       </fieldset>}
 
       {!single && <fieldset className="ps-group"><legend>Corte</legend>
-        <label className="ps-check"><input type="checkbox" checked={settings.cutLines} onChange={(event) => update({ cutLines: event.target.checked })} />Líneas de corte punteadas</label>
+        {mode === "qr" ? <>
+          <label className="ps-check"><input type="checkbox" checked={settings.tagCutGuides} onChange={(event) => update({ tagCutGuides: event.target.checked })} />Contorno vectorial continuo (Corel/Adobe)</label>
+          <button type="button" className="ps-cut-download" onClick={downloadCutContourSvg}>Descargar molde exacto de {qrSize} mm (.SVG)</button>
+          <small className="ps-muted">El círculo magenta marca el diámetro final exacto; el color se extiende 1 mm afuera como sangrado. En Corel o Illustrator, asignale al trazo el spot/hairline que pida el taller (normalmente CutContour).</small>
+        </> : <label className="ps-check"><input type="checkbox" checked={settings.cutLines} onChange={(event) => update({ cutLines: event.target.checked })} />Líneas de corte punteadas</label>}
       </fieldset>}
 
       <details className="ps-help-details">
         <summary>¿Cómo imprimir correctamente?</summary>
         <div className="ps-help">
-          <span>Elegí <b>Guardar como PDF</b>, márgenes <b>Ninguno</b> y activá <b>Gráficos de fondo</b>.</span>
+          <span>Elegí <b>Guardar como PDF</b>, escala <b>100 %</b> (nunca “Ajustar”), márgenes <b>Ninguno</b> y activá <b>Gráficos de fondo</b>.</span>
           {single
             ? <span>Cada cara va en su página, a {width}×{height} mm con <b>2 mm de sangrado</b> y marcas de corte{cardBoth ? ", frente y dorso intercalados" : ""}.{secureCard ? " La línea interior es para doblar la solapa, no para cortar." : ""}</span>
             : cardBoth && mode === "cards" && <span>Doble faz: imprimí girando por el <b>lado largo</b>.</span>}
@@ -634,7 +665,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
       {mode === "qr" && previewItem && <section className="ps-tag-overview" aria-label={`Vista del código ${previewItem.code}`}>
         <div className="ps-tag-overview-head"><div><small>VISTA PREVIA</small><h2>{unit(previewItem.number)} · {previewItem.code}</h2></div><div className="ps-overview-side"><span>{settings.tagNames[previewItem.id]?.trim() || "Sin nombre · stock"}</span><button type="button" className="ps-partner" onClick={showPartner}>Ver su tarjeta <i aria-hidden="true">→</i></button></div></div>
         <div className="ps-tag-overview-pair">
-          <figure><TagFront brand={settings.tagFront === "brand"} id={`preview-${previewItem.id}-front`} diameter={60} color={colorOf(previewItem)} character={characterOf(previewItem)} name={settings.tagNames[previewItem.id] || ""} hole={settings.tagHole} /><figcaption>Frente</figcaption></figure>
+          <figure><TagFront design={frontStyle} id={`preview-${previewItem.id}-front`} diameter={60} color={colorOf(previewItem)} character={characterOf(previewItem)} name={settings.tagNames[previewItem.id] || ""} hole={settings.tagHole} /><figcaption>Frente</figcaption></figure>
           <figure><TagBack id={`preview-${previewItem.id}-back`} qr={previewItem.tagQr} diameter={60} color={colorOf(previewItem)} design={tagBackDesign(settings.tagLayout)} hole={settings.tagHole} /><figcaption>Dorso · {layoutLabel}</figcaption></figure>
         </div>
       </section>}
@@ -655,7 +686,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
             {/* Un div (no un botón) porque adentro va el botoncito de estilo de la tarjeta. */}
             {page.map((item) => <div role="button" tabIndex={0} key={item.id} data-card={item.id} className={`ps-cell ps-selectable${settings.cutLines ? " has-cut" : ""}${previewItem?.id === item.id ? " is-selected" : ""}`} onClick={() => selectItem(item.id)} onKeyDown={(event) => selectItemFromKeyboard(event, item.id)} aria-label={`Seleccionar tarjeta con código ${item.code}`}>{styleChip(item)}<CardFront design={cardDesignOf(item)} layout={settings.cardLayout} item={item} host={host} style={cardStyle} closed={flapClosed} fresh={settings.flapFresh} /></div>)}
           </div>
-          <SheetFoot batchName={batchName} page={pageIndex + 1} pages={cardPages.length} items={page} detail="Tarjetas · frentes" />
+          <SheetFoot batchName={batchName} page={pageIndex + 1} pages={cardPages.length} detail="Tarjetas · frentes" />
         </section>
         {cardBoth && <section className="ps-page" aria-label={`Hoja ${pageIndex + 1}: dorsos`}>
           <span className="ps-page-label">Hoja {pageIndex + 1} · dorsos (atrás de la anterior)</span>
@@ -669,7 +700,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
                 : <div key={cell} className="ps-cell"><div style={cardStyle} /></div>;
             })}
           </div>
-          <SheetFoot batchName={batchName} page={pageIndex + 1} pages={cardPages.length} items={page} detail="Tarjetas · dorsos" />
+          <SheetFoot batchName={batchName} page={pageIndex + 1} pages={cardPages.length} detail="Tarjetas · dorsos" />
         </section>}
       </div>) : settings.tagOutput === "pairs" ? pairPages.map((page, pageIndex) => <section key={pageIndex} className="ps-page ps-pair-page" aria-label={`Hoja ${pageIndex + 1}: frentes y dorsos de chapitas`}>
         <span className="ps-page-label">Hoja {pageIndex + 1} · pares para armado</span>
@@ -679,18 +710,17 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
             <div className="ps-print-pair-faces">
               {tagArtwork(item, "front", `pair-${pageIndex}`)}
               {tagArtwork(item, "back", `pair-${pageIndex}`)}
-              <span className="ps-pair-code">{unit(item.number)}</span>
             </div>
           </div>)}
         </div>
-        <SheetFoot batchName={batchName} page={pageIndex + 1} pages={pairPages.length} items={page} detail={`Chapitas Ø ${qrSize} mm · ${layoutLabel}`} />
+        <SheetFoot batchName={batchName} page={pageIndex + 1} pages={pairPages.length} detail={`Chapitas Ø ${qrSize} mm · ${layoutLabel}`} />
       </section>) : qrPages.map((page, pageIndex) => <div key={pageIndex} className="ps-pair ps-tag-pages">
         {settings.tagSides !== "back" && <section className="ps-page" aria-label={`Hoja ${pageIndex + 1}: frentes de chapitas`}>
           <span className="ps-page-label">Hoja {pageIndex + 1} · frentes</span>
           <div className="ps-grid" style={gridStyle(qrCols, qrSize, qrGap)}>
             {page.map((item) => <div key={item.id}>{tagCell(item, "front")}</div>)}
           </div>
-          <SheetFoot batchName={batchName} page={pageIndex + 1} pages={qrPages.length} items={page} detail={`Chapitas Ø ${qrSize} mm · frentes`} />
+          <SheetFoot batchName={batchName} page={pageIndex + 1} pages={qrPages.length} detail={`Chapitas Ø ${qrSize} mm · frentes`} />
         </section>}
         {settings.tagSides !== "front" && <section className="ps-page" aria-label={`Hoja ${pageIndex + 1}: dorsos de chapitas`}>
           <span className="ps-page-label">Hoja {pageIndex + 1} · dorsos (atrás de la anterior)</span>
@@ -701,7 +731,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
               return <div key={cell}>{item ? tagCell(item, "back") : <div style={{ width: `${qrSize}mm`, height: `${qrCell}mm` }} />}</div>;
             })}
           </div>
-          <SheetFoot batchName={batchName} page={pageIndex + 1} pages={qrPages.length} items={page} detail={`Chapitas Ø ${qrSize} mm · dorsos`} />
+          <SheetFoot batchName={batchName} page={pageIndex + 1} pages={qrPages.length} detail={`Chapitas Ø ${qrSize} mm · dorsos`} />
         </section>}
       </div>)}
     </main>

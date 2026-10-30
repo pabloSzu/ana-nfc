@@ -125,6 +125,7 @@ const HoleMark = () => <circle cx={HOLE.cx} cy={HOLE.cy} r=".9" fill="#fff" stro
 
 export type TagBackStyle = "classic" | "v2" | "v3" | "v4" | "cat" | "dog" | "paws";
 export type TagBackChoice = TagBackStyle | "mix";
+export type VectorQr = { modules: number; path: string };
 export const TAG_BACK_STYLES: { id: TagBackChoice; label: string }[] = [
   { id: "mix", label: "Mezcla" },
   { id: "classic", label: "Clásico" },
@@ -140,12 +141,15 @@ const RAINBOWS: Record<string, { stops: string[]; vertical: boolean }> = {
   "rainbow-v": { stops: ["#ff1f3d", "#ff7a00", "#ffd000", "#19c35a", "#1f8bff", "#6a3cff", "#9b2cff"], vertical: true },
 };
 
-function Background({ id, color }: { id: string; color: string }) {
+function Background({ id, color, diameter }: { id: string; color: string; diameter: number }) {
   const rainbow = RAINBOWS[color];
   const solid = color.startsWith("#") ? color : (TAG_COLORS.find((item) => item.id === color) || TAG_COLORS[2]).value;
+  // Un milímetro real de sangrado alrededor del diámetro final. El SVG permite que este círculo
+  // salga del viewBox; el contorno de corte sigue siendo exactamente el círculo de 100 unidades.
+  const bleed = 100 / diameter;
   return <>
     {rainbow && <defs><linearGradient id={id} x1="0" y1="0" x2={rainbow.vertical ? "0" : "1"} y2="1">{rainbow.stops.map((stop, index) => <stop key={stop} offset={`${(index / (rainbow.stops.length - 1)) * 100}%`} stopColor={stop} />)}</linearGradient></defs>}
-    <circle cx="50" cy="50" r="50" fill={rainbow ? `url(#${id})` : solid} />
+    <circle cx="50" cy="50" r={50 + bleed} fill={rainbow ? `url(#${id})` : solid} />
   </>;
 }
 
@@ -183,41 +187,89 @@ export const isLightTagColor = (color: string) => {
 };
 const tagClass = (color: string) => `ps-tag${isLightTagColor(color) ? " is-light" : ""}`;
 
+// QR real en vectores. El margen blanco de un módulo se suma al viewBox y los módulos se
+// dibujan como un path con bordes enteros: el navegador conserva líneas nítidas en PDF.
+function VectorQrImage({ qr, x, y, size }: { qr: VectorQr; x: number; y: number; size: number }) {
+  const margin = 1;
+  const total = qr.modules + margin * 2;
+  return <svg x={x} y={y} width={size} height={size} viewBox={`0 0 ${total} ${total}`} shapeRendering="crispEdges" aria-hidden="true">
+    {/* El blanco lo aporta la caja redondeada de abajo. Otro rectángulo blanco acá dejaría ver
+        cuatro esquinas cuadradas al ampliar el diseño. */}
+    <path d={qr.path} transform={`translate(${margin} ${margin})`} fill="#1d1410" />
+  </svg>;
+}
+
 const EDGE = { stroke: "#151826", strokeOpacity: .72, strokeLinejoin: "round" as const };
 const WAVES = <><path d="M 0,2.3 A 2.2,2.2 0 0 1 0,5.7" /><path d="M 2.2,1.1 A 4,4 0 0 1 2.2,6.9" /><path d="M 4.4,0 A 5.8,5.8 0 0 1 4.4,8" /></>;
 
-export function TagFront({ id, diameter, color, character, name = "", hole = false, brand = false }: { id: string; diameter: number; color: string; character: TagCharacterId; name?: string; hole?: boolean; brand?: boolean }) {
+export type TagFrontStyle = "classic" | "brand" | "test1" | "test2" | "test3" | "test4" | "test5";
+
+function BrandPill({ y = 83.8, small = false }: { y?: number; small?: boolean }) {
+  const width = small ? 30 : 42.1;
+  const height = small ? 8 : 10.6;
+  const x = (100 - width) / 2;
+  const fontSize = small ? 5.7 : 7.6;
+  return <>
+    <rect x={x} y={y - height + 1.8} width={width} height={height} rx={height / 2} fill="#fff" />
+    {/* En PDF/Corel los degradados aplicados a glifos pueden convertirse en máscaras defectuosas.
+        Dos colores plenos conservan el logo nítido y completamente vectorial. */}
+    <text x={small ? 38.6 : 32.55} y={y} fontFamily="Plus Jakarta Sans, Poppins, Arial, sans-serif" fontSize={fontSize} fontWeight="800" letterSpacing="-.25"><tspan fill="#17120f">BIO</tspan><tspan fill="#3350e0">NFC</tspan></text>
+    <g transform={`translate(${small ? 59.2 : 62.84} ${y - (small ? 6.1 : 5.94)}) scale(${small ? .55 : .76})`} fill="none" stroke="#6a3fd6" strokeWidth="1.55" strokeLinecap="round">{WAVES}</g>
+  </>;
+}
+
+export function TagFront({ id, diameter, color, character, name = "", hole = false, design = "classic" }: { id: string; diameter: number; color: string; character: TagCharacterId; name?: string; hole?: boolean; design?: TagFrontStyle }) {
   const animal = TAG_CHARACTERS.find((item) => item.id === character) || TAG_CHARACTERS[0];
   const cleanName = tagNameText(name);
   const size = nameSize(cleanName);
+  const contentTransform = diameter < 30 ? "translate(3 3) scale(.94)" : undefined;
+  const lowerPet = design === "test2" || design === "test3" || design === "test5";
+  const petOffset = lowerPet ? 3 : 0;
+  const topPath = `tag-front-top-${id}`;
+  const bottomPath = `tag-front-bottom-${id}`;
+  const ink = { fill: "#fff", ...EDGE, paintOrder: "stroke" as const, fontFamily: "Poppins, Arial, sans-serif", fontWeight: 800 };
   // Si aun en el tamaño mínimo no entra (nombres muy anchos), se angosta para que quepa justo.
   const squeeze = nameWidth(cleanName) * size > NAME_MAX_WIDTH;
-  return <svg className={tagClass(color)} viewBox="0 0 100 100" width={`${diameter}mm`} height={`${diameter}mm`} role="img" aria-label={cleanName ? `Frente de la chapita de ${cleanName}` : `Frente de chapita con ${animal.label}`}>
-    <Background id={`tag-front-${id}`} color={color} />
+  return <svg className={tagClass(color)} viewBox="0 0 100 100" width={`${diameter}mm`} height={`${diameter}mm`} overflow="visible" role="img" aria-label={cleanName ? `Frente de la chapita de ${cleanName}` : `Frente de chapita con ${animal.label}`}>
+    <defs>
+      <path id={topPath} d="M 14 38 A 39 39 0 0 1 86 38" />
+      <path id={bottomPath} d="M 15 67 A 39 39 0 0 0 85 67" />
+    </defs>
+    <Background id={`tag-front-${id}`} color={color} diameter={diameter} />
     {hole && <HoleMark />}
-    <text x="50" y="21.5" textAnchor="middle" fill="#fff" {...EDGE} strokeWidth="1" paintOrder="stroke" fontFamily="Poppins, Arial, sans-serif" fontSize="4.3" fontWeight="800" letterSpacing=".35">CHAPITA INTELIGENTE</text>
+    <g transform={contentTransform}>
+    {(design === "classic" || design === "brand") && <text x="50" y="21.5" textAnchor="middle" fontSize="4.3" letterSpacing=".35" strokeWidth="1" {...ink}>CHAPITA INTELIGENTE</text>}
+    {design === "test1" && <text fontSize="5.7" letterSpacing=".45" strokeWidth="1" {...ink}><textPath href={`#${topPath}`} startOffset="50%" textAnchor="middle">CHAPITA INTELIGENTE</textPath></text>}
+    {design === "test2" && <>
+      <text x="50" y="16.8" textAnchor="middle" fill="#fff" fontFamily="Plus Jakarta Sans, Poppins, Arial, sans-serif" fontSize="8.2" fontWeight="800" letterSpacing="-.25">BIONFC</text>
+      <text x="50" y="23.5" textAnchor="middle" fontSize="4.1" letterSpacing=".55" strokeWidth=".8" {...ink}>CHAPITA INTELIGENTE</text>
+    </>}
+    {design === "test3" && <>
+      <rect x="18" y="10.5" width="64" height="12" rx="6" fill="#fff" />
+      <circle cx="25.5" cy="16.5" r="3.5" fill="#eaf0ff" />
+      <path d="M24.2 16.2A1.5 1.5 0 0 1 24.2 18M26 15.4A2.7 2.7 0 0 1 26 18.8" fill="none" stroke="#465ddd" strokeWidth=".8" strokeLinecap="round" />
+      <text x="52.8" y="18.5" textAnchor="middle" fill="#1d2130" fontFamily="Poppins, Arial, sans-serif" fontSize="4.4" fontWeight="800" letterSpacing=".28">CHAPITA INTELIGENTE</text>
+    </>}
+    {design === "test4" && <text fontSize="7.2" letterSpacing=".35" strokeWidth="1.2" {...ink}><textPath href={`#${topPath}`} startOffset="50%" textAnchor="middle">BIONFC</textPath></text>}
+    {design === "test5" && <text x="50" y="18" textAnchor="middle" fill="#fff" fontFamily="Plus Jakarta Sans, Poppins, Arial, sans-serif" fontSize="7.5" fontWeight="800">BIONFC</text>}
     {cleanName ? <>
       {/* Personaje y nombre forman un solo bloque compacto, con espacio real para explicar el NFC. */}
       {/* Las patitas apoyan sólo en el borde de arriba de la placa: el nombre queda libre debajo. */}
-      <rect x="19" y="55" width="62" height="17" rx="7.5" fill="#fff" stroke="#171717" strokeWidth="1.1" />
+      <rect x="19" y={55 + petOffset} width="62" height="17" rx="7.5" fill="#fff" stroke="#171717" strokeWidth="1.1" />
       {/* La versión limpia (public/pet-tags/named): sin franjas ni aire alrededor, así todos los
           animales llenan la misma caja y apoyan las patas en la placa. */}
-      <image href={`/pet-tags/named/${animal.id}.png`} x="28" y="23" width="44" height="35" preserveAspectRatio="xMidYMax meet" />
-      <text x="50" y={64.6 + size * .35} textAnchor="middle" fill="#1d1a18" fontFamily="Poppins, Arial, sans-serif" fontSize={size} fontWeight="800" {...(squeeze ? { textLength: NAME_MAX_WIDTH, lengthAdjust: "spacingAndGlyphs" } : {})}>{cleanName}</text>
+      <image href={`/pet-tags/named/${animal.id}.png`} x="28" y={23 + petOffset} width="44" height="35" preserveAspectRatio="xMidYMax meet" />
+      <text x="50" y={64.6 + size * .35 + petOffset} textAnchor="middle" fill="#1d1a18" fontFamily="Poppins, Arial, sans-serif" fontSize={size} fontWeight="800" {...(squeeze ? { textLength: NAME_MAX_WIDTH, lengthAdjust: "spacingAndGlyphs" } : {})}>{cleanName}</text>
     </> : <>
       {/* Las de stock usan una ilustración creada como cabeza aislada: no es un recorte del personaje con patas. */}
-      <image href={animal.faceSrc} x="18" y="22" width="64" height="54" preserveAspectRatio="xMidYMid meet" />
+      <image href={animal.faceSrc} x="18" y={22 + petOffset} width="64" height="54" preserveAspectRatio="xMidYMid meet" />
     </>}
-    {brand ? <>
-    {/* Frente nuevo (brand): sin "ACERCÁ TU CELU"; el logo en una pastilla blanca con sus colores
-        (degradé un poco más oscuro, para que se lea impreso). Medidas tomadas de la letra real:
-        "BIONFC" en Plus Jakarta Sans 800 a 7,6 mide 28,5 de ancho y 5,8 de alto de mayúscula; las
-        ondas van a esa misma altura, centradas en la misma línea, a 1,8 de la C. Todo centrado. */}
-    <defs><linearGradient id={`tag-brand-${id}`} x1="0" x2="1"><stop offset="0" stopColor="#0e9fbf" /><stop offset=".6" stopColor="#3350e0" /><stop offset="1" stopColor="#6a3fd6" /></linearGradient></defs>
-    <rect x="28.95" y="75.6" width="42.1" height="10.6" rx="5.3" fill="#fff" />
-    <text x="32.55" y="83.8" fontFamily="Plus Jakarta Sans, Poppins, Arial, sans-serif" fontSize="7.6" fontWeight="800" letterSpacing="-.25"><tspan fill="#17120f">BIO</tspan><tspan fill={`url(#tag-brand-${id})`}>NFC</tspan></text>
-    <g transform="translate(62.84 77.86) scale(.76)" fill="none" stroke="#6a3fd6" strokeWidth="1.55" strokeLinecap="round">{WAVES}</g>
-    </> : <>
+    {(design === "brand" || design === "test1") && <BrandPill />}
+    {design === "test2" && <g transform="translate(38 79)"><rect width="24" height="7" rx="3.5" fill="#ffffffdd" /><text x="12" y="5" textAnchor="middle" fill="#3045a4" fontFamily="Poppins, Arial, sans-serif" fontSize="3.7" fontWeight="800" letterSpacing=".35">CON NFC</text></g>}
+    {design === "test3" && <BrandPill small />}
+    {design === "test4" && <text fontSize="5" letterSpacing=".55" strokeWidth="1" {...ink}><textPath href={`#${bottomPath}`} startOffset="50%" textAnchor="middle">CHAPITA INTELIGENTE</textPath></text>}
+    {design === "test5" && <text x="50" y="85.2" textAnchor="middle" fontSize="4.6" letterSpacing=".65" strokeWidth=".9" {...ink}>INTELIGENTE · NFC</text>}
+    {design === "classic" && <>
     {/* Un poco más arriba que antes: "ACERCÁ TU CELU" quedaba fuera del margen de seguridad. */}
     <g aria-label="BioNFC · Acercá tu celu" fill="#fff" {...EDGE} paintOrder="stroke">
       <text x="45.8" y="80.5" textAnchor="middle" strokeWidth="1.4" fontFamily="Plus Jakarta Sans, Poppins, Arial, sans-serif" fontSize="7.2" fontWeight="800" letterSpacing="-.25">BIONFC</text>
@@ -231,11 +283,16 @@ export function TagFront({ id, diameter, color, character, name = "", hole = fal
     <rect x="28" y="82.6" width="44" height="6.4" rx="3.2" fill="#fff" />
     <text x="50" y="87.2" textAnchor="middle" fill="#1d2130" fontFamily="Poppins, Arial, sans-serif" fontSize="4.2" fontWeight="800" letterSpacing=".3">ACERCÁ TU CELU</text>
     </>}
+    </g>
   </svg>;
 }
 
-export function TagBack({ id, qr, diameter, color, design, hole = false }: { id: string; qr: string; diameter: number; color: string; design: TagBackStyle; hole?: boolean }) {
+export function TagBack({ id, qr, diameter, color, design, hole = false }: { id: string; qr: VectorQr; diameter: number; color: string; design: TagBackStyle; hole?: boolean }) {
   const bottom = `tag-back-bottom-${id}`;
+  // Debajo de 30 mm se agrega margen de seguridad interno para tolerar el corte real. La matriz
+  // nueva de 25×25 conserva módulos más grandes aun con este pequeño repliegue del contenido.
+  const compact = diameter < 30;
+  const contentTransform = compact ? "translate(3 3) scale(.94)" : undefined;
   // El mismo borde que el frente (EDGE): también en el ícono y la flechita.
   const edge = EDGE;
   const ink = { fill: "#fff", ...edge, strokeWidth: 1.5, paintOrder: "stroke" as const, fontWeight: 800, fontFamily: "Poppins, Arial, sans-serif" };
@@ -244,22 +301,25 @@ export function TagBack({ id, qr, diameter, color, design, hole = false }: { id:
     <path d="M 6.7,2.3 A 2.1,2.1 0 0 1 6.7,5.3" /><path d="M 8.6,1.1 A 3.7,3.7 0 0 1 8.6,6.5" /><path d="M 10.5,0 A 5.3,5.3 0 0 1 10.5,7.6" />
   </>;
   // Diseño 3: instrucción conjunta arriba, QR a la izquierda y gesto NFC a la derecha.
-  if (design === "v2") return <svg className={tagClass(color)} viewBox="0 0 100 100" width={`${diameter}mm`} height={`${diameter}mm`} role="img" aria-label="Dorso de la chapita con QR">
-    <Background id={`tag-back-${id}`} color={color} />
+  if (design === "v2") return <svg className={tagClass(color)} viewBox="0 0 100 100" width={`${diameter}mm`} height={`${diameter}mm`} overflow="visible" role="img" aria-label="Dorso de la chapita con QR">
+    <Background id={`tag-back-${id}`} color={color} diameter={diameter} />
     {hole && <HoleMark />}
+    <g transform={contentTransform}>
     <text x="50" y="22" textAnchor="middle" fontSize="5.6" letterSpacing=".15" {...ink}>ESCANEÁ O ACERCÁ</text>
     <text x="50" y="28.6" textAnchor="middle" fontSize="5.6" letterSpacing=".15" {...ink}>TU CELU</text>
     <rect x="11" y="31.2" width="38" height="38" rx="5.5" fill="#fff" />
-    <image href={qr} x="12.5" y="32.7" width="35" height="35" />
+    <VectorQrImage qr={qr} x={12.5} y={32.7} size={35} />
     <circle cx="69.5" cy="50.2" r="16" fill="#fff" />
     <image href="/pet-tags/tap-phone-bold.png" x="57.3" y="39.4" width="24.4" height="21.5" />
     <text x="50" y="80.4" textAnchor="middle" fontSize="5.2" letterSpacing=".1" {...ink}>Y AVISALE A MI FAMILIA</text>
+    </g>
   </svg>;
   // Diseño 1: cada acción sobre su elemento, gesto NFC primero y QR un poco más grande a la
   // derecha. La "O" central deja claro que son dos alternativas.
-  if (design === "v3") return <svg className={tagClass(color)} viewBox="0 0 100 100" width={`${diameter}mm`} height={`${diameter}mm`} role="img" aria-label="Dorso de la chapita con QR y NFC separados">
-    <Background id={`tag-back-${id}`} color={color} />
+  if (design === "v3") return <svg className={tagClass(color)} viewBox="0 0 100 100" width={`${diameter}mm`} height={`${diameter}mm`} overflow="visible" role="img" aria-label="Dorso de la chapita con QR y NFC separados">
+    <Background id={`tag-back-${id}`} color={color} diameter={diameter} />
     {hole && <HoleMark />}
+    <g transform={contentTransform}>
     <text x="29.5" y="24.1" textAnchor="middle" fontSize="5.1" letterSpacing=".12" {...ink}>ACERCÁ</text>
     <text x="29.5" y="30.1" textAnchor="middle" fontSize="5.1" letterSpacing=".12" {...ink}>TU CELU</text>
     <text x="50" y="27" textAnchor="middle" fontSize="5.1" {...ink}>O</text>
@@ -267,28 +327,32 @@ export function TagBack({ id, qr, diameter, color, design, hole = false }: { id:
     <circle cx="29.5" cy="50.2" r="16" fill="#fff" />
     <image href="/pet-tags/tap-phone-bold.png" x="17.3" y="39.4" width="24.4" height="21.5" />
     <rect x="50.5" y="29.7" width="41" height="41" rx="5.8" fill="#fff" />
-    <image href={qr} x="51.9" y="31.1" width="38.2" height="38.2" />
+    <VectorQrImage qr={qr} x={51.9} y={31.1} size={38.2} />
     <text x="50" y="80.4" textAnchor="middle" fontSize="5.2" letterSpacing=".1" {...ink}>Y AVISALE A MI FAMILIA</text>
+    </g>
   </svg>;
   // Diseño 4: la composición del Diseño 3, con el QR más grande y "TU CELU" alineado sobre el
   // sector NFC para que la segunda línea complete visualmente la opción de la derecha.
-  if (design === "v4") return <svg className={tagClass(color)} viewBox="0 0 100 100" width={`${diameter}mm`} height={`${diameter}mm`} role="img" aria-label="Dorso de la chapita con QR grande">
-    <Background id={`tag-back-${id}`} color={color} />
+  if (design === "v4") return <svg className={tagClass(color)} viewBox="0 0 100 100" width={`${diameter}mm`} height={`${diameter}mm`} overflow="visible" role="img" aria-label="Dorso de la chapita con QR grande">
+    <Background id={`tag-back-${id}`} color={color} diameter={diameter} />
     {hole && <HoleMark />}
+    <g transform={contentTransform}>
     <text x="29.5" y="22.4" textAnchor="middle" fontSize="5.5" letterSpacing=".05" {...ink}>ESCANEÁ</text>
     <text x="49.5" y="22.4" textAnchor="middle" fontSize="5.3" {...ink}>O</text>
     <text x="69.5" y="22.4" textAnchor="middle" fontSize="5.5" letterSpacing=".05" {...ink}>ACERCÁ</text>
     <text x="69.5" y="28.8" textAnchor="middle" fontSize="5.4" letterSpacing=".08" {...ink}>TU CELU</text>
     <rect x="9" y="29.7" width="41" height="41" rx="5.8" fill="#fff" />
-    <image href={qr} x="10.4" y="31.1" width="38.2" height="38.2" />
+    <VectorQrImage qr={qr} x={10.4} y={31.1} size={38.2} />
     <circle cx="69.5" cy="50.2" r="16" fill="#fff" />
     <image href="/pet-tags/tap-phone-bold.png" x="57.3" y="39.4" width="24.4" height="21.5" />
     <text x="50" y="80.4" textAnchor="middle" fontSize="5.2" letterSpacing=".1" {...ink}>Y AVISALE A MI FAMILIA</text>
+    </g>
   </svg>;
-  return <svg className={tagClass(color)} viewBox="0 0 100 100" width={`${diameter}mm`} height={`${diameter}mm`} role="img" aria-label="Dorso de la chapita con QR">
+  return <svg className={tagClass(color)} viewBox="0 0 100 100" width={`${diameter}mm`} height={`${diameter}mm`} overflow="visible" role="img" aria-label="Dorso de la chapita con QR">
     <defs><path id={bottom} d="M 11.5,50 A 38.5,38.5 0 0 0 88.5,50" /></defs>
-    <Background id={`tag-back-${id}`} color={color} />
+    <Background id={`tag-back-${id}`} color={color} diameter={diameter} />
     {hole && <HoleMark />}
+    <g transform={contentTransform}>
     {design === "paws" && <><Paw x={25} y={19} size={9} rotate={-20} /><Paw x={76} y={20} size={9} rotate={20} /><Paw x={87} y={63} size={7} rotate={-10} /></>}
     {design === "cat" && <>
       <path d="M 14.5,34 L 16.5,22.5 L 25.5,30.5 Z" fill="#fff" stroke="#fff" strokeWidth="2" strokeLinejoin="round" />
@@ -301,7 +365,7 @@ export function TagBack({ id, qr, diameter, color, design, hole = false }: { id:
     </>}
     {/* El QR lo más grande posible sin salir del margen de seguridad (2 mm del borde a 30 mm). */}
     <rect x="10" y="27" width="40" height="40" rx="5.5" fill="#fff" />
-    <image href={qr} x="11.5" y="28.5" width="37" height="37" />
+    <VectorQrImage qr={qr} x={11.5} y={28.5} size={37} />
     {design !== "dog" && <polygon points="56,44 51.5,47.5 56,51" fill="#fff" {...edge} strokeWidth="1.2" paintOrder="stroke" />}
     <text x="58" y="39.5" fontSize="6.4" letterSpacing=".2" {...ink}>ESCANEÁ</text>
     <text x="58" y="47.3" fontSize="6.4" letterSpacing=".2" {...ink}>O ACERCÁ</text>
@@ -311,5 +375,6 @@ export function TagBack({ id, qr, diameter, color, design, hole = false }: { id:
       <g stroke="#fff" strokeWidth="1.2">{phone}</g>
     </g>
     <text fontSize="5.2" letterSpacing=".3" {...ink}><textPath href={`#${bottom}`} startOffset="50%" textAnchor="middle">Y AVISALE A MI FAMILIA</textPath></text>
+    </g>
   </svg>;
 }

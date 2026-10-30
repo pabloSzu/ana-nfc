@@ -1,11 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
 import { getSiteOrigin, isLocalSite } from "@/lib/site-url";
-import { activationPath, formatCode, shortTagCode, shortTagRange } from "@/lib/pet-tags";
+import { activationPath, formatCode, shortTagCode, shortTagQrUrl, shortTagRange } from "@/lib/pet-tags";
 import { createAdminClient } from "@/lib/supabase/admin";
 import QRCode from "qrcode";
 import PrintStudio, { type PrintItem } from "./print-studio";
-import { cleanTagPrint } from "./tag-face";
+import { cleanTagPrint, type VectorQr } from "./tag-face";
 import "./print-studio.css";
 
 // Imprimir el material de un lote (solo las chapitas sin activar):
@@ -39,6 +39,25 @@ export default async function PrintBatch({ params, searchParams }: { params: Pro
   // Los QR se generan en el servidor: la impresión no depende de un tercero ni manda los enlaces
   // (el de activación tiene un secreto de un solo uso) fuera de BIONFC.
   const qr = (text: string) => QRCode.toDataURL(text, { width: 480, margin: 0, errorCorrectionLevel: "M", color: { dark: "#1d1410", light: "#00000000" } });
+  // El QR de la chapita viaja al cliente como un único path SVG serializable. No se pixela en el
+  // PDF ni al escalarlo y evita cientos de <rect> por cada unidad de la hoja.
+  const vectorQr = (text: string): VectorQr => {
+    const matrix = QRCode.create(text, { errorCorrectionLevel: "M" }).modules;
+    const path: string[] = [];
+    for (let y = 0; y < matrix.size; y += 1) {
+      let start = -1;
+      for (let x = 0; x <= matrix.size; x += 1) {
+        const dark = x < matrix.size && Boolean(matrix.data[y * matrix.size + x]);
+        if (dark && start < 0) start = x;
+        if (!dark && start >= 0) {
+          const width = x - start;
+          path.push(`M${start} ${y}h${width}v1h-${width}z`);
+          start = -1;
+        }
+      }
+    }
+    return { modules: matrix.size, path: path.join("") };
+  };
   const items: PrintItem[] = await Promise.all((tags || []).map(async (tag) => {
     const code = codeOf.get(tag.id) || "";
     return {
@@ -50,7 +69,7 @@ export default async function PrintBatch({ params, searchParams }: { params: Pro
       activationQr: code ? await qr(`${origin}${activationPath(code)}`) : "",
       // El de la chapita: va dentro de un cuadrado blanco (tag-face.tsx), que ya le da el margen
       // que necesitan los celulares para leerlo.
-      tagQr: await QRCode.toDataURL(await isUnique(tag.id) ? `${origin}/q/${shortTagCode(tag.id)}` : `${origin}/go/${tag.id}?s=qr`, { width: 480, margin: 1, errorCorrectionLevel: "M", color: { dark: "#1d1410", light: "#ffffff" } }),
+      tagQr: vectorQr(await isUnique(tag.id) ? shortTagQrUrl(origin, tag.id) : `${origin.toUpperCase()}/go/${tag.id.toUpperCase()}?s=qr`),
     };
   }));
 

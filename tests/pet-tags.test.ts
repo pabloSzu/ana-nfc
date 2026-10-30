@@ -1,7 +1,8 @@
 // Lotes y códigos de activación de chapitas (lib/pet-tags.ts). `npm test`.
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { activationPath, CODE_LENGTH, formatCode, newActivationCode, newTagSlug, normalizeCode, shortTagCode, shortTagRange, tagState } from "../lib/pet-tags.ts";
+import QRCode from "qrcode";
+import { activationPath, CODE_LENGTH, formatCode, newActivationCode, newTagSlug, normalizeCode, shortTagCode, shortTagQrUrl, shortTagRange, tagCutContourSvg, tagState } from "../lib/pet-tags.ts";
 
 describe("códigos de activación", () => {
   test("8 caracteres fáciles de leer: sin 0, O, 1, I, L, 5 ni S", () => {
@@ -31,6 +32,9 @@ describe("códigos de activación", () => {
 describe("link corto del QR", () => {
   test("los primeros 12 caracteres del id, sin guiones", () => {
     assert.equal(shortTagCode("2AD4B7A2-EE0B-49A6-8669-71EB4EF75491"), "2ad4b7a2ee0b");
+    const url = shortTagQrUrl("https://bionfc.com", "2AD4B7A2-EE0B-49A6-8669-71EB4EF75491");
+    assert.equal(url, "HTTPS://BIONFC.COM/q/2AD4B7A2EE0B");
+    assert.equal(QRCode.create(url, { errorCorrectionLevel: "M" }).modules.size, 25);
   });
 
   test("el rango abarca justo los ids que empiezan así", () => {
@@ -45,6 +49,21 @@ describe("link corto del QR", () => {
     assert.equal(shortTagRange("2ad4b7a2"), null);
     assert.equal(shortTagRange("2ad4b7a2ee0z"), null);
     assert.equal(shortTagRange("2AD4B7A2EE0B"), null);
+  });
+});
+
+describe("molde vectorial de corte", () => {
+  test("conserva el diámetro exacto y una capa de corte identificable", () => {
+    const svg = tagCutContourSvg(28);
+    assert.match(svg, /width="32mm" height="32mm"/);
+    assert.match(svg, /id="CUT_CONTOUR"/);
+    assert.match(svg, /stroke="#ff00ff" stroke-width="0.01"/);
+    assert.match(svg, /<circle id="CutContour" cx="16" cy="16" r="14"\/>/);
+  });
+
+  test("limita el molde al rango admitido por el editor", () => {
+    assert.match(tagCutContourSvg(12), /Contorno de corte BioNFC - 26 mm/);
+    assert.match(tagCutContourSvg(80), /Contorno de corte BioNFC - 45 mm/);
   });
 });
 

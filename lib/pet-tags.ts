@@ -36,12 +36,31 @@ export function newTagSlug(random: (max: number) => number = secureRandom): stri
 }
 
 // El QR impreso en el dorso usa un link corto: /q/ y los primeros 12 caracteres del id. Con el
-// /go/<id>?s=qr completo el QR tiene 37×37 cuadraditos; así, 29×29, y cada uno sale más grande
-// impreso (en una chapita de 30 mm, ~0,36 mm: se lee bien). El chip NFC sigue con /go/<id>.
+// /go/<id>?s=qr completo el QR tiene 37×37 cuadraditos. Al imprimir el link corto en mayúsculas,
+// el generador puede usar el modo alfanumérico del estándar: baja de 29×29 a 25×25 módulos sin
+// acortar el identificador ni perder seguridad. El chip NFC sigue con /go/<id>.
 export const SHORT_TAG_LENGTH = 12;
 
 export function shortTagCode(id: string): string {
   return id.replace(/-/g, "").slice(0, SHORT_TAG_LENGTH).toLowerCase();
+}
+
+// HTTPS y el host no distinguen mayúsculas; /q normaliza el código antes de buscarlo. Mantener
+// sólo la q minúscula hace que la URL siga siendo la ruta real y el resto queda en el alfabeto
+// compacto del QR. En producción da una matriz 25×25 en vez de 29×29 con corrección M.
+export function shortTagQrUrl(origin: string, id: string): string {
+  return `${origin.replace(/\/$/, "").toUpperCase()}/q/${shortTagCode(id).toUpperCase()}`;
+}
+
+// Molde independiente para plotter o láser. El lienzo agrega 2 mm alrededor, pero el path del
+// grupo CUT_CONTOUR conserva exactamente el diámetro final elegido.
+export function tagCutContourSvg(diameter: number): string {
+  const safeDiameter = Math.min(45, Math.max(26, Number.isFinite(diameter) ? diameter : 30));
+  const margin = 2;
+  const canvas = safeDiameter + margin * 2;
+  const center = canvas / 2;
+  const radius = safeDiameter / 2;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${canvas}mm" height="${canvas}mm" viewBox="0 0 ${canvas} ${canvas}"><title>Contorno de corte BioNFC - ${safeDiameter} mm</title><g id="CUT_CONTOUR" fill="none" stroke="#ff00ff" stroke-width="0.01"><circle id="CutContour" cx="${center}" cy="${center}" r="${radius}"/></g></svg>`;
 }
 
 // Los ids que empiezan con ese código corto, como rango de uuid (para buscarlos en la base).
@@ -57,8 +76,8 @@ function secureRandom(max: number): number {
   return value[0] % max;
 }
 
-// El N° de unidad ("07"): va en la tarjeta, al lado de cada chapita impresa y en el lote, para
-// emparejarlas sin imprimir el código privado en la hoja de chapitas.
+// El N° de unidad ("07"): se usa en la tarjeta, el editor y el lote. No se imprime sobre la
+// plancha de chapitas; los pares de frente y dorso ya salen físicamente juntos.
 export const unitNumber = (number: number) => String(number).padStart(2, "0");
 
 // Modo "Verificar armado" (app/admin/chapitas/verificar): mientras está la cookie, en el celu de

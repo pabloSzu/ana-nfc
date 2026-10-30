@@ -1,5 +1,7 @@
 /* Estudio de impresión (print-studio.tsx) y diseños de la tarjetita (card-designs.tsx). */
 /* Pantalla completa: sin la barra del Admin. */
+.admin-shell-frame:has(.ps) { scrollbar-width: none; -ms-overflow-style: none; }
+.admin-shell-frame:has(.ps)::-webkit-scrollbar { display: none; width: 0; height: 0; }
 .admin-shell-frame:has(.ps) > .global-nav { display: none; }
 .ps { display: grid; grid-template-columns: clamp(400px, 31vw, 460px) minmax(0, 1fr); min-height: 100vh; background: #e4e6ec; color: #1d2130; }
 .ps-panel { position: sticky; top: 0; display: grid; grid-auto-rows: max-content; align-content: start; gap: 14px; height: 100vh; overflow-y: auto; padding: 20px 18px; border-right: 1px solid #d5d8e0; background: #fff; }
@@ -80,11 +82,16 @@
 .ps-mark { position: absolute; background: #000; }
 
 @media print {
+  html, body { width: auto !important; height: auto !important; overflow: visible !important; }
+  .admin-shell-frame:has(.ps) { display: block !important; width: auto !important; height: auto !important; min-height: 0 !important; overflow: clip !important; }
   .global-nav, .ps-panel, .ps-page-label, .ps-tag-overview { display: none !important; }
-  .ps { display: block; background: #fff; }
-  .ps-sheets, .ps-sheets.is-single { display: block; padding: 0; overflow: visible; }
-  .ps-pair { display: block; }
+  .ps { display: block; width: auto !important; min-height: 0 !important; overflow: clip !important; background: #fff; scrollbar-width: none; }
+  .ps-sheets, .ps-sheets.is-single { display: block; width: auto !important; height: auto !important; padding: 0; overflow: clip !important; }
+  .ps-pair { display: block; overflow: clip !important; }
   .ps-pair.ps-tag-pages { zoom: 1; }
+  .ps-page { overflow: hidden !important; }
+  .ps * { scrollbar-width: none !important; }
+  .ps *::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
   .ps-selectable, .ps-selectable.is-selected { outline: 0 !important; filter: none !important; }
   .ps-page, .ps-single { box-shadow: none; break-after: page; }
   .ps-sheets > :last-child, .ps-pair:last-child .ps-page:last-child { break-after: auto; }
@@ -173,14 +180,15 @@
 .ps-tag-cell { display: grid; justify-items: center; align-content: start; }
 .ps-tag-ring { position: relative; display: grid; place-items: center; }
 .ps-tag { display: block; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-.ps-tag-ring.has-cut::after { content: ""; position: absolute; inset: -.6mm; border: .2mm dashed #b9bdc8; border-radius: 50%; pointer-events: none; }
+/* Trazado real para Corel/Illustrator: un solo círculo SVG continuo. El eje está exactamente en el
+   diámetro elegido; el fondo sobresale 1 mm como sangrado. */
+.ps-cut-contour { position: absolute; z-index: 5; inset: 0; display: block; overflow: visible; pointer-events: none; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .ps-colors-label { font-size: 13px; font-weight: 700; }
 .ps-colors { display: flex; gap: 8px; }
 .ps-colors button { display: grid; place-items: center; width: 38px; height: 38px; padding: 0; border: 2px solid transparent; border-radius: 50%; background: none; cursor: pointer; }
 .ps-colors button.is-on { border-color: #4b6bff; }
 .ps-colors span { width: 28px; height: 28px; border-radius: 50%; box-shadow: inset 0 0 0 1px #0002; }
 
-.ps-tag-number { margin-top: .4mm; color: #9aa0ad; font: 700 2.4mm/1 Arial, sans-serif; }
 .ps-tag-styles { display: flex; flex-wrap: wrap; gap: 6px; }
 .ps-tag-styles button { min-height: 34px; padding: 0 12px; border: 1.5px solid #e4e6ec; border-radius: 99px; background: #fff; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
 .ps-tag-styles button.is-on { border-color: #4b6bff; background: #4b6bff; color: #fff; }
@@ -196,6 +204,8 @@
 .ps-print-advanced > button { min-height: 34px; margin: 0 10px; padding: 0 10px; border: 1.5px solid #d9dce4; border-radius: 8px; background: #fff; color: #4f5564; font: inherit; font-size: 11.5px; font-weight: 800; cursor: pointer; }
 .ps-print-advanced > button.is-on { border-color: #4b6bff; background: #4b6bff; color: #fff; }
 .ps-print-advanced .ps-tag-styles { margin: 0 10px; }
+.ps-cut-download { min-height: 39px; padding: 0 11px; border: 1.5px solid #ff647c; border-radius: 9px; background: #fff4f6; color: #a72b42; font: inherit; font-size: 11.5px; font-weight: 850; cursor: pointer; }
+.ps-cut-download:hover { border-color: #d93650; background: #ffe9ed; }
 .ps-defaults { border: 1px solid #dfe2e8; border-radius: 12px; background: #fff; }
 .ps-defaults summary { padding: 11px 12px; color: #555b6c; font-size: 12.5px; font-weight: 800; cursor: pointer; }
 .ps-defaults[open] { display: grid; gap: 10px; padding-bottom: 12px; }
@@ -227,6 +237,9 @@
 .ps-unit-colors .ps-auto-color { display: flex; width: 52px; gap: 3px; border-radius: 99px; }
 .ps-unit-colors .ps-auto-color small { color: #62697a; font-size: 9px; font-weight: 800; }
 .ps-reset-unit { justify-self: start; padding: 0; border: 0; background: none; color: #6b7080; font: inherit; font-size: 11px; font-weight: 700; text-decoration: underline; cursor: pointer; }
+.ps-compact-note { display: block; padding: 8px 10px; border: 1px solid #f0cf98; border-radius: 9px; background: #fff7e9; color: #7b4a15; font-size: 10.5px; font-weight: 700; line-height: 1.4; }
+.ps-download-qr { justify-self: stretch; min-height: 36px; padding: 0 11px; border: 1.5px solid #c8d2ff; border-radius: 9px; background: #eef2ff; color: #3045a4; font: inherit; font-size: 11.5px; font-weight: 850; cursor: pointer; }
+.ps-download-qr:hover { border-color: #6679dc; background: #e6ebff; }
 .ps-print-dock { display: grid; gap: 10px; margin-top: 6px; padding: 14px; border: 1.5px solid #becaff; border-radius: 15px; background: linear-gradient(145deg, #f2f5ff, #fff); box-shadow: 0 8px 22px #334dcc12; }
 .ps-print-summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .ps-print-summary > div { display: grid; gap: 1px; }
@@ -243,7 +256,6 @@
 .ps-pair-grid { padding-top: 1mm; }
 .ps-print-pair { display: grid; justify-items: center; align-content: start; }
 .ps-print-pair-faces { position: relative; display: grid; grid-template-columns: repeat(2, max-content); gap: 3mm; }
-.ps-pair-code { position: absolute; top: 50%; left: 50%; z-index: 2; padding: .15mm .45mm; border-radius: 1mm; background: #fff; color: #3d4250; font: 800 1.65mm/1 Arial, sans-serif; letter-spacing: .08mm; white-space: nowrap; transform: translate(-50%, -50%) rotate(-90deg); }
 
 /* La vista grande no se imprime: sirve para comparar ambas caras mientras se personaliza. */
 .ps-tag-overview { box-sizing: border-box; width: min(100%, 760px); padding: 22px 26px 26px; border: 1px solid #d5d8e0; border-radius: 22px; background: #fff; box-shadow: 0 8px 28px #0000001a; }
@@ -493,6 +505,17 @@
 .ps-cell:has(.ps-style.is-open), .ps-single:has(.ps-style.is-open) { z-index: 30; }
 .ps-page:has(.ps-style.is-open) { z-index: 30; overflow: visible; }
 @media print { .ps-tools { display: none !important; } }
+
+/* Conservan el desplazamiento con rueda, trackpad o gesto, pero nunca muestran una barra dentro
+   del estudio ni en capturas/PDF de navegadores que aplican parcialmente @media print. */
+.ps-panel, .ps-sheets, .ps-unit-picker, .ps-animal-grid { scrollbar-width: none !important; -ms-overflow-style: none; }
+.ps-panel::-webkit-scrollbar, .ps-sheets::-webkit-scrollbar, .ps-unit-picker::-webkit-scrollbar, .ps-animal-grid::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
+html:has(.ps), body:has(.ps) { scrollbar-width: none !important; -ms-overflow-style: none; }
+html:has(.ps)::-webkit-scrollbar, body:has(.ps)::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
+@media print {
+  html, body { scrollbar-width: none !important; -ms-overflow-style: none; }
+  html::-webkit-scrollbar, body::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
+}
 
 /* Barra lateral: estilos agrupados para quién son. */
 .ps-design-group { display: grid; gap: 5px; }
