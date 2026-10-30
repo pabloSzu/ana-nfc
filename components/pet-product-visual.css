@@ -1,0 +1,34 @@
+/* La escena de las chapitas (PetProductVisual). Todo en cqw: la composición es una sola imagen. */
+.pps { container-type: inline-size; width: min(100%, 620px); margin-inline: auto; }
+.pps-inner { position: relative; aspect-ratio: 1 / 1.02; }
+.pps-halo { position: absolute; inset: 8cqw 2cqw 4cqw 6cqw; border-radius: 50%; background: radial-gradient(closest-side, #c9bdff 0%, #dcd4ff66 45%, transparent 75%), radial-gradient(circle at 20% 80%, #a9e6f2 0, transparent 40%); filter: blur(2cqw); opacity: .9; }
+
+/* El celular, con la ficha real adentro (sacada a 390 px de ancho). */
+.pps-phone { position: absolute; right: 4cqw; top: 1cqw; width: 47cqw; aspect-ratio: 390 / 844; padding: 1.5cqw; border-radius: 7.6cqw; background: linear-gradient(165deg, #3a3e4b 0%, #0b0c10 55%, #262932 100%); box-shadow: 0 2cqw 6cqw -1cqw #11131a59, 0 16cqw 28cqw -12cqw #2a1f7a73; transform: rotate(4deg); }
+.pps-screen { width: 100%; height: 100%; overflow: hidden; border-radius: 6.2cqw; background: #f4f1ff; }
+.pps-screen img { display: block; width: 100%; height: auto; }
+.pps-island { position: absolute; top: 3.2cqw; left: 50%; width: 13cqw; height: 3.6cqw; border-radius: 9cqw; background: #0b0c10; transform: translateX(-50%); }
+
+/* La chapita: la imagen real con un brillo de resina y la argolla. */
+.pps-tag { position: absolute; left: 3cqw; top: 41cqw; width: 42cqw; aspect-ratio: 1; border-radius: 50%; box-shadow: 0 1.2cqw 2cqw #11131a33, 0 7cqw 12cqw -4cqw #3b2a9a66; transform: rotate(-9deg); animation: pps-sway 6s ease-in-out infinite; transform-origin: 50% -6cqw; }
+.pps-tag img { position: relative; z-index: 1; display: block; width: 100%; height: 100%; border-radius: 50%; }
+.pps-tag::after { content: ""; position: absolute; z-index: 2; inset: 0; border-radius: 50%; background: radial-gradient(ellipse 60% 38% at 34% 22%, #ffffff8c 0%, #ffffff1f 55%, transparent 70%), radial-gradient(circle at 50% 50%, transparent 66%, #0000001f 100%); box-shadow: inset 0 0 0 .5cqw #ffffff4d; pointer-events: none; }
+.pps-ring { position: absolute; z-index: 0; left: 50%; top: -5.4cqw; width: 8cqw; aspect-ratio: 1; border: 1cqw solid #b9bdc9; border-top-color: #f1f2f6; border-right-color: #d9dce4; border-radius: 50%; box-shadow: 0 .6cqw 1cqw #11131a33; transform: translateX(-50%); }
+
+/* Las ondas del NFC, de la chapita al celular. */
+.pps-waves { position: absolute; z-index: 3; left: 41.5cqw; top: 36cqw; width: 9cqw; stroke: #6a45e0; stroke-width: 2.6; transform: rotate(-30deg); }
+.pps-waves path { animation: pps-wave 2.4s ease-in-out infinite; }
+.pps-waves path:nth-child(2) { animation-delay: .25s; }
+.pps-waves path:nth-child(3) { animation-delay: .5s; }
+
+/* Lo que pasa después: el aviso que le llega a su familia. */
+.pps-toast { position: absolute; left: 0; top: 13cqw; display: flex; align-items: center; gap: 2.4cqw; width: 54cqw; padding: 2.6cqw 3cqw; border: 1px solid #ffffffd9; border-radius: 4cqw; background: #ffffffeb; box-shadow: 0 3cqw 8cqw -2cqw #2a1f7a40; -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); transform: rotate(-2deg); animation: pps-pop .7s cubic-bezier(.2, .9, .3, 1.3) .4s both; }
+.pps-toast-icon { display: grid; flex: none; place-items: center; width: 8.4cqw; aspect-ratio: 1; border-radius: 2.4cqw; background: #25d366; color: #fff; font-size: 5cqw; }
+.pps-toast > span:last-child { display: grid; gap: .6cqw; min-width: 0; }
+.pps-toast b { color: #11131a; font: 800 3.1cqw/1.15 var(--bx-body, system-ui), sans-serif; }
+.pps-toast small { color: #5c6270; font: 600 2.5cqw/1.35 var(--bx-body, system-ui), sans-serif; }
+
+@keyframes pps-sway { 0%, 100% { transform: rotate(-9deg); } 50% { transform: rotate(-5deg); } }
+@keyframes pps-wave { 0%, 100% { opacity: .25; } 40% { opacity: 1; } }
+@keyframes pps-pop { from { opacity: 0; transform: translateY(3cqw) rotate(-2deg) scale(.96); } to { opacity: 1; transform: rotate(-2deg); } }
+@media (prefers-reduced-motion: reduce) { .pps-tag, .pps-waves path, .pps-toast { animation: none; } }

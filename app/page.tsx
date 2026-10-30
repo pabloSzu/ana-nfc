@@ -13,10 +13,11 @@ import Products from "./_home/products";
 import Makers from "./_home/makers";
 import "./_home/makers.css";
 import Destinations from "./_home/destinations";
+import Pets from "./_home/pets";
 import { getSiteOrigin } from "@/lib/site-url";
 
-const title = "Productos QR y NFC personalizados | BioNFC";
-const description = "Productos QR y NFC personalizados para conectar tu negocio con reseñas de Google, contacto, menús, páginas y experiencias digitales a medida.";
+const title = "Productos QR y NFC para negocios y mascotas | BioNFC";
+const description = "Productos QR y NFC personalizados para negocios, profesionales y mascotas: reseñas, contacto, páginas digitales y chapitas inteligentes.";
 
 export const metadata: Metadata = {
   title,
@@ -35,6 +36,7 @@ const WA = `https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_TEXT}`;
 
 const NAV_LINKS = [
   { href: "#elegi-tu-uso", label: "Para tu negocio" },
+  { href: "#mascotas", label: "Mascotas" },
   { href: "#como-funciona", label: "Cómo funciona" },
   { href: "#tu-pagina", label: "Tu página" },
   { href: "#productos", label: "Formatos" },
@@ -47,6 +49,7 @@ const FAQS = [
   { q: "¿Necesitan una app o un celular con NFC?", a: "No hace falta una app especial. Tus clientes pueden escanear el QR; si su celular tiene NFC, también pueden acercarlo y tocar el aviso. El destino puede pedirles iniciar sesión, como Google para publicar una reseña." },
   { q: "¿Puedo personalizar y actualizar mi página?", a: "Sí. Podés editar colores, imágenes, botones y contenido. Si elegís una página personalizada, actualizás sus enlaces desde el panel sin cambiar tu QR ni tu NFC. Para un enlace directo, consultanos cómo se actualiza según el formato." },
   { q: "¿Qué puedo compartir en mi página?", a: "WhatsApp, redes sociales, ubicación, menú, catálogo, portfolio, turnos y otros enlaces útiles para tu negocio." },
+  { q: "¿Cómo funciona la chapita para mascotas?", a: "La persona que encuentra a tu mascota puede acercar un celular compatible con NFC o escanear el QR. Se abre su ficha con los datos que decidiste publicar y las opciones para avisarte por WhatsApp o llamada." },
   { q: "¿Los productos son iguales a las imágenes?", a: "Las imágenes son referencias de uso y diseño. Consultanos por materiales, medidas, terminaciones y disponibilidad. Confirmamos esos detalles con vos antes de avanzar." },
   { q: "¿Cuánto cuesta y cuánto tarda?", a: "Depende del formato, la personalización y la entrega. Antes de confirmar tu pedido, te detallamos el precio, qué incluye, el plazo de preparación y cómo recibirlo." },
 ];
@@ -83,7 +86,7 @@ const structuredData = {
       description,
       provider: { "@id": `${siteUrl}/#organization` },
       url: siteUrl,
-      serviceType: ["Productos NFC personalizados", "Códigos QR personalizados", "Páginas digitales para negocios"],
+      serviceType: ["Productos NFC personalizados", "Códigos QR personalizados", "Páginas digitales para negocios", "Chapitas inteligentes para mascotas"],
     },
     {
       "@type": "FAQPage",
@@ -123,6 +126,8 @@ export default function Home() {
 
       <HowItWorks whatsappNumber={WHATSAPP_NUMBER} />
 
+      <Pets />
+
       <section id="tu-pagina" className="bx-dark">
         <div className="bx-dark-glow bx-dark-glow-a" />
         <div className="bx-section bx-section-dark"><StyleShowcase waUrl={WA} /></div>
@@ -150,7 +155,7 @@ export default function Home() {
       </div></div></section>
 
       <footer className="bx-footer bx-footer-redesign">
-        <div className="bx-footer-main"><div><a className="bx-brand" href="#top" aria-label="BioNFC, volver al inicio"><Logo /></a><p>Tu mundo, más cerca.<br />Una conexión a la vez.</p></div><nav aria-label="Explorá BioNFC"><span>EXPLORÁ</span><a href="#como-funciona">Cómo funciona</a><a href="#tu-pagina">Tu página</a><a href="#productos">Formatos NFC</a><a href="#para-talleres">Para fabricantes</a></nav><nav aria-label="Ayuda y contacto"><span>SEGUIMOS EN CONTACTO</span><a href={WA} target="_blank" rel="noreferrer">Hablemos por WhatsApp ↗</a><a href="#preguntas">Preguntas frecuentes</a></nav></div>
+        <div className="bx-footer-main"><div><a className="bx-brand" href="#top" aria-label="BioNFC, volver al inicio"><Logo /></a><p>Tu mundo, más cerca.<br />Una conexión a la vez.</p></div><nav aria-label="Explorá BioNFC"><span>EXPLORÁ</span><a href="#como-funciona">Cómo funciona</a><a href="#tu-pagina">Tu página</a><a href="#productos">Formatos NFC</a><a href="/mascotas">Chapitas para mascotas</a><a href="#para-talleres">Para fabricantes</a></nav><nav aria-label="Ayuda y contacto"><span>SEGUIMOS EN CONTACTO</span><a href={WA} target="_blank" rel="noreferrer">Hablemos por WhatsApp ↗</a><a href="#preguntas">Preguntas frecuentes</a></nav></div>
         <div className="bx-footer-bottom"><span>BioNFC · Hecho para conectar.</span><span>Entrega a coordinar <IconTruck /></span></div>
       </footer>
 

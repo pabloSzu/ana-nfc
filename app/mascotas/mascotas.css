@@ -1,0 +1,160 @@
+/* /mascotas: el mismo sistema que la home (.bx de marketing.css: colores, títulos, botones),
+   con la chapita y la ficha reales. */
+.pet-sale { min-height: 100vh; }
+.pet-sale .bx-grad { background: linear-gradient(100deg, #087fc9 0%, #3c65df 48%, #7651e7 100%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
+
+/* Barra */
+.ps-nav { position: sticky; z-index: 60; top: 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px clamp(16px, 4vw, 44px); background: #f7f8fcdb; border-bottom: 1px solid var(--line); -webkit-backdrop-filter: saturate(180%) blur(16px); backdrop-filter: saturate(180%) blur(16px); }
+.ps-nav-links { display: flex; gap: 26px; color: #2b3445; font: 600 14.5px/1 var(--bx-body), sans-serif; }
+.ps-nav-links a:hover { color: var(--violet); }
+.ps-nav .bx-btn-nav { background: #1675e7; }
+.ps-nav .bx-btn-nav:hover { background: #0e61c5; }
+
+/* Hero */
+.ps-hero { background: radial-gradient(ellipse 55% 60% at 80% 40%, #ece8ff 0%, transparent 70%), linear-gradient(180deg, #f7f8fc, #f3f2fd); }
+.ps-hero-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); align-items: center; gap: clamp(32px, 5vw, 80px); padding-block: clamp(40px, 6vw, 90px); }
+.ps-hero-copy { display: grid; justify-items: start; gap: 22px; }
+.ps-hero-copy .bx-h1 { margin: 0; font-size: clamp(44px, 6vw, 82px); }
+.ps-lead { max-width: 540px; color: var(--muted); font-size: clamp(16.5px, 1.4vw, 19px); line-height: 1.6; }
+.ps-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.ps-assure { display: flex; flex-wrap: wrap; gap: 10px 22px; color: var(--muted-2); font-size: 14px; font-weight: 650; }
+.ps-assure li { display: flex; align-items: center; gap: 7px; }
+.ps-assure svg { color: #4b5be0; }
+
+/* Encabezado de cada sección */
+.ps-head { display: grid; gap: 14px; max-width: 720px; margin-bottom: clamp(32px, 4vw, 56px); }
+.ps-head .bx-section-kicker { margin: 0; }
+.ps-head > p:not(.bx-section-kicker) { max-width: 560px; color: var(--muted); font-size: 17px; line-height: 1.6; }
+
+/* Cómo funciona */
+.ps-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin: 0; padding: 0; list-style: none; }
+.ps-steps li { position: relative; display: grid; align-content: start; gap: 10px; padding: 28px; border: 1px solid #e6e4f5; border-radius: 24px; background: #fff; box-shadow: 0 20px 40px -32px #2a1f7a59; }
+.ps-steps li > svg { width: 46px; height: 46px; margin-bottom: 8px; padding: 12px; border-radius: 14px; background: linear-gradient(135deg, #eef1ff, #f1ebff); color: #4b5be0; }
+.ps-steps li:last-child > svg { background: #e3f9eb; color: #1faa52; }
+.ps-step-n { position: absolute; top: 24px; right: 26px; color: #d9d6ef; font: 800 44px/1 var(--bx-display), sans-serif; }
+.ps-steps h3 { color: var(--ink); font: 800 20px/1.2 var(--bx-display), sans-serif; letter-spacing: -.02em; }
+.ps-steps p { color: var(--muted); font-size: 15.5px; line-height: 1.55; }
+
+/* La ficha: banda oscura, como "Tu página" en la home */
+.ps-ficha { position: relative; overflow: hidden; background: #11131a; color: #fff; }
+/* Celular primero: título, selector, celular, lista. En la compu: texto a la izquierda, celular a la derecha. */
+.ps-ficha-grid { display: grid; grid-template-areas: "head" "switch" "device" "list"; justify-items: center; gap: 28px; text-align: center; }
+.ps-head.is-dark { grid-area: head; justify-items: center; margin: 0; }
+.ps-head.is-dark .bx-section-kicker { color: #a9a0ff; }
+.ps-head.is-dark .bx-h2 { font-size: clamp(32px, 4vw, 52px); }
+.ps-head.is-dark .bx-h2 span { color: #a9a0ff; }
+.ps-head.is-dark > p:not(.bx-section-kicker) { color: #b9bccb; }
+.ps-mode-input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+
+.ps-switch { grid-area: switch; position: relative; display: grid; grid-template-columns: 1fr 1fr; width: min(100%, 360px); padding: 5px; border-radius: 999px; background: #ffffff12; box-shadow: inset 0 0 0 1px #ffffff1f; }
+.ps-switch::before { content: ""; position: absolute; top: 5px; bottom: 5px; left: 5px; width: calc(50% - 5px); border-radius: 999px; background: #fff; box-shadow: 0 8px 20px -8px #0009; transition: transform .35s cubic-bezier(.3, .8, .3, 1), background .35s ease; }
+.ps-switch label { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 46px; border-radius: 999px; color: #c9cbd6; font: 750 15px/1 var(--bx-body), sans-serif; cursor: pointer; transition: color .3s ease; }
+.ps-switch label svg { width: 17px; height: 17px; }
+#ps-mode-day:checked ~ .ps-switch label[for="ps-mode-day"] { color: #3a2bc4; }
+#ps-mode-lost:checked ~ .ps-switch::before { transform: translateX(100%); background: #e5372a; }
+#ps-mode-lost:checked ~ .ps-switch label[for="ps-mode-lost"] { color: #fff; }
+#ps-mode-day:focus-visible ~ .ps-switch label[for="ps-mode-day"], #ps-mode-lost:focus-visible ~ .ps-switch label[for="ps-mode-lost"] { outline: 2px solid #a9a0ff; outline-offset: 3px; }
+
+/* El celular: el mismo marco que el del hero (pet-product-visual.css). */
+.ps-device-wrap { grid-area: device; position: relative; width: min(78vw, 340px); }
+.ps-device-glow { position: absolute; inset: 10% -25%; border-radius: 50%; background: radial-gradient(closest-side, #6a45e080, transparent); filter: blur(30px); transition: background .5s ease; }
+#ps-mode-lost:checked ~ .ps-device-wrap .ps-device-glow { background: radial-gradient(closest-side, #e5372a73, transparent); }
+.ps-device { position: relative; aspect-ratio: 390 / 844; padding: 3.2%; border-radius: 16% / 7.5%; background: linear-gradient(165deg, #4a4f5e 0%, #15171e 55%, #33363f 100%); box-shadow: inset 0 0 0 1px #ffffff1a, 0 50px 80px -40px #000; }
+.ps-device-screen { position: relative; width: 100%; height: 100%; overflow: hidden; border-radius: 13% / 6%; background: #f3f1fe; }
+.ps-device-screen img { position: absolute; top: 5.5%; left: 0; display: block; width: 100%; height: auto; transition: opacity .45s ease, transform .45s ease; }
+.ps-device-screen img.is-lost { opacity: 0; transform: scale(1.02); }
+#ps-mode-lost:checked ~ .ps-device-wrap img.is-day { opacity: 0; transform: scale(.98); }
+#ps-mode-lost:checked ~ .ps-device-wrap img.is-lost { opacity: 1; transform: none; }
+.ps-device-island { position: absolute; top: 2.6%; left: 50%; width: 28%; height: 3.4%; border-radius: 99px; background: #0b0c10; transform: translateX(-50%); }
+
+/* Lo que tiene cada pantalla: cambia junto con el celular. */
+.ps-mode-list { grid-area: list; display: grid; align-content: start; align-self: start; gap: 10px; width: min(100%, 420px); text-align: left; }
+.ps-mode-list li { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 18px; background: #ffffff0d; box-shadow: inset 0 0 0 1px #ffffff14; }
+.ps-mode-list svg { flex: none; width: 40px; height: 40px; padding: 10px; border-radius: 12px; background: #a9a0ff26; color: #c9c2ff; }
+.ps-mode-list.is-lost svg { background: #e5372a2e; color: #ff8a80; }
+.ps-mode-list span { display: grid; gap: 2px; color: #b9bccb; font-size: 14.5px; line-height: 1.4; }
+.ps-mode-list b { color: #fff; font-size: 16px; font-weight: 750; }
+.ps-mode-list.is-lost, #ps-mode-lost:checked ~ .ps-mode-list.is-day { display: none; }
+#ps-mode-lost:checked ~ .ps-mode-list.is-lost { display: grid; animation: ps-in .4s ease both; }
+#ps-mode-day:checked ~ .ps-mode-list.is-day { animation: ps-in .4s ease both; }
+@keyframes ps-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+@media (min-width: 961px) {
+  .ps-ficha-grid { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "head device" "switch device" "list device"; grid-template-rows: auto auto 1fr; justify-items: start; column-gap: clamp(48px, 7vw, 120px); row-gap: 30px; text-align: left; }
+  .ps-head.is-dark { justify-items: start; }
+  .ps-device-wrap { align-self: center; width: 340px; }
+}
+@media (prefers-reduced-motion: reduce) { .ps-switch::before, .ps-device-screen img { transition: none; } .ps-mode-list { animation: none !important; } }
+
+/* Diseños */
+.ps-tags { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: clamp(14px, 2vw, 28px); }
+.ps-tags li { display: grid; justify-items: center; gap: 4px; text-align: center; }
+.ps-tags img { width: 100%; height: auto; margin-bottom: 12px; border-radius: 50%; box-shadow: 0 18px 30px -16px #2a1f7a80; transition: transform .3s ease; }
+.ps-tags li:nth-child(odd) img { transform: rotate(-5deg); }
+.ps-tags li:nth-child(even) img { transform: rotate(4deg); }
+.ps-tags li:hover img { transform: rotate(0) translateY(-4px); }
+.ps-tags b { color: var(--ink); font: 800 16px/1.2 var(--bx-display), sans-serif; }
+.ps-tags small { color: var(--muted-2); font-size: 13px; }
+.ps-note { margin-top: 32px; color: var(--faint); font-size: 13.5px; text-align: center; }
+
+/* Activación */
+.ps-ready { padding-top: 0; }
+.ps-ready-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: clamp(24px, 4vw, 56px); padding: clamp(28px, 4vw, 48px); border-radius: 32px; background: linear-gradient(120deg, #1a7bff, #7c5cf7); color: #fff; box-shadow: 0 40px 70px -40px #4b31f0; }
+.ps-ready-time { display: grid; place-items: center; width: 128px; aspect-ratio: 1; border-radius: 50%; background: #ffffff26; box-shadow: inset 0 0 0 1px #ffffff40; }
+.ps-ready-time b { font: 800 56px/1 var(--bx-display), sans-serif; }
+.ps-ready-time span { margin-top: -18px; font-size: 13px; font-weight: 700; opacity: .85; }
+.ps-ready-copy { display: grid; gap: 10px; }
+.ps-ready-copy .bx-section-kicker { margin: 0; color: #dfe4ff; }
+.ps-ready-copy h2 { font: 800 clamp(26px, 2.8vw, 38px)/1.1 var(--bx-display), sans-serif; letter-spacing: -.03em; }
+.ps-ready-copy ol { display: grid; gap: 4px; padding-left: 20px; list-style: decimal; color: #eef0ff; font-size: 15.5px; }
+.ps-ready-links { display: grid; justify-items: center; gap: 14px; }
+.ps-ready-links > a:not(.bx-btn) { color: #fff; font-size: 14px; font-weight: 700; text-decoration: underline; text-underline-offset: 4px; }
+.ps-ready .bx-btn-white { color: #3a2bc4; }
+
+/* Preguntas */
+.ps-faq { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: clamp(28px, 5vw, 80px); align-items: start; padding-top: 0; }
+.ps-faq .ps-head { margin: 0; }
+.ps-faq-list { display: grid; }
+.ps-faq-list details { border-bottom: 1px solid #e3e1ef; }
+.ps-faq-list summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 22px 0; color: var(--ink); font: 700 17px/1.35 var(--bx-body), sans-serif; list-style: none; cursor: pointer; }
+.ps-faq-list summary::-webkit-details-marker { display: none; }
+.ps-faq-list summary span { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #efedff; color: var(--violet); font-size: 18px; transition: transform .25s ease; }
+.ps-faq-list details[open] summary span { transform: rotate(45deg); }
+.ps-faq-list details p { padding: 0 44px 22px 0; color: var(--muted); font-size: 15.5px; line-height: 1.6; }
+
+/* Cierre y pie */
+.ps-final { background: radial-gradient(ellipse 60% 80% at 50% 0%, #3a2b8f 0%, transparent 70%), #11131a; color: #fff; text-align: center; }
+.ps-final-inner { display: grid; justify-items: center; gap: 26px; }
+.ps-final-tags { display: flex; }
+.ps-final-tags img { width: 68px; height: 68px; margin-left: -12px; border: 3px solid #11131a; border-radius: 50%; }
+.ps-final-tags img:first-child { margin-left: 0; }
+.ps-final .bx-h2 span { color: #a9a0ff; }
+.ps-final .bx-btn-white { color: #3a2bc4; }
+.ps-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 28px; padding: 28px clamp(16px, 4vw, 44px); background: #0b0c10; color: #8a90a0; font-size: 13.5px; }
+.ps-footer > a { color: #fff; }
+.ps-footer div { display: flex; flex-wrap: wrap; gap: 8px 22px; }
+.ps-footer div a:hover { color: #fff; }
+
+@media (max-width: 1080px) {
+  .ps-tags { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 36px; }
+  .ps-ready-card { grid-template-columns: auto minmax(0, 1fr); }
+  .ps-ready-links { grid-column: 1 / -1; justify-items: start; grid-auto-flow: column; align-items: center; }
+}
+@media (max-width: 960px) {
+  .ps-nav-links { display: none; }
+  .ps-hero-grid, .ps-faq { grid-template-columns: 1fr; }
+  .ps-hero .pps { width: min(100%, 520px); }
+  .ps-steps { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .ps-actions { display: grid; width: 100%; }
+  .ps-actions .bx-btn { width: 100%; }
+  .ps-steps li { padding: 22px; }
+  .ps-tags { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ps-ready-card { grid-template-columns: 1fr; justify-items: start; border-radius: 26px; }
+  .ps-ready-time { width: 96px; }
+  .ps-ready-time b { font-size: 42px; }
+  .ps-ready-time span { margin-top: -14px; }
+  .ps-ready-links { grid-auto-flow: row; justify-items: stretch; width: 100%; text-align: center; }
+  .ps-faq-list details p { padding-right: 0; }
+}

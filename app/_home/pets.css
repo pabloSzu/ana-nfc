@@ -1,0 +1,29 @@
+/* Sección de mascotas de la home (app/_home/pets.tsx). Mismo lenguaje que el hero: fondo claro
+   con un velo lavanda, la pastilla, el título con degradé y los botones del hero. */
+.bx-pets { position: relative; overflow: hidden; background: radial-gradient(ellipse 60% 55% at 78% 45%, #ece8ff 0%, transparent 70%), linear-gradient(180deg, #f7f8fc 0%, #f3f2fd 100%); border-top: 1px solid var(--line); }
+.bx-pets-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); align-items: center; gap: clamp(32px, 5vw, 80px); }
+.bx-pets-copy { display: grid; justify-items: start; gap: 22px; max-width: 580px; }
+.bx-pets-copy .bx-h2 { color: var(--ink); }
+.bx-pets .bx-grad { background: linear-gradient(100deg, #087fc9 0%, #3c65df 48%, #7651e7 100%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
+.bx-pets-lead { max-width: 520px; color: var(--muted); font-size: clamp(16px, 1.35vw, 18.5px); line-height: 1.6; }
+.bx-pets-points { display: grid; gap: 12px; }
+.bx-pets-points li { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 15.5px; line-height: 1.4; }
+.bx-pets-points svg { flex: none; width: 36px; height: 36px; padding: 9px; border-radius: 11px; background: #fff; color: #4b5be0; box-shadow: 0 6px 16px -10px #2a1f7a66, inset 0 0 0 1px #e6e4f5; }
+.bx-pets-points b { color: var(--ink); font-weight: 750; }
+.bx-pets-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 6px; }
+.bx-pets-tags { display: flex; align-items: center; gap: 14px; margin-top: 4px; }
+.bx-pets-tags-row { display: flex; flex: none; }
+.bx-pets-tags-row img { width: 48px; height: 48px; margin-left: -10px; border: 2.5px solid #fff; border-radius: 50%; box-shadow: 0 6px 14px -8px #11131a66; }
+.bx-pets-tags-row img:first-child { margin-left: 0; }
+.bx-pets-tags small { color: var(--muted-2); font-size: 13.5px; font-weight: 600; line-height: 1.4; }
+
+@media (max-width: 960px) {
+  .bx-pets-grid { grid-template-columns: 1fr; }
+  .bx-pets-copy { max-width: 640px; }
+  .bx-pets .pps { width: min(100%, 520px); }
+}
+@media (max-width: 560px) {
+  .bx-pets-actions { display: grid; width: 100%; }
+  .bx-pets-actions .bx-btn { width: 100%; }
+  .bx-pets-tags { align-items: flex-start; flex-direction: column; gap: 10px; }
+}
