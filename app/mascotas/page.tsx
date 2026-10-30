@@ -20,6 +20,13 @@ export const metadata: Metadata = {
   openGraph: { title: "Chapita inteligente BioNFC para mascotas", description: "NFC + QR, ficha editable y aviso por WhatsApp a su familia.", type: "website", locale: "es_AR", siteName: "BioNFC", url: "/mascotas" },
 };
 
+// Las dos filas de la vidriera de diseños (todas las de PET_TAGS, mezcladas por color).
+const byName = (names: string[]) => names.map((name) => PET_TAGS.find((tag) => tag.name === name)!);
+const TAG_ROWS = [
+  byName(["Luna", "Olivia", "Thor", "Nala", "Milo", "Bruno", "Rocco", "Michi", "Frida", ""]),
+  byName(["Toby", "Mía", "Pancho", "Lola", "Kira", "Max", "Coco", "Rayo", "Simba"]),
+];
+
 const FAQS = [
   ["¿Necesita una aplicación?", "No. Se escanea el QR con la cámara del celular. En los celulares con NFC, también alcanza con acercarlo a la chapita."],
   ["¿Qué datos quedan públicos?", "Solo los que vos cargues en la ficha. Podés mostrar únicamente el nombre y tu WhatsApp, o sumar datos de salud y de carácter que ayuden a cuidarla."],
@@ -32,8 +39,12 @@ const FAQS = [
 export default function MascotasPage() {
   return <main className={`bx pet-sale ${display.variable} ${body.variable}`}>
     <nav className="ps-nav" aria-label="Chapitas para mascotas">
-      <Link href="/" className="bx-brand" aria-label="BioNFC, volver al inicio"><Logo /></Link>
-      <div className="ps-nav-links"><a href="#como-funciona">Cómo funciona</a><a href="#ficha">La ficha</a><a href="#disenos">Diseños</a><a href="#preguntas">Preguntas</a></div>
+      {/* Submarca: la misma BioNFC (el logo lleva a la home), con "Mascotas" al lado. */}
+      <div className="ps-brand">
+        <Link href="/" className="bx-brand" aria-label="BioNFC, ir a la página principal"><Logo /></Link>
+        <span className="ps-brand-sub"><span aria-hidden="true">🐾</span>Mascotas</span>
+      </div>
+      <div className="ps-nav-links"><a href="#como-funciona">Cómo funciona</a><a href="#ficha">La ficha</a><a href="#disenos">Diseños</a><a href="#preguntas">Preguntas</a><Link className="ps-nav-home" href="/">Para negocios <FiArrowRight aria-hidden="true" /></Link></div>
       <a className="bx-btn bx-btn-nav" href={WA} target="_blank" rel="noreferrer">Quiero una</a>
     </nav>
 
@@ -103,14 +114,30 @@ export default function MascotasPage() {
       </div>
     </section>
 
-    <section id="disenos" className="bx-section ps-designs" aria-labelledby="ps-designs-title">
-      <div className="ps-head">
-        <p className="bx-section-kicker">HECHA PARA ELLA</p>
-        <h2 id="ps-designs-title" className="bx-h2">Con su nombre<br /><span className="bx-grad">y su cara.</span></h2>
-        <p>Elegí entre más de 40 animalitos y el color que quieras. Adelante, su nombre; atrás, el QR.</p>
+    {/* Una vidriera: dos filas de chapitas reales que se deslizan en sentidos opuestos. Cada fila
+        repite su lista (la copia, oculta para lectores) para que el loop no tenga corte. */}
+    <section id="disenos" className="ps-designs" aria-labelledby="ps-designs-title">
+      <div className="bx-section ps-designs-head">
+        <p className="bx-section-kicker">MÁS DE 40 ANIMALITOS · EL COLOR QUE QUIERAS</p>
+        <h2 id="ps-designs-title" className="bx-h2">Hay una<br /><span className="bx-grad">con su cara.</span></h2>
+        <p>Elegí su raza, el color que mejor le queda y su nombre bien grande. Adelante va ella; atrás, el QR.</p>
       </div>
-      <ul className="ps-tags">{PET_TAGS.map((tag) => <li key={tag.src}><Image src={tag.src} alt={`Chapita de ${tag.name}: ${tag.label}`} width={560} height={560} sizes="(max-width: 760px) 40vw, 190px" /><b>{tag.name}</b><small>{tag.label}</small></li>)}</ul>
-      <p className="ps-note">Diseños reales, tal como salen de la impresión. Consultanos por medidas y terminaciones.</p>
+      <div className="ps-marquee">
+        {[TAG_ROWS[0], TAG_ROWS[1]].map((row, index) => <div key={index} className={`ps-marquee-row${index ? " is-reverse" : ""}`}>
+          {[false, true].map((copy) => <ul key={String(copy)} aria-hidden={copy || undefined}>
+            {row.map((tag) => <li key={tag.src}><Image src={tag.src} alt={copy ? "" : tag.name ? `Chapita de ${tag.name}: ${tag.label}` : `Chapita sin nombre: ${tag.label}`} width={560} height={560} sizes="(max-width: 560px) 120px, 170px" /></li>)}
+          </ul>)}
+        </div>)}
+      </div>
+      <div className="bx-section ps-options">
+        <ul>
+          <li><span className="ps-swatches" aria-hidden="true"><i style={{ background: "#1d2130" }} /><i style={{ background: "#fff" }} /><i style={{ background: "linear-gradient(135deg, #ff4f6d, #ffd23f, #3ecf8e, #3aa0ff, #8a5cf7)" }} /></span><span><b>Lisa, negra, blanca o arcoíris</b>El color que quieras, con la letra que mejor se lee.</span></li>
+          <li><span className="ps-option-icon" aria-hidden="true">🐶</span><span><b>Perros, gatos y mestizos</b>Más de 40 animalitos para que se parezca a la tuya.</span></li>
+          <li><span className="ps-option-icon" aria-hidden="true">✏️</span><span><b>Con su nombre o sin nombre</b>Su nombre en grande, o solo su carita.</span></li>
+          <li><span className="ps-option-icon" aria-hidden="true">📱</span><span><b>Atrás, el QR</b>Para los celulares sin NFC: con la cámara alcanza.</span></li>
+        </ul>
+        <p className="ps-note">Diseños reales, tal como salen de la impresión. Consultanos por medidas y terminaciones.</p>
+      </div>
     </section>
 
     <section className="bx-section ps-ready" aria-labelledby="ps-ready-title">
@@ -132,7 +159,8 @@ export default function MascotasPage() {
 
     <section className="ps-final">
       <div className="bx-section ps-final-inner">
-        <div className="ps-final-tags" aria-hidden="true">{PET_TAGS.slice(0, 5).map((tag) => <Image key={tag.src} src={tag.src} alt="" width={560} height={560} sizes="72px" />)}</div>
+        {/* Colores que se leen sobre el fondo oscuro (sin violeta ni negro), con aro blanco. */}
+        <div className="ps-final-tags" aria-hidden="true">{byName(["Olivia", "Milo", "Pancho", "Toby", "Kira", "Bruno"]).map((tag) => <Image key={tag.src} src={tag.src} alt="" width={560} height={560} sizes="96px" loading="eager" />)}</div>
         <h2 className="bx-h2">Una forma más de cuidarla.<br /><span>Todos los días.</span></h2>
         <a className="bx-btn bx-btn-white" href={WA} target="_blank" rel="noreferrer"><FaWhatsapp aria-hidden="true" />Quiero una para mi mascota</a>
       </div>
