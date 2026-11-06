@@ -10,14 +10,15 @@
 //  · QR de las chapitas: el tamaño en mm se elige según la chapita.
 // Las opciones generales quedan guardadas en esta compu; lo de cada unidad (nombre, animal y color)
 // se guarda en la chapita misma (actions.ts), así no se pierde ni lo pisa otra pestaña.
-import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type MouseEvent, type PointerEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { LuPrinter } from "react-icons/lu";
 import { tagCutContourSvg } from "@/lib/pet-tags";
 import { CardBack, CardFront, DESIGN_ANIMAL, DESIGNS, FLAP_LIMITS, FLAP_WIDTH, DESIGN_GROUPS, autoCardDesign, designClash, designLabel, designSays, isFlapCard, unit, unitNumber, type CardAnimal, type CardLayout, type DesignId } from "./card-designs";
-import { cleanTagPrint, isCat, isGenericCharacterId, TagBack, TagFront, isLightTagColor, TAG_CATS, TAG_CHARACTERS, TAG_COLORS, TAG_CUSTOM, TAG_DOGS, tagCharacterFor, type TagCharacterChoice, type TagCharacterId, type TagFrontStyle, type TagPrint, type VectorQr } from "./tag-face";
-import { saveTagPrint } from "./actions";
-import CharacterPicker from "./character-picker";
+import { cleanTagPrint, isCat, isGenericCharacterId, TagBack, TagFront, isLightTagColor, TAG_CATS, TAG_CHARACTERS, TAG_COLORS, TAG_CUSTOM, TAG_DOGS, TAG_GENERIC, tagCharacterFor, type TagCharacterChoice, type TagCharacterId, type TagFrontStyle, type TagPrint, type VectorQr } from "./tag-face";
+import { addTagsToBatch, saveTagPrint, saveTagPrints } from "./actions";
+import CharacterPicker, { Face } from "./character-picker";
 
 export type PrintItem = { id: string; number: number; code: string; activationQr: string; tagQr: VectorQr; print: TagPrint };
 type Mode = "cards" | "qr";
@@ -117,6 +118,11 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
   const [mode, setMode] = useState<Mode>(initialMode);
   const [settings, setSettings] = useState<Settings>(() => ({ ...DEFAULTS, ...unitsOf(items) }));
   const [previewId, setPreviewId] = useState(items[0]?.id || "");
+  // Las chapitas elegidas en la hoja: Ctrl suma o saca, Shift elige un rango y el recuadro del mouse
+  // marca las que toca. Con más de una, el panel cambia el animal o el color de todas juntas.
+  const [picked, setPicked] = useState<string[]>(() => (items[0] ? [items[0].id] : []));
+  const router = useRouter();
+  const [filling, setFilling] = useState(false);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [editorNotice, setEditorNotice] = useState<{ id: string; message: string } | null>(null);
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
@@ -163,11 +169,77 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps -- sólo al abrir el estudio
   }, []);
-  const update = (patch: Partial<Settings>) => setSettings((current) => {
-    const next = { ...current, ...patch };
-    savePrefs(next);
-    return next;
-  });
+  // Deshacer / rehacer (como en el editor de páginas): cada cambio guarda cómo estaba todo antes.
+  // burst junta en un solo paso lo que llega seguido del mismo control (tipear un nombre, arrastrar
+  // el selector de color o el tamaño), así Ctrl+Z no va letra por letra.
+  const history = useRef<{ past: Settings[]; future: Settings[]; burst: { key: string; at: number } | null }>({ past: [], future: [], burst: null });
+  const [historySize, setHistorySize] = useState({ past: 0, future: 0 });
+  const syncHistory = () => setHistorySize({ past: history.current.past.length, future: history.current.future.length });
+  const update = (patch: Partial<Settings>, burst?: string) => {
+    const log = history.current, now = Date.now();
+    const joined = burst && log.burst?.key === burst && now - log.burst.at < 1500;
+    if (!joined) { log.past.push(settings); if (log.past.length > 100) log.past.shift(); }
+    log.burst = burst ? { key: burst, at: now } : null;
+    log.future = [];
+    syncHistory();
+    setSettings((current) => {
+      const next = { ...current, ...patch };
+      savePrefs(next);
+      return next;
+    });
+  };
+  // Lo de cada unidad también está en la base: al deshacer se vuelve a guardar lo que cambió (y lo
+  // que tenía un guardado esperando, para que ese guardado viejo no pise lo restaurado).
+  const unitPrint = (value: Settings, id: string): TagPrint => cleanTagPrint({ name: value.tagNames[id], character: value.tagCharacters[id], color: value.tagColors[id], card: value.tagCards[id] });
+  const manyPending = useRef<string[]>([]);
+  const restore = (target: Settings) => {
+    const changed = items.filter((item) => JSON.stringify(unitPrint(settings, item.id)) !== JSON.stringify(unitPrint(target, item.id))).map((item) => item.id);
+    const pending = [...Object.keys(saveTimers.current).filter((key) => key !== "many"), ...manyPending.current];
+    for (const timer of Object.values(saveTimers.current)) clearTimeout(timer);
+    saveTimers.current = {};
+    manyPending.current = [];
+    const ids = [...new Set([...changed, ...pending])].filter((id) => items.some((item) => item.id === id));
+    setSettings(target);
+    savePrefs(target);
+    setEditorNotice(null);
+    if (ids.length) {
+      setSaveState("saving");
+      saveTagPrints(batchId, ids.map((id) => ({ id, print: unitPrint(target, id) }))).then((ok) => setSaveState(ok ? "saved" : "error"), () => setSaveState("error"));
+    }
+    flashCards(changed);
+  };
+  const undo = () => {
+    const log = history.current, previous = log.past.pop();
+    if (!previous) return;
+    log.future.push(settings);
+    log.burst = null;
+    restore(previous);
+    syncHistory();
+  };
+  const redo = () => {
+    const log = history.current, next = log.future.pop();
+    if (!next) return;
+    log.past.push(settings);
+    log.burst = null;
+    restore(next);
+    syncHistory();
+  };
+  const undoRef = useRef({ undo, redo });
+  useEffect(() => { undoRef.current = { undo, redo }; });
+  useEffect(() => {
+    const onKey = (event: globalThis.KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+      const key = event.key.toLowerCase();
+      if (key !== "z" && key !== "y") return;
+      // En un campo de texto, Ctrl+Z deshace el texto (lo normal); con un cartel abierto, nada.
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("input, textarea, select, [contenteditable='true']") || document.querySelector(".ps-modal, dialog[open]")) return;
+      event.preventDefault();
+      if (key === "y" || event.shiftKey) undoRef.current.redo(); else undoRef.current.undo();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   // Diseño 2: la tarjeta con solapa (la actual o sus variantes A y B, más anchas).
   const secureCard = settings.cardLayout !== "classic";
@@ -232,13 +304,13 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
     if (cleanName.trim() && isGenericCharacterId(settings.tagCharacters[id] || "")) {
       const tagCharacters = { ...settings.tagCharacters };
       delete tagCharacters[id];
-      update({ tagNames, tagCharacters });
+      update({ tagNames, tagCharacters }, `name:${id}`);
       saveUnit(id, printOf(id, { name: cleanName, character: undefined }), 700);
       setEditorNotice({ id, message: "Agregaste un nombre: cambiamos el diseño genérico por uno compatible." });
       return;
     }
     setEditorNotice(null);
-    update({ tagNames });
+    update({ tagNames }, `name:${id}`);
     saveUnit(id, printOf(id, { name: cleanName }), 700);
   };
   const setTagCharacter = (id: string, character: string) => {
@@ -262,7 +334,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
     const next = { ...settings.tagColors };
     if (!color) delete next[id];
     else next[id] = color;
-    update({ tagColors: next });
+    update({ tagColors: next }, delay ? `color:${id}` : undefined);
     saveUnit(id, printOf(id, { color: next[id] }), delay);
   };
   // Lo automático sale del N° de unidad (no del orden en la lista): así no cambia cuando se
@@ -312,7 +384,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
   // El botoncito de estilo de cada tarjeta: uno abierto a la vez; se cierra tocando afuera o con Esc.
   const [stylePicker, setStylePicker] = useState<string | null>(null);
   // Confirmación (modal) y aviso de lo que cambió.
-  const [ask, setAsk] = useState<{ title: string; text: string; cancel?: string; actions: { label: string; run: () => void; main?: boolean }[] } | null>(null);
+  const [ask, setAsk] = useState<{ title: string; text: string; cancel?: string; stack?: boolean; actions: { label: string; run: () => void; main?: boolean }[] } | null>(null);
   const [toast, setToast] = useState("");
   useEffect(() => {
     if (!stylePicker && !ask) return;
@@ -386,7 +458,173 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
     </div>;
   };
   const previewItem = items.find((item) => item.id === previewId) || items[0];
-  const selectItem = (id: string) => setPreviewId(id);
+  const range = (from: string, to: string) => {
+    const a = items.findIndex((item) => item.id === from), b = items.findIndex((item) => item.id === to);
+    if (a < 0 || b < 0) return [to];
+    return items.slice(Math.min(a, b), Math.max(a, b) + 1).map((item) => item.id);
+  };
+  const selectItem = (id: string, event?: { ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }) => {
+    if (event?.shiftKey && previewId) { setPicked(range(previewId, id)); return; }
+    if (event?.ctrlKey || event?.metaKey) {
+      setPicked((current) => current.includes(id) ? (current.length > 1 ? current.filter((other) => other !== id) : current) : [...current, id]);
+      setPreviewId(id);
+      return;
+    }
+    setPicked([id]);
+    setPreviewId(id);
+  };
+  const isPicked = (id: string) => picked.includes(id);
+  const inOrder = (ids: Iterable<string>) => { const set = new Set(ids); return items.filter((item) => set.has(item.id)).map((item) => item.id); };
+  // Recuadro con el mouse, como en el escritorio: se arrastra desde cualquier lado de las hojas (sobre
+  // una chapita también) y queda elegido todo lo que toca. Con Ctrl se suma a lo que ya había.
+  // Hasta que el mouse se mueve unos píxeles es un clic común. Cerca del borde de la ventana, baja o sube solo.
+  // Rendimiento: mientras se arrastra no se redibuja nada con React. El recuadro se mueve directo en
+  // la página, las tocadas se marcan con una clase y las posiciones se miden una sola vez al empezar.
+  // Al soltar se aplica la selección (un solo dibujo).
+  const sheetsRef = useRef<HTMLElement>(null);
+  const bandRef = useRef<HTMLDivElement>(null);
+  type BandTarget = { id: string; elements: HTMLElement[]; boxes: { left: number; top: number; right: number; bottom: number }[] };
+  const band = useRef<{ x: number; y: number; sx: number; sy: number; cx: number; cy: number; base: string[]; active: boolean; targets: BandTarget[]; hits: Set<string> } | null>(null);
+  const justBanded = useRef(false);
+  const startBand = (event: PointerEvent<HTMLElement>) => {
+    if (event.pointerType !== "mouse" || event.button !== 0 || event.shiftKey) return;
+    if ((event.target as HTMLElement).closest(".ps-tools, .ps-style, .ps-page-actions, .ps-sheet-bar, .ps-tag-overview, a, input, select")) return;
+    const area = sheetsRef.current;
+    if (!area) return;
+    const rect = area.getBoundingClientRect();
+    band.current = { x: event.clientX - rect.left, y: event.clientY - rect.top, sx: event.clientX, sy: event.clientY, cx: event.clientX, cy: event.clientY, base: event.ctrlKey || event.metaKey ? picked : [], active: false, targets: [], hits: new Set() };
+  };
+  useEffect(() => {
+    let frame = 0, queued = 0;
+    // Dónde está cada chapita, relativo a las hojas (no cambia al desplazarse: se mueven juntas).
+    const measure = (area: HTMLElement): BandTarget[] => {
+      const rect = area.getBoundingClientRect();
+      const byId = new Map<string, BandTarget>();
+      area.querySelectorAll<HTMLElement>("[data-pick]").forEach((element) => {
+        const id = element.dataset.pick!, r = element.getBoundingClientRect();
+        const target = byId.get(id) || { id, elements: [], boxes: [] };
+        target.elements.push(element);
+        target.boxes.push({ left: r.left - rect.left, top: r.top - rect.top, right: r.right - rect.left, bottom: r.bottom - rect.top });
+        byId.set(id, target);
+      });
+      return [...byId.values()];
+    };
+    const paint = () => {
+      queued = 0;
+      const current = band.current, area = sheetsRef.current, box = bandRef.current;
+      if (!current?.active || !area || !box) return;
+      const rect = area.getBoundingClientRect();
+      const x2 = current.cx - rect.left, y2 = current.cy - rect.top;
+      const left = Math.min(current.x, x2), top = Math.min(current.y, y2), right = Math.max(current.x, x2), bottom = Math.max(current.y, y2);
+      box.style.transform = `translate(${left}px, ${top}px)`;
+      box.style.width = `${right - left}px`;
+      box.style.height = `${bottom - top}px`;
+      // Solo se tocan las clases de las que cambiaron.
+      for (const target of current.targets) {
+        const hit = target.boxes.some((b) => b.left < right && b.right > left && b.top < bottom && b.bottom > top);
+        if (hit === current.hits.has(target.id)) continue;
+        if (hit) current.hits.add(target.id); else current.hits.delete(target.id);
+        for (const element of target.elements) element.classList.toggle("is-band-hit", hit);
+      }
+    };
+    const schedule = () => { if (!queued) queued = requestAnimationFrame(paint); };
+    // Cerca del borde de la ventana se desplaza solo, más rápido cuanto más cerca.
+    const scroll = () => {
+      const current = band.current;
+      if (!current?.active) { frame = 0; return; }
+      const scroller = sheetsRef.current?.closest(".admin-shell-frame") || document.scrollingElement;
+      const edge = 60, height = window.innerHeight;
+      const step = current.cy < edge ? -Math.ceil((edge - current.cy) / 3) : current.cy > height - edge ? Math.ceil((current.cy - (height - edge)) / 3) : 0;
+      if (step && scroller) { scroller.scrollBy(0, step); schedule(); }
+      frame = requestAnimationFrame(scroll);
+    };
+    const move = (event: globalThis.PointerEvent) => {
+      const current = band.current;
+      if (!current) return;
+      current.cx = event.clientX; current.cy = event.clientY;
+      if (!current.active) {
+        if (Math.hypot(event.clientX - current.sx, event.clientY - current.sy) < 6) return;
+        const area = sheetsRef.current;
+        if (!area) return;
+        current.active = true;
+        current.targets = measure(area);
+        window.getSelection()?.removeAllRanges();
+        area.classList.add("is-banding");
+        if (!current.base.length) area.classList.add("is-band-fresh");
+        if (bandRef.current) bandRef.current.hidden = false;
+      }
+      schedule();
+      if (!frame) frame = requestAnimationFrame(scroll);
+    };
+    const up = () => {
+      const current = band.current;
+      band.current = null;
+      cancelAnimationFrame(frame); frame = 0;
+      cancelAnimationFrame(queued); queued = 0;
+      if (!current?.active) return;
+      sheetsRef.current?.classList.remove("is-banding", "is-band-fresh");
+      if (bandRef.current) bandRef.current.hidden = true;
+      for (const target of current.targets) for (const element of target.elements) element.classList.remove("is-band-hit");
+      const next = inOrderRef.current([...current.base, ...current.hits]);
+      if (next.length) { setPicked(next); setPreviewId(current.hits.size ? inOrderRef.current(current.hits)[0] : next[0]); }
+      // El clic que llega después de soltar no tiene que cambiar lo elegido con el recuadro.
+      justBanded.current = true;
+      setTimeout(() => { justBanded.current = false; }, 0);
+    };
+    window.addEventListener("pointermove", move, { passive: true });
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+    return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); window.removeEventListener("pointercancel", up); cancelAnimationFrame(frame); cancelAnimationFrame(queued); };
+  }, []);
+  const inOrderRef = useRef(inOrder);
+  useEffect(() => { inOrderRef.current = inOrder; });
+  const pickProps = (id: string) => ({
+    "data-pick": id,
+    onClick: (event: MouseEvent<HTMLElement>) => { if (justBanded.current) return; selectItem(id, event); },
+  });
+  // Arriba de cada hoja: elegirla entera y, en la última si quedó con lugares, completarla.
+  // Se elige con qué llenarla: lo automático del lote o un genérico para todas. Las nuevas quedan
+  // elegidas, para seguir cambiándoles lo que haga falta.
+  const fillSheet = (count: number) => {
+    const add = (character: TagCharacterId | "", label: string) => () => {
+      setFilling(true);
+      addTagsToBatch(batchId, count, character)
+        .then((result) => { if (result.ok) { pickFresh.current = true; setToast(`Listo: ${count} ${count === 1 ? "chapita nueva" : "chapitas nuevas"}${label} en el lote. Quedaron elegidas.`); router.refresh(); } else setToast(result.error || "No se pudieron agregar."); })
+        .catch(() => setToast("No se pudieron agregar. Revisá la conexión."))
+        .finally(() => setFilling(false));
+    };
+    setAsk({
+      title: `¿Agregar ${count} ${count === 1 ? "chapita" : "chapitas"} al lote?`,
+      stack: true,
+      text: "Así la hoja sale completa y no se desperdicia. Se crean de stock (sin nombre), cada una con su código de activación y su QR, numeradas después de las que ya tiene el lote. ¿Con qué dibujo?",
+      actions: [
+        { label: "Como el lote (automático)", run: add("", ""), main: true },
+        { label: "🐶 Genérico perro", run: add("generic-dog-front", " con perrito genérico") },
+        { label: "🐱 Genérico gato", run: add("generic-cat-front", " con gatito genérico") },
+        { label: "🐾 Patita", run: add("generic-paw", " con patita") },
+      ],
+    });
+  };
+  // Las que llegan nuevas (después de "Completar hoja"): se suma lo que traen de la base, también al
+  // historial (así deshacer no les borra el dibujo) y, si las acabamos de crear, quedan elegidas.
+  const knownIds = useRef(new Set(items.map((item) => item.id)));
+  const pickFresh = useRef(false);
+  useEffect(() => {
+    const fresh = items.filter((item) => !knownIds.current.has(item.id));
+    if (!fresh.length) return;
+    for (const item of fresh) knownIds.current.add(item.id);
+    const units = unitsOf(fresh);
+    const merge = (value: Settings): Settings => ({ ...value, tagNames: { ...value.tagNames, ...units.tagNames }, tagCharacters: { ...value.tagCharacters, ...units.tagCharacters }, tagColors: { ...value.tagColors, ...units.tagColors }, tagCards: { ...value.tagCards, ...units.tagCards } });
+    history.current.past = history.current.past.map(merge);
+    history.current.future = history.current.future.map(merge);
+    setSettings(merge);
+    if (pickFresh.current) { pickFresh.current = false; setPicked(fresh.map((item) => item.id)); setPreviewId(fresh[0].id); }
+  }, [items]);
+  const pageTools = (page: PrintItem[], index: number, total: number, capacity: number) => <div key={`tools-${index}`} className="ps-page-actions">
+    <span>Hoja {index + 1}{page.length < capacity ? ` · ${page.length} de ${capacity}` : ""}</span>
+    <button type="button" onClick={() => { setPicked(page.map((item) => item.id)); setPreviewId(page[0].id); }}>Elegir toda la hoja</button>
+    {index === total - 1 && page.length < capacity && <button type="button" className="is-fill" disabled={filling} onClick={() => fillSheet(capacity - page.length)}>{filling ? "Agregando…" : `Completar hoja · +${capacity - page.length}`}</button>}
+  </div>;
   // "Ver su tarjeta" / "Ver su chapita": la unidad elegida es la misma en las dos pestañas; se
   // cambia de pestaña y, ya dibujada, se lleva a la vista y brilla un momento.
   const [jump, setJump] = useState(0);
@@ -414,6 +652,87 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
       selectItem(id);
     }
   };
+  const pickedItems = items.filter((item) => picked.includes(item.id));
+  const multi = pickedItems.length > 1;
+  const pickedIds = pickedItems.map((item) => item.id);
+  // El valor que tienen todas las elegidas, o "" si no coinciden.
+  const shared = (values: Record<string, string>) => { const first = values[pickedIds[0]] || ""; return pickedIds.every((id) => (values[id] || "") === first) ? first : ""; };
+  const pickedNamed = pickedIds.filter((id) => settings.tagNames[id]?.trim());
+  const pickedStock = pickedIds.filter((id) => !settings.tagNames[id]?.trim());
+  const saveMany = (ids: string[], tagNames: Record<string, string>, tagCharacters: Record<string, TagCharacterId>, tagColors: Record<string, string>, delay = 0) => {
+    const units = ids.map((id) => ({ id, print: cleanTagPrint({ name: tagNames[id], character: tagCharacters[id], color: tagColors[id], card: settings.tagCards[id] }) }));
+    clearTimeout(saveTimers.current.many);
+    setSaveState("saving");
+    manyPending.current = ids;
+    saveTimers.current.many = setTimeout(() => {
+      manyPending.current = [];
+      saveTagPrints(batchId, units).then((ok) => setSaveState(ok ? "saved" : "error"), () => setSaveState("error"));
+    }, delay);
+  };
+  // pick: el animal de cada una (por su lugar entre las elegidas, para las mezclas). dropNames: un
+  // diseño genérico no lleva nombre, así que se lo saca (si se eligió eso en la pregunta).
+  const setManyCharacter = (ids: string[], pick: (index: number) => TagCharacterId | "", dropNames = false) => {
+    const tagCharacters = { ...settings.tagCharacters }, tagNames = { ...settings.tagNames };
+    ids.forEach((id, index) => {
+      const character = pick(index);
+      if (character) tagCharacters[id] = character; else delete tagCharacters[id];
+      if (dropNames) delete tagNames[id];
+    });
+    update({ tagCharacters, tagNames });
+    saveMany(ids, tagNames, tagCharacters, settings.tagColors);
+    flashCards(ids);
+  };
+  // Antes se perdía en silencio: un genérico en una chapita con nombre no se ve (characterOf). Ahora
+  // pregunta qué hacer con las que tienen nombre.
+  const chooseManyCharacter = (pick: (index: number) => TagCharacterId | "", generic: boolean) => {
+    if (!generic || !pickedNamed.length) return setManyCharacter(pickedIds, pick);
+    const count = pickedNamed.length;
+    setAsk({
+      title: count === 1 ? "Una de las elegidas tiene nombre" : `${count} de las elegidas tienen nombre`,
+      text: `El diseño genérico va sin nombre. ¿Qué hacemos con ${count === 1 ? "esa" : "esas"}?`,
+      actions: [
+        ...(pickedStock.length ? [{ label: `Saltearlas (cambiar solo ${pickedStock.length === 1 ? "la de stock" : `las ${pickedStock.length} de stock`})`, run: () => setManyCharacter(pickedStock, pick), main: true }] : []),
+        { label: count === 1 ? "Sacarle el nombre" : "Sacarles el nombre", run: () => setManyCharacter(pickedIds, pick, true), main: !pickedStock.length },
+      ],
+    });
+  };
+  const MIX_COLORS = ["blue", "violet", "pink", "orange", "green"];
+  const setManyColor = (pick: (index: number) => string, delay = 0) => {
+    const tagColors = { ...settings.tagColors };
+    pickedIds.forEach((id, index) => { const color = pick(index); if (color) tagColors[id] = color; else delete tagColors[id]; });
+    update({ tagColors }, delay ? "many-color" : undefined);
+    saveMany(pickedIds, settings.tagNames, settings.tagCharacters, tagColors, delay);
+    if (!delay) flashCards(pickedIds);
+  };
+  const resetMany = () => {
+    const tagNames = { ...settings.tagNames }, tagCharacters = { ...settings.tagCharacters }, tagColors = { ...settings.tagColors };
+    for (const id of pickedIds) { delete tagNames[id]; delete tagCharacters[id]; delete tagColors[id]; }
+    update({ tagNames, tagCharacters, tagColors });
+    saveMany(pickedIds, tagNames, tagCharacters, tagColors);
+    flashCards(pickedIds);
+  };
+  const panelRef = useRef<HTMLElement>(null);
+  // Al pasar a varias, el panel baja solo hasta "2 · Personalizar unidades" (sin cambiar el orden de los pasos).
+  useEffect(() => {
+    const panel = panelRef.current, title = panel?.querySelector<HTMLElement>(".ps-personalize-title");
+    if (!multi || !panel || !title) return;
+    panel.scrollTo({ top: panel.scrollTop + title.getBoundingClientRect().top - panel.getBoundingClientRect().top - 12, behavior: "smooth" });
+  }, [multi]);
+  const collapsePick = () => { const keep = previewItem?.id || pickedIds[0]; if (keep) setPicked([keep]); };
+  const escRef = useRef(collapsePick);
+  useEffect(() => { escRef.current = collapsePick; });
+  useEffect(() => {
+    const onKey = (event: globalThis.KeyboardEvent) => { if (event.key === "Escape" && !document.querySelector(".ps-modal, dialog[open]")) escRef.current(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+  // Atajos del panel para varias: genéricos (de a uno) y mezclas.
+  const MIXES: { label: string; pick: (index: number) => TagCharacterId; generic?: boolean }[] = [
+    { label: "🐶 Razas de perro", pick: (index) => TAG_DOGS[index % TAG_DOGS.length].id },
+    { label: "🐱 Razas de gato", pick: (index) => TAG_CATS[index % TAG_CATS.length].id },
+    { label: "🐶🐱 Perros y gatos", pick: (index) => tagCharacterFor("mix", index) },
+    { label: "◉ Genéricos variados", pick: (index) => TAG_GENERIC[index % TAG_GENERIC.length].id, generic: true },
+  ];
   const resetTag = (id: string) => {
     const tagNames = { ...settings.tagNames }; delete tagNames[id];
     const tagCharacters = { ...settings.tagCharacters }; delete tagCharacters[id];
@@ -450,17 +769,17 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
     </svg>}
   </div>;
   // Divs (no botones) porque adentro va el botón "Ver su tarjeta".
-  const tagCell = (item: PrintItem, side: "front" | "back") => <div role="button" tabIndex={0} data-card={item.id} className={`ps-tag-cell ps-selectable${previewItem?.id === item.id ? " is-selected" : ""}`} onClick={() => selectItem(item.id)} onKeyDown={(event) => selectItemFromKeyboard(event, item.id)} aria-label={`Seleccionar chapita con código ${item.code}`}>
+  const tagCell = (item: PrintItem, side: "front" | "back") => <div role="button" tabIndex={0} data-card={item.id} className={`ps-tag-cell ps-selectable${isPicked(item.id) ? " is-selected" : ""}`} {...pickProps(item.id)} onKeyDown={(event) => selectItemFromKeyboard(event, item.id)} aria-label={`Seleccionar chapita con código ${item.code}`}>
     <span className="ps-tools">{partnerButton(item)}</span>
     {tagArtwork(item, side, "sheet")}
   </div>;
 
-  return <div className={`ps is-${paper.toLowerCase()}`} style={{ "--page-w": `${PAGE.width}mm`, "--page-h": `${PAGE.height}mm` } as CSSProperties}>
+  return <div className={`ps is-${paper.toLowerCase()}${multi ? " is-multi" : ""}`} style={{ "--page-w": `${PAGE.width}mm`, "--page-h": `${PAGE.height}mm` } as CSSProperties}>
     {/* eslint-disable-next-line @next/next/no-page-custom-font -- solo para esta hoja de impresión */}
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@800&family=Poppins:wght@600;700;800&display=swap" />
     {/* El tamaño de página depende del formato elegido. */}
     <style>{`@media print { @page { size: ${single ? `${singlePage.width}mm ${singlePage.height}mm` : paper}; margin: 0; } }`}</style>
-    <aside className="ps-panel">
+    <aside ref={panelRef} className="ps-panel">
       <Link className="ps-back" href={`/admin/chapitas/${batchId}`}>← Volver al lote</Link>
       <h1>{batchName}</h1>
       <p className="ps-muted">{items.length} {items.length === 1 ? "chapita sin activar" : "chapitas sin activar"} · {pageCount} {pageCount === 1 ? "página" : "páginas"}</p>
@@ -500,16 +819,16 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
         <fieldset className="ps-group"><legend>Tamaño</legend>
           {secureCard ? <>
             <div className="ps-row">
-              <label>Ancho cerrada (mm)<input type="number" min={FLAP_LIMITS.width[0]} max={FLAP_LIMITS.width[1]} value={settings.flapWidth} onChange={(event) => update({ flapWidth: Number(event.target.value) })} /></label>
-              <label>Alto (mm)<input type="number" min={FLAP_LIMITS.height[0]} max={FLAP_LIMITS.height[1]} value={settings.flapHeight} onChange={(event) => update({ flapHeight: Number(event.target.value) })} /></label>
+              <label>Ancho cerrada (mm)<input type="number" min={FLAP_LIMITS.width[0]} max={FLAP_LIMITS.width[1]} value={settings.flapWidth} onChange={(event) => update({ flapWidth: Number(event.target.value) }, "flapWidth")} /></label>
+              <label>Alto (mm)<input type="number" min={FLAP_LIMITS.height[0]} max={FLAP_LIMITS.height[1]} value={settings.flapHeight} onChange={(event) => update({ flapHeight: Number(event.target.value) }, "flapHeight")} /></label>
             </div>
             <small className="ps-muted">Cerrada {flapClosed.width}×{flapClosed.height} mm · abierta {width}×{height} mm (la solapa del QR suma {FLAP_WIDTH} mm). Ancho de {FLAP_LIMITS.width[0]} a {FLAP_LIMITS.width[1]} y alto de {FLAP_LIMITS.height[0]} a {FLAP_LIMITS.height[1]}.</small>
           </> : <><select value={settings.size} onChange={(event) => { const size = SIZES.find((item) => item.id === event.target.value)!; update(size.id === "custom" ? { size: size.id } : { size: size.id, width: size.width, height: size.height }); }}>
             {SIZES.map((size) => <option key={size.id} value={size.id}>{size.label}</option>)}
           </select>
           {settings.size === "custom" && <div className="ps-row">
-            <label>Ancho (mm)<input type="number" min={40} max={190} value={settings.width} onChange={(event) => update({ width: Number(event.target.value) })} /></label>
-            <label>Alto (mm)<input type="number" min={30} max={270} value={settings.height} onChange={(event) => update({ height: Number(event.target.value) })} /></label>
+            <label>Ancho (mm)<input type="number" min={40} max={190} value={settings.width} onChange={(event) => update({ width: Number(event.target.value) }, "width")} /></label>
+            <label>Alto (mm)<input type="number" min={30} max={270} value={settings.height} onChange={(event) => update({ height: Number(event.target.value) }, "height")} /></label>
           </div>}</>}
         </fieldset>
         <fieldset className="ps-group"><legend>Caras</legend>
@@ -545,7 +864,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
         ] as [TagFrontStyle, string][]).map(([value, label]) => <button key={value} type="button" className={frontStyle === value ? "is-on" : ""} onClick={() => update({ tagFront: value })}>{label}</button>)}</div>
       </section>
       <fieldset className="ps-group"><legend>Impresión de chapitas</legend>
-        <label>Tamaño (diámetro): <b>{qrSize} mm</b><input type="range" min={26} max={45} value={qrSize} onChange={(event) => update({ qrSize: Number(event.target.value) })} /></label>
+        <label>Tamaño (diámetro): <b>{qrSize} mm</b><input type="range" min={26} max={45} value={qrSize} onChange={(event) => update({ qrSize: Number(event.target.value) }, "qrSize")} /></label>
         {qrSize < 30 && <small className="ps-compact-note">Modo compacto: el contenido se mete dentro del margen de corte y el QR usa 25×25 módulos. No recomendamos bajar de 26 mm.</small>}
         <span className="ps-colors-label">Formato de hoja</span>
         <div className="ps-output-options">
@@ -583,15 +902,65 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
           {TAG_COLORS.map((color) => <button key={color.id} type="button" className={settings.qrColor === color.id ? "is-on" : ""} onClick={() => update({ qrColor: color.id })} aria-label={color.label} title={color.label}><span style={{ background: color.value }} /></button>)}
           <label className={`ps-color-custom${settings.qrColor.startsWith("#") ? " is-on" : ""}`} title="Otro color">
             <span style={settings.qrColor.startsWith("#") ? { background: settings.qrColor } : undefined}>{settings.qrColor.startsWith("#") ? "" : "+"}</span>
-            <input type="color" value={settings.qrColor.startsWith("#") ? settings.qrColor : "#3a7bd5"} onChange={(event) => update({ qrColor: event.target.value })} aria-label="Elegir otro color" />
+            <input type="color" value={settings.qrColor.startsWith("#") ? settings.qrColor : "#3a7bd5"} onChange={(event) => update({ qrColor: event.target.value }, "qrColor")} aria-label="Elegir otro color" />
           </label>
         </div>
       </details>
 
-      <div className="ps-stage-title"><span>2</span><div><strong>Personalizar unidades</strong><small>Elegí una chapita y ajustala sin afectar las demás.</small></div></div>
+      <div className="ps-stage-title ps-personalize-title"><span>2</span><div><strong>Personalizar unidades</strong><small>Tocá una chapita para editarla. Para varias: arrastrá un recuadro sobre la hoja (con Ctrl se suma), o Ctrl / Shift + clic.</small></div></div>
       <section className="ps-personalize" aria-label="Personalización por unidad">
-        <div className="ps-personalize-head"><div><strong>Editando esta chapita</strong>{previewItem && <span className={settings.tagNames[previewItem.id]?.trim() ? "has-name" : "is-stock"}>{settings.tagNames[previewItem.id]?.trim() ? "Con nombre" : "Stock"}</span>}</div><small className={`ps-save is-${saveState}`}>{{ idle: "Se guarda automáticamente.", saving: "Guardando…", saved: "✓ Guardado en la chapita", error: "⚠ No se pudo guardar. Revisá la conexión." }[saveState]}</small></div>
+        <div className="ps-personalize-head"><div><strong>{multi ? `Editando ${pickedItems.length} chapitas` : "Editando esta chapita"}</strong>{previewItem && !multi && <span className={settings.tagNames[previewItem.id]?.trim() ? "has-name" : "is-stock"}>{settings.tagNames[previewItem.id]?.trim() ? "Con nombre" : "Stock"}</span>}</div><small className={`ps-save is-${saveState}`}>{{ idle: "Se guarda automáticamente.", saving: "Guardando…", saved: "✓ Guardado en la chapita", error: "⚠ No se pudo guardar. Revisá la conexión." }[saveState]}</small></div>
         {/* La unidad se elige tocándola en la hoja; ‹ › pasa a la anterior o a la siguiente (y la muestra). */}
+        {multi ? (() => {
+          const sharedCharacter = shared(settings.tagCharacters) as TagCharacterId | "";
+          const sameCharacter = new Set(pickedItems.map(characterOf)).size === 1;
+          const sharedColor = shared(settings.tagColors);
+          const sameColor = new Set(pickedItems.map(colorOf)).size === 1;
+          const shown = pickedItems.slice(0, 18);
+          return <div className="ps-unit-editor ps-multi-editor">
+            <div className="ps-multi-summary">
+              <p><b>{pickedItems.length} elegidas</b>{!!pickedNamed.length && <span> · {pickedNamed.length} con nombre</span>}{!!pickedNamed.length && !!pickedStock.length && <span> · {pickedStock.length} de stock</span>}</p>
+              <div className="ps-multi-faces" aria-label="Chapitas elegidas">
+                {shown.map((item) => <button key={item.id} type="button" title={`${unit(item.number)}${settings.tagNames[item.id]?.trim() ? ` · ${settings.tagNames[item.id].trim()}` : ""} — editar solo esta`} onClick={() => selectItem(item.id)}><Face id={characterOf(item)} color={colorOf(item)} size={30} /></button>)}
+                {pickedItems.length > shown.length && <span>+{pickedItems.length - shown.length}</span>}
+              </div>
+              <div className="ps-multi-actions">
+                {!!pickedNamed.length && !!pickedStock.length && <button type="button" onClick={() => { setPicked(pickedStock); setPreviewId(pickedStock[0]); }}>Solo las de stock</button>}
+                {pickedItems.length < items.length && <button type="button" onClick={() => { setPicked(items.map((item) => item.id)); setPreviewId(items[0].id); }}>Todas ({items.length})</button>}
+                <button type="button" onClick={collapsePick}>Elegir solo una <kbd>Esc</kbd></button>
+              </div>
+            </div>
+            <p className="ps-multi-note">Lo que toques abajo se aplica a las {pickedItems.length}. El nombre se pone de a una. Si te equivocás: <b>Ctrl+Z</b>.</p>
+
+            <span className="ps-editor-label">Animal {!sameCharacter && <em className="ps-mixed">· varios</em>}</span>
+            <div className="ps-quick-animals">
+              <small>Genéricos (sin nombre)</small>
+              <div className="ps-quick-faces">{TAG_GENERIC.map((character) => <button key={character.id} type="button" className={sharedCharacter === character.id ? "is-on" : ""} title={character.label} aria-label={character.label} onClick={() => chooseManyCharacter(() => character.id, true)}><Face id={character.id} color={sameColor ? colorOf(pickedItems[0]) : "blue"} size={38} /></button>)}</div>
+              <small>Mezclas (una distinta cada una)</small>
+              <div className="ps-quick-mixes">
+                {MIXES.map((mix) => <button key={mix.label} type="button" onClick={() => chooseManyCharacter(mix.pick, Boolean(mix.generic))}>{mix.label}</button>)}
+                <button type="button" className={pickedIds.every((id) => !settings.tagCharacters[id]) ? "is-on" : ""} onClick={() => chooseManyCharacter(() => "", false)}>Automático</button>
+              </div>
+              <small>O la misma raza para todas</small>
+              <CharacterPicker value={sharedCharacter} auto={characterOf(pickedItems[0])} color={sameColor ? colorOf(pickedItems[0]) : "blue"} name="" mixed={!sameCharacter} onChange={(id) => chooseManyCharacter(() => id, isGenericCharacterId(id))} onChooseGeneric={(id) => chooseManyCharacter(() => id, true)} />
+            </div>
+
+            <span className="ps-editor-label">Color {!sameColor && <em className="ps-mixed">· varios</em>}</span>
+            <div className="ps-colors ps-unit-colors">
+              <button type="button" className={`ps-auto-color${pickedIds.every((id) => !settings.tagColors[id]) ? " is-on" : ""}`} onClick={() => setManyColor(() => "")} aria-label="Color automático" title="Color automático"><span className="is-auto">A</span><small>Auto</small></button>
+              {TAG_COLORS.filter((color) => color.id !== "mix").map((color) => <button key={color.id} type="button" className={sharedColor === color.id ? "is-on" : ""} onClick={() => setManyColor(() => color.id)} aria-label={color.label} title={color.label}><span style={{ background: color.value }} /></button>)}
+              {(() => {
+                const custom = sharedColor.startsWith("#");
+                return <label className={`ps-color-custom${custom ? " is-on" : ""}`} title="Otro color">
+                  <span style={custom ? { background: sharedColor } : undefined}>{custom ? "" : "+"}</span>
+                  <input type="color" value={custom ? sharedColor : "#3a7bd5"} onChange={(event) => { const value = event.target.value; setManyColor(() => value, 600); }} aria-label="Elegir otro color para las chapitas elegidas" />
+                </label>;
+              })()}
+            </div>
+            <button type="button" className="ps-mix-colors" onClick={() => setManyColor((index) => MIX_COLORS[index % MIX_COLORS.length])}><span style={{ background: TAG_COLORS[0].value }} />Mezcla de colores (una de cada)</button>
+            <button type="button" className="ps-reset-unit" onClick={resetMany}>Restablecer estas {pickedItems.length}</button>
+          </div>;
+        })() : <>
         {previewItem && <div className="ps-unit-nav">
           <button type="button" onClick={() => stepUnit(-1)} aria-label="Chapita anterior" disabled={items.length < 2}>‹</button>
           <div><span style={{ background: TAG_COLORS.find((color) => color.id === colorOf(previewItem))?.value || colorOf(previewItem) }} /><b>{previewItem.code}</b><small>{unitNumber(previewItem.number)} · {items.indexOf(previewItem) + 1} de {items.length}</small></div>
@@ -619,6 +988,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
           <button type="button" className="ps-download-qr" onClick={() => downloadQrSvg(previewItem)}>Descargar QR vectorial (.SVG)</button>
           <button type="button" className="ps-reset-unit" onClick={() => resetTag(previewItem.id)}>Restablecer esta unidad</button>
         </div>}
+        </>}
       </section>
       <small className="ps-muted">El dorso conserva siempre el diseño original y el QR público. El código privado va sólo en la tarjeta de activación.</small>
       </>}
@@ -660,7 +1030,17 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
       </div>
     </aside>
 
-    <main className={`ps-sheets${single ? " is-single" : ""}`}>
+    <main ref={sheetsRef} className={`ps-sheets${single ? " is-single" : ""}`} onPointerDown={startBand} onDragStart={(event) => event.preventDefault()}>
+      {!!items.length && <div className="ps-sheet-bar">
+        <div className="ps-history">
+          <button type="button" title="Deshacer (Ctrl+Z)" aria-label="Deshacer" disabled={!historySize.past} onClick={undo}>↶<span>Deshacer</span></button>
+          <button type="button" title="Rehacer (Ctrl+Y)" aria-label="Rehacer" disabled={!historySize.future} onClick={redo}>↷<span>Rehacer</span></button>
+        </div>
+        {multi
+          ? <p><b>{pickedItems.length} elegidas</b><button type="button" onClick={collapsePick}>Soltar <kbd>Esc</kbd></button></p>
+          : <p className="ps-sheet-tip">Arrastrá sobre la hoja para elegir varias</p>}
+      </div>}
+      <div ref={bandRef} className="ps-band" hidden />
       {!items.length && <p className="ps-empty">Todas las chapitas de este lote ya están activadas: no hay nada para imprimir.</p>}
       {mode === "qr" && previewItem && <section className="ps-tag-overview" aria-label={`Vista del código ${previewItem.code}`}>
         <div className="ps-tag-overview-head"><div><small>VISTA PREVIA</small><h2>{unit(previewItem.number)} · {previewItem.code}</h2></div><div className="ps-overview-side"><span>{settings.tagNames[previewItem.id]?.trim() || "Sin nombre · stock"}</span><button type="button" className="ps-partner" onClick={showPartner}>Ver su tarjeta <i aria-hidden="true">→</i></button></div></div>
@@ -670,21 +1050,22 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
         </div>
       </section>}
       {single ? items.flatMap((item) => [
-        <section key={`${item.id}-f`} className={`ps-single ps-selectable${previewItem?.id === item.id ? " is-selected" : ""}`} style={{ width: `${singlePage.width}mm`, height: `${singlePage.height}mm` }} aria-label={`Seleccionar tarjeta con código ${item.code}: frente`} role="button" tabIndex={0} data-card={item.id} onClick={() => selectItem(item.id)} onKeyDown={(event) => selectItemFromKeyboard(event, item.id)}>
+        <section key={`${item.id}-f`} className={`ps-single ps-selectable${isPicked(item.id) ? " is-selected" : ""}`} style={{ width: `${singlePage.width}mm`, height: `${singlePage.height}mm` }} aria-label={`Seleccionar tarjeta con código ${item.code}: frente`} role="button" tabIndex={0} data-card={item.id} {...pickProps(item.id)} onKeyDown={(event) => selectItemFromKeyboard(event, item.id)}>
           {styleChip(item)}
           <CardFront design={cardDesignOf(item)} layout={settings.cardLayout} item={item} host={host} style={bleedStyle} bleed closed={flapClosed} fresh={settings.flapFresh} />
           <CropMarks width={width} height={height} />
         </section>,
-        ...(cardBoth ? [<section key={`${item.id}-b`} className={`ps-single ps-selectable${previewItem?.id === item.id ? " is-selected" : ""}`} style={{ width: `${singlePage.width}mm`, height: `${singlePage.height}mm` }} aria-label={`Seleccionar tarjeta con código ${item.code}: dorso`} role="button" tabIndex={0} onClick={() => selectItem(item.id)} onKeyDown={(event) => selectItemFromKeyboard(event, item.id)}>
+        ...(cardBoth ? [<section key={`${item.id}-b`} className={`ps-single ps-selectable${isPicked(item.id) ? " is-selected" : ""}`} style={{ width: `${singlePage.width}mm`, height: `${singlePage.height}mm` }} aria-label={`Seleccionar tarjeta con código ${item.code}: dorso`} role="button" tabIndex={0} {...pickProps(item.id)} onKeyDown={(event) => selectItemFromKeyboard(event, item.id)}>
           <CardBack design={cardDesignOf(item)} layout={settings.cardLayout} host={host} style={bleedStyle} bleed />
           <CropMarks width={width} height={height} />
         </section>] : []),
       ]) : mode === "cards" ? cardPages.map((page, pageIndex) => <div key={pageIndex} className="ps-pair">
+        {pageTools(page, pageIndex, cardPages.length, perCardPage)}
         <section className="ps-page" aria-label={`Hoja ${pageIndex + 1}: frentes`}>
           <span className="ps-page-label">Hoja {pageIndex + 1} · frentes</span>
           <div className="ps-grid" style={gridStyle(cardCols, width, cardGap)}>
             {/* Un div (no un botón) porque adentro va el botoncito de estilo de la tarjeta. */}
-            {page.map((item) => <div role="button" tabIndex={0} key={item.id} data-card={item.id} className={`ps-cell ps-selectable${settings.cutLines ? " has-cut" : ""}${previewItem?.id === item.id ? " is-selected" : ""}`} onClick={() => selectItem(item.id)} onKeyDown={(event) => selectItemFromKeyboard(event, item.id)} aria-label={`Seleccionar tarjeta con código ${item.code}`}>{styleChip(item)}<CardFront design={cardDesignOf(item)} layout={settings.cardLayout} item={item} host={host} style={cardStyle} closed={flapClosed} fresh={settings.flapFresh} /></div>)}
+            {page.map((item) => <div role="button" tabIndex={0} key={item.id} data-card={item.id} className={`ps-cell ps-selectable${settings.cutLines ? " has-cut" : ""}${isPicked(item.id) ? " is-selected" : ""}`} {...pickProps(item.id)} onKeyDown={(event) => selectItemFromKeyboard(event, item.id)} aria-label={`Seleccionar tarjeta con código ${item.code}`}>{styleChip(item)}<CardFront design={cardDesignOf(item)} layout={settings.cardLayout} item={item} host={host} style={cardStyle} closed={flapClosed} fresh={settings.flapFresh} /></div>)}
           </div>
           <SheetFoot batchName={batchName} page={pageIndex + 1} pages={cardPages.length} detail="Tarjetas · frentes" />
         </section>
@@ -696,16 +1077,16 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
               const row = Math.floor(cell / cardCols);
               const item = page[row * cardCols + (cardCols - 1 - (cell % cardCols))];
               return item
-                ? <button type="button" key={cell} className={`ps-cell ps-selectable${settings.cutLines ? " has-cut" : ""}${previewItem?.id === item.id ? " is-selected" : ""}`} onClick={() => selectItem(item.id)} aria-label={`Seleccionar dorso de la tarjeta con código ${item.code}`}><CardBack design={cardDesignOf(item)} layout={settings.cardLayout} host={host} style={cardStyle} /></button>
+                ? <button type="button" key={cell} className={`ps-cell ps-selectable${settings.cutLines ? " has-cut" : ""}${isPicked(item.id) ? " is-selected" : ""}`} {...pickProps(item.id)} aria-label={`Seleccionar dorso de la tarjeta con código ${item.code}`}><CardBack design={cardDesignOf(item)} layout={settings.cardLayout} host={host} style={cardStyle} /></button>
                 : <div key={cell} className="ps-cell"><div style={cardStyle} /></div>;
             })}
           </div>
           <SheetFoot batchName={batchName} page={pageIndex + 1} pages={cardPages.length} detail="Tarjetas · dorsos" />
         </section>}
-      </div>) : settings.tagOutput === "pairs" ? pairPages.map((page, pageIndex) => <section key={pageIndex} className="ps-page ps-pair-page" aria-label={`Hoja ${pageIndex + 1}: frentes y dorsos de chapitas`}>
+      </div>) : settings.tagOutput === "pairs" ? pairPages.map((page, pageIndex) => [pageTools(page, pageIndex, pairPages.length, perPairPage), <section key={pageIndex} className="ps-page ps-pair-page" aria-label={`Hoja ${pageIndex + 1}: frentes y dorsos de chapitas`}>
         <span className="ps-page-label">Hoja {pageIndex + 1} · pares para armado</span>
         <div className="ps-grid ps-pair-grid" style={{ gridTemplateColumns: `repeat(${pairCols}, ${pairWidth}mm)`, gap: `${pairGap}mm` }}>
-          {page.map((item) => <div role="button" tabIndex={0} key={item.id} data-card={item.id} className={`ps-print-pair ps-selectable${previewItem?.id === item.id ? " is-selected" : ""}`} onClick={() => selectItem(item.id)} onKeyDown={(event) => selectItemFromKeyboard(event, item.id)} aria-label={`Seleccionar chapita con código ${item.code}`}>
+          {page.map((item) => <div role="button" tabIndex={0} key={item.id} data-card={item.id} className={`ps-print-pair ps-selectable${isPicked(item.id) ? " is-selected" : ""}`} {...pickProps(item.id)} onKeyDown={(event) => selectItemFromKeyboard(event, item.id)} aria-label={`Seleccionar chapita con código ${item.code}`}>
             <span className="ps-tools">{partnerButton(item)}</span>
             <div className="ps-print-pair-faces">
               {tagArtwork(item, "front", `pair-${pageIndex}`)}
@@ -714,7 +1095,8 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
           </div>)}
         </div>
         <SheetFoot batchName={batchName} page={pageIndex + 1} pages={pairPages.length} detail={`Chapitas Ø ${qrSize} mm · ${layoutLabel}`} />
-      </section>) : qrPages.map((page, pageIndex) => <div key={pageIndex} className="ps-pair ps-tag-pages">
+      </section>]) : qrPages.map((page, pageIndex) => <div key={pageIndex} className="ps-pair ps-tag-pages">
+        {pageTools(page, pageIndex, qrPages.length, perQrPage)}
         {settings.tagSides !== "back" && <section className="ps-page" aria-label={`Hoja ${pageIndex + 1}: frentes de chapitas`}>
           <span className="ps-page-label">Hoja {pageIndex + 1} · frentes</span>
           <div className="ps-grid" style={gridStyle(qrCols, qrSize, qrGap)}>
@@ -739,7 +1121,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
       <div className="ps-modal-box" role="alertdialog" aria-modal="true" aria-labelledby="ps-modal-title" onClick={(event) => event.stopPropagation()}>
         <h3 id="ps-modal-title">{ask.title}</h3>
         <p>{ask.text}</p>
-        <div>
+        <div className={ask.stack ? "is-stack" : undefined}>
           <button type="button" className="ps-modal-cancel" onClick={() => setAsk(null)}>{ask.cancel || "Cancelar"}</button>
           {ask.actions.map((action) => <button key={action.label} type="button" className={action.main ? "ps-modal-ok" : "ps-modal-cancel"} autoFocus={action.main} onClick={() => { action.run(); setAsk(null); }}>{action.label}</button>)}
         </div>

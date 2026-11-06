@@ -4,7 +4,7 @@
 // hablando. Están dibujados en "em": 1em = 1 mm en una tarjeta de 85 mm de ancho, y la letra base
 // crece con el tamaño elegido (print-studio.tsx), así que todo escala junto. Ningún texto queda
 // por debajo de 2,2em (~6 puntos impreso). Estilos en print-studio.css (.pc-*).
-import type { CSSProperties, ReactNode } from "react";
+import { memo, type CSSProperties, type ReactNode } from "react";
 import { LuBone, LuCat, LuDog, LuHeart, LuLock, LuPawPrint, LuSparkles, LuStar } from "react-icons/lu";
 import { LOGO_FONT_FAMILY } from "@/components/bionfc-logo";
 import { unitNumber } from "@/lib/pet-tags";
@@ -141,7 +141,19 @@ export { unitNumber };
 export const unit = (number: number) => `UNIDAD ${unitNumber(number)}`;
 
 // bleed: la tarjeta con sangrado (el fondo sigue 2 mm más por fuera, ver .pc.is-bleed).
-export function CardFront({ design: id, layout = "classic", item, host, style, bleed = false, closed = { width: 85, height: 55 }, fresh = false }: { design: DesignId; layout?: CardLayout; item: PrintItem; host: string; style: CSSProperties; bleed?: boolean; closed?: { width: number; height: number }; fresh?: boolean }) {
+// memo: el estudio arma estilos nuevos en cada dibujo; se comparan por contenido, así una tarjeta
+// solo se redibuja si de verdad le cambió algo.
+const sameCardProps = (a: Record<string, unknown>, b: Record<string, unknown>) => {
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+  for (const key of keys) {
+    const x = a[key], y = b[key];
+    if (x === y) continue;
+    if (x && y && typeof x === "object" && typeof y === "object" && key !== "item" && JSON.stringify(x) === JSON.stringify(y)) continue;
+    return false;
+  }
+  return true;
+};
+export const CardFront = memo(function CardFront({ design: id, layout = "classic", item, host, style, bleed = false, closed = { width: 85, height: 55 }, fresh = false }: { design: DesignId; layout?: CardLayout; item: PrintItem; host: string; style: CSSProperties; bleed?: boolean; closed?: { width: number; height: number }; fresh?: boolean }) {
   const design = designOf(id);
   if (isFlapCard(layout)) {
     const clean = layout === "flap-a";
@@ -212,9 +224,9 @@ export function CardFront({ design: id, layout = "classic", item, host, style, b
       <small>{host}/activar</small>
     </div>
   </article>;
-}
+}, sameCardProps);
 
-export function CardBack({ design: id, host, style, bleed = false }: { design: DesignId; layout?: CardLayout; host: string; style: CSSProperties; bleed?: boolean }) {
+export const CardBack = memo(function CardBack({ design: id, host, style, bleed = false }: { design: DesignId; layout?: CardLayout; host: string; style: CSSProperties; bleed?: boolean }) {
   const design = designOf(id);
   return <article className={`pc pc-${design.id} pc-back${bleed ? " is-bleed" : ""}`} style={style}>
     <Deco items={design.backDeco} />
@@ -226,4 +238,4 @@ export function CardBack({ design: id, host, style, bleed = false }: { design: D
       <li><b><Num n="!" /></b>¿Me perdí? Avisá en {host}/mi</li>
     </ul>
   </article>;
-}
+}, sameCardProps);

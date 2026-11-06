@@ -3,7 +3,7 @@
 // Elegir el animal del frente de una chapita. En el panel se ve el elegido (su carita sobre el
 // color de la chapita) y "Cambiar"; al tocarlo se abre un modal con perros y gatos en pestañas,
 // buscador y las caritas grandes. Las imágenes van achicadas (next/image) para que abra rápido.
-import { useMemo, useRef, useState } from "react";
+import { memo, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { TAG_CATS, TAG_CHARACTERS, TAG_COLORS, TAG_CUSTOM, TAG_DOGS, TAG_GENERIC, isCat, isGenericCharacterId, type TagCharacter, type TagCharacterId } from "./tag-face";
 
@@ -16,17 +16,20 @@ const familyOf = (character: TagCharacter) => "family" in character ? character.
 const coatOf = (character: TagCharacter) => "coat" in character ? character.coat : "";
 const dogFamilyCount = new Set(TAG_DOGS.map(familyOf)).size;
 
-function Face({ id, color, size }: { id: TagCharacterId; color: string; size: number }) {
+export const Face = memo(function Face({ id, color, size }: { id: TagCharacterId; color: string; size: number }) {
   const character = TAG_CHARACTERS.find((item) => item.id === id) || TAG_CHARACTERS[0];
   return <span className="ps-animal-face" style={{ width: size, height: size, background: colorValue(color) }}>
     {/* Miniatura recortada al dibujo (public/pet-tags/thumbs): todas del mismo tamaño y centradas. */}
     <Image src={isGenericCharacterId(character.id) ? character.faceSrc : `/pet-tags/thumbs/${character.id}.png`} alt="" width={size} height={size} />
   </span>;
-}
+});
 
 // value: el elegido para esta unidad ("" = automático); auto: el que le toca si es automático.
-export default function CharacterPicker({ value, auto, color, name, onChange, onChooseGeneric }: { value: TagCharacterId | ""; auto: TagCharacterId; color: string; name: string; onChange: (id: TagCharacterId | "") => void; onChooseGeneric: (id: TagCharacterId) => void }) {
+// mixed: varias chapitas elegidas con animales distintos (se ve "Varios" en vez de uno que no es de todas).
+export default function CharacterPicker({ value, auto, color, name, mixed = false, onChange, onChooseGeneric }: { value: TagCharacterId | ""; auto: TagCharacterId; color: string; name: string; mixed?: boolean; onChange: (id: TagCharacterId | "") => void; onChooseGeneric: (id: TagCharacterId) => void }) {
   const dialog = useRef<HTMLDialogElement>(null);
+  // La grilla (decenas de dibujitos) se arma solo con el modal abierto: si no, se rehacía en cada clic del estudio.
+  const [isOpen, setIsOpen] = useState(false);
   const current = value || auto;
   const [tab, setTab] = useState<Tab>(tabOf(current));
   const [query, setQuery] = useState("");
@@ -51,8 +54,8 @@ export default function CharacterPicker({ value, auto, color, name, onChange, on
     }
     return Array.from(grouped.values());
   }, [list]);
-  const close = () => { setPendingGeneric(null); setPendingFamily(null); dialog.current?.close(); };
-  const open = () => { setTab(tabOf(current)); setQuery(""); setPendingGeneric(null); setPendingFamily(null); dialog.current?.showModal(); };
+  const close = () => { setPendingGeneric(null); setPendingFamily(null); dialog.current?.close(); setIsOpen(false); };
+  const open = () => { setTab(tabOf(current)); setQuery(""); setPendingGeneric(null); setPendingFamily(null); setIsOpen(true); dialog.current?.showModal(); };
   const choose = (id: TagCharacterId | "") => {
     if (id && isGenericCharacterId(id) && name.trim()) {
       setPendingGeneric(id);
@@ -70,11 +73,11 @@ export default function CharacterPicker({ value, auto, color, name, onChange, on
   return <>
     <button type="button" className="ps-animal-trigger" onClick={open}>
       <Face id={current} color={color} size={46} />
-      <span><b>{label}</b><small>{value ? "Elegido a mano" : "Automático"}</small></span>
+      <span><b>{mixed ? "Varios animales" : label}</b><small>{mixed ? "Elegí uno para todas" : value ? "Elegido a mano" : "Automático"}</small></span>
       <em>Cambiar</em>
     </button>
-    <dialog ref={dialog} className="ps-animal-dialog" onClick={(event) => { if (event.target === dialog.current) close(); }}>
-      <div className="ps-animal-box">
+    <dialog ref={dialog} className="ps-animal-dialog" onClose={() => setIsOpen(false)} onClick={(event) => { if (event.target === dialog.current) close(); }}>
+      {isOpen && <div className="ps-animal-box">
         <header>
           <div><strong>Elegí el animal</strong><small>Se ve en el frente de la chapita, con su color.</small></div>
           <button type="button" className="ps-animal-close" aria-label="Cerrar" onClick={close}>✕</button>
@@ -121,7 +124,7 @@ export default function CharacterPicker({ value, auto, color, name, onChange, on
           {!list.length && <p className="ps-animal-empty">No hay ninguna raza con ese nombre.</p>}
           </>}
         </div>
-      </div>
+      </div>}
     </dialog>
   </>;
 }

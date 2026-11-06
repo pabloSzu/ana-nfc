@@ -445,7 +445,7 @@
 .ps-partner i { font-style: normal; transition: transform .15s; }
 .ps-partner:hover i { transform: translateX(3px); }
 @keyframes ps-flash { 0%, 100% { outline-color: #4b6bff; outline-offset: 2px; } 30%, 70% { outline-color: #4b6bff; outline-offset: 7px; outline-width: 4px; } }
-@media screen { .ps-selectable.is-selected.is-flash { animation: ps-flash .5s ease-in-out 2; } }
+@media screen { .ps-selectable.is-flash { animation: ps-flash .5s ease-in-out 2; } }
 
 /* Confirmación (modal). */
 .ps-modal { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 16px; background: #1d213066; backdrop-filter: blur(3px); animation: ps-modal-in .15s ease-out; }
@@ -653,3 +653,71 @@ html:has(.ps)::-webkit-scrollbar, body:has(.ps)::-webkit-scrollbar { display: no
 .ps-tag.is-light :is(text, g)[fill="#fff"][stroke] { stroke: #fff; stroke-opacity: .9; }
 .ps-tag.is-light g[stroke="#fff"] { stroke: #1d2130; }
 .ps-light-note { color: #7a5a14; font-size: 11.5px; font-weight: 700; }
+
+/* Varias a la vez: herramientas arriba de cada hoja y el editor de varias. */
+.ps-page-actions { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; margin-bottom: -14px; }
+.ps-page-actions > span { margin-right: auto; color: #5b6170; font: 800 13px/1.2 system-ui, sans-serif; }
+.ps-page-actions button { padding: 4px 10px; border: 1px solid #d8dbe6; border-radius: 999px; background: #fff; color: #3a3f52; font: 700 11.5px/1.2 system-ui, sans-serif; cursor: pointer; }
+.ps-page-actions button:hover { border-color: #6a45e0; color: #4b31f0; }
+.ps-page-actions .is-fill { border-color: #6a45e0; background: #6a45e0; color: #fff; }
+.ps-page-actions .is-fill:hover { background: #5536c9; color: #fff; }
+.ps-page-actions button:disabled { opacity: .6; cursor: wait; }
+.ps-selectable { -webkit-user-select: none; user-select: none; }
+.ps.is-multi .is-selected > .ps-tools { opacity: 0; }
+.ps.is-multi .ps-print-pair:hover > .ps-tools, .ps.is-multi .ps-tag-cell:hover > .ps-tools { opacity: 1; }
+@media print { .ps-page-actions { display: none !important; } }
+
+/* Barra de arriba de las hojas: deshacer / rehacer y lo elegido. Queda pegada arriba al bajar. */
+.ps-sheets { position: relative; }
+.ps-sheet-bar { position: sticky; top: 10px; z-index: 40; justify-self: center; display: flex; align-items: center; gap: 12px; margin-bottom: -10px; padding: 6px 8px; border: 1px solid #d5d8e0; border-radius: 999px; background: #ffffffeb; box-shadow: 0 6px 20px #1d213022; backdrop-filter: blur(6px); font: 600 13px/1.2 system-ui, sans-serif; }
+.ps-history { display: flex; gap: 4px; }
+.ps-history button { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 0; border-radius: 999px; background: #f1f2f6; color: #1d2130; font: 800 16px/1 system-ui, sans-serif; cursor: pointer; }
+.ps-history button span { font-size: 12.5px; font-weight: 700; }
+.ps-history button:hover:not(:disabled) { background: #e5e1ff; color: #3a2bc4; }
+.ps-history button:disabled { opacity: .4; cursor: default; }
+.ps-sheet-bar p { display: flex; align-items: center; gap: 8px; margin: 0 6px 0 0; color: #3a2bc4; }
+.ps-sheet-bar p.ps-sheet-tip { color: #6b7080; font-weight: 600; }
+.ps-sheet-bar p button { padding: 5px 10px; border: 1px solid #cfc6ff; border-radius: 999px; background: #fff; color: #3a2bc4; font: 700 12px/1 system-ui, sans-serif; cursor: pointer; }
+.ps kbd { margin-left: 4px; padding: 1px 5px; border: 1px solid #cfc6ff; border-radius: 5px; background: #f7f5ff; font: 700 10px/1.3 system-ui, sans-serif; }
+/* El recuadro del mouse. */
+.ps-band { position: absolute; z-index: 45; top: 0; left: 0; border: 1.5px solid #4b6bff; border-radius: 4px; background: #4b6bff1a; pointer-events: none; will-change: transform, width, height; }
+.ps-sheets.is-banding { cursor: crosshair; -webkit-user-select: none; user-select: none; }
+.ps-sheets.is-banding .ps-selectable { cursor: crosshair; transition: none; }
+.ps-sheets.is-banding .ps-selectable:hover { filter: none; outline-color: transparent; }
+.ps-sheets.is-banding .ps-tools, .ps-sheets.is-banding .ps-style { opacity: 0 !important; transition: none; }
+/* Mientras se arrastra: las que toca el recuadro (sin Ctrl, lo elegido antes deja de marcarse). */
+@media screen {
+  .ps-sheets.is-band-fresh .ps-selectable.is-selected { outline-color: transparent; }
+  .ps-sheets.is-banding .ps-selectable.is-band-hit { outline: 2px solid #4b6bff; outline-offset: 2px; background-color: #4b6bff12; }
+}
+@media print { .ps-sheet-bar, .ps-band { display: none !important; } }
+
+/* Panel con varias elegidas. */
+.ps-multi-summary { display: grid; gap: 10px; padding: 12px; border-radius: 12px; background: #f1edff; color: #3a2bc4; }
+.ps-multi-summary > p { margin: 0; font-size: 14px; }
+.ps-multi-summary > p span { color: #5b52a8; font-size: 12.5px; font-weight: 600; }
+.ps-multi-faces { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.ps-multi-faces button { display: grid; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; }
+.ps-multi-faces button:hover { outline: 2px solid #4b6bff; outline-offset: 1px; }
+.ps-multi-faces > span { padding: 0 6px; font-size: 12px; font-weight: 800; }
+.ps-multi-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.ps-multi-actions button, .ps-quick-mixes button, .ps-mix-colors { padding: 6px 11px; border: 1px solid #cfc6ff; border-radius: 999px; background: #fff; color: #3a2bc4; font: 700 12px/1.1 system-ui, sans-serif; cursor: pointer; }
+.ps-multi-actions button:hover, .ps-quick-mixes button:hover, .ps-mix-colors:hover { border-color: #6a45e0; background: #f7f5ff; }
+.ps-multi-note { margin: 0; color: #5b6170; font-size: 12.5px; line-height: 1.4; }
+.ps-mixed { color: #8a7cf0; font-style: normal; font-weight: 700; text-transform: none; letter-spacing: 0; }
+.ps-quick-animals { display: grid; gap: 8px; }
+.ps-quick-animals > small { color: #6b7080; font-size: 11.5px; font-weight: 700; }
+.ps-quick-faces { display: flex; flex-wrap: wrap; gap: 6px; }
+.ps-quick-faces button { display: grid; padding: 2px; border: 2px solid transparent; border-radius: 50%; background: none; cursor: pointer; }
+.ps-quick-faces button:hover { border-color: #b9c8ff; }
+.ps-quick-faces button.is-on { border-color: #4b6bff; }
+.ps-quick-mixes { display: flex; flex-wrap: wrap; gap: 6px; }
+.ps-quick-mixes button.is-on { border-color: #4b6bff; background: #4b6bff; color: #fff; }
+.ps-mix-colors { display: inline-flex; align-items: center; gap: 8px; justify-self: start; }
+.ps-mix-colors span { width: 16px; height: 16px; border-radius: 50%; }
+
+/* Con varias elegidas se resalta el editor (el panel baja solo hasta él). */
+.ps.is-multi .ps-panel > .ps-personalize { border-color: #8a7cf0; box-shadow: 0 8px 26px #6a45e026; }
+.ps-modal-box > div.is-stack { flex-direction: column; align-items: stretch; }
+.ps-modal-box > div.is-stack button { text-align: left; }
+.ps-modal-box > div.is-stack > .ps-modal-cancel:first-child { order: 1; border-color: transparent; text-align: center; }

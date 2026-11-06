@@ -3,6 +3,7 @@
 // aparece acá: va únicamente en la tarjeta del paquete.
 // Los colores lisos son lo bastante oscuros para que el texto blanco chico se lea impreso
 // (contraste de 4,5:1 o más). En los arcoíris, las letras se leen por su borde oscuro (EDGE).
+import { memo } from "react";
 import type { DesignId } from "./card-designs";
 
 export const TAG_COLORS = [
@@ -199,6 +200,10 @@ function VectorQrImage({ qr, x, y, size }: { qr: VectorQr; x: number; y: number;
   </svg>;
 }
 
+// Los dibujos van en vector (public/pet-tags/vector, sacados de los PNG con el mismo nombre): en el
+// PDF salen como curvas, tan nítidos como el QR. Los PNG quedan para las miniaturas del estudio.
+const vector = (src: string) => src.replace(/^\/pet-tags\//, "/pet-tags/vector/").replace(/\.png$/, ".svg");
+
 const EDGE = { stroke: "#151826", strokeOpacity: .72, strokeLinejoin: "round" as const };
 const WAVES = <><path d="M 0,2.3 A 2.2,2.2 0 0 1 0,5.7" /><path d="M 2.2,1.1 A 4,4 0 0 1 2.2,6.9" /><path d="M 4.4,0 A 5.8,5.8 0 0 1 4.4,8" /></>;
 
@@ -218,7 +223,8 @@ function BrandPill({ y = 83.8, small = false }: { y?: number; small?: boolean })
   </>;
 }
 
-export function TagFront({ id, diameter, color, character, name = "", hole = false, design = "classic" }: { id: string; diameter: number; color: string; character: TagCharacterId; name?: string; hole?: boolean; design?: TagFrontStyle }) {
+// memo: en el estudio hay cientos; así solo se redibuja la que cambió (elegir, colores, recuadro).
+export const TagFront = memo(function TagFront({ id, diameter, color, character, name = "", hole = false, design = "classic" }: { id: string; diameter: number; color: string; character: TagCharacterId; name?: string; hole?: boolean; design?: TagFrontStyle }) {
   const animal = TAG_CHARACTERS.find((item) => item.id === character) || TAG_CHARACTERS[0];
   const cleanName = tagNameText(name);
   const size = nameSize(cleanName);
@@ -258,11 +264,11 @@ export function TagFront({ id, diameter, color, character, name = "", hole = fal
       <rect x="19" y={55 + petOffset} width="62" height="17" rx="7.5" fill="#fff" stroke="#171717" strokeWidth="1.1" />
       {/* La versión limpia (public/pet-tags/named): sin franjas ni aire alrededor, así todos los
           animales llenan la misma caja y apoyan las patas en la placa. */}
-      <image href={`/pet-tags/named/${animal.id}.png`} x="28" y={23 + petOffset} width="44" height="35" preserveAspectRatio="xMidYMax meet" />
+      <image href={vector(`/pet-tags/named/${animal.id}.png`)} x="28" y={23 + petOffset} width="44" height="35" preserveAspectRatio="xMidYMax meet" />
       <text x="50" y={64.6 + size * .35 + petOffset} textAnchor="middle" fill="#1d1a18" fontFamily="Poppins, Arial, sans-serif" fontSize={size} fontWeight="800" {...(squeeze ? { textLength: NAME_MAX_WIDTH, lengthAdjust: "spacingAndGlyphs" } : {})}>{cleanName}</text>
     </> : <>
       {/* Las de stock usan una ilustración creada como cabeza aislada: no es un recorte del personaje con patas. */}
-      <image href={animal.faceSrc} x="18" y={22 + petOffset} width="64" height="54" preserveAspectRatio="xMidYMid meet" />
+      <image href={vector(animal.faceSrc)} x="18" y={22 + petOffset} width="64" height="54" preserveAspectRatio="xMidYMid meet" />
     </>}
     {(design === "brand" || design === "test1") && <BrandPill />}
     {design === "test2" && <g transform="translate(38 79)"><rect width="24" height="7" rx="3.5" fill="#ffffffdd" /><text x="12" y="5" textAnchor="middle" fill="#3045a4" fontFamily="Poppins, Arial, sans-serif" fontSize="3.7" fontWeight="800" letterSpacing=".35">CON NFC</text></g>}
@@ -285,9 +291,9 @@ export function TagFront({ id, diameter, color, character, name = "", hole = fal
     </>}
     </g>
   </svg>;
-}
+});
 
-export function TagBack({ id, qr, diameter, color, design, hole = false }: { id: string; qr: VectorQr; diameter: number; color: string; design: TagBackStyle; hole?: boolean }) {
+export const TagBack = memo(function TagBack({ id, qr, diameter, color, design, hole = false }: { id: string; qr: VectorQr; diameter: number; color: string; design: TagBackStyle; hole?: boolean }) {
   const bottom = `tag-back-bottom-${id}`;
   // Debajo de 30 mm se agrega margen de seguridad interno para tolerar el corte real. La matriz
   // nueva de 25×25 conserva módulos más grandes aun con este pequeño repliegue del contenido.
@@ -310,7 +316,7 @@ export function TagBack({ id, qr, diameter, color, design, hole = false }: { id:
     <rect x="11" y="31.2" width="38" height="38" rx="5.5" fill="#fff" />
     <VectorQrImage qr={qr} x={12.5} y={32.7} size={35} />
     <circle cx="69.5" cy="50.2" r="16" fill="#fff" />
-    <image href="/pet-tags/tap-phone-bold.png" x="57.3" y="39.4" width="24.4" height="21.5" />
+    <image href="/pet-tags/vector/tap-phone-bold.svg" x="57.3" y="39.4" width="24.4" height="21.5" />
     <text x="50" y="80.4" textAnchor="middle" fontSize="5.2" letterSpacing=".1" {...ink}>Y AVISALE A MI FAMILIA</text>
     </g>
   </svg>;
@@ -325,7 +331,7 @@ export function TagBack({ id, qr, diameter, color, design, hole = false }: { id:
     <text x="50" y="27" textAnchor="middle" fontSize="5.1" {...ink}>O</text>
     <text x="71" y="27" textAnchor="middle" fontSize="5.4" letterSpacing=".15" {...ink}>ESCANEÁ</text>
     <circle cx="29.5" cy="50.2" r="16" fill="#fff" />
-    <image href="/pet-tags/tap-phone-bold.png" x="17.3" y="39.4" width="24.4" height="21.5" />
+    <image href="/pet-tags/vector/tap-phone-bold.svg" x="17.3" y="39.4" width="24.4" height="21.5" />
     <rect x="50.5" y="29.7" width="41" height="41" rx="5.8" fill="#fff" />
     <VectorQrImage qr={qr} x={51.9} y={31.1} size={38.2} />
     <text x="50" y="80.4" textAnchor="middle" fontSize="5.2" letterSpacing=".1" {...ink}>Y AVISALE A MI FAMILIA</text>
@@ -344,7 +350,7 @@ export function TagBack({ id, qr, diameter, color, design, hole = false }: { id:
     <rect x="9" y="29.7" width="41" height="41" rx="5.8" fill="#fff" />
     <VectorQrImage qr={qr} x={10.4} y={31.1} size={38.2} />
     <circle cx="69.5" cy="50.2" r="16" fill="#fff" />
-    <image href="/pet-tags/tap-phone-bold.png" x="57.3" y="39.4" width="24.4" height="21.5" />
+    <image href="/pet-tags/vector/tap-phone-bold.svg" x="57.3" y="39.4" width="24.4" height="21.5" />
     <text x="50" y="80.4" textAnchor="middle" fontSize="5.2" letterSpacing=".1" {...ink}>Y AVISALE A MI FAMILIA</text>
     </g>
   </svg>;
@@ -377,4 +383,4 @@ export function TagBack({ id, qr, diameter, color, design, hole = false }: { id:
     <text fontSize="5.2" letterSpacing=".3" {...ink}><textPath href={`#${bottom}`} startOffset="50%" textAnchor="middle">Y AVISALE A MI FAMILIA</textPath></text>
     </g>
   </svg>;
-}
+});
