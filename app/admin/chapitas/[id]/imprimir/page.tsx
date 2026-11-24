@@ -3,9 +3,8 @@ import { notFound, redirect } from "next/navigation";
 import { getSiteOrigin, isLocalSite } from "@/lib/site-url";
 import { activationPath, formatCode, shortTagCode, shortTagQrUrl, shortTagRange } from "@/lib/pet-tags";
 import { createAdminClient } from "@/lib/supabase/admin";
-import QRCode from "qrcode";
-import PrintStudio, { type PrintItem } from "./print-studio";
-import { cleanTagPrint, type VectorQr } from "./tag-face";
+import PrintStudio, { type PrintSource } from "./print-studio";
+import { cleanTagPrint } from "./tag-face";
 import "./print-studio.css";
 
 // Imprimir el material de un lote (solo las chapitas sin activar):
@@ -30,35 +29,20 @@ export default async function PrintBatch({ params, searchParams }: { params: Pro
   const origin = getSiteOrigin();
   // El QR del dorso usa el link corto (/q/…). Si otra chapita empezara con el mismo código
   // (casi imposible), esa sale con el link largo de siempre.
+  // Antes era una consulta por chapita (con 96, ~1 s): ahora una por tanda de 40, y se cuenta acá.
   const admin = createAdminClient();
-  const isUnique = async (id: string) => {
-    const [from, to] = shortTagRange(shortTagCode(id))!;
-    const { count, error } = await admin.from("landings").select("id", { count: "exact", head: true }).not("batch_id", "is", null).gte("id", from).lte("id", to);
-    return !error && count === 1;
-  };
-  // Los QR se generan en el servidor: la impresión no depende de un tercero ni manda los enlaces
-  // (el de activación tiene un secreto de un solo uso) fuera de BIONFC.
-  const qr = (text: string) => QRCode.toDataURL(text, { width: 480, margin: 0, errorCorrectionLevel: "M", color: { dark: "#1d1410", light: "#00000000" } });
-  // El QR de la chapita viaja al cliente como un único path SVG serializable. No se pixela en el
-  // PDF ni al escalarlo y evita cientos de <rect> por cada unidad de la hoja.
-  const vectorQr = (text: string): VectorQr => {
-    const matrix = QRCode.create(text, { errorCorrectionLevel: "M" }).modules;
-    const path: string[] = [];
-    for (let y = 0; y < matrix.size; y += 1) {
-      let start = -1;
-      for (let x = 0; x <= matrix.size; x += 1) {
-        const dark = x < matrix.size && Boolean(matrix.data[y * matrix.size + x]);
-        if (dark && start < 0) start = x;
-        if (!dark && start >= 0) {
-          const width = x - start;
-          path.push(`M${start} ${y}h${width}v1h-${width}z`);
-          start = -1;
-        }
-      }
-    }
-    return { modules: matrix.size, path: path.join("") };
-  };
-  const items: PrintItem[] = await Promise.all((tags || []).map(async (tag) => {
+  const sharing = new Map<string, number>();
+  let checked = true;
+  for (let start = 0; start < ids.length; start += 40) {
+    const ranges = ids.slice(start, start + 40).map((tagId) => shortTagRange(shortTagCode(tagId))!);
+    const { data: hits, error } = await admin.from("landings").select("id").not("batch_id", "is", null).or(ranges.map(([from, to]) => `and(id.gte.${from},id.lte.${to})`).join(","));
+    if (error) { checked = false; break; }
+    for (const hit of hits || []) sharing.set(shortTagCode(hit.id), (sharing.get(shortTagCode(hit.id)) || 0) + 1);
+  }
+  const isUnique = (tagId: string) => checked && sharing.get(shortTagCode(tagId)) === 1;
+  // Solo los links: los QR (en vector) los dibuja el navegador (qr-vector.ts). Mandarlos ya
+  // dibujados hacía la página pesada y lenta de armar.
+  const items: PrintSource[] = (tags || []).map((tag) => {
     const code = codeOf.get(tag.id) || "";
     return {
       id: tag.id,
@@ -66,12 +50,12 @@ export default async function PrintBatch({ params, searchParams }: { params: Pro
       code: code ? formatCode(code) : "",
       // Lo elegido para imprimir esta unidad (nombre, animal, color), guardado en la chapita.
       print: cleanTagPrint(tag.button_style && typeof tag.button_style === "object" ? (tag.button_style as { print?: unknown }).print : null),
-      activationQr: code ? await qr(`${origin}${activationPath(code)}`) : "",
+      activationUrl: code ? `${origin}${activationPath(code)}` : "",
       // El de la chapita: va dentro de un cuadrado blanco (tag-face.tsx), que ya le da el margen
       // que necesitan los celulares para leerlo.
-      tagQr: vectorQr(await isUnique(tag.id) ? shortTagQrUrl(origin, tag.id) : `${origin.toUpperCase()}/go/${tag.id.toUpperCase()}?s=qr`),
+      tagUrl: isUnique(tag.id) ? shortTagQrUrl(origin, tag.id) : `${origin.toUpperCase()}/go/${tag.id.toUpperCase()}?s=qr`,
     };
-  }));
+  });
 
   return <PrintStudio batchId={batch.id} batchName={batch.name} items={items} host={new URL(origin).host} isLocal={isLocalSite(origin)} initialMode={que === "tarjetas" ? "cards" : "qr"} />;
 }

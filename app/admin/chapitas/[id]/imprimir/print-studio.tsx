@@ -10,17 +10,29 @@
 //  · QR de las chapitas: el tamaño en mm se elige según la chapita.
 // Las opciones generales quedan guardadas en esta compu; lo de cada unidad (nombre, animal y color)
 // se guarda en la chapita misma (actions.ts), así no se pierde ni lo pisa otra pestaña.
-import { useEffect, useRef, useState, type ClipboardEvent, type CSSProperties, type KeyboardEvent, type MouseEvent, type PointerEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ClipboardEvent, type CSSProperties, type KeyboardEvent, type MouseEvent, type PointerEvent } from "react";
+import { flushSync } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LuPrinter } from "react-icons/lu";
 import { tagCutContourSvg } from "@/lib/pet-tags";
 import { CardBack, CardFront, DESIGN_ANIMAL, DESIGNS, FLAP_LIMITS, FLAP_WIDTH, DESIGN_GROUPS, autoCardDesign, designClash, designLabel, designSays, isFlapCard, unit, unitNumber, type CardAnimal, type CardLayout, type DesignId } from "./card-designs";
-import { cleanTagPrint, isCat, isGenericCharacterId, TagBack, TagFront, isLightTagColor, TAG_CATS, TAG_CHARACTERS, TAG_COLORS, TAG_CUSTOM, TAG_DOGS, TAG_GENERIC, tagCharacterFor, type TagCharacterChoice, type TagCharacterId, type TagFrontStyle, type TagPrint, type VectorQr } from "./tag-face";
+import { cleanTagPrint, isCat, isGenericCharacterId, TagBack, TagFront, isLightTagColor, TAG_CATS, TAG_CHARACTERS, TAG_COLORS, TAG_CUSTOM, TAG_DOGS, TAG_GENERIC, tagCharacterFor, type TagCharacterChoice, type TagCharacterId, type TagFrontStyle, type TagPrint, type VectorQr, vector } from "./tag-face";
 import { addTagsToBatch, saveTagPrint, saveTagPrints } from "./actions";
 import CharacterPicker, { Face } from "./character-picker";
+import { qrImage, vectorQr } from "./qr-vector";
 
+// Lo que manda el servidor (solo los links) y lo que usa el estudio (con los QR ya armados acá).
+export type PrintSource = { id: string; number: number; code: string; activationUrl: string; tagUrl: string; print: TagPrint };
 export type PrintItem = { id: string; number: number; code: string; activationQr: string; tagQr: VectorQr; print: TagPrint };
+// Por link: al sumar chapitas ("Completar hoja") solo se arman los QR nuevos.
+const qrCache = new Map<string, { activationQr: string; tagQr: VectorQr }>();
+const withQr = ({ activationUrl, tagUrl, ...item }: PrintSource): PrintItem => {
+  const key = `${activationUrl}\n${tagUrl}`;
+  let qr = qrCache.get(key);
+  if (!qr) { qr = { activationQr: activationUrl ? qrImage(activationUrl) : "", tagQr: vectorQr(tagUrl) }; qrCache.set(key, qr); }
+  return { ...item, ...qr };
+};
 type Mode = "cards" | "qr";
 type Settings = {
   design: DesignId;
@@ -114,7 +126,8 @@ function SheetFoot({ batchName, page, pages, detail }: { batchName: string; page
   </footer>;
 }
 
-export default function PrintStudio({ batchId, batchName, items, host, isLocal = false, initialMode }: { batchId: string; batchName: string; items: PrintItem[]; host: string; isLocal?: boolean; initialMode: Mode }) {
+export default function PrintStudio({ batchId, batchName, items: sources, host, isLocal = false, initialMode }: { batchId: string; batchName: string; items: PrintSource[]; host: string; isLocal?: boolean; initialMode: Mode }) {
+  const items = useMemo(() => sources.map(withQr), [sources]);
   const [mode, setMode] = useState<Mode>(initialMode);
   const [settings, setSettings] = useState<Settings>(() => ({ ...DEFAULTS, ...unitsOf(items) }));
   const [previewId, setPreviewId] = useState(items[0]?.id || "");
@@ -488,7 +501,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
   const justBanded = useRef(false);
   const startBand = (event: PointerEvent<HTMLElement>) => {
     if (event.pointerType !== "mouse" || event.button !== 0 || event.shiftKey) return;
-    if ((event.target as HTMLElement).closest(".ps-tools, .ps-style, .ps-page-actions, .ps-sheet-bar, .ps-tag-overview, a, input, select")) return;
+    if ((event.target as HTMLElement).closest(".ps-tools, .ps-style, .ps-page-actions, .ps-sheet-row, .ps-tag-overview, a, input, select")) return;
     const area = sheetsRef.current;
     if (!area) return;
     const rect = area.getBoundingClientRect();
@@ -575,6 +588,33 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
     window.addEventListener("pointerup", up);
     window.addEventListener("pointercancel", up);
     return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); window.removeEventListener("pointercancel", up); cancelAnimationFrame(frame); cancelAnimationFrame(queued); };
+  }, []);
+  // Imprimir con los dibujos en vector (en pantalla van los PNG, ver `vector` en tag-face.tsx):
+  // primero se bajan y procesan los SVG que usa la hoja, después se cambia a vector y recién ahí se
+  // abre la impresión. Al cerrarla vuelve a los PNG. Ctrl+P hace lo mismo que el botón.
+  const [printArt, setPrintArt] = useState(false);
+  const [preparingPrint, setPreparingPrint] = useState(false);
+  const printNow = async () => {
+    if (preparingPrint) return;
+    setPreparingPrint(true);
+    const pngs = new Set([...(sheetsRef.current?.querySelectorAll("image") || [])].map((image) => image.getAttribute("href") || "").filter((href) => /^\/pet-tags\/.*\.png$/.test(href)));
+    await Promise.all([...pngs].map((png) => { const image = new Image(); image.src = vector(png); return image.decode().catch(() => undefined); }));
+    flushSync(() => setPrintArt(true));
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    setPreparingPrint(false);
+    window.print();
+  };
+  const printRef = useRef(printNow);
+  useEffect(() => { printRef.current = printNow; });
+  useEffect(() => {
+    const key = (event: globalThis.KeyboardEvent) => { if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "p") { event.preventDefault(); printRef.current(); } };
+    // Si igual se imprime por otro lado (menú del navegador), al menos se cambia a vector.
+    const before = () => flushSync(() => setPrintArt(true));
+    const after = () => setPrintArt(false);
+    window.addEventListener("keydown", key);
+    window.addEventListener("beforeprint", before);
+    window.addEventListener("afterprint", after);
+    return () => { window.removeEventListener("keydown", key); window.removeEventListener("beforeprint", before); window.removeEventListener("afterprint", after); };
   }, []);
   const inOrderRef = useRef(inOrder);
   useEffect(() => { inOrderRef.current = inOrder; });
@@ -780,7 +820,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
   };
   const tagArtwork = (item: PrintItem, side: "front" | "back", suffix: string) => <div className="ps-tag-ring">
     {side === "front"
-      ? <TagFront design={frontStyle} id={`${item.id}-${suffix}-front`} diameter={qrSize} color={colorOf(item)} character={characterOf(item)} name={settings.tagNames[item.id] || ""} hole={settings.tagHole} />
+      ? <TagFront design={frontStyle} id={`${item.id}-${suffix}-front`} diameter={qrSize} color={colorOf(item)} character={characterOf(item)} name={settings.tagNames[item.id] || ""} hole={settings.tagHole} vectorArt={printArt} />
       : <TagBack id={`${item.id}-${suffix}-back`} qr={item.tagQr} diameter={qrSize} color={colorOf(item)} design={tagBackDesign(settings.tagLayout)} hole={settings.tagHole} />}
     {settings.tagCutGuides && <svg className="ps-cut-contour" viewBox="0 0 100 100" width={`${qrSize}mm`} height={`${qrSize}mm`} overflow="visible" aria-hidden="true">
       <g id={`CUT_CONTOUR-${item.id}-${suffix}-${side}`} fill="none" stroke="#ff00ff" strokeWidth=".01mm">
@@ -1059,13 +1099,13 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
 
       <div className="ps-print-dock">
         <div className="ps-print-summary"><div><strong>{paper} · {items.length} {items.length === 1 ? "unidad" : "unidades"}</strong><small>{pageCount} {pageCount === 1 ? "página" : "páginas"}{mode === "qr" && settings.tagOutput === "pairs" ? " · frente y dorso juntos" : ""}</small></div>{mode === "cards" ? <span className="is-warn">Códigos privados</span> : <span className="is-ready">Listo para imprimir</span>}</div>
-        <button type="button" className="btn full ps-print" onClick={() => window.print()} disabled={!items.length}><LuPrinter aria-hidden="true" /> Imprimir o guardar PDF</button>
+        <button type="button" className="btn full ps-print" onClick={printNow} disabled={!items.length || preparingPrint}><LuPrinter aria-hidden="true" /> {preparingPrint ? "Preparando la impresión…" : "Imprimir o guardar PDF"}</button>
         {mode === "qr" && <button type="button" className="ps-next-step" onClick={() => setMode("cards")}>Siguiente: <b>2</b> Tarjetas <i aria-hidden="true">→</i></button>}
       </div>
     </aside>
 
     <main ref={sheetsRef} className={`ps-sheets${single ? " is-single" : ""}`} onPointerDown={startBand} onDragStart={(event) => event.preventDefault()}>
-      {!!items.length && <div className="ps-sheet-bar">
+      {!!items.length && <div className="ps-sheet-row"><div className="ps-sheet-bar">
         <div className="ps-history">
           <button type="button" title="Deshacer (Ctrl+Z)" aria-label="Deshacer" disabled={!historySize.past} onClick={undo}>↶<span>Deshacer</span></button>
           <button type="button" title="Rehacer (Ctrl+Y)" aria-label="Rehacer" disabled={!historySize.future} onClick={redo}>↷<span>Rehacer</span></button>
@@ -1073,7 +1113,7 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
         {multi
           ? <p><b>{pickedItems.length} elegidas</b><button type="button" onClick={collapsePick}>Soltar <kbd>Esc</kbd></button></p>
           : <p className="ps-sheet-tip">Arrastrá sobre la hoja para elegir varias</p>}
-      </div>}
+      </div></div>}
       <div ref={bandRef} className="ps-band" hidden />
       {!items.length && <p className="ps-empty">Todas las chapitas de este lote ya están activadas: no hay nada para imprimir.</p>}
       {mode === "qr" && previewItem && <section className="ps-tag-overview" aria-label={`Vista del código ${previewItem.code}`}>

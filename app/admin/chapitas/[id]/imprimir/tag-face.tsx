@@ -203,9 +203,11 @@ function VectorQrImage({ qr, x, y, size }: { qr: VectorQr; x: number; y: number;
   </svg>;
 }
 
-// Los dibujos van en vector (public/pet-tags/vector, sacados de los PNG con el mismo nombre): en el
-// PDF salen como curvas, tan nítidos como el QR. Los PNG quedan para las miniaturas del estudio.
-const vector = (src: string) => src.replace(/^\/pet-tags\//, "/pet-tags/vector/").replace(/\.png$/, ".svg");
+// Al imprimir, los dibujos van en vector (public/pet-tags/vector, sacados de los PNG con el mismo
+// nombre): en el PDF salen como curvas, tan nítidos como el QR. En pantalla van los PNG: cada SVG
+// pesa ~1 MB y Chrome los procesa en el hilo de la página (con 96 chapitas, ~3,5 s y unas 20
+// trabas al abrir). El estudio pasa vectorArt recién al imprimir (print-studio.tsx).
+export const vector = (src: string) => src.replace(/^\/pet-tags\//, "/pet-tags/vector/").replace(/\.png$/, ".svg");
 
 const EDGE = { stroke: "#151826", strokeOpacity: .72, strokeLinejoin: "round" as const };
 const WAVES = <><path d="M 0,2.3 A 2.2,2.2 0 0 1 0,5.7" /><path d="M 2.2,1.1 A 4,4 0 0 1 2.2,6.9" /><path d="M 4.4,0 A 5.8,5.8 0 0 1 4.4,8" /></>;
@@ -227,8 +229,10 @@ function BrandPill({ y = 83.8, small = false }: { y?: number; small?: boolean })
 }
 
 // memo: en el estudio hay cientos; así solo se redibuja la que cambió (elegir, colores, recuadro).
-export const TagFront = memo(function TagFront({ id, diameter, color, character, name = "", hole = false, design = "classic" }: { id: string; diameter: number; color: string; character: TagCharacterId; name?: string; hole?: boolean; design?: TagFrontStyle }) {
+// vectorArt: dibujos en vector (solo al imprimir, ver `vector`).
+export const TagFront = memo(function TagFront({ id, diameter, color, character, name = "", hole = false, design = "classic", vectorArt = false }: { id: string; diameter: number; color: string; character: TagCharacterId; name?: string; hole?: boolean; design?: TagFrontStyle; vectorArt?: boolean }) {
   const animal = TAG_CHARACTERS.find((item) => item.id === character) || TAG_CHARACTERS[0];
+  const art = vectorArt ? vector : (src: string) => src;
   const cleanName = tagNameText(name);
   const size = nameSize(cleanName);
   const contentTransform = diameter < 30 ? "translate(3 3) scale(.94)" : undefined;
@@ -270,11 +274,11 @@ export const TagFront = memo(function TagFront({ id, diameter, color, character,
       {/* La versión limpia (public/pet-tags/named): sin franjas ni aire alrededor, así todos los
           animales llenan la misma caja y apoyan las patas en la placa. La caja usa casi todo el
           ancho de la placa (antes 44×35 y el animal quedaba chiquito al lado de la carita sola). */}
-      <image href={vector(`/pet-tags/named/${animal.id}.png`)} x="20" y={22 + petOffset} width="60" height="38" preserveAspectRatio="xMidYMax meet" />
+      <image href={art(`/pet-tags/named/${animal.id}.png`)} x="20" y={22 + petOffset} width="60" height="38" preserveAspectRatio="xMidYMax meet" />
       <text x="50" y={65.6 + size * .35 + petOffset} textAnchor="middle" fill="#1d1a18" fontFamily="Poppins, Arial, sans-serif" fontSize={size} fontWeight="800" {...(squeeze ? { textLength: NAME_MAX_WIDTH, lengthAdjust: "spacingAndGlyphs" } : {})}>{cleanName}</text>
     </> : <>
       {/* Las de stock usan una ilustración creada como cabeza aislada: no es un recorte del personaje con patas. */}
-      <image href={vector(animal.faceSrc)} x="18" y={22 + petOffset} width="64" height="54" preserveAspectRatio="xMidYMid meet" />
+      <image href={art(animal.faceSrc)} x="18" y={22 + petOffset} width="64" height="54" preserveAspectRatio="xMidYMid meet" />
     </>}
     {(design === "brand" || design === "test1") && <BrandPill />}
     {design === "test2" && <g transform="translate(38 79)"><rect width="24" height="7" rx="3.5" fill="#ffffffdd" /><text x="12" y="5" textAnchor="middle" fill="#3045a4" fontFamily="Poppins, Arial, sans-serif" fontSize="3.7" fontWeight="800" letterSpacing=".35">CON NFC</text></g>}

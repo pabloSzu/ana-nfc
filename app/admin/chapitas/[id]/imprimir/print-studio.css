@@ -669,7 +669,7 @@ html:has(.ps)::-webkit-scrollbar, body:has(.ps)::-webkit-scrollbar { display: no
 
 /* Barra de arriba de las hojas: deshacer / rehacer y lo elegido. Queda pegada arriba al bajar. */
 .ps-sheets { position: relative; }
-.ps-sheet-bar { position: sticky; top: 10px; z-index: 40; justify-self: center; display: flex; align-items: center; gap: 12px; margin-bottom: -10px; padding: 6px 8px; border: 1px solid #d5d8e0; border-radius: 999px; background: #ffffffeb; box-shadow: 0 6px 20px #1d213022; backdrop-filter: blur(6px); font: 600 13px/1.2 system-ui, sans-serif; }
+.ps-sheet-bar { display: flex; align-items: center; gap: 12px; padding: 6px 8px; border: 1px solid #d5d8e0; border-radius: 999px; background: #ffffffeb; box-shadow: 0 6px 20px #1d213022; backdrop-filter: blur(6px); font: 600 13px/1.2 system-ui, sans-serif; }
 .ps-history { display: flex; gap: 4px; }
 .ps-history button { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 0; border-radius: 999px; background: #f1f2f6; color: #1d2130; font: 800 16px/1 system-ui, sans-serif; cursor: pointer; }
 .ps-history button span { font-size: 12.5px; font-weight: 700; }
@@ -690,7 +690,12 @@ html:has(.ps)::-webkit-scrollbar, body:has(.ps)::-webkit-scrollbar { display: no
   .ps-sheets.is-band-fresh .ps-selectable.is-selected { outline-color: transparent; }
   .ps-sheets.is-banding .ps-selectable.is-band-hit { outline: 2px solid #4b6bff; outline-offset: 2px; background-color: #4b6bff12; }
 }
-@media print { .ps-sheet-bar, .ps-band { display: none !important; } }
+/* La barra va en su propio renglón a todo el ancho: en tarjetas sueltas (is-single) la hoja es flex
+   con wrap y la barra, como un ítem más, se estiraba al alto de la tarjeta (un óvalo gigante). */
+.ps-sheet-row { position: sticky; top: 10px; z-index: 40; display: flex; justify-content: center; margin-bottom: -10px; pointer-events: none; }
+.ps-sheets.is-single > .ps-sheet-row { flex: 0 0 100%; margin-bottom: 0; }
+.ps-sheet-row > .ps-sheet-bar { pointer-events: auto; }
+@media print { .ps-sheet-row, .ps-sheet-bar, .ps-band { display: none !important; } }
 
 /* Panel con varias elegidas. */
 .ps-multi-summary { display: grid; gap: 10px; padding: 12px; border-radius: 12px; background: #f1edff; color: #3a2bc4; }
