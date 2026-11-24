@@ -247,7 +247,9 @@ export const TagFront = memo(function TagFront({ id, diameter, color, character,
     <Background id={`tag-front-${id}`} color={color} diameter={diameter} />
     {hole && <HoleMark />}
     <g transform={contentTransform}>
-    {(design === "classic" || design === "brand") && <text x="50" y="21.5" textAnchor="middle" fontSize="4.3" letterSpacing=".35" strokeWidth="1" {...ink}>CHAPITA INTELIGENTE</text>}
+    {/* Lo más arriba posible: más alto, las puntas de la C y la E salen del margen de seguridad
+        (2 mm a 30 mm, 43,3 desde el centro). Medido en el navegador. */}
+    {(design === "classic" || design === "brand") && <text x="50" y="20.8" textAnchor="middle" fontSize="4.3" letterSpacing=".35" strokeWidth="1" {...ink}>CHAPITA INTELIGENTE</text>}
     {design === "test1" && <text fontSize="5.7" letterSpacing=".45" strokeWidth="1" {...ink}><textPath href={`#${topPath}`} startOffset="50%" textAnchor="middle">CHAPITA INTELIGENTE</textPath></text>}
     {design === "test2" && <>
       <text x="50" y="16.8" textAnchor="middle" fill="#fff" fontFamily="Plus Jakarta Sans, Poppins, Arial, sans-serif" fontSize="8.2" fontWeight="800" letterSpacing="-.25">BIONFC</text>
@@ -264,11 +266,12 @@ export const TagFront = memo(function TagFront({ id, diameter, color, character,
     {cleanName ? <>
       {/* Personaje y nombre forman un solo bloque compacto, con espacio real para explicar el NFC. */}
       {/* Las patitas apoyan sólo en el borde de arriba de la placa: el nombre queda libre debajo. */}
-      <rect x="19" y={55 + petOffset} width="62" height="17" rx="7.5" fill="#fff" stroke="#171717" strokeWidth="1.1" />
+      <rect x="19" y={56.5 + petOffset} width="62" height="16" rx="7.5" fill="#fff" stroke="#171717" strokeWidth="1.1" />
       {/* La versión limpia (public/pet-tags/named): sin franjas ni aire alrededor, así todos los
-          animales llenan la misma caja y apoyan las patas en la placa. */}
-      <image href={vector(`/pet-tags/named/${animal.id}.png`)} x="28" y={23 + petOffset} width="44" height="35" preserveAspectRatio="xMidYMax meet" />
-      <text x="50" y={64.6 + size * .35 + petOffset} textAnchor="middle" fill="#1d1a18" fontFamily="Poppins, Arial, sans-serif" fontSize={size} fontWeight="800" {...(squeeze ? { textLength: NAME_MAX_WIDTH, lengthAdjust: "spacingAndGlyphs" } : {})}>{cleanName}</text>
+          animales llenan la misma caja y apoyan las patas en la placa. La caja usa casi todo el
+          ancho de la placa (antes 44×35 y el animal quedaba chiquito al lado de la carita sola). */}
+      <image href={vector(`/pet-tags/named/${animal.id}.png`)} x="20" y={22 + petOffset} width="60" height="38" preserveAspectRatio="xMidYMax meet" />
+      <text x="50" y={65.6 + size * .35 + petOffset} textAnchor="middle" fill="#1d1a18" fontFamily="Poppins, Arial, sans-serif" fontSize={size} fontWeight="800" {...(squeeze ? { textLength: NAME_MAX_WIDTH, lengthAdjust: "spacingAndGlyphs" } : {})}>{cleanName}</text>
     </> : <>
       {/* Las de stock usan una ilustración creada como cabeza aislada: no es un recorte del personaje con patas. */}
       <image href={vector(animal.faceSrc)} x="18" y={22 + petOffset} width="64" height="54" preserveAspectRatio="xMidYMid meet" />

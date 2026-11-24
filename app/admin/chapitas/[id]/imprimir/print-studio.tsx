@@ -10,7 +10,7 @@
 //  · QR de las chapitas: el tamaño en mm se elige según la chapita.
 // Las opciones generales quedan guardadas en esta compu; lo de cada unidad (nombre, animal y color)
 // se guarda en la chapita misma (actions.ts), así no se pierde ni lo pisa otra pestaña.
-import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type MouseEvent, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type ClipboardEvent, type CSSProperties, type KeyboardEvent, type MouseEvent, type PointerEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LuPrinter } from "react-icons/lu";
@@ -704,6 +704,26 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
     saveMany(pickedIds, settings.tagNames, settings.tagCharacters, tagColors, delay);
     if (!delay) flashCards(pickedIds);
   };
+  // Nombres para varias de una: los de `names` van a las elegidas en orden, desde `from`. Sirve para
+  // pegar una lista (un nombre por renglón) y para "Sacar los nombres". Como al escribir de a una, un
+  // genérico no lleva nombre: a esas se les vuelve al animal automático.
+  const setManyNames = (from: number, names: string[]) => {
+    const ids = pickedIds.slice(from, from + names.length);
+    const tagNames = { ...settings.tagNames }, tagCharacters = { ...settings.tagCharacters };
+    ids.forEach((id, index) => {
+      const name = names[index].slice(0, 14);
+      if (name.trim()) { tagNames[id] = name; if (isGenericCharacterId(tagCharacters[id] || "")) delete tagCharacters[id]; } else delete tagNames[id];
+    });
+    update({ tagNames, tagCharacters });
+    saveMany(ids, tagNames, tagCharacters, settings.tagColors);
+    flashCards(ids);
+  };
+  const pasteNames = (from: number, event: ClipboardEvent<HTMLInputElement>) => {
+    const names = event.clipboardData.getData("text").split(/\r?\n|\t/).map((name) => name.trim()).filter(Boolean);
+    if (names.length < 2) return;
+    event.preventDefault();
+    setManyNames(from, names);
+  };
   const resetMany = () => {
     const tagNames = { ...settings.tagNames }, tagCharacters = { ...settings.tagCharacters }, tagColors = { ...settings.tagColors };
     for (const id of pickedIds) { delete tagNames[id]; delete tagCharacters[id]; delete tagColors[id]; }
@@ -930,7 +950,21 @@ export default function PrintStudio({ batchId, batchName, items, host, isLocal =
                 <button type="button" onClick={collapsePick}>Elegir solo una <kbd>Esc</kbd></button>
               </div>
             </div>
-            <p className="ps-multi-note">Lo que toques abajo se aplica a las {pickedItems.length}. El nombre se pone de a una. Si te equivocás: <b>Ctrl+Z</b>.</p>
+            <p className="ps-multi-note">Animal y color se aplican a las {pickedItems.length}; el nombre, a cada una. Si te equivocás: <b>Ctrl+Z</b>.</p>
+
+            <span className="ps-editor-label">Nombres {!!pickedNamed.length && <em className="ps-mixed">· {pickedNamed.length} de {pickedItems.length}</em>}</span>
+            <div className="ps-multi-names">
+              <small>Enter pasa a la siguiente. Si pegás una lista (un nombre por renglón), se reparte en orden. Vacío = stock.</small>
+              <ol>{pickedItems.map((item, index) => <li key={item.id}>
+                <Face id={characterOf(item)} color={colorOf(item)} size={26} />
+                <span>{unitNumber(item.number)}</span>
+                <input data-name-row={index} value={settings.tagNames[item.id] || ""} maxLength={14} placeholder="Stock" aria-label={`Nombre de la ${unit(item.number)}`}
+                  onChange={(event) => setTagName(item.id, event.target.value)}
+                  onPaste={(event) => pasteNames(index, event)}
+                  onKeyDown={(event) => { if (event.key !== "Enter") return; event.preventDefault(); document.querySelector<HTMLInputElement>(`[data-name-row="${index + 1}"]`)?.focus(); }} />
+              </li>)}</ol>
+              {!!pickedNamed.length && <button type="button" onClick={() => setManyNames(0, pickedIds.map(() => ""))}>Sacar los nombres ({pickedNamed.length})</button>}
+            </div>
 
             <span className="ps-editor-label">Animal {!sameCharacter && <em className="ps-mixed">· varios</em>}</span>
             <div className="ps-quick-animals">

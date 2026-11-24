@@ -715,6 +715,17 @@ html:has(.ps)::-webkit-scrollbar, body:has(.ps)::-webkit-scrollbar { display: no
 .ps-quick-mixes button.is-on { border-color: #4b6bff; background: #4b6bff; color: #fff; }
 .ps-mix-colors { display: inline-flex; align-items: center; gap: 8px; justify-self: start; }
 .ps-mix-colors span { width: 16px; height: 16px; border-radius: 50%; }
+/* Nombres de varias: un renglón por chapita elegida (carita · unidad · nombre). Con muchas, scroll. */
+.ps-multi-names { display: grid; gap: 7px; }
+.ps-multi-names > small { color: #6b7080; font-size: 11.5px; font-weight: 600; line-height: 1.35; }
+.ps-multi-names ol { display: grid; gap: 4px; max-height: 286px; margin: 0; padding: 2px; overflow-y: auto; list-style: none; }
+.ps-multi-names li { display: grid; grid-template-columns: 26px 26px minmax(0, 1fr); align-items: center; gap: 7px; }
+.ps-multi-names li > span { color: #6b7080; font-size: 11.5px; font-weight: 800; text-align: right; }
+.ps-multi-names input { width: 100%; min-height: 32px; padding: 0 9px; border: 1px solid #d8dce5; border-radius: 8px; background: #fff; font: inherit; font-size: 13px; text-transform: uppercase; }
+.ps-multi-names input::placeholder { text-transform: none; color: #a8adb8; }
+.ps-multi-names input:focus { border-color: #4b6bff; outline: 2px solid #4b6bff33; }
+.ps-multi-names > button { justify-self: start; padding: 6px 11px; border: 1px solid #f1c4c4; border-radius: 999px; background: #fff; color: #b42318; font: 700 12px/1.1 system-ui, sans-serif; cursor: pointer; }
+.ps-multi-names > button:hover { background: #fff5f5; }
 
 /* Con varias elegidas se resalta el editor (el panel baja solo hasta él). */
 .ps.is-multi .ps-panel > .ps-personalize { border-color: #8a7cf0; box-shadow: 0 8px 26px #6a45e026; }
