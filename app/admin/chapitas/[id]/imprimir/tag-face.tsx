@@ -233,6 +233,10 @@ function BrandPill({ y = 83.8, small = false }: { y?: number; small?: boolean })
 }
 
 // memo: en el estudio hay cientos; así solo se redibuja la que cambió (elegir, colores, recuadro).
+// Título en curva del frente "Nuevo": radio de la curva (más grande = más abierta), altura de la
+// línea base en el medio, tamaño y espacio entre letras.
+const TITLE = { r: 35, top: 15, size: 5, spacing: .3 };
+
 // vectorArt: dibujos en vector (solo al imprimir, ver `vector`).
 export const TagFront = memo(function TagFront({ id, diameter, color, character, name = "", hole = false, design = "classic", vectorArt = false }: { id: string; diameter: number; color: string; character: TagCharacterId; name?: string; hole?: boolean; design?: TagFrontStyle; vectorArt?: boolean }) {
   const animal = TAG_CHARACTERS.find((item) => item.id === character) || TAG_CHARACTERS[0];
@@ -246,6 +250,7 @@ export const TagFront = memo(function TagFront({ id, diameter, color, character,
   const room = design === "brand" ? 2 : 0;
   const topPath = `tag-front-top-${id}`;
   const bottomPath = `tag-front-bottom-${id}`;
+  const arcPath = `tag-front-arc-${id}`;
   const ink = { fill: "#fff", ...edgeFor(color), paintOrder: "stroke" as const, fontFamily: "Poppins, Arial, sans-serif", fontWeight: 800 };
   // Si aun en el tamaño mínimo no entra (nombres muy anchos), se angosta para que quepa justo.
   const squeeze = nameWidth(cleanName) * size > NAME_MAX_WIDTH;
@@ -253,13 +258,15 @@ export const TagFront = memo(function TagFront({ id, diameter, color, character,
     <defs>
       <path id={topPath} d="M 14 38 A 39 39 0 0 1 86 38" />
       <path id={bottomPath} d="M 15 67 A 39 39 0 0 0 85 67" />
+      {/* "Nuevo": el título en curva concéntrica con el borde (radio 35). Así puede ir más grande sin
+          que las puntas salgan del margen, y por arriba deja aire al puntito de perforación (r 42). */}
+      <path id={arcPath} d={`M ${50 - TITLE.r} ${TITLE.top + TITLE.r} A ${TITLE.r} ${TITLE.r} 0 0 1 ${50 + TITLE.r} ${TITLE.top + TITLE.r}`} />
     </defs>
     <Background id={`tag-front-${id}`} color={color} diameter={diameter} />
     {hole && <HoleMark />}
     <g transform={contentTransform}>
-    {/* Lo más arriba posible: un poco más chico y apretado (antes 4,3 y .35) para que las puntas de
-        la C y la E no salgan del margen de seguridad (2 mm a 30 mm, 43,3 desde el centro). Medido. */}
-    {(design === "classic" || design === "brand") && <text x="50" y="18.6" textAnchor="middle" fontSize="4.1" letterSpacing=".2" strokeWidth="1" {...ink}>CHAPITA INTELIGENTE</text>}
+    {design === "classic" && <text x="50" y="18.6" textAnchor="middle" fontSize="4.1" letterSpacing=".2" strokeWidth="1" {...ink}>CHAPITA INTELIGENTE</text>}
+    {design === "brand" && <text fontSize={TITLE.size} letterSpacing={TITLE.spacing} strokeWidth="1" {...ink}><textPath href={`#${arcPath}`} startOffset="50%" textAnchor="middle">CHAPITA INTELIGENTE</textPath></text>}
     {design === "test1" && <text fontSize="5.7" letterSpacing=".45" strokeWidth="1" {...ink}><textPath href={`#${topPath}`} startOffset="50%" textAnchor="middle">CHAPITA INTELIGENTE</textPath></text>}
     {design === "test2" && <>
       <text x="50" y="16.8" textAnchor="middle" fill="#fff" fontFamily="Plus Jakarta Sans, Poppins, Arial, sans-serif" fontSize="8.2" fontWeight="800" letterSpacing="-.25">BIONFC</text>

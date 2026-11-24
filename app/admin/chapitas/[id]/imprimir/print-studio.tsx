@@ -17,7 +17,7 @@ import { useRouter } from "next/navigation";
 import { LuPrinter } from "react-icons/lu";
 import { tagCutContourSvg } from "@/lib/pet-tags";
 import { CardBack, CardFront, DESIGN_ANIMAL, DESIGNS, FLAP_LIMITS, FLAP_WIDTH, DESIGN_GROUPS, autoCardDesign, designClash, designLabel, designSays, isFlapCard, unit, unitNumber, type CardAnimal, type CardLayout, type DesignId } from "./card-designs";
-import { cleanTagPrint, isCat, isGenericCharacterId, TagBack, TagFront, isLightTagColor, TAG_CATS, TAG_CHARACTERS, TAG_COLORS, TAG_CUSTOM, TAG_DOGS, TAG_GENERIC, tagCharacterFor, type TagCharacterChoice, type TagCharacterId, type TagFrontStyle, type TagPrint, type VectorQr, vector } from "./tag-face";
+import { cleanTagPrint, isCat, isGenericCharacterId, TagBack, TagFront, isLightTagColor, TAG_CATS, TAG_CHARACTERS, TAG_COLORS, TAG_CUSTOM, TAG_DOGS, TAG_GENERIC, tagCharacterFor, type TagCharacterChoice, type TagCharacterId, type TagFrontStyle, type TagPrint, type VectorQr } from "./tag-face";
 import { addTagsToBatch, saveTagPrint, saveTagPrints } from "./actions";
 import CharacterPicker, { Face } from "./character-picker";
 import { qrImage, vectorQr } from "./qr-vector";
@@ -595,14 +595,33 @@ export default function PrintStudio({ batchId, batchName, items: sources, host, 
   // abre la impresión. Al cerrarla vuelve a los PNG. Ctrl+P hace lo mismo que el botón.
   const [printArt, setPrintArt] = useState(false);
   const [preparingPrint, setPreparingPrint] = useState(false);
+  // Antes esperaba solo dos cuadros después del cambio: con muchas chapitas la impresión se abría
+  // con dibujos a medio cargar y "Guardar como PDF" los sacaba vacíos. Ahora espera el "load" de
+  // cada uno (con un tope de 90 s por si alguno no llega) y muestra el avance en el botón.
+  const printLabel = useRef<HTMLSpanElement>(null);
+  const printing = useRef(false);
   const printNow = async () => {
-    if (preparingPrint) return;
+    if (printing.current) return;
+    printing.current = true;
     setPreparingPrint(true);
-    const pngs = new Set([...(sheetsRef.current?.querySelectorAll("image") || [])].map((image) => image.getAttribute("href") || "").filter((href) => /^\/pet-tags\/.*\.png$/.test(href)));
-    await Promise.all([...pngs].map((png) => { const image = new Image(); image.src = vector(png); return image.decode().catch(() => undefined); }));
+    // Los dibujos de la hoja que van a cambiar a vector. Se escucha antes de cambiarlos.
+    const targets = [...(sheetsRef.current?.querySelectorAll<SVGImageElement>(".ps-page image") || [])].filter((image) => /^\/pet-tags\/.*\.png$/.test(image.getAttribute("href") || ""));
+    let done = 0;
+    const show = () => { if (printLabel.current) printLabel.current.textContent = `Preparando la impresión… ${done} de ${targets.length}`; };
+    show();
+    const ready = Promise.all(targets.map((image) => new Promise<void>((resolve) => {
+      const finish = () => { image.removeEventListener("load", finish); image.removeEventListener("error", finish); done++; show(); resolve(); };
+      image.addEventListener("load", finish);
+      image.addEventListener("error", finish);
+    })));
     flushSync(() => setPrintArt(true));
+    // Los que no cambiaron (no estaban en la hoja impresa) no van a avisar: se dan por listos.
+    for (const image of targets) if (!(image.getAttribute("href") || "").includes("/vector/")) image.dispatchEvent(new Event("load"));
+    await Promise.race([ready, new Promise((resolve) => setTimeout(resolve, 90000))]);
     await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    await new Promise((resolve) => setTimeout(resolve, 300));
     setPreparingPrint(false);
+    printing.current = false;
     window.print();
   };
   const printRef = useRef(printNow);
@@ -1092,7 +1111,7 @@ export default function PrintStudio({ batchId, batchName, items: sources, host, 
 
       <div className="ps-print-dock">
         <div className="ps-print-summary"><div><strong>{paper} · {items.length} {items.length === 1 ? "unidad" : "unidades"}</strong><small>{pageCount} {pageCount === 1 ? "página" : "páginas"}{mode === "qr" && settings.tagOutput === "pairs" ? " · frente y dorso juntos" : ""}</small></div>{mode === "cards" ? <span className="is-warn">Códigos privados</span> : <span className="is-ready">Listo para imprimir</span>}</div>
-        <button type="button" className="btn full ps-print" onClick={printNow} disabled={!items.length || preparingPrint}><LuPrinter aria-hidden="true" /> {preparingPrint ? "Preparando la impresión…" : "Imprimir o guardar PDF"}</button>
+        <button type="button" className="btn full ps-print" onClick={printNow} disabled={!items.length || preparingPrint}><LuPrinter aria-hidden="true" /> <span ref={printLabel}>{preparingPrint ? "Preparando la impresión…" : "Imprimir o guardar PDF"}</span></button>
         {mode === "qr" && <button type="button" className="ps-next-step" onClick={() => setMode("cards")}>Siguiente: <b>2</b> Tarjetas <i aria-hidden="true">→</i></button>}
       </div>
     </aside>
