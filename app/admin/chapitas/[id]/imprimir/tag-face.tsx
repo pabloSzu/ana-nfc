@@ -2,7 +2,7 @@
 // conserva el diseño original con el enlace público permanente, NFC e instrucciones. El código privado de activación nunca
 // aparece acá: va únicamente en la tarjeta del paquete.
 // Los colores lisos son lo bastante oscuros para que el texto blanco chico se lea impreso
-// (contraste de 4,5:1 o más). En los arcoíris, las letras se leen por su borde oscuro (EDGE).
+// (contraste de 4,5:1 o más) y van sin borde. En los arcoíris, las letras llevan borde oscuro (EDGE).
 import { memo } from "react";
 import type { DesignId } from "./card-designs";
 
@@ -124,7 +124,8 @@ export function cleanTagPrint(value: unknown): TagPrint {
 
 // El agujero (opcional): un puntito que marca el centro, en el mismo lugar en las dos caras, para
 // perforar y para que frente y dorso queden alineados al pegarlos. Se imprime.
-const HOLE = { cx: 50, cy: 10 };
+// Centro del agujero para el aro: lo más arriba que deja material firme alrededor.
+const HOLE = { cx: 50, cy: 8 };
 const HoleMark = () => <circle cx={HOLE.cx} cy={HOLE.cy} r=".9" fill="#fff" stroke="#00000059" strokeWidth=".3" />;
 
 export type TagBackStyle = "classic" | "v2" | "v3" | "v4" | "cat" | "dog" | "paws";
@@ -210,6 +211,9 @@ function VectorQrImage({ qr, x, y, size }: { qr: VectorQr; x: number; y: number;
 export const vector = (src: string) => src.replace(/^\/pet-tags\//, "/pet-tags/vector/").replace(/\.png$/, ".svg");
 
 const EDGE = { stroke: "#151826", strokeOpacity: .72, strokeLinejoin: "round" as const };
+// Solo en los arcoíris: ahí el blanco sobre amarillo o verde claro no se lee sin borde. En los
+// colores lisos ya contrasta (4,5:1) y el borde, con letras de ~1,3 mm, las empasta al imprimir.
+const edgeFor = (color: string) => color.startsWith("rainbow") ? EDGE : {};
 const WAVES = <><path d="M 0,2.3 A 2.2,2.2 0 0 1 0,5.7" /><path d="M 2.2,1.1 A 4,4 0 0 1 2.2,6.9" /><path d="M 4.4,0 A 5.8,5.8 0 0 1 4.4,8" /></>;
 
 export type TagFrontStyle = "classic" | "brand" | "test1" | "test2" | "test3" | "test4" | "test5";
@@ -238,9 +242,11 @@ export const TagFront = memo(function TagFront({ id, diameter, color, character,
   const contentTransform = diameter < 30 ? "translate(3 3) scale(.94)" : undefined;
   const lowerPet = design === "test2" || design === "test3" || design === "test5";
   const petOffset = lowerPet ? 3 : 0;
+  // "Nuevo" (brand): la pastilla BIONFC va más abajo, así la placa del nombre baja y el dibujo gana alto.
+  const room = design === "brand" ? 2 : 0;
   const topPath = `tag-front-top-${id}`;
   const bottomPath = `tag-front-bottom-${id}`;
-  const ink = { fill: "#fff", ...EDGE, paintOrder: "stroke" as const, fontFamily: "Poppins, Arial, sans-serif", fontWeight: 800 };
+  const ink = { fill: "#fff", ...edgeFor(color), paintOrder: "stroke" as const, fontFamily: "Poppins, Arial, sans-serif", fontWeight: 800 };
   // Si aun en el tamaño mínimo no entra (nombres muy anchos), se angosta para que quepa justo.
   const squeeze = nameWidth(cleanName) * size > NAME_MAX_WIDTH;
   return <svg className={tagClass(color)} viewBox="0 0 100 100" width={`${diameter}mm`} height={`${diameter}mm`} overflow="visible" role="img" aria-label={cleanName ? `Frente de la chapita de ${cleanName}` : `Frente de chapita con ${animal.label}`}>
@@ -251,9 +257,9 @@ export const TagFront = memo(function TagFront({ id, diameter, color, character,
     <Background id={`tag-front-${id}`} color={color} diameter={diameter} />
     {hole && <HoleMark />}
     <g transform={contentTransform}>
-    {/* Lo más arriba posible: más alto, las puntas de la C y la E salen del margen de seguridad
-        (2 mm a 30 mm, 43,3 desde el centro). Medido en el navegador. */}
-    {(design === "classic" || design === "brand") && <text x="50" y="20.8" textAnchor="middle" fontSize="4.3" letterSpacing=".35" strokeWidth="1" {...ink}>CHAPITA INTELIGENTE</text>}
+    {/* Lo más arriba posible: un poco más chico y apretado (antes 4,3 y .35) para que las puntas de
+        la C y la E no salgan del margen de seguridad (2 mm a 30 mm, 43,3 desde el centro). Medido. */}
+    {(design === "classic" || design === "brand") && <text x="50" y="18.6" textAnchor="middle" fontSize="4.1" letterSpacing=".2" strokeWidth="1" {...ink}>CHAPITA INTELIGENTE</text>}
     {design === "test1" && <text fontSize="5.7" letterSpacing=".45" strokeWidth="1" {...ink}><textPath href={`#${topPath}`} startOffset="50%" textAnchor="middle">CHAPITA INTELIGENTE</textPath></text>}
     {design === "test2" && <>
       <text x="50" y="16.8" textAnchor="middle" fill="#fff" fontFamily="Plus Jakarta Sans, Poppins, Arial, sans-serif" fontSize="8.2" fontWeight="800" letterSpacing="-.25">BIONFC</text>
@@ -270,17 +276,19 @@ export const TagFront = memo(function TagFront({ id, diameter, color, character,
     {cleanName ? <>
       {/* Personaje y nombre forman un solo bloque compacto, con espacio real para explicar el NFC. */}
       {/* Las patitas apoyan sólo en el borde de arriba de la placa: el nombre queda libre debajo. */}
-      <rect x="19" y={56.5 + petOffset} width="62" height="16" rx="7.5" fill="#fff" stroke="#171717" strokeWidth="1.1" />
+      <rect x="19" y={56.5 + room + petOffset} width="62" height="16" rx="7.5" fill="#fff" stroke="#171717" strokeWidth="1.1" />
       {/* La versión limpia (public/pet-tags/named): sin franjas ni aire alrededor, así todos los
           animales llenan la misma caja y apoyan las patas en la placa. La caja usa casi todo el
           ancho de la placa (antes 44×35 y el animal quedaba chiquito al lado de la carita sola). */}
-      <image href={art(`/pet-tags/named/${animal.id}.png`)} x="20" y={22 + petOffset} width="60" height="38" preserveAspectRatio="xMidYMax meet" />
-      <text x="50" y={65.6 + size * .35 + petOffset} textAnchor="middle" fill="#1d1a18" fontFamily="Poppins, Arial, sans-serif" fontSize={size} fontWeight="800" {...(squeeze ? { textLength: NAME_MAX_WIDTH, lengthAdjust: "spacingAndGlyphs" } : {})}>{cleanName}</text>
+      <image href={art(`/pet-tags/named/${animal.id}.png`)} x="20" y={22 + petOffset} width="60" height={38 + room} preserveAspectRatio="xMidYMax meet" />
+      <text x="50" y={65.6 + room + size * .35 + petOffset} textAnchor="middle" fill="#1d1a18" fontFamily="Poppins, Arial, sans-serif" fontSize={size} fontWeight="800" {...(squeeze ? { textLength: NAME_MAX_WIDTH, lengthAdjust: "spacingAndGlyphs" } : {})}>{cleanName}</text>
     </> : <>
       {/* Las de stock usan una ilustración creada como cabeza aislada: no es un recorte del personaje con patas. */}
-      <image href={art(animal.faceSrc)} x="18" y={22 + petOffset} width="64" height="54" preserveAspectRatio="xMidYMid meet" />
+      <image href={art(animal.faceSrc)} x="18" y={22 + petOffset} width="64" height={54 + room} preserveAspectRatio="xMidYMid meet" />
     </>}
-    {(design === "brand" || design === "test1") && <BrandPill />}
+    {/* Más abajo en "Nuevo": las esquinas de la pastilla quedan dentro del margen de seguridad (medido). */}
+    {design === "brand" && <BrandPill y={86.8} />}
+    {design === "test1" && <BrandPill />}
     {design === "test2" && <g transform="translate(38 79)"><rect width="24" height="7" rx="3.5" fill="#ffffffdd" /><text x="12" y="5" textAnchor="middle" fill="#3045a4" fontFamily="Poppins, Arial, sans-serif" fontSize="3.7" fontWeight="800" letterSpacing=".35">CON NFC</text></g>}
     {design === "test3" && <BrandPill small />}
     {design === "test4" && <text fontSize="5" letterSpacing=".55" strokeWidth="1" {...ink}><textPath href={`#${bottomPath}`} startOffset="50%" textAnchor="middle">CHAPITA INTELIGENTE</textPath></text>}
@@ -309,8 +317,8 @@ export const TagBack = memo(function TagBack({ id, qr, diameter, color, design, 
   // nueva de 25×25 conserva módulos más grandes aun con este pequeño repliegue del contenido.
   const compact = diameter < 30;
   const contentTransform = compact ? "translate(3 3) scale(.94)" : undefined;
-  // El mismo borde que el frente (EDGE): también en el ícono y la flechita.
-  const edge = EDGE;
+  // El mismo borde que el frente (solo en arcoíris): también en el ícono y la flechita.
+  const edge = edgeFor(color);
   const ink = { fill: "#fff", ...edge, strokeWidth: 1.5, paintOrder: "stroke" as const, fontWeight: 800, fontFamily: "Poppins, Arial, sans-serif" };
   const phone = <>
     <rect x="0" y="0" width="4.6" height="7.6" rx="1.1" />

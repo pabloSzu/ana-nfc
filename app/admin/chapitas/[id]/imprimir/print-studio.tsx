@@ -70,7 +70,7 @@ const SIZES = [
   { id: "100x70", label: "Grande · 100×70 mm", width: 100, height: 70 },
   { id: "custom", label: "Otra medida", width: 85, height: 55 },
 ];
-const DEFAULTS: Settings = { design: "playful", cardLayout: "flap-a", flapWidth: 85, flapHeight: 55, flapFresh: false, size: "85x55", width: 85, height: 55, sides: "front", output: "single", cutLines: true, tagCutGuides: true, qrSize: 30, qrColor: "mix", tagSides: "both", tagOutput: "pairs", tagLayoutVersion: 2, tagCharacter: "mix", tagNames: {}, tagCharacters: {}, tagColors: {}, tagCards: {}, cardMatch: true, tagHole: false, paper: "A4", tagLayout: "v3", tagFront: "classic" };
+const DEFAULTS: Settings = { design: "playful", cardLayout: "flap-a", flapWidth: 85, flapHeight: 55, flapFresh: false, size: "85x55", width: 85, height: 55, sides: "front", output: "single", cutLines: true, tagCutGuides: true, qrSize: 30, qrColor: "mix", tagSides: "both", tagOutput: "pairs", tagLayoutVersion: 2, tagCharacter: "mix", tagNames: {}, tagCharacters: {}, tagColors: {}, tagCards: {}, cardMatch: true, tagHole: false, paper: "A4", tagLayout: "v3", tagFront: "brand" };
 const STORAGE_KEY = "bionfc-print-settings";
 // Lo de cada unidad no va al navegador: viene de la base (PrintItem.print).
 const UNIT_KEYS = ["tagNames", "tagCharacters", "tagColors", "tagCards"];
@@ -269,7 +269,8 @@ export default function PrintStudio({ batchId, batchName, items: sources, host, 
   const layoutLabel = LAYOUTS.find((layout) => layout.value === settings.tagLayout)?.label || LAYOUTS[0].label;
   // Las pruebas se pueden elegir únicamente en localhost. Aunque quedara una preferencia vieja,
   // una pantalla no local vuelve al frente nuevo estable.
-  const frontStyle: TagFrontStyle = isLocal || settings.tagFront === "classic" || settings.tagFront === "brand" ? settings.tagFront : "brand";
+  // El frente es siempre "Nuevo" (brand), en la compu y en bionfc.com: no hay para elegir.
+  const frontStyle: TagFrontStyle = "brand";
   const PAGE = { ...PAPERS[paper], margin: PAGE_MARGIN };
 
   // Cuántas entran por hoja.
@@ -914,14 +915,6 @@ export default function PrintStudio({ batchId, batchName, items: sources, host, 
             <small>{layout.hint}</small>
           </button>;
         })}</div>
-      </section>
-      {/* El frente: el actual o el nuevo (sin "ACERCÁ TU CELU", con el logo en pastilla). */}
-      <section className="ps-front-pick" aria-label="Frente de la chapita">
-        <span className="ps-layouts-title">Frente</span>
-        <div className="ps-tag-styles">{([
-          ["classic", "Actual"], ["brand", "Nuevo ✨"],
-          ...(isLocal ? [["test1", "PRUEBA1"], ["test2", "PRUEBA2"], ["test3", "PRUEBA3"], ["test4", "PRUEBA4"], ["test5", "PRUEBA5"]] : []),
-        ] as [TagFrontStyle, string][]).map(([value, label]) => <button key={value} type="button" className={frontStyle === value ? "is-on" : ""} onClick={() => update({ tagFront: value })}>{label}</button>)}</div>
       </section>
       <fieldset className="ps-group"><legend>Impresión de chapitas</legend>
         <label>Tamaño (diámetro): <b>{qrSize} mm</b><input type="range" min={26} max={45} value={qrSize} onChange={(event) => update({ qrSize: Number(event.target.value) }, "qrSize")} /></label>
