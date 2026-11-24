@@ -2,6 +2,8 @@
 
 Cómo se venden, cómo las activa el comprador y qué pasa por dentro. Complementa
 [ARQUITECTURA.md](ARQUITECTURA.md) (permisos) y [VENCIMIENTOS.md](VENCIMIENTOS.md) (planes).
+Los dibujos de los animalitos, cómo se vectorizan y cómo sumar una raza nueva están en
+[DIBUJOS-CHAPITAS.md](DIBUJOS-CHAPITAS.md).
 
 ---
 
