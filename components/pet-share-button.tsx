@@ -1,8 +1,11 @@
 "use client";
 
 // Compartir una chapita, según el momento:
-//  · Normal: imagen para historias y para publicación (para mostrarla con orgullo) y el link.
-//  · Perdida: las mismas imágenes con "¡ESTOY PERDIDO/A!", y el link con el pedido de ayuda.
+//  · Normal: una imagen (para mostrarla con orgullo) y el link.
+//  · Perdida: la imagen con "¡ESTOY PERDIDO/A!", y el link con el pedido de ayuda.
+// Una sola imagen, la vertical: Instagram ya pregunta Historia, Reel o Feed al recibirla (antes
+// había "Historia" y "Publicación" y se elegía dos veces), y en el feed la recorta al medio, donde
+// está todo lo importante (ver Story en app/api/og/mascota).
 // Las imágenes llevan la dirección de su página escrita (un QR no sirve en algo que se mira en el
 // mismo celular) y salen de app/api/og/mascota. Se bajan antes de que toquen la opción: el
 // celular solo deja abrir su menú de compartir justo después de un toque, así que tienen que estar
@@ -11,9 +14,9 @@
 // PetSharePanel son las opciones (las usa la pantalla "Ahora, difundilo" del editor, al activar el
 // modo perdido); PetShareButton es el botón que las abre en una hoja desde abajo.
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { FiDownload, FiImage, FiLink, FiShare2, FiSquare } from "react-icons/fi";
+import { FiDownload, FiImage, FiLink, FiShare2 } from "react-icons/fi";
 
-type Kind = "historia" | "publicacion";
+type Kind = "historia";
 // version: la de petImageVersion (lib/pet.ts). Con ella las imágenes se bajan una sola vez mientras
 // no cambie nada; sin ella, se arman de nuevo cada vez.
 type Props = { path: string; petName: string; lost: boolean; lostZone?: string; female?: boolean; version?: string };
@@ -36,7 +39,7 @@ export function PetSharePanel({ path, petName, lost, lostZone = "", female = fal
   useEffect(() => {
     const urls: string[] = [];
     const stamp = version || String(Date.now());
-    for (const kind of ["historia", "publicacion"] as Kind[]) {
+    for (const kind of ["historia"] as Kind[]) {
       fetch(`/api/og/mascota/${slug}?formato=${kind}&v=${stamp}`)
         .then((response) => { if (!response.ok) throw new Error(String(response.status)); return response.blob(); })
         .then((blob) => {
@@ -94,18 +97,18 @@ export function PetSharePanel({ path, petName, lost, lostZone = "", female = fal
     const download = ready && !canShareFiles(ready.file);
     return <button type="button" key={kind} className="pet-share-option" disabled={!ready} onClick={() => shareImage(kind)}>
       <span className="pet-share-thumb" data-kind={kind}>{/* eslint-disable-next-line @next/next/no-img-element -- imagen recién generada */}{ready ? <img src={ready.preview} alt="" /> : failed ? "!" : <i className="spin" aria-hidden="true" />}</span>
-      <span><strong>{kind === "historia" ? <><FiImage aria-hidden="true" /> Historia</> : <><FiSquare aria-hidden="true" /> Publicación</>}</strong>
-        <small>{failed && !ready ? "No pudimos prepararla. Cerrá y probá de nuevo." : !ready ? "Preparando la imagen…" : kind === "historia" ? "Para historias, estados de WhatsApp y reels." : lost ? "Para el feed y los grupos de Facebook de mascotas perdidas." : "Para el feed de Instagram o Facebook."}</small></span>
+      <span><strong><FiImage aria-hidden="true" /> Compartir imagen</strong>
+        <small>{failed && !ready ? "No pudimos prepararla. Cerrá y probá de nuevo." : !ready ? "Preparando la imagen…" : lost ? "Para historias, estados, el feed o grupos de Facebook. Instagram te pregunta dónde." : "Para historias, estados de WhatsApp o el feed. Instagram te pregunta dónde."}</small></span>
       {download && <FiDownload className="pet-share-go" aria-label="Descargar" />}
     </button>;
   };
 
   return <>
-    {(["historia", "publicacion"] as Kind[]).map(option)}
+    {option("historia")}
     {/* La imagen no lleva el link tocable (Instagram no lo deja poner desde una página web): se
         agrega con el sticker "Enlace". Mucha gente no sabe dónde está: los pasos, cortitos. */}
     {storyTapped && <ol className="pet-share-steps">
-      <li>Tocá <b>Historia</b> y elegí <b>Instagram → Historia</b>.</li>
+      <li>Elegí <b>Instagram</b> y después <b>Historia</b>.</li>
       <li>Tocá el ícono de <b>stickers</b> y elegí <b>“Enlace”</b>.</li>
       <li><b>Pegá el link</b>{linkReady ? " (ya está copiado)" : " (se copia solo al tocar la imagen)"} y ponelo sobre la dirección blanca. En “Personalizar texto” podés poner <b>{lost ? "Avisá acá si lo ves 🐾" : "Conocé su chapita 🐾"}</b>.</li>
     </ol>}

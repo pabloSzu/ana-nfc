@@ -191,10 +191,12 @@ type ShareProps = { pet: PetData; look: PetLook; name: string; photo: string | n
 // Historia de perdido (1080×1920), armada dentro de la "zona segura" de Instagram: arriba (~270 px)
 // van el nombre de la cuenta y la barra de progreso, y abajo (~360 px) la caja de respuesta y, en
 // un reel, los botones. Ahí no va nada importante, así sirve igual para historias, estados y reels.
+// Es la única imagen que se comparte: en el feed de Instagram o Facebook se recorta al medio (4:5,
+// de y=285 a y=1635), así que el título arranca en 330 para que entre con aire también ahí.
 // El cartel rojo, la foto, el nombre y la dirección para avisar.
 function Story({ pet, look, name, photo, photoSize, address, background, lostTitle, zone, reward }: ShareProps) {
   return <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", background, color: look.ink, fontFamily: "Poppins, sans-serif", textAlign: "center" }}>
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", padding: "270px 60px 50px", background: "#d92d20", color: "#fff" }}>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", padding: "330px 60px 50px", background: "#d92d20", color: "#fff" }}>
       <div style={{ display: "flex", fontSize: 108, fontWeight: 900, letterSpacing: -3, lineHeight: 1 }}>{lostTitle}</div>
       {zone && <div style={{ display: "flex", justifyContent: "center", marginTop: 22, fontSize: fitSize(zone, 50, 940, 2), fontWeight: 800, lineHeight: 1.2 }}>{zone}</div>}
       {reward && <div style={{ display: "flex", marginTop: 22, padding: "10px 32px", borderRadius: 999, background: "#fff", color: "#b42318", fontSize: fitSize(reward, 42, 860), fontWeight: 900 }}>{reward}</div>}

@@ -7,6 +7,6 @@ import { getSiteOrigin } from "@/lib/site-url";
 // así que quedan guardadas). Corre después de responder; si falla, no pasa nada: se arman al pedirlas.
 export async function warmPetImages(slug: string, version: string) {
   const origin = getSiteOrigin();
-  await Promise.allSettled(["historia", "publicacion"].map((format) =>
+  await Promise.allSettled(["historia"].map((format) =>
     fetch(`${origin}/api/og/mascota/${encodeURIComponent(slug)}?formato=${format}&v=${version}`, { cache: "no-store" }).then((response) => response.arrayBuffer())));
 }

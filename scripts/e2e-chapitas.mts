@@ -280,7 +280,7 @@ async function run() {
     // 7. Compartir desde Mis chapitas.
     await go(`${BASE}/mi`);
     await clickText("Compartir", ".mi-pet-actions button");
-    check("Mis chapitas: Compartir prepara las imágenes", await waitFor("document.querySelector('.pet-share-sheet')?.open && [...document.querySelectorAll('.pet-share-sheet .pet-share-option')].length >= 3 && ![...document.querySelectorAll('.pet-share-sheet .pet-share-option')].some((b) => b.disabled)", 40));
+    check("Mis chapitas: Compartir prepara las imágenes", await waitFor("document.querySelector('.pet-share-sheet')?.open && [...document.querySelectorAll('.pet-share-sheet .pet-share-option')].length >= 2 && ![...document.querySelectorAll('.pet-share-sheet .pet-share-option')].some((b) => b.disabled)", 40));
   } finally {
     chrome.close();
     await cleanupUser(data.userId);
