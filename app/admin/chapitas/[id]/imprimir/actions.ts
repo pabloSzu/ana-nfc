@@ -5,8 +5,26 @@ import { createClient } from "@/lib/supabase/server";
 import { newPet, petLook } from "@/lib/pet";
 import { BATCH_MAX, newActivationCode, newTagSlug } from "@/lib/pet-tags";
 import { cleanTagPrint, type TagPrint } from "./tag-face";
+import { TAG_SETUP_KEYS, type PrintWorkflowAction } from "./print-workflow";
 
 const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export async function changePrintWorkflow(batchId: string, action: PrintWorkflowAction, ids: string[], setup?: Record<string, unknown>) {
+  if (!ID.test(batchId) || !Array.isArray(ids) || ids.length > 1000 || ids.some((id) => !ID.test(id))) return false;
+  const supabase = await createClient();
+  const snapshot = action === "print_tags" && setup
+    ? Object.fromEntries(TAG_SETUP_KEYS.filter((key) => ["string", "number", "boolean"].includes(typeof setup[key])).map((key) => [key, setup[key]]))
+    : null;
+  const { data, error } = await supabase.rpc("change_batch_print_workflow", {
+    p_batch: batchId,
+    p_action: action,
+    p_ids: [...new Set(ids)],
+    p_setup: snapshot,
+  });
+  if (error || data !== true) return false;
+  revalidatePath(`/admin/chapitas/${batchId}/imprimir`);
+  return true;
+}
 
 // Guarda lo elegido para imprimir una unidad (nombre, animal y color) en la chapita misma
 // (button_style.print), así no se pierde al cambiar de compu ni lo pisa otra pestaña. Vacío lo borra.
@@ -31,6 +49,27 @@ export async function saveTagPrints(batchId: string, units: { id: string; print:
   if (!Array.isArray(units) || units.length > 500) return false;
   const results = await Promise.all(units.map((unit) => saveTagPrint(batchId, unit.id, unit.print)));
   return results.every(Boolean);
+}
+
+// Resultado físico de la impresión. Vive en la base (no en esta computadora), para que quien
+// retome el lote desde otra máquina vea exactamente las mismas chapitas pendientes de reimpresión.
+export async function setTagPrintFailed(batchId: string, landingIds: string[], failed: boolean): Promise<boolean> {
+  if (!ID.test(batchId) || !Array.isArray(landingIds) || !landingIds.length || landingIds.length > 500 || landingIds.some((id) => !ID.test(id))) return false;
+  const supabase = await createClient();
+  const { data: claims } = await supabase.auth.getClaims();
+  const userId = String(claims?.claims?.sub || "");
+  if (!userId) return false;
+  const ids = [...new Set(landingIds)];
+  const { data, error } = await supabase.from("landings")
+    .update({ tag_print_failed: failed })
+    .eq("batch_id", batchId)
+    .eq("owner_id", userId)
+    .is("activated_at", null)
+    .in("id", ids)
+    .select("id");
+  if (error || data?.length !== ids.length) return false;
+  revalidatePath(`/admin/chapitas/${batchId}/imprimir`);
+  return true;
 }
 
 // "Completar hoja": agrega al lote las chapitas que faltan para llenar la última hoja. Son de stock

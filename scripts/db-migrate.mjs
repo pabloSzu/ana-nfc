@@ -45,6 +45,7 @@ if (includeAll) console.log("  historial: incluir migraciones antiguas faltantes
 
 const args = ["--yes", "supabase", "db", "push", "--db-url", url];
 if (!apply) args.push("--dry-run");
+if (apply && flags.includes("--yes")) args.push("--yes");
 if (includeAll) args.push("--include-all");
 
 const result = spawnSync("npx", args, { stdio: "inherit", shell: true });

@@ -20,6 +20,25 @@
 .ps-group .ps-check { display: flex; align-items: center; gap: 8px; font-weight: 600; }
 .ps-group .ps-check input { flex: none; width: 16px; height: 16px; min-height: 0; margin: 0; padding: 0; accent-color: #4b6bff; }
 .ps-group input[type=range] { width: 100%; accent-color: #4b6bff; }
+.ps-card-scale > span { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.ps-card-scale > span b { color: #3446c9; font-size: 20px; }
+.ps-card-scale > span small { color: #6b7080; font-size: 12px; }
+.ps-size-result { display: grid; gap: 2px; padding: 10px 12px; border: 1px solid #cbd5ff; border-radius: 11px; background: #f3f6ff; }
+.ps-size-result strong { color: #273eb3; font-size: 14px; }
+.ps-size-result small { color: #606a8c; font-size: 11.5px; }
+.ps-result-filter { padding: 10px 12px; border: 1px solid #f1c6c6; border-radius: 12px; background: #fff8f8; }
+.ps-result-filter > div { display: flex; align-items: center; gap: 8px; }
+.ps-result-filter > div span { margin-right: auto; color: #9d2727; font-size: 12px; font-weight: 700; }
+.ps-result-filter > div span b { font-size: 16px; }
+.ps-result-filter button { padding: 6px 10px; border: 1px solid #e3a7a7; border-radius: 999px; background: #fff; color: #a32626; font: 700 11.5px/1.1 system-ui, sans-serif; cursor: pointer; }
+.ps-result-filter button.is-on { background: #b42318; color: #fff; }
+.ps-result-filter button:disabled { opacity: .45; cursor: default; }
+.ps-result-filter > small { color: #7a6262; font-size: 11px; }
+.ps-workflow { padding: 10px 12px; border: 1px solid #cbd5ff; border-radius: 12px; background: #f3f6ff; }
+.ps-workflow p { margin: 0; font-size: 13px; }
+.ps-workflow button { padding: 7px 10px; border: 1px solid #b8c5f1; border-radius: 9px; background: #fff; color: #273eb3; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.ps-workflow button:disabled { opacity: .45; cursor: default; }
+.ps-workflow-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .ps-card-formats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .ps-card-formats button { display: grid; grid-template-columns: 54px 1fr; grid-template-rows: auto auto; align-items: center; gap: 2px 9px; min-width: 0; padding: 10px; border: 1.5px solid #e1e4ea; border-radius: 13px; background: #fff; color: #1d2130; font: inherit; text-align: left; cursor: pointer; }
 .ps-card-formats button.is-on { border-color: #4b6bff; background: #f2f5ff; box-shadow: 0 0 0 3px #4b6bff1f; }
@@ -68,6 +87,9 @@
   .ps-selectable { transition: outline-color .15s ease, filter .15s ease; }
   .ps-selectable:hover { filter: brightness(.98); outline: 1.5px solid #4b6bff66; outline-offset: 1.5px; }
   .ps-selectable:focus-visible, .ps-selectable.is-selected { outline: 2px solid #4b6bff; outline-offset: 2px; }
+  .ps-selectable.is-failed { outline: 2.5px solid #dc2626; outline-offset: 2px; background: #dc26260d; }
+  .ps-selectable.is-failed.is-selected { outline: 3px solid #dc2626; box-shadow: 0 0 0 3px #fff, 0 0 0 5px #4b6bff; }
+  .ps-selectable.is-pending:not(.is-failed) { outline: 2px dashed #a95a06; outline-offset: 2px; }
 }
 /* En la hoja, esquinas rectas: la guillotina corta derecho (redondearlas es una terminación de la
    imprenta). */
@@ -82,9 +104,11 @@
 .ps-mark { position: absolute; background: #000; }
 
 @media print {
-  html, body { width: auto !important; height: auto !important; overflow: visible !important; }
+  /* El fondo del sitio (degradés del body) se imprimía detrás de la hoja como imágenes de píxeles
+     del tamaño de la página: blanco liso. */
+  html, body { width: auto !important; height: auto !important; overflow: visible !important; background: #fff !important; }
   .admin-shell-frame:has(.ps) { display: block !important; width: auto !important; height: auto !important; min-height: 0 !important; overflow: clip !important; }
-  .global-nav, .ps-panel, .ps-page-label, .ps-tag-overview { display: none !important; }
+  .global-nav, .ps-panel, .ps-page-label, .ps-tag-overview, .ps-card-excluded { display: none !important; }
   .ps { display: block; width: auto !important; min-height: 0 !important; overflow: clip !important; background: #fff; scrollbar-width: none; }
   .ps-sheets, .ps-sheets.is-single { display: block; width: auto !important; height: auto !important; padding: 0; overflow: clip !important; }
   .ps-pair { display: block; overflow: clip !important; }
@@ -107,7 +131,9 @@
 .pc img { display: block; }
 .pc-logo { display: inline-flex; align-items: center; color: #1d1410; font-size: 3.4em; font-weight: 800; line-height: 1; letter-spacing: -.04em; }
 .pc-logo b { font-weight: 800; }
-.pc-logo i { font-style: normal; background: linear-gradient(100deg, #22c7e0, #4b6bff 60%, #8a5cf7); -webkit-background-clip: text; background-clip: text; color: transparent; }
+/* "NFC" en un azul liso (como en la chapita): el degradé recortado en las letras sale en el PDF como
+   imagen de píxeles y pierde nitidez impreso. */
+.pc-logo i { font-style: normal; color: #3350e0; }
 .pc-logo svg { width: .9em; height: .9em; margin-left: .1em; fill: none; stroke: #3aa0ff; stroke-width: 2.4; stroke-linecap: round; }
 .pc-logo.is-light { color: #fff; }
 .pc-logo.is-light i { background: none; color: #fff; }
@@ -678,6 +704,11 @@ html:has(.ps)::-webkit-scrollbar, body:has(.ps)::-webkit-scrollbar { display: no
 .ps-sheet-bar p { display: flex; align-items: center; gap: 8px; margin: 0 6px 0 0; color: #3a2bc4; }
 .ps-sheet-bar p.ps-sheet-tip { color: #6b7080; font-weight: 600; }
 .ps-sheet-bar p button { padding: 5px 10px; border: 1px solid #cfc6ff; border-radius: 999px; background: #fff; color: #3a2bc4; font: 700 12px/1 system-ui, sans-serif; cursor: pointer; }
+.ps-sheet-bar p button.is-bad { border-color: #efb0b0; color: #b42318; }
+.ps-sheet-bar p button.is-bad:hover { background: #fff1f1; }
+.ps-sheet-bar p button.is-good { border-color: #a7d8b8; color: #14733b; }
+.ps-sheet-bar p button.is-good:hover { background: #effbf3; }
+.ps-sheet-bar p button:disabled { opacity: .5; cursor: wait; }
 .ps kbd { margin-left: 4px; padding: 1px 5px; border: 1px solid #cfc6ff; border-radius: 5px; background: #f7f5ff; font: 700 10px/1.3 system-ui, sans-serif; }
 /* El recuadro del mouse. */
 .ps-band { position: absolute; z-index: 45; top: 0; left: 0; border: 1.5px solid #4b6bff; border-radius: 4px; background: #4b6bff1a; pointer-events: none; will-change: transform, width, height; }
@@ -696,6 +727,18 @@ html:has(.ps)::-webkit-scrollbar, body:has(.ps)::-webkit-scrollbar { display: no
 .ps-sheets.is-single > .ps-sheet-row { flex: 0 0 100%; margin-bottom: 0; }
 .ps-sheet-row > .ps-sheet-bar { pointer-events: auto; }
 @media print { .ps-sheet-row, .ps-sheet-bar, .ps-band { display: none !important; } }
+
+/* Tarjetas apartadas: fuera de la hoja, compactas y grises. Nunca forman huecos ni se imprimen. */
+.ps-card-excluded { display: grid; grid-column: 1 / -1; gap: 9px; width: min(100%, var(--page-w, 210mm)); box-sizing: border-box; padding: 12px 14px; border: 1px solid #cfd2da; border-radius: 14px; background: #f5f6f8; color: #545a68; box-shadow: 0 4px 16px #1d213012; }
+.ps-sheets.is-single > .ps-card-excluded { flex: 0 0 100%; }
+.ps-card-excluded > div:first-child { display: flex; align-items: baseline; gap: 10px; }
+.ps-card-excluded > div:first-child strong { font-size: 14px; }
+.ps-card-excluded > div:first-child small { color: #777d89; font-size: 11.5px; }
+.ps-card-excluded > div:last-child { display: flex; flex-wrap: wrap; gap: 6px; }
+.ps-card-excluded button { display: grid; grid-template-columns: 28px auto; grid-template-rows: auto auto; align-items: center; column-gap: 7px; padding: 5px 9px 5px 6px; border: 1px solid #d6d9df; border-radius: 999px; background: #fff; color: #525866; font: 800 11.5px/1.1 system-ui, sans-serif; text-align: left; filter: grayscale(.75); cursor: pointer; }
+.ps-card-excluded button > svg { grid-row: 1 / 3; }
+.ps-card-excluded button small { color: #9297a1; font-size: 9.5px; font-weight: 700; }
+.ps-card-excluded button:hover { border-color: #6a45e0; color: #3a2bc4; filter: none; }
 
 /* Panel con varias elegidas. */
 .ps-multi-summary { display: grid; gap: 10px; padding: 12px; border-radius: 12px; background: #f1edff; color: #3a2bc4; }
@@ -737,3 +780,13 @@ html:has(.ps)::-webkit-scrollbar, body:has(.ps)::-webkit-scrollbar { display: no
 .ps-modal-box > div.is-stack { flex-direction: column; align-items: stretch; }
 .ps-modal-box > div.is-stack button { text-align: left; }
 .ps-modal-box > div.is-stack > .ps-modal-cancel:first-child { order: 1; border-color: transparent; text-align: center; }
+
+/* "Aspecto nuevo" al imprimir: las sombras difuminadas (recuadro del QR y "Abrí la solapa") salen en
+   el PDF como imágenes de píxeles y en papel no aportan. Quedan los aros de color lisos, que son
+   vector. */
+@media print {
+  .pc-front.is-flap.is-fresh .pc-qrbox, .pc-front.is-flap.is-fresh .pc-flap-open { box-shadow: none !important; }
+  .pc-paws.pc-front.is-flap.is-fresh .pc-qrbox { box-shadow: 0 0 0 .7em #ffd9b8 !important; }
+  .pc-night.pc-front.is-flap.is-fresh .pc-qrbox { box-shadow: 0 0 0 .5em #a88bff !important; }
+  .pc-rainbow.pc-front.is-flap.is-fresh .pc-qrbox { box-shadow: 0 0 0 .3em #2a1f3d !important; }
+}

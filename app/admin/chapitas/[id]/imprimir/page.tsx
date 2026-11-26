@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
+import Link from "next/link";
 import { getSiteOrigin, isLocalSite } from "@/lib/site-url";
 import { activationPath, formatCode, shortTagCode, shortTagQrUrl, shortTagRange } from "@/lib/pet-tags";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -22,7 +23,29 @@ export default async function PrintBatch({ params, searchParams }: { params: Pro
   if (!userId) redirect("/admin/login");
   const { data: batch } = await supabase.from("tag_batches").select("id,name").eq("id", id).eq("owner_id", userId).maybeSingle();
   if (!batch) notFound();
-  const { data: tags } = await supabase.from("landings").select("id,tag_number,button_style").eq("batch_id", id).eq("owner_id", userId).is("activated_at", null).order("tag_number");
+  const { data: printState } = await supabase.from("tag_batches")
+    .select("tag_print_setup,tag_print_reopened_ids,cards_printed_count")
+    .eq("id", id).eq("owner_id", userId).maybeSingle();
+  const workflow = printState ? {
+    setup: printState.tag_print_setup,
+    reopenedIds: printState.tag_print_reopened_ids,
+    cardsPrintedCount: printState.cards_printed_count,
+  } : null;
+  const loadTags = <Columns extends string>(columns: Columns) => supabase.from("landings").select(columns)
+    .eq("batch_id", id).eq("owner_id", userId).is("activated_at", null).order("tag_number");
+  const result = await loadTags("id,tag_number,button_style,tag_print_failed");
+  const canMarkResults = !result.error;
+  // Durante el despliegue, la base anterior todavía puede servir las hojas de impresión.
+  const missingColumn = result.error?.code === "42703" && result.error.message.includes("tag_print_failed");
+  const tagResult = missingColumn ? await loadTags("id,tag_number,button_style") : result;
+  if (tagResult.error) {
+    return <section className="ps-empty" role="alert">
+      <h1>No pudimos cargar las chapitas del lote</h1>
+      <p>Recargá la página para volver a intentar.</p>
+      <Link href={`/admin/chapitas/${batch.id}`}>Volver al lote</Link>
+    </section>;
+  }
+  const tags = tagResult.data;
   const ids = (tags || []).map((tag) => tag.id);
   const { data: codes } = ids.length ? await supabase.from("tag_activations").select("landing_id,code").in("landing_id", ids) : { data: [] };
   const codeOf = new Map((codes || []).map((row) => [row.landing_id, row.code]));
@@ -50,6 +73,7 @@ export default async function PrintBatch({ params, searchParams }: { params: Pro
       code: code ? formatCode(code) : "",
       // Lo elegido para imprimir esta unidad (nombre, animal, color), guardado en la chapita.
       print: cleanTagPrint(tag.button_style && typeof tag.button_style === "object" ? (tag.button_style as { print?: unknown }).print : null),
+      printFailed: "tag_print_failed" in tag && tag.tag_print_failed === true,
       activationUrl: code ? `${origin}${activationPath(code)}` : "",
       // El de la chapita: va dentro de un cuadrado blanco (tag-face.tsx), que ya le da el margen
       // que necesitan los celulares para leerlo.
@@ -57,5 +81,5 @@ export default async function PrintBatch({ params, searchParams }: { params: Pro
     };
   });
 
-  return <PrintStudio batchId={batch.id} batchName={batch.name} items={items} host={new URL(origin).host} isLocal={isLocalSite(origin)} initialMode={que === "tarjetas" ? "cards" : "qr"} />;
+  return <PrintStudio batchId={batch.id} batchName={batch.name} items={items} workflow={workflow} canMarkResults={canMarkResults} host={new URL(origin).host} isLocal={isLocalSite(origin)} initialMode={que === "tarjetas" ? "cards" : "qr"} />;
 }

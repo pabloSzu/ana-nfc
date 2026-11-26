@@ -16,15 +16,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LuPrinter } from "react-icons/lu";
 import { tagCutContourSvg } from "@/lib/pet-tags";
-import { CardBack, CardFront, DESIGN_ANIMAL, DESIGNS, FLAP_LIMITS, FLAP_WIDTH, DESIGN_GROUPS, autoCardDesign, designClash, designLabel, designSays, isFlapCard, unit, unitNumber, type CardAnimal, type CardLayout, type DesignId } from "./card-designs";
+import { CardBack, CardFront, DESIGN_ANIMAL, DESIGNS, FLAP_WIDTH, DESIGN_GROUPS, autoCardDesign, designClash, designLabel, designSays, isFlapCard, unit, unitNumber, type CardAnimal, type CardLayout, type DesignId } from "./card-designs";
 import { cleanTagPrint, isCat, isGenericCharacterId, TagBack, TagFront, isLightTagColor, TAG_CATS, TAG_CHARACTERS, TAG_COLORS, TAG_CUSTOM, TAG_DOGS, TAG_GENERIC, tagCharacterFor, type TagCharacterChoice, type TagCharacterId, type TagFrontStyle, type TagPrint, type VectorQr } from "./tag-face";
-import { addTagsToBatch, saveTagPrint, saveTagPrints } from "./actions";
+import { addTagsToBatch, changePrintWorkflow, saveTagPrint, saveTagPrints, setTagPrintFailed } from "./actions";
+import { TAG_SETUP_KEYS, type PrintWorkflow, type PrintWorkflowAction } from "./print-workflow";
 import CharacterPicker, { Face } from "./character-picker";
 import { qrImage, vectorQr } from "./qr-vector";
+import { vectorizeBackgrounds } from "./vector-backgrounds";
 
 // Lo que manda el servidor (solo los links) y lo que usa el estudio (con los QR ya armados acá).
-export type PrintSource = { id: string; number: number; code: string; activationUrl: string; tagUrl: string; print: TagPrint };
-export type PrintItem = { id: string; number: number; code: string; activationQr: string; tagQr: VectorQr; print: TagPrint };
+export type PrintSource = { id: string; number: number; code: string; activationUrl: string; tagUrl: string; print: TagPrint; printFailed: boolean };
+export type PrintItem = { id: string; number: number; code: string; activationQr: string; tagQr: VectorQr; print: TagPrint; printFailed: boolean };
 // Por link: al sumar chapitas ("Completar hoja") solo se arman los QR nuevos.
 const qrCache = new Map<string, { activationQr: string; tagQr: VectorQr }>();
 const withQr = ({ activationUrl, tagUrl, ...item }: PrintSource): PrintItem => {
@@ -40,6 +42,7 @@ type Settings = {
   flapWidth: number;
   flapHeight: number;
   flapFresh: boolean;
+  cardScale: number;
   size: string;
   width: number;
   height: number;
@@ -64,13 +67,7 @@ type Settings = {
   paper: Paper;
 };
 
-const SIZES = [
-  { id: "85x55", label: "Tarjeta personal · 85×55 mm", width: 85, height: 55 },
-  { id: "90x50", label: "Tarjeta angosta · 90×50 mm", width: 90, height: 50 },
-  { id: "100x70", label: "Grande · 100×70 mm", width: 100, height: 70 },
-  { id: "custom", label: "Otra medida", width: 85, height: 55 },
-];
-const DEFAULTS: Settings = { design: "playful", cardLayout: "flap-a", flapWidth: 85, flapHeight: 55, flapFresh: false, size: "85x55", width: 85, height: 55, sides: "front", output: "single", cutLines: true, tagCutGuides: true, qrSize: 30, qrColor: "mix", tagSides: "both", tagOutput: "pairs", tagLayoutVersion: 2, tagCharacter: "mix", tagNames: {}, tagCharacters: {}, tagColors: {}, tagCards: {}, cardMatch: true, tagHole: false, paper: "A4", tagLayout: "v3", tagFront: "brand" };
+const DEFAULTS: Settings = { design: "playful", cardLayout: "flap-a", flapWidth: 85, flapHeight: 55, flapFresh: false, cardScale: 100, size: "85x55", width: 85, height: 55, sides: "front", output: "sheet", cutLines: true, tagCutGuides: true, qrSize: 30, qrColor: "mix", tagSides: "both", tagOutput: "pairs", tagLayoutVersion: 2, tagCharacter: "mix", tagNames: {}, tagCharacters: {}, tagColors: {}, tagCards: {}, cardMatch: true, tagHole: false, paper: "A4", tagLayout: "v3", tagFront: "brand" };
 const STORAGE_KEY = "bionfc-print-settings";
 // Lo de cada unidad no va al navegador: viene de la base (PrintItem.print).
 const UNIT_KEYS = ["tagNames", "tagCharacters", "tagColors", "tagCards"];
@@ -126,10 +123,24 @@ function SheetFoot({ batchName, page, pages, detail }: { batchName: string; page
   </footer>;
 }
 
-export default function PrintStudio({ batchId, batchName, items: sources, host, isLocal = false, initialMode }: { batchId: string; batchName: string; items: PrintSource[]; host: string; isLocal?: boolean; initialMode: Mode }) {
-  const items = useMemo(() => sources.map(withQr), [sources]);
+export default function PrintStudio({ batchId, batchName, items: sources, host, isLocal = false, initialMode, canMarkResults = true, workflow = null }: { batchId: string; batchName: string; items: PrintSource[]; host: string; isLocal?: boolean; initialMode: Mode; canMarkResults?: boolean; workflow?: PrintWorkflow | null }) {
+  const allItems = useMemo(() => sources.map(withQr), [sources]);
   const [mode, setMode] = useState<Mode>(initialMode);
-  const [settings, setSettings] = useState<Settings>(() => ({ ...DEFAULTS, ...unitsOf(items) }));
+  const [failedIds, setFailedIds] = useState<Set<string>>(() => new Set(sources.filter((item) => item.printFailed).map((item) => item.id)));
+  const [showFailedOnly, setShowFailedOnly] = useState(false);
+  const [showPendingOnly, setShowPendingOnly] = useState(false);
+  const [cardExcluded, setCardExcluded] = useState<Set<string>>(() => new Set());
+  const [cardOverrides, setCardOverrides] = useState<Set<string>>(() => new Set());
+  const [manufacturingSaving, setManufacturingSaving] = useState(false);
+  const locked = Boolean(workflow?.setup);
+  const pendingIds = useMemo(() => new Set(workflow?.reopenedIds ?? []), [workflow]);
+  useEffect(() => { setFailedIds(new Set(sources.filter((item) => item.printFailed).map((item) => item.id))); }, [sources]);
+  const items = useMemo(() => allItems.filter((item) => mode === "qr"
+    ? (!showFailedOnly || failedIds.has(item.id)) && (!showPendingOnly || pendingIds.has(item.id))
+    : !pendingIds.has(item.id) && (!failedIds.has(item.id) || cardOverrides.has(item.id)) && !cardExcluded.has(item.id)), [allItems, mode, showFailedOnly, showPendingOnly, pendingIds, failedIds, cardExcluded, cardOverrides]);
+  const excludedCards = useMemo(() => allItems.filter((item) => !items.includes(item)), [allItems, items]);
+  const [draftSettings, setSettings] = useState<Settings>(() => ({ ...DEFAULTS, ...unitsOf(allItems) }));
+  const settings: Settings = { ...draftSettings, ...workflow?.setup, ...(mode === "cards" ? { paper: draftSettings.paper } : {}) };
   const [previewId, setPreviewId] = useState(items[0]?.id || "");
   // Las chapitas elegidas en la hoja: Ctrl suma o saca, Shift elige un rango y el recuadro del mouse
   // marca las que toca. Con más de una, el panel cambia el animal o el color de todas juntas.
@@ -138,6 +149,10 @@ export default function PrintStudio({ batchId, batchName, items: sources, host, 
   const [filling, setFilling] = useState(false);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [editorNotice, setEditorNotice] = useState<{ id: string; message: string } | null>(null);
+  useEffect(() => {
+    if (!items.length) { if (picked.length) setPicked([]); return; }
+    if (!items.some((item) => picked.includes(item.id))) { setPicked([items[0].id]); setPreviewId(items[0].id); }
+  }, [items, picked]);
   const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   // Guarda una unidad en la chapita. Mientras se escribe el nombre, espera a que se deje de tipear.
   const saveUnit = (id: string, print: TagPrint, delay = 0) => {
@@ -160,14 +175,20 @@ export default function PrintStudio({ batchId, batchName, items: sources, host, 
       if (stored && typeof stored === "object") {
         // Lo que versiones anteriores guardaban en el navegador por unidad pasa una sola vez a la
         // chapita (sólo si la chapita todavía no tiene nada elegido).
-        const legacy = items.filter((item) => !Object.keys(item.print).length)
+        const legacy = allItems.filter((item) => !Object.keys(item.print).length)
           .map((item) => ({ id: item.id, print: cleanTagPrint({ name: stored.tagNames?.[item.id], character: stored.tagCharacters?.[item.id], color: stored.tagColors?.[item.id] }) }))
           .filter((entry) => Object.keys(entry.print).length);
         for (const entry of legacy) saveUnit(entry.id, entry.print);
-        const next = { ...DEFAULTS, ...stored, ...unitsOf([...items.filter((item) => Object.keys(item.print).length), ...legacy]) };
+        const next = { ...DEFAULTS, ...stored, ...unitsOf([...allItems.filter((item) => Object.keys(item.print).length), ...legacy]) };
         // Un diseño guardado que ya no existe vuelve al primero.
         if (!DESIGNS.some((design) => design.id === next.design)) next.design = DEFAULTS.design;
-        if (!["classic", "flap-a", "flap-b"].includes(next.cardLayout)) next.cardLayout = DEFAULTS.cardLayout;
+        // "Diseño 1" (la clásica) quedó descartado por ahora: las guardadas vuelven a la solapa.
+        if (!["flap-a", "flap-b"].includes(next.cardLayout)) next.cardLayout = DEFAULTS.cardLayout;
+        next.sides = "front";
+        // Primera apertura de la versión con escala: arranca en A4, como flujo normal de taller.
+        // Después se respeta lo que la persona elija, incluida "Una por página" para imprenta.
+        if (!("cardScale" in stored)) { next.cardScale = 100; next.output = "sheet"; next.paper = "A4"; }
+        next.cardScale = clamp(Number(next.cardScale) || 100, 65, 100);
         if (!LAYOUTS.some((layout) => layout.value === next.tagLayout)) next.tagLayout = DEFAULTS.tagLayout;
         // La versión anterior dejaba el modo espejado demasiado visible. Una sola vez migramos a
         // pares para armado; si después alguien activa doble faz a propósito, la elección se guarda.
@@ -206,12 +227,12 @@ export default function PrintStudio({ batchId, batchName, items: sources, host, 
   const unitPrint = (value: Settings, id: string): TagPrint => cleanTagPrint({ name: value.tagNames[id], character: value.tagCharacters[id], color: value.tagColors[id], card: value.tagCards[id] });
   const manyPending = useRef<string[]>([]);
   const restore = (target: Settings) => {
-    const changed = items.filter((item) => JSON.stringify(unitPrint(settings, item.id)) !== JSON.stringify(unitPrint(target, item.id))).map((item) => item.id);
+    const changed = allItems.filter((item) => JSON.stringify(unitPrint(settings, item.id)) !== JSON.stringify(unitPrint(target, item.id))).map((item) => item.id);
     const pending = [...Object.keys(saveTimers.current).filter((key) => key !== "many"), ...manyPending.current];
     for (const timer of Object.values(saveTimers.current)) clearTimeout(timer);
     saveTimers.current = {};
     manyPending.current = [];
-    const ids = [...new Set([...changed, ...pending])].filter((id) => items.some((item) => item.id === id));
+    const ids = [...new Set([...changed, ...pending])].filter((id) => allItems.some((item) => item.id === id));
     setSettings(target);
     savePrefs(target);
     setEditorNotice(null);
@@ -222,6 +243,7 @@ export default function PrintStudio({ batchId, batchName, items: sources, host, 
     flashCards(changed);
   };
   const undo = () => {
+    if (locked) return;
     const log = history.current, previous = log.past.pop();
     if (!previous) return;
     log.future.push(settings);
@@ -230,6 +252,7 @@ export default function PrintStudio({ batchId, batchName, items: sources, host, 
     syncHistory();
   };
   const redo = () => {
+    if (locked) return;
     const log = history.current, next = log.future.pop();
     if (!next) return;
     log.past.push(settings);
@@ -254,13 +277,14 @@ export default function PrintStudio({ batchId, batchName, items: sources, host, 
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // Diseño 2: la tarjeta con solapa (la actual o sus variantes A y B, más anchas).
+  // La tarjeta se escala entera: textos, QR, solapa y adornos conservan exactamente su proporción.
+  // La base abierta es 115×55 mm (85 mm cerrada + 30 mm de solapa).
   const secureCard = settings.cardLayout !== "classic";
-  // La solapa suma 25 mm: abierta mide 110×55 y al plegarla vuelve al formato 85×55.
-  // Con solapa: el tamaño de la tarjeta cerrada se elige dentro de FLAP_LIMITS; abierta suma la solapa.
-  const flapClosed = { width: clamp(settings.flapWidth, ...FLAP_LIMITS.width), height: clamp(settings.flapHeight, ...FLAP_LIMITS.height) };
-  const width = secureCard ? flapClosed.width + FLAP_WIDTH : clamp(settings.width, 40, 190);
-  const height = secureCard ? flapClosed.height : clamp(settings.height, 30, 270);
+  const cardScalePercent = clamp(settings.cardScale, 65, 100);
+  const cardRatio = cardScalePercent / 100;
+  const flapClosed = { width: 85, height: 55 };
+  const width = secureCard ? (flapClosed.width + FLAP_WIDTH) * cardRatio : clamp(settings.width, 40, 190) * cardRatio;
+  const height = secureCard ? flapClosed.height * cardRatio : clamp(settings.height, 30, 270) * cardRatio;
   // La chapita entera (el círculo), en mm. El QR vectorial de 25×25 módulos permite llegar a
   // 26 mm; por debajo los módulos quedan demasiado chicos para impresión doméstica confiable.
   const qrSize = clamp(settings.qrSize, 26, 45);
@@ -276,7 +300,10 @@ export default function PrintStudio({ batchId, batchName, items: sources, host, 
   // Cuántas entran por hoja.
   const cardGap = 2;
   const cardCols = Math.max(1, Math.floor((PAGE.width - PAGE.margin * 2 + cardGap) / (width + cardGap)));
-  const cardRows = Math.max(1, Math.floor((PAGE.height - PAGE.margin * 2 + cardGap) / (height + cardGap)));
+  // Un encaje matemáticamente exacto (100% da cinco filas al milímetro) no deja tolerancia de
+  // corte ni lugar real al pie de control. Un centésimo evita ese caso límite: 100%=4, 84%=10,
+  // 70%=14 en A4.
+  const cardRows = Math.max(1, Math.floor((PAGE.height - PAGE.margin * 2 + cardGap - .01) / (height + cardGap)));
   const perCardPage = cardCols * cardRows;
   // Bien juntas para no gastar hojas (2 mm entre una y otra para cortar).
   const qrGap = 2;
@@ -303,7 +330,7 @@ export default function PrintStudio({ batchId, batchName, items: sources, host, 
     ? settings.tagSides === "both" && settings.tagOutput === "pairs" ? pairPages.length : qrPages.length * tagFaces
     : single ? items.length * faces : cardPages.length * faces;
 
-  const cardScale = secureCard ? 1 : width / 85;
+  const cardScale = cardRatio;
   const cardStyle = { width: `${width}mm`, height: `${height}mm`, fontSize: `${cardScale}mm` };
   // Con sangrado la tarjeta crece 2 mm por lado (el fondo sigue por debajo) y el contenido queda
   // en la medida final.
@@ -615,6 +642,9 @@ export default function PrintStudio({ batchId, batchName, items: sources, host, 
       image.addEventListener("error", finish);
     })));
     flushSync(() => setPrintArt(true));
+    // Tarjetitas: los fondos con mosaico, en vector (vector-backgrounds.ts). Se deshace al cerrar.
+    restoreBackgrounds.current();
+    restoreBackgrounds.current = vectorizeBackgrounds(sheetsRef.current);
     // Los que no cambiaron (no estaban en la hoja impresa) no van a avisar: se dan por listos.
     for (const image of targets) if (!(image.getAttribute("href") || "").includes("/vector/")) image.dispatchEvent(new Event("load"));
     await Promise.race([ready, new Promise((resolve) => setTimeout(resolve, 90000))]);
@@ -624,13 +654,14 @@ export default function PrintStudio({ batchId, batchName, items: sources, host, 
     printing.current = false;
     window.print();
   };
+  const restoreBackgrounds = useRef<() => void>(() => {});
   const printRef = useRef(printNow);
   useEffect(() => { printRef.current = printNow; });
   useEffect(() => {
     const key = (event: globalThis.KeyboardEvent) => { if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "p") { event.preventDefault(); printRef.current(); } };
     // Si igual se imprime por otro lado (menú del navegador), al menos se cambia a vector.
-    const before = () => flushSync(() => setPrintArt(true));
-    const after = () => setPrintArt(false);
+    const before = () => { flushSync(() => setPrintArt(true)); restoreBackgrounds.current(); restoreBackgrounds.current = vectorizeBackgrounds(sheetsRef.current); };
+    const after = () => { setPrintArt(false); restoreBackgrounds.current(); restoreBackgrounds.current = () => {}; };
     window.addEventListener("keydown", key);
     window.addEventListener("beforeprint", before);
     window.addEventListener("afterprint", after);
@@ -667,10 +698,10 @@ export default function PrintStudio({ batchId, batchName, items: sources, host, 
   };
   // Las que llegan nuevas (después de "Completar hoja"): se suma lo que traen de la base, también al
   // historial (así deshacer no les borra el dibujo) y, si las acabamos de crear, quedan elegidas.
-  const knownIds = useRef(new Set(items.map((item) => item.id)));
+  const knownIds = useRef(new Set(allItems.map((item) => item.id)));
   const pickFresh = useRef(false);
   useEffect(() => {
-    const fresh = items.filter((item) => !knownIds.current.has(item.id));
+    const fresh = allItems.filter((item) => !knownIds.current.has(item.id));
     if (!fresh.length) return;
     for (const item of fresh) knownIds.current.add(item.id);
     const units = unitsOf(fresh);
@@ -679,11 +710,11 @@ export default function PrintStudio({ batchId, batchName, items: sources, host, 
     history.current.future = history.current.future.map(merge);
     setSettings(merge);
     if (pickFresh.current) { pickFresh.current = false; setPicked(fresh.map((item) => item.id)); setPreviewId(fresh[0].id); }
-  }, [items]);
+  }, [allItems]);
   const pageTools = (page: PrintItem[], index: number, total: number, capacity: number) => <div key={`tools-${index}`} className="ps-page-actions">
     <span>Hoja {index + 1}{page.length < capacity ? ` · ${page.length} de ${capacity}` : ""}</span>
     <button type="button" onClick={() => { setPicked(page.map((item) => item.id)); setPreviewId(page[0].id); }}>Elegir toda la hoja</button>
-    {index === total - 1 && page.length < capacity && <button type="button" className="is-fill" disabled={filling} onClick={() => fillSheet(capacity - page.length)}>{filling ? "Agregando…" : `Completar hoja · +${capacity - page.length}`}</button>}
+    {!locked && items.length === allItems.length && index === total - 1 && page.length < capacity && <button type="button" className="is-fill" disabled={filling} onClick={() => fillSheet(capacity - page.length)}>{filling ? "Agregando…" : `Completar hoja · +${capacity - page.length}`}</button>}
   </div>;
   // "Ver su tarjeta" / "Ver su chapita": la unidad elegida es la misma en las dos pestañas; se
   // cambia de pestaña y, ya dibujada, se lleva a la vista y brilla un momento.
@@ -715,6 +746,53 @@ export default function PrintStudio({ batchId, batchName, items: sources, host, 
   const pickedItems = items.filter((item) => picked.includes(item.id));
   const multi = pickedItems.length > 1;
   const pickedIds = pickedItems.map((item) => item.id);
+  const pendingItems = allItems.filter((item) => pendingIds.has(item.id));
+  const editableSelection = !locked || (pickedIds.length > 0 && pickedIds.every((id) => pendingIds.has(id)));
+  const workflowBusy = manufacturingSaving || filling || preparingPrint || saveState === "saving";
+  const changeStage = async (action: PrintWorkflowAction, ids: string[] = []) => {
+    if (workflowBusy) return;
+    setManufacturingSaving(true);
+    const setup = action === "print_tags" ? Object.fromEntries(TAG_SETUP_KEYS.map((key) => [key, settings[key]])) : undefined;
+    const ok = await changePrintWorkflow(batchId, action, ids, setup).catch(() => false);
+    setManufacturingSaving(false);
+    if (!ok) {
+      setToast("No se pudo actualizar el estado de impresión. Recargá el lote e intentá de nuevo.");
+      return;
+    }
+    setToast("Estado de impresión guardado.");
+  };
+  const confirmPrinted = () => setAsk({
+    title: "¿Ya imprimiste las chapitas?",
+    text: "Se guardará el diseño actual del lote. Podrás marcar fallas, reimprimir y reabrir unidades puntuales para corregirlas.",
+    actions: [{ label: "Marcar chapitas como impresas", main: true, run: () => void changeStage("print_tags") }],
+  });
+  const markPrintResult = async (failed: boolean) => {
+    if (!pickedIds.length || manufacturingSaving) return;
+    const ids = [...pickedIds];
+    const previous = new Set(failedIds);
+    const next = new Set(previous);
+    for (const id of ids) failed ? next.add(id) : next.delete(id);
+    setFailedIds(next);
+    if (failed) setCardOverrides((current) => { const clean = new Set(current); ids.forEach((id) => clean.delete(id)); return clean; });
+    setManufacturingSaving(true);
+    const ok = await setTagPrintFailed(batchId, ids, failed).catch(() => false);
+    setManufacturingSaving(false);
+    if (!ok) { setFailedIds(previous); setToast("No se pudo guardar el resultado. Revisá la conexión."); return; }
+    setToast(failed
+      ? `${ids.length === 1 ? "Chapita marcada" : `${ids.length} chapitas marcadas`} para reimprimir.`
+      : `${ids.length === 1 ? "Chapita lista" : `${ids.length} chapitas listas`}.`);
+  };
+  const excludePickedCards = () => {
+    if (!pickedIds.length) return;
+    setCardExcluded((current) => new Set([...current, ...pickedIds]));
+    setPicked([]);
+  };
+  const restoreCard = (id: string) => {
+    setCardExcluded((current) => { const next = new Set(current); next.delete(id); return next; });
+    if (failedIds.has(id)) setCardOverrides((current) => new Set([...current, id]));
+    setPicked([id]);
+    setPreviewId(id);
+  };
   // El valor que tienen todas las elegidas, o "" si no coinciden.
   const shared = (values: Record<string, string>) => { const first = values[pickedIds[0]] || ""; return pickedIds.every((id) => (values[id] || "") === first) ? first : ""; };
   const pickedNamed = pickedIds.filter((id) => settings.tagNames[id]?.trim());
@@ -849,7 +927,7 @@ export default function PrintStudio({ batchId, batchName, items: sources, host, 
     </svg>}
   </div>;
   // Divs (no botones) porque adentro va el botón "Ver su tarjeta".
-  const tagCell = (item: PrintItem, side: "front" | "back") => <div role="button" tabIndex={0} data-card={item.id} className={`ps-tag-cell ps-selectable${isPicked(item.id) ? " is-selected" : ""}`} {...pickProps(item.id)} onKeyDown={(event) => selectItemFromKeyboard(event, item.id)} aria-label={`Seleccionar chapita con código ${item.code}`}>
+  const tagCell = (item: PrintItem, side: "front" | "back") => <div role="button" tabIndex={0} data-card={item.id} className={`ps-tag-cell ps-selectable${isPicked(item.id) ? " is-selected" : ""}${failedIds.has(item.id) ? " is-failed" : ""}${pendingIds.has(item.id) ? " is-pending" : ""}`} {...pickProps(item.id)} onKeyDown={(event) => selectItemFromKeyboard(event, item.id)} aria-label={`Seleccionar chapita con código ${item.code}${pendingIds.has(item.id) ? ", por imprimir" : ""}`}>
     <span className="ps-tools">{partnerButton(item)}</span>
     {tagArtwork(item, side, "sheet")}
   </div>;
@@ -872,14 +950,26 @@ export default function PrintStudio({ batchId, batchName, items: sources, host, 
         <button type="button" role="tab" aria-selected={mode === "cards"} className={mode === "cards" ? "is-on" : ""} onClick={() => setMode("cards")}><b>2</b>Tarjetas</button>
       </div>
 
+      {!canMarkResults && <p className="ps-local" role="status">Podés imprimir. Para marcar chapitas como «Salió mal» o «Salió bien», falta actualizar la base de datos.</p>}
+      {workflow && <fieldset className="ps-group ps-workflow"><legend>Avance del lote</legend>
+        <p><strong>Chapitas:</strong> {locked ? "Impresas · diseño bloqueado" : "Por imprimir"}{pendingItems.length > 0 && ` · ${pendingItems.length} por volver a imprimir`}</p>
+        <p><strong>Tarjetas:</strong> {workflow.cardsPrintedCount ? `${workflow.cardsPrintedCount} marcadas como impresas` : "Por imprimir"}</p>
+        {mode === "qr" && !locked && <button type="button" disabled={workflowBusy || !items.length || showFailedOnly || saveState === "error"} onClick={confirmPrinted}>Marcar chapitas como impresas</button>}
+        {mode === "qr" && (pendingItems.length > 0 || showPendingOnly) && <button type="button" aria-pressed={showPendingOnly} onClick={() => { setShowFailedOnly(false); setShowPendingOnly(!showPendingOnly); }}>{showPendingOnly ? "Ver todo el lote" : "Solo las pendientes de corrección"}</button>}
+        {mode === "cards" && locked && <div className="ps-workflow-actions">
+          <button type="button" disabled={workflowBusy || !items.length} onClick={() => void changeStage("print_cards", items.map((item) => item.id))}>Marcar {items.length} como impresas</button>
+          {workflow.cardsPrintedCount && <button type="button" disabled={workflowBusy} onClick={() => void changeStage("reopen_cards")}>Volver a pendiente</button>}
+        </div>}
+      </fieldset>}
+      {mode === "qr" && canMarkResults && <fieldset className="ps-group ps-result-filter"><legend>Resultado de impresión</legend>
+        <div><span><b>{failedIds.size}</b> {failedIds.size === 1 ? "salió mal" : "salieron mal"}</span><button type="button" className={showFailedOnly ? "is-on" : ""} disabled={!failedIds.size && !showFailedOnly} onClick={() => { setShowPendingOnly(false); setShowFailedOnly(!showFailedOnly); }}>{showFailedOnly ? "Ver todo el lote" : "Solo las que salieron mal"}</button></div>
+        <small>Elegí una o varias en la hoja y marcá el resultado desde la barra superior.</small>
+      </fieldset>}
+
       {mode === "cards" ? <>
         <p className="ps-flow-note">🐾 Cada tarjeta sigue al animal de su chapita: si cambiás una chapita, su tarjeta se actualiza sola. <b>Imprimí las tarjetas cuando las chapitas estén listas.</b></p>
         <div className="ps-stage-title"><span>1</span><div><strong>Diseño de tarjetas</strong><small>Elegí formato, estilo y tamaño.</small></div></div>
         <fieldset className="ps-group"><legend>Formato de tarjeta</legend>
-          <div className="ps-card-formats">
-            <button type="button" className={settings.cardLayout === "classic" ? "is-on" : ""} onClick={() => update({ cardLayout: "classic" })}><span className="ps-card-format-preview is-classic"><i /></span><strong>Diseño 1</strong><small>Clásica · QR visible · medida configurable</small></button>
-            <button type="button" className={secureCard ? "is-on" : ""} onClick={() => update({ cardLayout: secureCard ? settings.cardLayout : "flap-a", sides: "front" })}><span className="ps-card-format-preview is-secure"><i /><b /></span><strong>Diseño 2</strong><small>Una sola faz · solapa privada · recomendado</small></button>
-          </div>
           {secureCard && <div className="ps-tag-styles ps-flap-variants">
             {([["flap-a", "A · Tapa limpia"], ["flap-b", "B · Pasos a la vista"]] as const).map(([value, label]) => <button key={value} type="button" className={settings.cardLayout === value ? "is-on" : ""} onClick={() => update({ cardLayout: value, sides: "front" })}>{label}</button>)}
           </div>}
@@ -897,28 +987,16 @@ export default function PrintStudio({ batchId, batchName, items: sources, host, 
           {!!styleCount.length && <p className="ps-style-count">En este lote: {styleCount.map(([label, count]) => `${count} ${label}`).join(" · ")}</p>}
         </fieldset>
         <fieldset className="ps-group"><legend>Tamaño</legend>
-          {secureCard ? <>
-            <div className="ps-row">
-              <label>Ancho cerrada (mm)<input type="number" min={FLAP_LIMITS.width[0]} max={FLAP_LIMITS.width[1]} value={settings.flapWidth} onChange={(event) => update({ flapWidth: Number(event.target.value) }, "flapWidth")} /></label>
-              <label>Alto (mm)<input type="number" min={FLAP_LIMITS.height[0]} max={FLAP_LIMITS.height[1]} value={settings.flapHeight} onChange={(event) => update({ flapHeight: Number(event.target.value) }, "flapHeight")} /></label>
-            </div>
-            <small className="ps-muted">Cerrada {flapClosed.width}×{flapClosed.height} mm · abierta {width}×{height} mm (la solapa del QR suma {FLAP_WIDTH} mm). Ancho de {FLAP_LIMITS.width[0]} a {FLAP_LIMITS.width[1]} y alto de {FLAP_LIMITS.height[0]} a {FLAP_LIMITS.height[1]}.</small>
-          </> : <><select value={settings.size} onChange={(event) => { const size = SIZES.find((item) => item.id === event.target.value)!; update(size.id === "custom" ? { size: size.id } : { size: size.id, width: size.width, height: size.height }); }}>
-            {SIZES.map((size) => <option key={size.id} value={size.id}>{size.label}</option>)}
-          </select>
-          {settings.size === "custom" && <div className="ps-row">
-            <label>Ancho (mm)<input type="number" min={40} max={190} value={settings.width} onChange={(event) => update({ width: Number(event.target.value) }, "width")} /></label>
-            <label>Alto (mm)<input type="number" min={30} max={270} value={settings.height} onChange={(event) => update({ height: Number(event.target.value) }, "height")} /></label>
-          </div>}</>}
-        </fieldset>
-        <fieldset className="ps-group"><legend>Caras</legend>
-          {secureCard ? <div className="ps-fixed-size"><strong>Una sola faz</strong><small>Las instrucciones, el QR y el código salen juntos en la misma cara.</small></div> : <><label className="ps-check"><input type="radio" checked={settings.sides === "both"} onChange={() => update({ sides: "both" })} />Frente y dorso</label><label className="ps-check"><input type="radio" checked={settings.sides === "front"} onChange={() => update({ sides: "front" })} />Solo frente (el dorso lo hago en Canva)</label></>}
+          <label className="ps-card-scale"><span><b>{cardScalePercent}%</b><small>Abierta {Math.round(width)} × {Math.round(height)} mm</small></span><input type="range" min={65} max={100} step={1} value={cardScalePercent} onChange={(event) => update({ cardScale: Number(event.target.value) }, "cardScale")} /></label>
+          <div className="ps-size-result"><strong>{perCardPage} por hoja {paper}</strong><small>El diseño, la solapa y el QR se achican juntos, sin deformarse.</small></div>
+          {cardScalePercent === 65 && <small className="ps-compact-note">Este es el mínimo recomendado para que el QR siga siendo confiable al imprimir.</small>}
         </fieldset>
         <fieldset className="ps-group"><legend>Formato</legend>
           <label className="ps-check"><input type="radio" checked={settings.output === "single"} onChange={() => update({ output: "single" })} />Una por página, con sangrado (imprenta o Canva)</label>
           <label className="ps-check"><input type="radio" checked={settings.output === "sheet"} onChange={() => update({ output: "sheet" })} />Hoja {paper}, {perCardPage} por hoja (imprimir en casa)</label>
         </fieldset>
       </> : <>
+      {!locked && <>
       <div className="ps-stage-title"><span>1</span><div><strong>Diseño general</strong><small>Definí cómo se imprimen todas las chapitas.</small></div></div>
       <section className="ps-layouts" aria-label="Diseño de la chapita">
         <span className="ps-layouts-title">Diseño de la chapita</span>
@@ -979,6 +1057,8 @@ export default function PrintStudio({ batchId, batchName, items: sources, host, 
         </div>
       </details>
 
+      </>}
+      {editableSelection && <>
       <div className="ps-stage-title ps-personalize-title"><span>2</span><div><strong>Personalizar unidades</strong><small>Tocá una chapita para editarla. Para varias: arrastrá un recuadro sobre la hoja (con Ctrl se suma), o Ctrl / Shift + clic.</small></div></div>
       <section className="ps-personalize" aria-label="Personalización por unidad">
         <div className="ps-personalize-head"><div><strong>{multi ? `Editando ${pickedItems.length} chapitas` : "Editando esta chapita"}</strong>{previewItem && !multi && <span className={settings.tagNames[previewItem.id]?.trim() ? "has-name" : "is-stock"}>{settings.tagNames[previewItem.id]?.trim() ? "Con nombre" : "Stock"}</span>}</div><small className={`ps-save is-${saveState}`}>{{ idle: "Se guarda automáticamente.", saving: "Guardando…", saved: "✓ Guardado en la chapita", error: "⚠ No se pudo guardar. Revisá la conexión." }[saveState]}</small></div>
@@ -1076,11 +1156,12 @@ export default function PrintStudio({ batchId, batchName, items: sources, host, 
         </div>}
         </>}
       </section>
+      </>}
       <small className="ps-muted">El dorso conserva siempre el diseño original y el QR público. El código privado va sólo en la tarjeta de activación.</small>
       </>}
 
       <div className="ps-stage-title"><span>{mode === "qr" ? 3 : 2}</span><div><strong>Preparar impresión</strong><small>Revisá hoja, corte y cantidad de páginas.</small></div></div>
-      {!single && <fieldset className="ps-group"><legend>Hoja</legend>
+      {!single && !(mode === "qr" && locked) && <fieldset className="ps-group"><legend>Hoja</legend>
         <div className="ps-tag-styles">
           {(Object.keys(PAPERS) as Paper[]).map((size) => <button key={size} type="button" className={paper === size ? "is-on" : ""} onClick={() => update({ paper: size })}>{size} · {PAPERS[size].width}×{PAPERS[size].height} mm</button>)}
         </div>
@@ -1089,7 +1170,7 @@ export default function PrintStudio({ batchId, batchName, items: sources, host, 
 
       {!single && <fieldset className="ps-group"><legend>Corte</legend>
         {mode === "qr" ? <>
-          <label className="ps-check"><input type="checkbox" checked={settings.tagCutGuides} onChange={(event) => update({ tagCutGuides: event.target.checked })} />Contorno vectorial continuo (Corel/Adobe)</label>
+          <label className="ps-check"><input type="checkbox" disabled={locked} checked={settings.tagCutGuides} onChange={(event) => update({ tagCutGuides: event.target.checked })} />Contorno vectorial continuo (Corel/Adobe)</label>
           <button type="button" className="ps-cut-download" onClick={downloadCutContourSvg}>Descargar molde exacto de {qrSize} mm (.SVG)</button>
           <small className="ps-muted">El círculo magenta marca el diámetro final exacto; el color se extiende 1 mm afuera como sangrado. En Corel o Illustrator, asignale al trazo el spot/hairline que pida el taller (normalmente CutContour).</small>
         </> : <label className="ps-check"><input type="checkbox" checked={settings.cutLines} onChange={(event) => update({ cutLines: event.target.checked })} />Líneas de corte punteadas</label>}
@@ -1117,17 +1198,29 @@ export default function PrintStudio({ batchId, batchName, items: sources, host, 
     </aside>
 
     <main ref={sheetsRef} className={`ps-sheets${single ? " is-single" : ""}`} onPointerDown={startBand} onDragStart={(event) => event.preventDefault()}>
+      {mode === "cards" && !!excludedCards.length && <section className="ps-card-excluded" aria-label={`No se imprimen ${excludedCards.length} tarjetas`}>
+        <div><strong>No se imprimen ({excludedCards.length})</strong><small>Salieron mal o las apartaste. Tocá una para devolverla a la hoja.</small></div>
+        <div>{excludedCards.map((item) => <button type="button" key={item.id} disabled={pendingIds.has(item.id)} onClick={() => restoreCard(item.id)}><Face id={characterOf(item)} color={colorOf(item)} size={28} /><span>{unitNumber(item.number)}</span><small>{pendingIds.has(item.id) ? "Chapita por imprimir" : failedIds.has(item.id) ? "Salió mal" : "Apartada"}</small></button>)}</div>
+      </section>}
       {!!items.length && <div className="ps-sheet-row"><div className="ps-sheet-bar">
         <div className="ps-history">
-          <button type="button" title="Deshacer (Ctrl+Z)" aria-label="Deshacer" disabled={!historySize.past} onClick={undo}>↶<span>Deshacer</span></button>
-          <button type="button" title="Rehacer (Ctrl+Y)" aria-label="Rehacer" disabled={!historySize.future} onClick={redo}>↷<span>Rehacer</span></button>
+          <button type="button" title="Deshacer (Ctrl+Z)" aria-label="Deshacer" disabled={locked || !historySize.past} onClick={undo}>↶<span>Deshacer</span></button>
+          <button type="button" title="Rehacer (Ctrl+Y)" aria-label="Rehacer" disabled={locked || !historySize.future} onClick={redo}>↷<span>Rehacer</span></button>
         </div>
-        {multi
-          ? <p><b>{pickedItems.length} elegidas</b><button type="button" onClick={collapsePick}>Soltar <kbd>Esc</kbd></button></p>
-          : <p className="ps-sheet-tip">Arrastrá sobre la hoja para elegir varias</p>}
+        {pickedItems.length ? <p><b>{pickedItems.length} {pickedItems.length === 1 ? "elegida" : "elegidas"}</b>
+          {mode === "qr" ? canMarkResults && <><button type="button" className="is-bad" disabled={manufacturingSaving} onClick={() => markPrintResult(true)}>Salió mal</button><button type="button" className="is-good" disabled={manufacturingSaving} onClick={() => markPrintResult(false)}>Salió bien</button></> : <button type="button" className="is-bad" onClick={excludePickedCards}>No imprimir {pickedItems.length === 1 ? "esta" : "estas"}</button>}
+          {mode === "qr" && locked && (editableSelection
+            ? <button type="button" disabled={workflowBusy || saveState === "error"} onClick={() => void changeStage("print_units", pickedIds)}>Marcar selección impresa</button>
+            : <button type="button" disabled={workflowBusy} onClick={() => setAsk({
+              title: "¿Reabrir la edición de la selección?",
+              text: "Las chapitas seleccionadas quedarán pendientes de imprimir y sus tarjetas se apartarán hasta que vuelvas a marcarlas como impresas.",
+              actions: [{ label: "Reabrir edición", main: true, run: () => void changeStage("reopen_units", pickedIds) }],
+            })}>Reabrir edición</button>)}
+          {multi && <button type="button" onClick={collapsePick}>Soltar <kbd>Esc</kbd></button>}
+        </p> : <p className="ps-sheet-tip">Arrastrá sobre la hoja para elegir varias</p>}
       </div></div>}
       <div ref={bandRef} className="ps-band" hidden />
-      {!items.length && <p className="ps-empty">Todas las chapitas de este lote ya están activadas: no hay nada para imprimir.</p>}
+      {!items.length && <p className="ps-empty">{mode === "cards" ? "No quedaron tarjetas para imprimir." : showPendingOnly ? "No hay chapitas pendientes de corrección." : showFailedOnly ? "No hay chapitas marcadas para reimprimir." : "No hay chapitas sin activar para imprimir en este lote."}</p>}
       {mode === "qr" && previewItem && <section className="ps-tag-overview" aria-label={`Vista del código ${previewItem.code}`}>
         <div className="ps-tag-overview-head"><div><small>VISTA PREVIA</small><h2>{unit(previewItem.number)} · {previewItem.code}</h2></div><div className="ps-overview-side"><span>{settings.tagNames[previewItem.id]?.trim() || "Sin nombre · stock"}</span><button type="button" className="ps-partner" onClick={showPartner}>Ver su tarjeta <i aria-hidden="true">→</i></button></div></div>
         <div className="ps-tag-overview-pair">
@@ -1172,7 +1265,7 @@ export default function PrintStudio({ batchId, batchName, items: sources, host, 
       </div>) : settings.tagOutput === "pairs" ? pairPages.map((page, pageIndex) => [pageTools(page, pageIndex, pairPages.length, perPairPage), <section key={pageIndex} className="ps-page ps-pair-page" aria-label={`Hoja ${pageIndex + 1}: frentes y dorsos de chapitas`}>
         <span className="ps-page-label">Hoja {pageIndex + 1} · pares para armado</span>
         <div className="ps-grid ps-pair-grid" style={{ gridTemplateColumns: `repeat(${pairCols}, ${pairWidth}mm)`, gap: `${pairGap}mm` }}>
-          {page.map((item) => <div role="button" tabIndex={0} key={item.id} data-card={item.id} className={`ps-print-pair ps-selectable${isPicked(item.id) ? " is-selected" : ""}`} {...pickProps(item.id)} onKeyDown={(event) => selectItemFromKeyboard(event, item.id)} aria-label={`Seleccionar chapita con código ${item.code}`}>
+          {page.map((item) => <div role="button" tabIndex={0} key={item.id} data-card={item.id} className={`ps-print-pair ps-selectable${isPicked(item.id) ? " is-selected" : ""}${failedIds.has(item.id) ? " is-failed" : ""}${pendingIds.has(item.id) ? " is-pending" : ""}`} {...pickProps(item.id)} onKeyDown={(event) => selectItemFromKeyboard(event, item.id)} aria-label={`Seleccionar chapita con código ${item.code}${pendingIds.has(item.id) ? ", por imprimir" : ""}`}>
             <span className="ps-tools">{partnerButton(item)}</span>
             <div className="ps-print-pair-faces">
               {tagArtwork(item, "front", `pair-${pageIndex}`)}
