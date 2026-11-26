@@ -506,6 +506,11 @@ a.pet-celebrate-more { align-items: center; text-decoration: none; }
 .pet-confetti { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 .pet-confetti i { position: absolute; top: -14px; width: 7px; height: 11px; border-radius: 2px; animation: pet-confetti-fall 3.8s linear infinite; }
 .pet-celebrate.is-done > :not(.pet-confetti) { position: relative; z-index: 1; }
+/* Sin foto: en lugar de la historia, el pedido de la foto (la imagen se arma con ella). */
+.pet-story-nophoto { display: grid; justify-items: center; gap: 10px; padding: 18px 16px; border: 1.5px dashed #f0c9ad; border-radius: 20px; background: #fff7f0; text-align: center; }
+.pet-story-nophoto > span { font-size: 34px; line-height: 1; }
+.pet-story-nophoto p { margin: 0; color: #6f5545; font-size: 14.5px; line-height: 1.45; }
+.pet-story-nophoto .pet-step-next { margin-top: 4px; }
 .pet-story-preview { display: grid; justify-items: center; gap: 10px; margin: 2px 0 0; padding: 18px 0 8px; border-radius: 24px; background: radial-gradient(circle at 50% 40%, #ffe3cf, #ffe3cf00 70%); }
 .pet-story-preview img { width: 138px; max-width: 100%; aspect-ratio: 9 / 16; border-radius: 16px; object-fit: cover; background: linear-gradient(100deg, #f6e2d2 30%, #fff3e9 50%, #f6e2d2 70%) 0 0 / 300% 100%; box-shadow: 0 14px 30px #2d1d1233; color: transparent; animation: pet-story-float 4s ease-in-out infinite, pet-story-skeleton 1.3s linear infinite; }
 .pet-story-preview.is-loaded img { animation: pet-story-float 4s ease-in-out infinite, pet-story-in .45s ease-out; }

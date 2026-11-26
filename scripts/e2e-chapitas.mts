@@ -156,7 +156,8 @@ async function run() {
     const { data: afterSteps } = await admin.from("landings").select("button_style").eq("id", data.tagId).single();
     const savedPet = (afterSteps?.button_style as { pet?: { look?: string; about?: { sex?: string }; family?: unknown[] } })?.pet;
     check("Opcionales: se guardó lo elegido antes de seguir", savedPet?.look === "divertido" && savedPet?.about?.sex === "Hembra" && savedPet?.family?.length === 1, `${savedPet?.look} · ${savedPet?.about?.sex} · ${savedPet?.family?.length} contacto(s)`);
-    check("Opcionales: final con 'Subir a mi historia' y la imagen", await waitFor("[...document.querySelectorAll('button')].some((b) => b.textContent.includes('Subir a mi historia')) && Boolean(document.querySelector('.pet-story-preview img'))"));
+    // Sin foto (se salteó): en lugar de la historia pide la foto, y no ofrece "Subir a mi historia".
+    check("Opcionales: final sin foto pide la foto (sin 'Subir a mi historia')", await waitFor("Boolean(document.querySelector('.pet-story-nophoto .pet-step-next')) && ![...document.querySelectorAll('button')].some((b) => b.textContent.includes('Subir a mi historia'))"));
     // "Listo" termina en Mis chapitas, con la bienvenida apuntando al botón rojo.
     await click(".pet-done-card");
     check("Final: lleva a Mis chapitas con la bienvenida", await waitFor("location.pathname === '/mi' && Boolean(document.querySelector('.mi-welcome')) && Boolean(document.querySelector('.mi-lost-button.is-highlight'))", 30));

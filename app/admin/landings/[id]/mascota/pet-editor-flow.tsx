@@ -119,7 +119,9 @@ export function AfterScreen({ step, steps }: { step: AfterStep; steps?: AfterSte
       if (!result?.ok) return;
     }
     const following = list[list.indexOf(step) + 1] || "done";
-    if (following === "done" && steps) { router.push(`/mi?completa=${landing.id}`); return; }
+    // Completando desde Mis chapitas, termina ahí. Si la lista trae "done" (subir la foto desde la
+    // pantalla final), vuelve a esa pantalla.
+    if (following === "done" && steps && !steps.includes("done")) { router.push(`/mi?completa=${landing.id}`); return; }
     to(following);
   };
 
@@ -136,7 +138,9 @@ export function AfterScreen({ step, steps }: { step: AfterStep; steps?: AfterSte
       <span className="pet-ficha-copy">Completar su ficha<small>Son 2 minutos · {AFTER_STEPS.length} pasos cortitos</small></span>
       <span className="pet-ficha-arrow" aria-hidden="true">→</span>
     </button>
-    <button type="button" className="pet-celebrate-home" onClick={() => go({ name: "after", step: "done" })}>Lo hago después</button>
+    {/* Si lo deja para después, está apurado: directo a Mis chapitas (ahí está Compartir, y la
+        bienvenida le explica cómo volver), sin la pantalla de compartir de en medio. */}
+    <button type="button" className="pet-celebrate-home" onClick={() => router.push(`/mi?nueva=${landing.id}`)}>Lo hago después</button>
     <div className="pet-celebrate-preview">
       <p>Así la ve quien la escanea:</p>
       <MiniPreview />
@@ -148,21 +152,30 @@ export function AfterScreen({ step, steps }: { step: AfterStep; steps?: AfterSte
   // gana el dueño (que más gente conozca su cara) y después el gracias; cada historia que se sube
   // es publicidad gratis. Se ve la imagen real que va a subir.
   if (step === "done") {
+    // La imagen para compartir se arma con la foto: sin foto queda vacía. Primero se pide la foto
+    // (el paso "photo", que al terminar vuelve acá) y recién con ella se ofrece la historia.
+    const hasPhoto = Boolean(landing.photoUrl);
     return <section className="pet-wizard pet-celebrate is-done">
       <div className="pet-confetti" aria-hidden="true">{CONFETTI.map((color, index) => <i key={index} style={{ left: `${6 + index * 11}%`, background: color, animationDelay: `${(index * 0.7) % 3}s` }} />)}</div>
       <div className="pet-wizard-progress is-done" aria-hidden="true"><span style={{ width: "100%" }} /></div>
       <div className="pet-celebrate-mark" aria-hidden="true">🎉</div>
       <h2>¡{petName} ya tiene su chapita!</h2>
-      <p className="pet-wizard-lead">Mostrásela a tus amigos en tus historias.</p>
+      <p className="pet-wizard-lead">{hasPhoto ? "Mostrásela a tus amigos en tus historias." : `Subí una foto de ${petName} y mostrásela a tus amigos en tus historias.`}</p>
       <AccessCard petName={petName} />
-      {/* La historia que va a subir. Mientras se arma, un esqueleto con brillo; después, un fundido. */}
-      <figure className={`pet-story-preview${storyLoaded ? " is-loaded" : ""}`}>
-        {/* eslint-disable-next-line @next/next/no-img-element -- la imagen para historias, la misma que se comparte */}
-        <img src={storyUrl} alt={`La historia de ${petName}`} onLoad={() => setStoryLoaded(true)} ref={(image) => { if (image?.complete && image.naturalWidth) setStoryLoaded(true); }} />
-        <figcaption>Así queda tu historia</figcaption>
-      </figure>
-      <PetStoryShareButton path={`/mascota/${landing.slug}`} petName={name} version={version} className="pet-step-next pet-story-cta" label="Subir a mi historia" icon={<FaInstagram aria-hidden="true" />} />
-      <p className="pet-story-thanks">Y de paso nos ayudás a crecer 🧡</p>
+      {hasPhoto ? <>
+        {/* La historia que va a subir. Mientras se arma, un esqueleto con brillo; después, un fundido. */}
+        <figure className={`pet-story-preview${storyLoaded ? " is-loaded" : ""}`}>
+          {/* eslint-disable-next-line @next/next/no-img-element -- la imagen para historias, la misma que se comparte */}
+          <img src={storyUrl} alt={`La historia de ${petName}`} onLoad={() => setStoryLoaded(true)} ref={(image) => { if (image?.complete && image.naturalWidth) setStoryLoaded(true); }} />
+          <figcaption>Así queda tu historia</figcaption>
+        </figure>
+        <PetStoryShareButton path={`/mascota/${landing.slug}`} petName={name} version={version} className="pet-step-next pet-story-cta" label="Subir a mi historia" icon={<FaInstagram aria-hidden="true" />} />
+        <p className="pet-story-thanks">Y de paso nos ayudás a crecer 🧡</p>
+      </> : <div className="pet-story-nophoto">
+        <span aria-hidden="true">📷</span>
+        <p>La imagen para tus historias se arma con su foto. Subila y te la mostramos.</p>
+        <button type="button" className="pet-step-next" onClick={() => go({ name: "after", step: "photo", steps: ["photo", "done"] })}>Subir una foto</button>
+      </div>}
       {/* Termina en Mis chapitas: es su lugar (editar, compartir y, si se pierde, avisar). La
           primera vez se le muestra qué hay ahí, también el botón para cuando se pierda (?nueva=,
           ver app/mi/mi-welcome.tsx). */}
@@ -182,7 +195,7 @@ export function AfterScreen({ step, steps }: { step: AfterStep; steps?: AfterSte
       {steps && index === 0
         ? <Link className="pet-wizard-back" href="/mi" onClick={toMi}>{leaving ? "Guardando…" : "← Mis chapitas"}</Link>
         : <button type="button" className="pet-wizard-back" onClick={() => to(list[index - 1] || "ready")}>← Atrás</button>}
-      <span className="pet-wizard-count">{steps ? "Completar ficha" : "Opcional"} · {index + 1} de {list.length}</span>
+      <span className="pet-wizard-count">{steps ? "Completar ficha" : "Opcional"} · {index + 1} de {list.filter((item) => item !== "done").length}</span>
     </div>
     <div className="pet-wizard-progress" aria-hidden="true"><span style={{ width: `${((index + 1) / list.length) * 100}%` }} /></div>
 
