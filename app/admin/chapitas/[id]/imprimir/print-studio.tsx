@@ -23,6 +23,7 @@ import { TAG_SETUP_KEYS, type PrintWorkflow, type PrintWorkflowAction } from "./
 import CharacterPicker, { Face } from "./character-picker";
 import { qrImage, vectorQr } from "./qr-vector";
 import { vectorizeBackgrounds } from "./vector-backgrounds";
+import { cardSizeOptions, packCards } from "./card-pack";
 
 // Lo que manda el servidor (solo los links) y lo que usa el estudio (con los QR ya armados acá).
 export type PrintSource = { id: string; number: number; code: string; activationUrl: string; tagUrl: string; print: TagPrint; printFailed: boolean };
@@ -69,10 +70,6 @@ type Settings = {
 
 const DEFAULTS: Settings = { design: "playful", cardLayout: "flap-a", flapWidth: 85, flapHeight: 55, flapFresh: false, cardScale: 100, size: "85x55", width: 85, height: 55, sides: "front", output: "sheet", cutLines: true, tagCutGuides: true, qrSize: 30, qrColor: "mix", tagSides: "both", tagOutput: "pairs", tagLayoutVersion: 2, tagCharacter: "mix", tagNames: {}, tagCharacters: {}, tagColors: {}, tagCards: {}, cardMatch: true, tagHole: false, paper: "A4", tagLayout: "v3", tagFront: "brand" };
 const STORAGE_KEY = "bionfc-print-settings";
-// Tamaños listos de la tarjetita (porcentaje de la abierta de 115×55 mm), elegidos por cuántas
-// entran en A4: 100% = 4, 82% = 12, 70% = 14. Más chica no suma (65% también da 14) y el QR de
-// activación necesita tamaño para leerse bien impreso.
-const CARD_PRESETS = [[100, "Grande"], [82, "Mediana"], [70, "Chica"]] as const;
 // Lo de cada unidad no va al navegador: viene de la base (PrintItem.print).
 const UNIT_KEYS = ["tagNames", "tagCharacters", "tagColors", "tagCards"];
 const prefsOf = (value: Settings) => Object.fromEntries(Object.entries(value).filter(([key]) => !UNIT_KEYS.includes(key)));
@@ -308,7 +305,12 @@ export default function PrintStudio({ batchId, batchName, items: sources, host, 
   // corte ni lugar real al pie de control. Un centésimo evita ese caso límite: 100%=4, 84%=10,
   // 70%=14 en A4.
   const cardRows = Math.max(1, Math.floor((PAGE.height - PAGE.margin * 2 + cardGap - .01) / (height + cardGap)));
-  const perCardPage = cardCols * cardRows;
+  // Las tarjetitas se acomodan para que entren las más posibles, girando algunas si suma (card-pack.ts).
+  const cardArea = { width: PAGE.width - PAGE.margin * 2, height: PAGE.height - PAGE.margin * 2 };
+  const cardSlots = packCards(cardArea.width, cardArea.height, width, height, cardGap);
+  const perCardPage = Math.max(1, cardSlots.length);
+  // Para cada cantidad por hoja, la tarjeta más grande con la que entra.
+  const sizeOptions = useMemo(() => cardSizeOptions(PAGE.width - PAGE.margin * 2, PAGE.height - PAGE.margin * 2, 85 + FLAP_WIDTH, 55, 2), [PAGE.width, PAGE.height, PAGE.margin]);
   // Bien juntas para no gastar hojas (2 mm entre una y otra para cortar).
   const qrGap = 2;
   const qrCell = qrSize;
@@ -991,14 +993,12 @@ export default function PrintStudio({ batchId, batchName, items: sources, host, 
           {!!styleCount.length && <p className="ps-style-count">En este lote: {styleCount.map(([label, count]) => `${count} ${label}`).join(" · ")}</p>}
         </fieldset>
         <fieldset className="ps-group"><legend>Tamaño</legend>
-          {/* Tamaños listos (cada uno con cuántas entran por hoja); el control de abajo ajusta fino. */}
-          <div className="ps-card-presets">{CARD_PRESETS.map(([percent, label]) => {
-            const ratio = percent / 100, presetWidth = (85 + FLAP_WIDTH) * ratio, presetHeight = 55 * ratio;
-            const perPage = Math.max(1, Math.floor((PAGE.width - PAGE.margin * 2 + cardGap) / (presetWidth + cardGap))) * Math.max(1, Math.floor((PAGE.height - PAGE.margin * 2 + cardGap - .01) / (presetHeight + cardGap)));
-            return <button key={percent} type="button" className={cardScalePercent === percent ? "is-on" : ""} onClick={() => update({ cardScale: percent })}><strong>{label}</strong><small>{Math.round(presetWidth)}×{Math.round(presetHeight)} mm · {perPage} por hoja</small></button>;
-          })}</div>
-          <label className="ps-card-scale"><span><b>{cardScalePercent}%</b><small>Abierta {Math.round(width)} × {Math.round(height)} mm</small></span><input type="range" min={65} max={100} step={1} value={cardScalePercent} onChange={(event) => update({ cardScale: Number(event.target.value) }, "cardScale")} /></label>
-          <div className="ps-size-result"><strong>{perCardPage} por hoja {paper}</strong><small>El diseño, la solapa y el QR se achican juntos, sin deformarse.</small></div>
+          {/* Elegís cuántas por hoja y va la tarjeta más grande con la que entran; abajo, ajuste fino. */}
+          <div className="ps-card-presets">{sizeOptions.map((option) => <button key={option.count} type="button" className={cardScalePercent === option.percent ? "is-on" : ""} onClick={() => update({ cardScale: option.percent })}>
+            <strong>{option.count} por hoja</strong><small>{Math.round((85 + FLAP_WIDTH) * option.percent / 100)}×{Math.round(55 * option.percent / 100)} mm</small>
+          </button>)}</div>
+          <label className="ps-card-scale"><span><b>{cardScalePercent}%</b><small>Abierta {Math.round(width)} × {Math.round(height)} mm</small></span><input type="range" min={65} max={100} step={0.5} value={cardScalePercent} onChange={(event) => update({ cardScale: Number(event.target.value) }, "cardScale")} /></label>
+          <div className="ps-size-result"><strong>{perCardPage} por hoja {paper}</strong><small>{cardSlots.some((slot) => slot.rotated) ? "Algunas van giradas para que entren más. " : ""}El diseño, la solapa y el QR se achican juntos, sin deformarse.</small></div>
           {cardScalePercent === 65 && <small className="ps-compact-note">Este es el mínimo recomendado para que el QR siga siendo confiable al imprimir.</small>}
         </fieldset>
         <fieldset className="ps-group"><legend>Formato</legend>
@@ -1252,9 +1252,17 @@ export default function PrintStudio({ batchId, batchName, items: sources, host, 
         {pageTools(page, pageIndex, cardPages.length, perCardPage)}
         <section className="ps-page" aria-label={`Hoja ${pageIndex + 1}: frentes`}>
           <span className="ps-page-label">Hoja {pageIndex + 1} · frentes</span>
-          <div className="ps-grid" style={gridStyle(cardCols, width, cardGap)}>
-            {/* Un div (no un botón) porque adentro va el botoncito de estilo de la tarjeta. */}
-            {page.map((item) => <div role="button" tabIndex={0} key={item.id} data-card={item.id} className={`ps-cell ps-selectable${settings.cutLines ? " has-cut" : ""}${isPicked(item.id) ? " is-selected" : ""}`} {...pickProps(item.id)} onKeyDown={(event) => selectItemFromKeyboard(event, item.id)} aria-label={`Seleccionar tarjeta con código ${item.code}`}>{styleChip(item)}<CardFront design={cardDesignOf(item)} layout={settings.cardLayout} item={item} host={host} style={cardStyle} closed={flapClosed} fresh={settings.flapFresh} /></div>)}
+          {/* Cada tarjeta en el lugar que le da el acomodador; las giradas ocupan alto × ancho y la
+              tarjeta adentro rota 90°. Un div (no un botón) porque adentro va el botoncito de estilo. */}
+          <div className="ps-pack" style={{ width: `${cardArea.width}mm`, height: `${cardArea.height}mm` }}>
+            {page.map((item, slotIndex) => {
+              const slot = cardSlots[slotIndex] || { x: 0, y: 0, rotated: false };
+              const card = <CardFront design={cardDesignOf(item)} layout={settings.cardLayout} item={item} host={host} style={cardStyle} closed={flapClosed} fresh={settings.flapFresh} />;
+              return <div role="button" tabIndex={0} key={item.id} data-card={item.id} className={`ps-cell ps-selectable${settings.cutLines ? " has-cut" : ""}${isPicked(item.id) ? " is-selected" : ""}${slot.rotated ? " is-rotated" : ""}`} style={{ left: `${slot.x}mm`, top: `${slot.y}mm`, width: `${slot.rotated ? height : width}mm`, height: `${slot.rotated ? width : height}mm` }} {...pickProps(item.id)} onKeyDown={(event) => selectItemFromKeyboard(event, item.id)} aria-label={`Seleccionar tarjeta con código ${item.code}`}>
+                {styleChip(item)}
+                {slot.rotated ? <div className="ps-rot" style={{ width: `${width}mm`, height: `${height}mm`, transform: `translateX(${height}mm) rotate(90deg)` }}>{card}</div> : card}
+              </div>;
+            })}
           </div>
           <SheetFoot batchName={batchName} page={pageIndex + 1} pages={cardPages.length} detail="Tarjetas · frentes" />
         </section>

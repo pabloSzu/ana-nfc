@@ -799,3 +799,8 @@ html:has(.ps)::-webkit-scrollbar, body:has(.ps)::-webkit-scrollbar { display: no
 .ps-card-presets button:hover { border-color: #9fb0ff; }
 .ps-card-presets button.is-on { border-color: #3446c9; background: #f3f6ff; box-shadow: 0 0 0 1px #3446c9; }
 .ps-card-presets button.is-on strong { color: #273eb3; }
+
+/* Hoja de tarjetas acomodada (card-pack.ts): cada una en su lugar, algunas giradas 90°. */
+.ps-pack { position: relative; }
+.ps-pack > .ps-cell { position: absolute; }
+.ps-rot { position: absolute; top: 0; left: 0; transform-origin: 0 0; }
