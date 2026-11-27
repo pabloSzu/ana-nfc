@@ -1,7 +1,7 @@
 // Cómo se acomodan las tarjetitas en la hoja (app/admin/chapitas/[id]/imprimir/card-pack.ts). `npm test`.
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import { cardSizeOptions, packCards, type CardSlot } from "../app/admin/chapitas/[id]/imprimir/card-pack.ts";
+import { cardSizeOptions, packCards, sizeHints, type CardSlot } from "../app/admin/chapitas/[id]/imprimir/card-pack.ts";
 
 // A4 menos 7 mm de margen por lado, 2 mm entre tarjetas; la tarjeta abierta base es 115×55 mm.
 const AREA = { width: 196, height: 283 }, GAP = 2, BASE = { width: 115, height: 55 };
@@ -35,6 +35,16 @@ describe("acomodar tarjetitas", () => {
         assert.ok(apart, `${percent}%: las tarjetas ${i} y ${j} se pisan`);
       }
     }
+  });
+
+  test("avisos con un tamaño a mano: agrandar sin perder ninguna, o achicar para que entren más", () => {
+    const hint = sizeHints(AREA.width, AREA.height, BASE.width, BASE.height, GAP, 90);
+    assert.equal(hint.count, 7);
+    assert.equal(hint.grow, 99.5);
+    assert.deepEqual(hint.more, { percent: 86, count: 9 });
+    // En el tamaño justo no sugiere agrandar; en el mínimo no hay con cuánto entren más.
+    assert.equal(sizeHints(AREA.width, AREA.height, BASE.width, BASE.height, GAP, 86).grow, null);
+    assert.equal(sizeHints(AREA.width, AREA.height, BASE.width, BASE.height, GAP, 65).more, null);
   });
 
   test("las opciones por hoja van de más grande a más chica y sin repetir cantidad", () => {

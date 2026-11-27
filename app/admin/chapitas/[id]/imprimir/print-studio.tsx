@@ -23,7 +23,7 @@ import { TAG_SETUP_KEYS, type PrintWorkflow, type PrintWorkflowAction } from "./
 import CharacterPicker, { Face } from "./character-picker";
 import { qrImage, vectorQr } from "./qr-vector";
 import { vectorizeBackgrounds } from "./vector-backgrounds";
-import { cardSizeOptions, packCards } from "./card-pack";
+import { cardSizeOptions, packCards, sizeHints } from "./card-pack";
 
 // Lo que manda el servidor (solo los links) y lo que usa el estudio (con los QR ya armados acá).
 export type PrintSource = { id: string; number: number; code: string; activationUrl: string; tagUrl: string; print: TagPrint; printFailed: boolean };
@@ -310,6 +310,8 @@ export default function PrintStudio({ batchId, batchName, items: sources, host, 
   const cardSlots = packCards(cardArea.width, cardArea.height, width, height, cardGap);
   const perCardPage = Math.max(1, cardSlots.length);
   // Para cada cantidad por hoja, la tarjeta más grande con la que entra.
+  // Con el tamaño elegido a mano: hasta dónde agrandarla sin perder ninguna y con cuánto entran más.
+  const sizeHint = useMemo(() => sizeHints(PAGE.width - PAGE.margin * 2, PAGE.height - PAGE.margin * 2, 85 + FLAP_WIDTH, 55, 2, cardScalePercent), [PAGE.width, PAGE.height, PAGE.margin, cardScalePercent]);
   const sizeOptions = useMemo(() => cardSizeOptions(PAGE.width - PAGE.margin * 2, PAGE.height - PAGE.margin * 2, 85 + FLAP_WIDTH, 55, 2), [PAGE.width, PAGE.height, PAGE.margin]);
   // Bien juntas para no gastar hojas (2 mm entre una y otra para cortar).
   const qrGap = 2;
@@ -998,7 +1000,14 @@ export default function PrintStudio({ batchId, batchName, items: sources, host, 
             <strong>{option.count} por hoja</strong><small>{Math.round((85 + FLAP_WIDTH) * option.percent / 100)}×{Math.round(55 * option.percent / 100)} mm</small>
           </button>)}</div>
           <label className="ps-card-scale"><span><b>{cardScalePercent}%</b><small>Abierta {Math.round(width)} × {Math.round(height)} mm</small></span><input type="range" min={65} max={100} step={0.5} value={cardScalePercent} onChange={(event) => update({ cardScale: Number(event.target.value) }, "cardScale")} /></label>
+          {/* La medida a mano: el ancho de la tarjeta abierta; el alto sigue la proporción. */}
+          <label className="ps-card-mm">Ancho abierta<input type="number" key={cardScalePercent} min={75} max={115} step={0.5} defaultValue={Math.round(width * 2) / 2} onBlur={(event) => { const mm = Number(event.currentTarget.value); if (mm) update({ cardScale: clamp(Math.round(mm / (85 + FLAP_WIDTH) * 200) / 2, 65, 100) }); else event.currentTarget.value = String(Math.round(width * 2) / 2); }} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} /><span>mm × {String(Math.round(height * 2) / 2).replace(".", ",")} mm de alto</span></label>
           <div className="ps-size-result"><strong>{perCardPage} por hoja {paper}</strong><small>{cardSlots.some((slot) => slot.rotated) ? "Algunas van giradas para que entren más. " : ""}El diseño, la solapa y el QR se achican juntos, sin deformarse.</small></div>
+          {/* Si el tamaño desperdicia hoja: agrandarla sin perder ninguna, o achicarla para que entren más. */}
+          {(sizeHint.grow || sizeHint.more) && <div className="ps-size-hints">
+            {sizeHint.grow && <p><span>Podés agrandarla a <b>{Math.round((85 + FLAP_WIDTH) * sizeHint.grow / 100)}×{Math.round(55 * sizeHint.grow / 100)} mm</b> y siguen entrando {sizeHint.count}.</span><button type="button" onClick={() => update({ cardScale: sizeHint.grow! })}>Agrandar</button></p>}
+            {sizeHint.more && <p><span>Achicándola a <b>{Math.round((85 + FLAP_WIDTH) * sizeHint.more.percent / 100)}×{Math.round(55 * sizeHint.more.percent / 100)} mm</b> entran {sizeHint.more.count}.</span><button type="button" onClick={() => update({ cardScale: sizeHint.more!.percent })}>Aplicar</button></p>}
+          </div>}
           {cardScalePercent === 65 && <small className="ps-compact-note">Este es el mínimo recomendado para que el QR siga siendo confiable al imprimir.</small>}
         </fieldset>
         <fieldset className="ps-group"><legend>Formato</legend>

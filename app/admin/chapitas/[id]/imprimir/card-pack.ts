@@ -54,6 +54,18 @@ export function packCards(areaWidth: number, areaHeight: number, cardWidth: numb
   return best.map((slot) => ({ ...slot, x: slot.x + shift }));
 }
 
+// Para un tamaño elegido a mano: hasta dónde se puede agrandar sin perder ninguna por hoja, y el
+// tamaño más grande con el que entra al menos una más (null si no hay). Pasos de medio punto.
+export function sizeHints(areaWidth: number, areaHeight: number, baseWidth: number, baseHeight: number, gap: number, percent: number, min = 65, max = 100) {
+  const count = (p: number) => packCards(areaWidth, areaHeight, baseWidth * p / 100, baseHeight * p / 100, gap).length;
+  const current = count(percent);
+  let grow = percent;
+  for (let p = Math.floor(percent * 2) / 2 + .5; p <= max; p += .5) { if (count(p) >= current) grow = p; else break; }
+  let more: { percent: number; count: number } | null = null;
+  for (let p = Math.ceil(percent * 2) / 2 - .5; p >= min; p -= .5) { const n = count(p); if (n > current) { more = { percent: p, count: n }; break; } }
+  return { count: current, grow: grow > percent ? grow : null, more };
+}
+
 // Para cada cantidad por hoja, el tamaño más grande (en % de la tarjeta base) con el que entra.
 // Se saltean las que casi no cambian el tamaño respecto de la anterior (menos de 2,5 puntos), salvo
 // la que más mete.
