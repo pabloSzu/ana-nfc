@@ -790,3 +790,12 @@ html:has(.ps)::-webkit-scrollbar, body:has(.ps)::-webkit-scrollbar { display: no
   .pc-night.pc-front.is-flap.is-fresh .pc-qrbox { box-shadow: 0 0 0 .5em #a88bff !important; }
   .pc-rainbow.pc-front.is-flap.is-fresh .pc-qrbox { box-shadow: 0 0 0 .3em #2a1f3d !important; }
 }
+
+/* Tamaños listos de la tarjetita, arriba del control fino. */
+.ps-card-presets { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.ps-card-presets button { display: grid; gap: 1px; padding: 8px 10px; border: 1px solid #d8dce5; border-radius: 10px; background: #fff; text-align: left; cursor: pointer; font: inherit; }
+.ps-card-presets button strong { color: #1d2130; font-size: 13px; }
+.ps-card-presets button small { color: #6b7080; font-size: 11px; }
+.ps-card-presets button:hover { border-color: #9fb0ff; }
+.ps-card-presets button.is-on { border-color: #3446c9; background: #f3f6ff; box-shadow: 0 0 0 1px #3446c9; }
+.ps-card-presets button.is-on strong { color: #273eb3; }

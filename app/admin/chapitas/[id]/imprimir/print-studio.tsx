@@ -69,6 +69,10 @@ type Settings = {
 
 const DEFAULTS: Settings = { design: "playful", cardLayout: "flap-a", flapWidth: 85, flapHeight: 55, flapFresh: false, cardScale: 100, size: "85x55", width: 85, height: 55, sides: "front", output: "sheet", cutLines: true, tagCutGuides: true, qrSize: 30, qrColor: "mix", tagSides: "both", tagOutput: "pairs", tagLayoutVersion: 2, tagCharacter: "mix", tagNames: {}, tagCharacters: {}, tagColors: {}, tagCards: {}, cardMatch: true, tagHole: false, paper: "A4", tagLayout: "v3", tagFront: "brand" };
 const STORAGE_KEY = "bionfc-print-settings";
+// Tamaños listos de la tarjetita (porcentaje de la abierta de 115×55 mm), elegidos por cuántas
+// entran en A4: 100% = 4, 82% = 12, 70% = 14. Más chica no suma (65% también da 14) y el QR de
+// activación necesita tamaño para leerse bien impreso.
+const CARD_PRESETS = [[100, "Grande"], [82, "Mediana"], [70, "Chica"]] as const;
 // Lo de cada unidad no va al navegador: viene de la base (PrintItem.print).
 const UNIT_KEYS = ["tagNames", "tagCharacters", "tagColors", "tagCards"];
 const prefsOf = (value: Settings) => Object.fromEntries(Object.entries(value).filter(([key]) => !UNIT_KEYS.includes(key)));
@@ -987,6 +991,12 @@ export default function PrintStudio({ batchId, batchName, items: sources, host, 
           {!!styleCount.length && <p className="ps-style-count">En este lote: {styleCount.map(([label, count]) => `${count} ${label}`).join(" · ")}</p>}
         </fieldset>
         <fieldset className="ps-group"><legend>Tamaño</legend>
+          {/* Tamaños listos (cada uno con cuántas entran por hoja); el control de abajo ajusta fino. */}
+          <div className="ps-card-presets">{CARD_PRESETS.map(([percent, label]) => {
+            const ratio = percent / 100, presetWidth = (85 + FLAP_WIDTH) * ratio, presetHeight = 55 * ratio;
+            const perPage = Math.max(1, Math.floor((PAGE.width - PAGE.margin * 2 + cardGap) / (presetWidth + cardGap))) * Math.max(1, Math.floor((PAGE.height - PAGE.margin * 2 + cardGap - .01) / (presetHeight + cardGap)));
+            return <button key={percent} type="button" className={cardScalePercent === percent ? "is-on" : ""} onClick={() => update({ cardScale: percent })}><strong>{label}</strong><small>{Math.round(presetWidth)}×{Math.round(presetHeight)} mm · {perPage} por hoja</small></button>;
+          })}</div>
           <label className="ps-card-scale"><span><b>{cardScalePercent}%</b><small>Abierta {Math.round(width)} × {Math.round(height)} mm</small></span><input type="range" min={65} max={100} step={1} value={cardScalePercent} onChange={(event) => update({ cardScale: Number(event.target.value) }, "cardScale")} /></label>
           <div className="ps-size-result"><strong>{perCardPage} por hoja {paper}</strong><small>El diseño, la solapa y el QR se achican juntos, sin deformarse.</small></div>
           {cardScalePercent === 65 && <small className="ps-compact-note">Este es el mínimo recomendado para que el QR siga siendo confiable al imprimir.</small>}
