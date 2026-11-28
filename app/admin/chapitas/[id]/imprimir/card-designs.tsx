@@ -1,7 +1,7 @@
 // Los diseños de la tarjetita del paquete: frente con el QR secreto y el código de activación;
 // dorso con cómo funciona y dónde entrar si se pierde. Todos con la misma estructura (lo que
-// importa siempre en el mismo lugar) y cada uno con sus colores, adornos y textos, con la mascota
-// hablando. Están dibujados en "em": 1em = 1 mm en una tarjeta de 85 mm de ancho, y la letra base
+// importa siempre en el mismo lugar) y cada uno con sus colores, adornos y textos, con textos
+// que le hablan al dueño. Están dibujados en "em": 1em = 1 mm en una tarjeta de 85 mm de ancho, y la letra base
 // crece con el tamaño elegido (print-studio.tsx), así que todo escala junto. Ningún texto queda
 // por debajo de 2,2em (~6 puntos impreso). Estilos en print-studio.css (.pc-*).
 import { memo, type CSSProperties, type ReactNode } from "react";
@@ -37,13 +37,13 @@ type Design = {
   watermark?: ReactNode;
 };
 
-// Lo mismo que pide la activación: entrar con el email y cargar el nombre y el WhatsApp (la foto es opcional).
-const LEAD = "Escaneá el código, entrá con tu email y poné mi nombre y tu WhatsApp.";
+// Le habla al dueño (nunca la mascota en primera persona: "mi nombre y tu WhatsApp" confundía).
+const LEAD = "Escaneá el QR, confirmá tu email y cargá los datos de tu mascota.";
 
 export const DESIGNS: Design[] = [
   {
     id: "playful", label: "Juguetón", hint: "Durazno y rosa, con patitas", swatch: "linear-gradient(135deg, #ffd3cb 0 50%, #3a1730 50%)",
-    title: "¡Hola! Activame en 2 minutos", lead: LEAD, backTitle: "Así me ayudás a volver",
+    title: "¡Activá tu chapita en 2 minutos!", lead: LEAD, backTitle: "Así vuelve a casa",
     deco: [{ icon: <LuPawPrint />, x: 44, y: 78, size: 18, rotate: -20 }, { icon: <LuHeart />, x: 36, y: 6, size: 6, rotate: 14 }],
     backDeco: [{ icon: <LuPawPrint />, x: 22, y: 42, size: 14, rotate: 18 }],
   },
@@ -51,7 +51,7 @@ export const DESIGNS: Design[] = [
     // Para cualquier mascota: azul noche liso con estrellas (colores sólidos: salen parejos en
     // impresora casera; no negro puro, que gasta más tinta y se raya).
     id: "night", label: "Noche", hint: "Azul noche con estrellas y animalitos, para cualquier mascota", swatch: "linear-gradient(135deg, #161b33 0 50%, #a88bff 50%)",
-    title: "Activame y siempre vuelvo a casa", lead: LEAD, backTitle: "Siempre de vuelta a casa",
+    title: "Activá tu chapita en 2 minutos", lead: LEAD, backTitle: "Siempre de vuelta a casa",
     deco: [{ icon: <LuStar />, x: 46, y: 1, size: 6, rotate: 12 }, { icon: <LuPawPrint />, x: 46, y: 74, size: 12, rotate: -18 }, { icon: <LuDog />, x: 37, y: 84, size: 6, rotate: 0 }],
     backDeco: [{ icon: <LuStar />, x: 14, y: 42, size: 12, rotate: 12 }, { icon: <LuCat />, x: 27, y: 80, size: 6, rotate: -8 }, { icon: <LuSparkles />, x: 44, y: 86, size: 4, rotate: 0 }],
   },
@@ -60,7 +60,7 @@ export const DESIGNS: Design[] = [
     // recuadros blancos; la parte del QR, lisa, con un arcoíris dibujado. En la tarjeta con solapa
     // va el segundo adorno (abajo a la derecha, adentro); en la clásica, el arco sobre el QR.
     id: "rainbow", label: "Arcoíris", hint: "Bandas de arcoíris y un arcoíris dibujado, para cualquier mascota", swatch: "linear-gradient(135deg, #e8414f 0 17%, #f08a1c 0 34%, #f5c518 0 50%, #2fa35a 0 67%, #2f86d6 0 84%, #6a45e0 0)",
-    title: "¡Hola! Ya casi tengo mi chapita", lead: LEAD, backTitle: "Con mi chapita, siempre vuelvo",
+    title: "¡Ya casi! Activá tu chapita", lead: LEAD, backTitle: "Con su chapita, siempre vuelve",
     deco: [{ icon: <LuHeart />, x: 0, y: 0, size: 5, rotate: 0 }, { icon: <RainbowArt />, x: 0, y: 0, size: 10, rotate: 0 }],
     backDeco: [{ icon: <RainbowArt />, x: 6, y: 44, size: 17, rotate: 0 }, { icon: <LuPawPrint />, x: 38, y: 14, size: 6, rotate: 18 }],
   },
@@ -68,14 +68,14 @@ export const DESIGNS: Design[] = [
     // Lo de perritos: un perrito enorme y clarito de fondo, huellitas, huesitos y corazones (en el CSS), y
     // arriba una huella y abajo un huesito (los dos primeros adornos son los de la tarjeta con solapa).
     id: "paws", label: "Patitas", hint: "Naranja y crema, lleno de huellas y huesitos", swatch: "linear-gradient(135deg, #fff1e2 0 50%, #e9772f 50%)",
-    title: "¡Guau! Ya casi tengo mi chapita", lead: LEAD, backTitle: "Si me pierdo, vuelvo a casa",
+    title: "¡Guau! Activá tu chapita", lead: LEAD, backTitle: "Si se pierde, vuelve a casa",
     watermark: <LuDog />,
     deco: [{ icon: <LuPawPrint />, x: 47, y: 2, size: 6, rotate: 16 }, { icon: <LuBone />, x: 47, y: 76, size: 9, rotate: -24 }, { icon: <LuPawPrint />, x: 2, y: 66, size: 10, rotate: -24 }, { icon: <LuPawPrint />, x: 14, y: 84, size: 7, rotate: -12 }],
     backDeco: [{ icon: <LuPawPrint />, x: 8, y: 44, size: 11, rotate: -18 }, { icon: <LuBone />, x: 26, y: 58, size: 8, rotate: -20 }, { icon: <LuDog />, x: 30, y: 80, size: 6, rotate: 0 }],
   },
   {
     id: "kitty", label: "Michi", hint: "Lavanda, con orejitas de gato en el QR", swatch: "linear-gradient(135deg, #ece3ff 0 50%, #4b2a85 50%)",
-    title: "¡Miau! Activame en 2 minutos", lead: LEAD, backTitle: "Si me escapo, te avisan",
+    title: "¡Miau! Activá tu chapita", lead: LEAD, backTitle: "Si se escapa, te avisan",
     // Todo de michi (sin pescado): un gatito enorme y clarito de fondo, huellitas, ovillos, caritas de gato y
     // corazones (en el CSS), y adornos de huella y corazón (los dos primeros, en la tarjeta con solapa).
     watermark: <LuCat />,
@@ -157,13 +157,13 @@ export const CardFront = memo(function CardFront({ design: id, layout = "classic
   const design = designOf(id);
   if (isFlapCard(layout)) {
     const clean = layout === "flap-a";
-    // Los pasos reales de la activación: escanear, confirmar el email con el código de 6 dígitos que
-    // llega por mail y cargar nombre y WhatsApp (la foto es opcional). Hablan como la mascota, igual
-    // que el título. En la tapa de la B el QR está tapado: el primer paso arranca abriendo la solapa.
+    // Los pasos reales de la activación, cortos y hablándole al dueño: escanear, confirmar el email
+    // (con el código que llega por mail) y cargar los datos de la mascota. En la tapa de la B el QR
+    // está tapado: el primer paso arranca abriendo la solapa.
     const steps = <ol>
       <li><b><Num n="1" /></b>{clean ? "Escaneá el QR" : "Abrí la solapa y escaneá el QR"}</li>
-      <li><b><Num n="2" /></b>Poné tu email y el código que te llega</li>
-      <li><b><Num n="3" /></b>Cargá mi nombre y tu WhatsApp</li>
+      <li><b><Num n="2" /></b>Confirmá tu email</li>
+      <li><b><Num n="3" /></b>Cargá los datos de tu mascota</li>
     </ol>;
     // Los adornos del estilo sólo en esquinas libres: arriba a la derecha de la tapa y abajo en la
     // zona interior. Nunca detrás del texto ni donde va el calco.
@@ -182,7 +182,7 @@ export const CardFront = memo(function CardFront({ design: id, layout = "classic
           <h2>{design.title}</h2>
           {clean ? <span className="pc-flap-open">Abrí la solapa <i aria-hidden="true">→</i></span> : steps}
         </div>
-        <small className="pc-flap-foot">Si me pierdo, quien me encuentre te avisa</small>
+        <small className="pc-flap-foot">Si se pierde, quien la encuentre te avisa</small>
       </div>
       {/* Bajo la solapa (55–85): se ve al abrirla, al lado del QR. */}
       <div className="pc-flap-inside">
@@ -232,10 +232,10 @@ export const CardBack = memo(function CardBack({ design: id, host, style, bleed 
     <Deco items={design.backDeco} />
     <div className="pc-left"><h2>{design.backTitle}</h2><Logo light /></div>
     <ul>
-      <li><b><Num n="1" /></b>Me encuentran y escanean mi chapita</li>
-      <li><b><Num n="2" /></b>Ven mi foto y tu WhatsApp</li>
+      <li><b><Num n="1" /></b>Si se pierde, escanean su chapita</li>
+      <li><b><Num n="2" /></b>Ven su foto y tu WhatsApp</li>
       <li><b><Num n="3" /></b>Te avisan al toque</li>
-      <li><b><Num n="!" /></b>¿Me perdí? Avisá en {host}/mi</li>
+      <li><b><Num n="!" /></b>¿Se perdió? Avisá en {host}/mi</li>
     </ul>
   </article>;
 }, sameCardProps);
