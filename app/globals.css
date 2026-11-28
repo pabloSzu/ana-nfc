@@ -3169,7 +3169,7 @@ dialog.confirm-modal { width: min(400px, calc(100vw - 32px)); }
 .pet-message { max-width: 320px; margin: 10px auto 0; font-size: 15px; line-height: 1.5; opacity: .82; white-space: pre-line; }
 .pet-family { display: grid; gap: 10px; margin-top: 24px; margin-bottom: 14px; }
 .pet-contact { display: flex; gap: 8px; }
-.pet-whatsapp, .pet-call { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; border-radius: 16px; background: var(--pet-accent); color: var(--pet-accent-ink); text-decoration: none; box-shadow: 0 10px 24px color-mix(in srgb, var(--pet-accent) 34%, transparent); transition: transform .15s; }
+.pet-whatsapp, .pet-call { position: relative; display: inline-flex; align-items: center; justify-content: center; min-height: 52px; border-radius: 16px; background: var(--pet-accent); color: var(--pet-accent-ink); text-decoration: none; box-shadow: 0 10px 24px color-mix(in srgb, var(--pet-accent) 34%, transparent); transition: transform .15s; }
 .pet-whatsapp { flex: 1; gap: 10px; padding: 0 18px; font-size: 16px; font-weight: 800; }
 .pet-whatsapp svg { flex: none; font-size: 22px; }
 .pet-call { flex: none; width: 52px; font-size: 20px; background: var(--pet-card); color: var(--pet-accent); box-shadow: 0 8px 20px rgba(0, 0, 0, .07); }
@@ -3194,35 +3194,69 @@ dialog.confirm-modal { width: min(400px, calc(100vw - 32px)); }
 .pet-page.look-calido .pet-hero { padding: 23px 18px 27px; border: 1px solid #f5d9c3; border-radius: 34px; background: var(--pet-card); box-shadow: 0 17px 42px #9a54211c; }
 .pet-page.look-calido .pet-photo { border-color: #fff; box-shadow: 0 10px 25px #b9531e36; }
 .pet-page.look-calido .pet-card { border: 1px solid #f2ddca; }
-.pet-page.look-pastel .pet-hero { padding: 24px 16px 28px; border: 1px solid #ffffffbd; border-radius: 110px 110px 30px 30px; background: linear-gradient(165deg, #fff9, #ffffffdf); }
-.pet-page.look-pastel .pet-photo { border-radius: 44% 56% 57% 43%; transform: rotate(-5deg); box-shadow: 0 10px 30px #7465e833; }
-.pet-page.look-pastel .pet-whatsapp, .pet-page.look-pastel .pet-call { border-radius: 28px; }
-.pet-page.look-pastel .pet-card { border: 1px solid #ffffffd9; border-radius: 28px; }
-.pet-page.look-campo .pet-hero { justify-items: start; padding: 20px 4px 22px; border-top: 2px solid #3c652b50; border-bottom: 1px solid #3c652b50; text-align: left; }
-.pet-page.look-campo .pet-photo { width: 110px; height: 110px; border: 3px solid var(--pet-card); border-radius: 24px; box-shadow: 8px 8px 0 #3c652b2b; }
-.pet-page.look-campo .pet-name { letter-spacing: -.045em; }
-.pet-page.look-campo .pet-message { margin-left: 0; }
-.pet-page.look-campo .pet-card { border: 1px solid #3c652b30; border-radius: 8px; box-shadow: none; }
-.pet-page.look-campo .pet-whatsapp, .pet-page.look-campo .pet-call { border-radius: 10px; box-shadow: none; }
 .pet-page.look-divertido .pet-hero { padding: 22px 17px 27px; border: 3px solid var(--pet-ink); border-radius: 28px; background: var(--pet-card); box-shadow: 8px 8px 0 #3b1d2b; }
 .pet-page.look-divertido .pet-photo { width: 118px; height: 118px; border: 4px solid var(--pet-ink); border-radius: 28px; transform: rotate(-6deg); box-shadow: 7px 7px 0 #ffd6e6; }
+/* El marco va inclinado, la foto derecha adentro (y un poco más grande, para no dejar esquinas vacías). */
+.pet-page.look-divertido .pet-photo img { transform: rotate(6deg) scale(1.1); }
 .pet-page.look-divertido .pet-card { border: 2px solid var(--pet-ink); box-shadow: 4px 4px 0 #3b1d2b; }
 .pet-page.look-divertido .pet-whatsapp { border: 2px solid var(--pet-ink); box-shadow: 5px 5px 0 #3b1d2b; }
-.pet-page.look-oceano .pet-hero { justify-items: start; padding: 8px 2px 24px; text-align: left; }
-.pet-page.look-oceano .pet-photo { width: 100px; height: 100px; border: 0; border-radius: 24px; box-shadow: 0 12px 24px #066b7726; }
-.pet-page.look-oceano .pet-name { letter-spacing: -.055em; }
-.pet-page.look-oceano .pet-message { margin-left: 0; }
-.pet-page.look-oceano .pet-card { border: 1px solid #066b7730; border-radius: 14px; box-shadow: none; }
-.pet-page.look-oceano .pet-whatsapp, .pet-page.look-oceano .pet-call { border-radius: 12px; box-shadow: none; }
-.pet-page.look-lavanda .pet-hero { padding: 24px 18px 28px; border: 1px solid #78449f55; border-radius: 100px 100px 18px 18px; background: #fffaffbb; }
-.pet-page.look-lavanda .pet-photo { width: 120px; height: 120px; border: 5px double var(--pet-accent); box-shadow: none; }
-.pet-page.look-lavanda .pet-name { font-weight: 700; }
-.pet-page.look-lavanda .pet-card { border-left: 3px solid var(--pet-accent); border-radius: 10px; box-shadow: none; }
-.pet-page.look-noche .pet-hero { padding: 24px 18px 28px; border: 1px solid #f4b74055; border-radius: 26px; background: #222738; box-shadow: 0 18px 40px #0004; }
-.pet-page.look-noche .pet-photo { border-color: #f4b740; box-shadow: 0 0 32px #f4b74038; }
-.pet-page.look-noche .pet-photo-placeholder { color: #f4b740; }
-.pet-page.look-noche .pet-card { border-color: #f4b7403d; }
-.pet-page.look-noche .pet-whatsapp { box-shadow: 0 0 25px #f4b74032; }
+.pet-page.look-lavanda { border-top: 6px solid; border-image: linear-gradient(90deg, #b9a4fb, #8f7cf6, #6f86f4, #5fa8f0, #6fd6e0) 1; background: radial-gradient(circle at 10% 4%, #c4b5fd40 0 120px, #c4b5fd00 121px), radial-gradient(circle at 92% 10%, #a5f3fc40 0 100px, #a5f3fc00 101px), linear-gradient(170deg, var(--pet-bg), var(--pet-bg-to)); }
+.pet-page.look-lavanda .pet-hero { padding: 30px 18px 28px; border: 3px solid transparent; border-radius: 120px 120px 26px 26px; background: linear-gradient(#fff, #fff) padding-box, linear-gradient(140deg, #b9a4fb, #8f7cf6, #6f86f4, #5fa8f0, #6fd6e0) border-box; box-shadow: 0 18px 40px #6d4fd81c; }
+.pet-page.look-lavanda .pet-photo { width: 122px; height: 122px; border: 6px solid transparent; background: linear-gradient(#f1edff, #f1edff) padding-box, conic-gradient(#b9a4fb, #8f7cf6, #6f86f4, #5fa8f0, #6fd6e0, #b9a4fb) border-box; box-shadow: 0 0 0 4px #fff, 0 12px 28px #6d4fd826; }
+.pet-page.look-lavanda .pet-greeting { background: linear-gradient(90deg, #7c5ce6, #5b6ee8, #2a9fc4); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.pet-page.look-lavanda .pet-name { font-weight: 600; font-style: italic; }
+.pet-page.look-lavanda .pet-whatsapp { border-radius: 999px; background: linear-gradient(100deg, #8064e8, #5f74ea 55%, #3d9bd6); box-shadow: 0 12px 26px #6d4fd833; }
+.pet-page.look-lavanda .pet-call { border: 1px solid #ddd5ff; border-radius: 999px; }
+.pet-page.look-lavanda .pet-card { position: relative; overflow: hidden; border: 1px solid #e6e0ff; border-radius: 22px; box-shadow: 0 8px 22px #6d4fd810; }
+.pet-page.look-lavanda .pet-card::before { content: ""; position: absolute; inset: 0 0 auto; height: 4px; background: linear-gradient(90deg, #b9a4fb, #8f7cf6, #6f86f4, #5fa8f0, #6fd6e0); }
+.pet-page.look-lavanda .pet-card h2 { color: #5b45c4; }
+/* Arcoíris: blanco, con el arcoíris en el borde de arriba, el marco, el aro de la foto y las tarjetas. */
+.pet-page.look-arcoiris { border-top: 6px solid; border-image: linear-gradient(90deg, #ff5a6e, #ff9f43, #ffd43b, #3ccf91, #3aa0ff, #8b5cf6) 1; }
+.pet-page.look-arcoiris .pet-hero { padding: 26px 18px 28px; border: 3px solid transparent; border-radius: 32px; background: linear-gradient(#fff, #fff) padding-box, linear-gradient(120deg, #ff5a6e, #ff9f43, #ffd43b, #3ccf91, #3aa0ff, #8b5cf6) border-box; box-shadow: 0 18px 40px #6a45e01c; }
+/* El aro va en el borde: la foto (con su encuadre) ocupa el interior y no lo tapa. */
+.pet-page.look-arcoiris .pet-photo { border: 6px solid transparent; background: linear-gradient(#f4efff, #f4efff) padding-box, conic-gradient(#ff5a6e, #ff9f43, #ffd43b, #3ccf91, #3aa0ff, #8b5cf6, #ff5a6e) border-box; box-shadow: 0 0 0 4px #fff, 0 12px 28px #6a45e026; }
+.pet-page.look-arcoiris .pet-greeting { background: linear-gradient(90deg, #ff5a6e, #ff9f43, #3ccf91, #3aa0ff, #8b5cf6); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.pet-page.look-arcoiris .pet-name { font-weight: 700; letter-spacing: -.02em; }
+.pet-page.look-arcoiris .pet-whatsapp { border-radius: 999px; background: linear-gradient(100deg, #7c4dff, #5b5bf0); box-shadow: 0 12px 26px #6a45e033; }
+.pet-page.look-arcoiris .pet-call { border: 1px solid #ece6ff; border-radius: 999px; }
+.pet-page.look-arcoiris .pet-card { position: relative; overflow: hidden; border: 1px solid #efe9ff; border-radius: 22px; box-shadow: 0 8px 22px #6a45e010; }
+.pet-page.look-arcoiris .pet-card::before { content: ""; position: absolute; inset: 0 0 auto; height: 4px; background: linear-gradient(90deg, #ff5a6e, #ff9f43, #ffd43b, #3ccf91, #3aa0ff, #8b5cf6); }
+/* Medianoche: negro de verdad, botón blanco, brillo suave detrás de la foto. De fondo, huesitos,
+   patitas, estrellas y corazones en blanco muy tenue; las tarjetas, apenas translúcidas (vidrio),
+   dejan ver el dibujo. Detalles dorados en el saludo y los títulos. */
+.pet-page.look-medianoche { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='144' viewBox='0 0 60 48'%3E%3Cg fill='%23ffffff' fill-opacity='.14'%3E%3Cg transform='translate(9 9) rotate(-18)'%3E%3Cellipse cy='1.1' rx='1.6' ry='1.35'/%3E%3Ccircle cx='-1.85' cy='-.7' r='.66'/%3E%3Ccircle cx='-.66' cy='-1.75' r='.66'/%3E%3Ccircle cx='.66' cy='-1.75' r='.66'/%3E%3Ccircle cx='1.85' cy='-.7' r='.66'/%3E%3C/g%3E%3Cg transform='translate(36 7) rotate(24)'%3E%3Crect x='-2.1' y='-.45' width='4.2' height='.9' rx='.4'/%3E%3Ccircle cx='-2.1' cy='-.55' r='.62'/%3E%3Ccircle cx='-2.1' cy='.55' r='.62'/%3E%3Ccircle cx='2.1' cy='-.55' r='.62'/%3E%3Ccircle cx='2.1' cy='.55' r='.62'/%3E%3C/g%3E%3Cpath transform='translate(52 20) scale(1.2)' d='M0-1.2L.32-.32 1.2 0 .32.32 0 1.2-.32.32-1.2 0-.32-.32Z'/%3E%3Cpath transform='translate(21 26) rotate(10) scale(1.3)' d='M0 1.1L-1.25-.05A.72.72 0 0 1 0-.95A.72.72 0 0 1 1.25-.05Z'/%3E%3Cg transform='translate(44 36) rotate(16) scale(.9)'%3E%3Cellipse cy='1.1' rx='1.6' ry='1.35'/%3E%3Ccircle cx='-1.85' cy='-.7' r='.66'/%3E%3Ccircle cx='-.66' cy='-1.75' r='.66'/%3E%3Ccircle cx='.66' cy='-1.75' r='.66'/%3E%3Ccircle cx='1.85' cy='-.7' r='.66'/%3E%3C/g%3E%3Cg transform='translate(10 40) rotate(-32) scale(.85)'%3E%3Crect x='-2.1' y='-.45' width='4.2' height='.9' rx='.4'/%3E%3Ccircle cx='-2.1' cy='-.55' r='.62'/%3E%3Ccircle cx='-2.1' cy='.55' r='.62'/%3E%3Ccircle cx='2.1' cy='-.55' r='.62'/%3E%3Ccircle cx='2.1' cy='.55' r='.62'/%3E%3C/g%3E%3Ccircle cx='30' cy='42' r='.5'/%3E%3Ccircle cx='4' cy='24' r='.45'/%3E%3Ccircle cx='57' cy='4' r='.45'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 180px 144px, linear-gradient(170deg, var(--pet-bg), var(--pet-bg-to)); }
+.pet-page.look-medianoche .pet-greeting, .pet-page.look-medianoche .pet-card h2 { color: #e8c27a; }
+.pet-page.look-pop { background: radial-gradient(#ffffff26 1.6px, transparent 2px) 0 0 / 22px 22px, linear-gradient(170deg, var(--pet-bg), var(--pet-bg-to)); }
+.pet-page.look-pop .pet-hero { padding: 22px 17px 27px; border: 3px solid var(--pet-ink); border-radius: 28px; background: var(--pet-card); box-shadow: 8px 8px 0 var(--pet-ink); }
+.pet-page.look-pop .pet-photo { width: 118px; height: 118px; border: 4px solid var(--pet-ink); border-radius: 28px; transform: rotate(-6deg); box-shadow: 7px 7px 0 var(--pet-accent); }
+.pet-page.look-pop .pet-photo img { transform: rotate(6deg) scale(1.1); }
+.pet-page.look-pop .pet-greeting, .pet-page.look-pop .pet-card h2 { color: #5a2bd8; }
+.pet-page.look-pop .pet-whatsapp { border: 2px solid var(--pet-ink); box-shadow: 5px 5px 0 var(--pet-ink); }
+.pet-page.look-pop .pet-call { border: 2px solid var(--pet-ink); background: #fff; color: #5a2bd8; box-shadow: 4px 4px 0 var(--pet-ink); }
+.pet-page.look-pop .pet-card { border: 2px solid var(--pet-ink); box-shadow: 4px 4px 0 var(--pet-ink); }
+.pet-page.look-pop .pet-report { color: #ffffffe0; }
+.pet-page.look-medianoche .pet-card { background: #16161dd9; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.pet-page.look-medianoche .pet-hero { padding: 26px 18px 28px; border: 1px solid #ffffff14; border-radius: 30px; background: radial-gradient(120% 85% at 50% 0%, #2b2b3ae6 0, #16161dcc 62%); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); box-shadow: 0 24px 50px #000c; }
+.pet-page.look-medianoche .pet-photo { border: 3px solid #fff; box-shadow: 0 0 0 7px #ffffff12, 0 18px 40px #000; }
+.pet-page.look-medianoche .pet-greeting { color: #e8c27a; }
+.pet-page.look-medianoche .pet-name { font-weight: 800; letter-spacing: -.03em; }
+.pet-page.look-medianoche .pet-whatsapp { border-radius: 999px; box-shadow: 0 10px 30px #ffffff1f; }
+.pet-page.look-medianoche .pet-call { border: 1px solid #ffffff24; border-radius: 999px; background: #16161d; color: #fff; }
+.pet-page.look-medianoche .pet-card { border: 1px solid #ffffff12; border-radius: 22px; }
+.pet-page.look-medianoche .pet-card h2 { color: #e8c27a; letter-spacing: .01em; }
+/* Pop: amarillo con lunarcitos negros, tarjetas blancas tipo sticker (borde negro grueso y sombra
+   corrida, como Divertido) y botones negros con letra amarilla. */
+/* Aurora: como Arcoíris, con una aurora (verde agua, azul y violeta): franja arriba, marco, aro de la
+   foto y tarjetas con borde en degradé, botones en degradé y un brillo suave arriba. */
+/* Arena: beige y negro, arco y letra serif, sin sombras. */
+.pet-page.look-arena .pet-hero { padding: 30px 18px 28px; border: 1px solid #e6d9c8; border-radius: 999px 999px 28px 28px; background: var(--pet-card); }
+.pet-page.look-arena .pet-photo { border: 4px solid var(--pet-card); outline: 1px solid #1f1b16; outline-offset: 2px; box-shadow: none; }
+.pet-page.look-arena .pet-greeting { color: #8a7560; letter-spacing: .28em; }
+.pet-page.look-arena .pet-name { font-weight: 400; letter-spacing: -.01em; }
+.pet-page.look-arena .pet-whatsapp { border-radius: 12px; box-shadow: none; }
+.pet-page.look-arena .pet-call { border: 1px solid #e6d9c8; border-radius: 12px; box-shadow: none; }
+.pet-page.look-arena .pet-card { border: 1px solid #ece2d4; border-radius: 16px; box-shadow: none; }
+.pet-page.look-arena .pet-card h2 { font-size: 19px; font-weight: 400; }
 .report-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
 .report-list li { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 12px 0; border-top: 1px solid var(--border); }
 .report-list li:first-child { border-top: 0; }

@@ -166,7 +166,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ slug
   const detailsInline = lostDetails.join("  ·  ").length <= 60;
   return new ImageResponse(
     (
-      <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", background, color: look.ink, fontFamily: "Poppins, sans-serif" }}>
+      <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", background, color: look.backgroundInk || look.ink, fontFamily: "Poppins, sans-serif" }}>
         {pet.lost && <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "22px 40px", background: "#d92d20", color: "#fff" }}>
           <div style={{ display: "flex", fontSize: 64, fontWeight: 900, letterSpacing: -1 }}>{lostTitle}</div>
           {(detailsInline ? [lostDetails.join("  ·  ")] : lostDetails).filter(Boolean).map((line) => <div key={line} style={{ display: "flex", marginTop: 4, fontSize: detailsInline ? 30 : 26, fontWeight: 700 }}>{line}</div>)}
@@ -195,7 +195,7 @@ type ShareProps = { pet: PetData; look: PetLook; name: string; photo: string | n
 // de y=285 a y=1635), así que el título arranca en 330 para que entre con aire también ahí.
 // El cartel rojo, la foto, el nombre y la dirección para avisar.
 function Story({ pet, look, name, photo, photoSize, address, background, lostTitle, zone, reward }: ShareProps) {
-  return <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", background, color: look.ink, fontFamily: "Poppins, sans-serif", textAlign: "center" }}>
+  return <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", background, color: look.backgroundInk || look.ink, fontFamily: "Poppins, sans-serif", textAlign: "center" }}>
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", padding: "330px 60px 50px", background: "#d92d20", color: "#fff" }}>
       <div style={{ display: "flex", fontSize: 108, fontWeight: 900, letterSpacing: -3, lineHeight: 1 }}>{lostTitle}</div>
       {zone && <div style={{ display: "flex", justifyContent: "center", marginTop: 22, fontSize: fitSize(zone, 50, 940, 2), fontWeight: 800, lineHeight: 1.2 }}>{zone}</div>}
@@ -328,7 +328,7 @@ function Polaroid({ pet, name, photo, address, post }: { pet: PetData; name: str
 function Post({ pet, look, name, photo, photoSize, address, background, lostTitle, zone, reward, greeting }: ShareProps) {
   const details = [zone, reward].filter(Boolean) as string[];
   const inline = details.join("  ·  ").length <= 44;
-  return <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", background, color: look.ink, fontFamily: "Poppins, sans-serif", textAlign: "center" }}>
+  return <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", alignItems: "center", background, color: look.backgroundInk || look.ink, fontFamily: "Poppins, sans-serif", textAlign: "center" }}>
     {pet.lost
       ? <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", padding: "56px 40px 48px", background: "#d92d20", color: "#fff" }}>
           <div style={{ display: "flex", fontSize: 96, fontWeight: 900, letterSpacing: -2, lineHeight: 1 }}>{lostTitle}</div>

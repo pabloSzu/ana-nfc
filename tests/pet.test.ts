@@ -108,6 +108,14 @@ describe("contacto de la familia", () => {
     assert.equal(petLook("noche").dark, true);
     assert.equal(petLook("nada").id, "calido");
   });
+
+  test("los diseños retirados pasan al que los reemplazó", () => {
+    assert.equal(petLook("pastel").id, "lavanda");
+    assert.equal(petLook("campo").id, "arena");
+    assert.equal(petLook("oceano").id, "pop");
+    assert.equal(petLook("noche").id, "medianoche");
+    assert.equal(parsePet({ pet: { ...newPet(), look: "noche" } }).look, "medianoche");
+  });
 });
 
 describe("números de teléfono argentinos", () => {

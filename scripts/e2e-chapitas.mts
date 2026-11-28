@@ -141,7 +141,7 @@ async function run() {
     check("Ya funciona: 'Completar su ficha' se ve sin bajar", await js("(() => { const r = document.querySelector('.pet-celebrate.is-ready .pet-step-next').getBoundingClientRect(); return r.bottom <= innerHeight; })()"));
     await clickText("Completar");
     check("Opcionales: elegir diseño", await waitFor("document.body.innerText.includes('Elegí un diseño')"));
-    await js("[...document.querySelectorAll('.pet-look-grid button')][3].click()");
+    await js("[...document.querySelectorAll('.pet-look-grid button')].find((b) => b.innerText.trim() === 'Divertido').click()");
     // Cada "Siguiente" guarda antes de pasar: se espera el paso que sigue.
     await clickText("Siguiente");
     await waitFor("document.body.innerText.includes('Contanos de')", 20);

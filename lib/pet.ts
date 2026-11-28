@@ -13,6 +13,8 @@ export type PetLook = {
   accent: string;
   accentInk: string;
   ink: string;
+  // Texto que va directo sobre el fondo (imagen para compartir), cuando ink no se lee ahí.
+  backgroundInk?: string;
   card: string;
   titleFont: string;
   bodyFont: string;
@@ -22,16 +24,20 @@ export type PetLook = {
 // Diseños de la chapita: cambian la presentación, nunca los datos ni las acciones de contacto.
 export const PET_LOOKS: PetLook[] = [
   { id: "calido", label: "Cálido", description: "Cercano y luminoso", background: "#fff6ec", backgroundTo: "#fde3cc", accent: "#b9531e", accentInk: "#ffffff", ink: "#4a2b17", card: "#fffaf5", titleFont: "friendly", bodyFont: "friendly" },
-  { id: "pastel", label: "Pastel", description: "Suave y soñador", background: "#f4f1ff", backgroundTo: "#e3f1ff", accent: "#5b4cc7", accentInk: "#ffffff", ink: "#2c2856", card: "#ffffff", titleFont: "friendly", bodyFont: "friendly" },
-  { id: "campo", label: "Campo", description: "Natural y editorial", background: "#f1f5ea", backgroundTo: "#dce8cf", accent: "#3c652b", accentInk: "#ffffff", ink: "#22351a", card: "#fbfcf8", titleFont: "fraunces", bodyFont: "manrope" },
   { id: "divertido", label: "Divertido", description: "Colorido y juguetón", background: "#fff4b8", backgroundTo: "#ffd6e6", accent: "#c72b65", accentInk: "#ffffff", ink: "#3b1d2b", card: "#fffdf6", titleFont: "chango", bodyFont: "friendly" },
-  { id: "oceano", label: "Océano", description: "Fresco y minimalista", background: "#eaf8fb", backgroundTo: "#cdeaf2", accent: "#066b77", accentInk: "#ffffff", ink: "#163d43", card: "#f8feff", titleFont: "sora", bodyFont: "manrope" },
-  { id: "lavanda", label: "Lavanda", description: "Delicado y elegante", background: "#faf3ff", backgroundTo: "#eadcf8", accent: "#78449f", accentInk: "#ffffff", ink: "#3d294d", card: "#fffaff", titleFont: "fraunces", bodyFont: "manrope" },
-  { id: "noche", label: "Noche", description: "Oscuro y nítido", background: "#171b29", backgroundTo: "#0d1019", accent: "#f4b740", accentInk: "#1b1405", ink: "#f5f1e8", card: "#222738", titleFont: "sora", bodyFont: "sora", dark: true },
+  { id: "lavanda", label: "Lavanda", description: "Lavanda y celeste, con bordes en degradé", background: "#f7f4ff", backgroundTo: "#eaf0ff", accent: "#6d4fd8", accentInk: "#ffffff", ink: "#2e2350", card: "#ffffff", titleFont: "fraunces", bodyFont: "manrope" },
+  { id: "arcoiris", label: "Arcoíris", description: "Blanco con arcoíris", background: "#ffffff", backgroundTo: "#fbf6ff", accent: "#6a45e0", accentInk: "#ffffff", ink: "#231942", card: "#ffffff", titleFont: "unbounded", bodyFont: "outfit" },
+  { id: "medianoche", label: "Medianoche", description: "Negro y elegante", background: "#0c0c11", backgroundTo: "#050507", accent: "#ffffff", accentInk: "#0c0c11", ink: "#f2f2f5", card: "#16161d", titleFont: "outfit", bodyFont: "outfit", dark: true },
+  { id: "pop", label: "Pop", description: "Violeta y lima, juguetón", background: "#6f4bff", backgroundTo: "#5233df", accent: "#c8ff3a", accentInk: "#1d1240", ink: "#1d1240", backgroundInk: "#ffffff", card: "#ffffff", titleFont: "chango", bodyFont: "friendly" },
+  { id: "arena", label: "Arena", description: "Chic y editorial", background: "#f8f3ec", backgroundTo: "#efe5d8", accent: "#1f1b16", accentInk: "#ffffff", ink: "#2a221b", card: "#fffdf9", titleFont: "dm-serif", bodyFont: "outfit" },
 ];
 
+// Diseños que ya no se ofrecen: las fichas que los tenían guardados pasan al que los reemplazó.
+const RETIRED_LOOKS: Record<string, string> = { pastel: "lavanda", campo: "arena", oceano: "pop", noche: "medianoche" };
+
 export function petLook(id: string | undefined): PetLook {
-  return PET_LOOKS.find((look) => look.id === id) || PET_LOOKS[0];
+  const current = (id && RETIRED_LOOKS[id]) || id;
+  return PET_LOOKS.find((look) => look.id === current) || PET_LOOKS[0];
 }
 
 export type PetFamily = { name: string; phone: string };
